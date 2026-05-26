@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Hide SIM / mobile-network entry points in Settings -->
+    <bool name="config_show_sim_info">false</bool>
+    <bool name="config_show_communal_settings_mobile">false</bool>
+    <bool name="config_show_glanceable_hub_toggle_setting_mobile">false</bool>
+</resources>

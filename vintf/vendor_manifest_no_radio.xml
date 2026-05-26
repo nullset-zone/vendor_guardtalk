@@ -1,0 +1,76 @@
+<!--
+  GuardTalkOS — tokay vendor device manifest without cellular radio HALs.
+  Replaces vendor/google_devices/tokay/vintf/vendor/manifest.xml when
+  GUARDTALK_RADIO_EXCISED is set.
+-->
+<manifest version="9.0" type="device" target-level="8">
+    <hal format="aidl">
+        <name>android.hardware.bluetooth</name>
+        <fqname>IBluetoothHci/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.bluetooth.finder</name>
+        <fqname>IBluetoothFinder/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.bluetooth.ranging</name>
+        <fqname>IBluetoothChannelSounding/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.boot</name>
+        <fqname>IBootControl/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.media.c2</name>
+        <fqname>IComponentStore/default1</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.media.c2</name>
+        <fqname>IComponentStore/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.security.keymint</name>
+        <version>3</version>
+        <fqname>IRemotelyProvisionedComponent/strongbox</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input</name>
+        <version>6</version>
+        <fqname>ITouchContextService/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input</name>
+        <version>6</version>
+        <fqname>ITwoshayNotificationService/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input</name>
+        <version>6</version>
+        <fqname>ITwoshayFileDumpService/touchflow_default</fqname>
+        <fqname>ITwoshayFileDumpService/twoshay</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input.algos.spd</name>
+        <version>6</version>
+        <fqname>IScreenProtectorDetectorService/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input.gia.core</name>
+        <version>2</version>
+        <fqname>IGiaService/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>vendor.google.bluetooth_ext</name>
+        <version>4</version>
+        <fqname>IBTChannelAvoidance/default</fqname>
+        <fqname>IBluetoothCcc/default</fqname>
+        <fqname>IBluetoothCco/default</fqname>
+        <fqname>IBluetoothEwp/default</fqname>
+        <fqname>IBluetoothExt/default</fqname>
+        <fqname>IBluetoothFinder/default</fqname>
+        <fqname>IBluetoothSar/default</fqname>
+    </hal>
+    <sepolicy>
+        <version>202504</version>
+    </sepolicy>
+</manifest>
