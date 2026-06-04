@@ -71,9 +71,22 @@ GUARDTALK_RADIO_PACKAGES := \
     adevtool_vintf_fragment_vendor_manifest_radioext.xml \
     adevtool_vintf_fragment_vendor_vendor.google.radio_ext-default.xml
 
+# Orphans still pulled via base_vendor.mk (libreference-ril) if late filter did not run.
+GT_RADIO_ORPHAN_PACKAGES := \
+    libreference-ril \
+    libgooglerilaudio \
+    libgooglerilmemmonitor \
+    libgril_oem-google \
+    libril \
+    librilutils \
+    android.hardware.radio@1.0 \
+    android.hardware.radio@1.1 \
+
 define _gt-package-drop
 $(or \
   $(findstring android.hardware.radio,$(1)), \
+  $(findstring googleril,$(1)), \
+  $(findstring libgril,$(1)), \
   $(findstring libsitril,$(1)), \
   $(findstring libril,$(1)), \
   $(findstring modem_ml,$(1)), \
@@ -95,3 +108,4 @@ $(foreach p,$(filter-out $(GUARDTALK_RADIO_PACKAGES),$(PRODUCT_PACKAGES)),\
   $(if $(call _gt-package-drop,$(p)),,\
     $(eval _gt_filtered_product_packages += $(p))))
 PRODUCT_PACKAGES := $(strip $(_gt_filtered_product_packages))
+PRODUCT_PACKAGES := $(filter-out $(GT_RADIO_ORPHAN_PACKAGES),$(PRODUCT_PACKAGES))

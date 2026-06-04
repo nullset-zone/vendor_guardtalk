@@ -10,12 +10,23 @@ Product deltas for the GrapheneOS fork under [nullset-zone](https://github.com/n
 - **Do not edit** `vendor/google_devices/tokay/tokay.mk` or `BoardConfig.mk` directly — re-apply hooks after `adevtool generate-all -d tokay` (see `device/tokay/REGEN_HOOKS.md`).
 - After filter changes: `rm -f out/soong/soong.$(TARGET_PRODUCT).variables out/soong/soong.$(TARGET_PRODUCT).extra.variables`
 
+## QA and flash
+
+```bash
+source build/envsetup.sh && lunch tokay-cur-user
+vendor/guardtalk/scripts/verify-radio-excision.sh
+```
+
+See `docs/FLASH.md` for rebuild, flash, and on-device checks.
+
 ## Layout
 
 ```text
 device/tokay/          Product and BoardConfig hooks
 radio-excised/         Late product pass (packages, copy-files, product-config-late)
 overlays/              Framework RRO (telephony features)
+scripts/               Host-side acceptance checks
+docs/                  Flash and validation notes
 ```
 
 ## Upstream
