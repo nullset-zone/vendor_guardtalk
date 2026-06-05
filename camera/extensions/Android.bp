@@ -1,0 +1,24 @@
+// GuardTalkOS Camera2 extension (Beauty slot → face persona)
+package {
+    default_applicable_licenses: ["vendor_guardtalk_camera_license"],
+}
+
+java_library {
+    name: "androidx.camera.extensions.impl.guardtalk",
+    installable: true,
+    static_libs: [
+        "androidx.annotation_annotation",
+    ],
+    exclude_kotlinc_generated_files: true,
+    srcs: ["src/**/*.java"],
+    sdk_version: "current",
+    vendor: true,
+    jarjar_rules: "jarjar-rules.txt",
+}
+
+prebuilt_etc {
+    name: "guardtalk_camera_extensions.xml",
+    vendor: true,
+    src: "guardtalk_camera_extensions.xml",
+    sub_dir: "permissions",
+}

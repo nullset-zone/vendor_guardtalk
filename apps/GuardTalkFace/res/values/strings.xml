@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GuardTalk Face</string>
+    <string name="consent_title">Face persona consent</string>
+    <string name="consent_summary">Enabling face persona alters your camera preview in Beauty mode. Use only with consent.</string>
+    <string name="enabled_title">Face persona enabled</string>
+    <string name="persona_title">Persona preset</string>
+    <string name="quality_title">Processing quality</string>
+    <string name="persona_neutral">Neutral (off)</string>
+    <string name="persona_soft">Soft</string>
+    <string name="persona_bold">Bold</string>
+    <string name="persona_cool">Cool</string>
+    <string name="persona_warm">Warm</string>
+    <string name="quality_lite">Lite</string>
+    <string name="quality_balanced">Balanced</string>
+    <string name="quality_max">Max</string>
+    <string name="status_template">Enabled: %1$s · Persona: %2$s · Quality: %3$s</string>
+    <string name="usage_hint">Use CameraX Beauty extension in supported camera apps.</string>
+</resources>

@@ -1,0 +1,60 @@
+// GuardTalkOS face persona pipeline (DEC-GT-004)
+package {
+    default_applicable_licenses: ["vendor_guardtalk_camera_license"],
+}
+
+license {
+    name: "vendor_guardtalk_camera_license",
+    visibility: [":__subpackages__"],
+    license_kinds: ["SPDX-license-identifier-Apache-2.0"],
+    license_text: ["NOTICE"],
+}
+
+cc_library_static {
+    name: "libguardtalkface_pipeline",
+    vendor: true,
+    host_supported: true,
+    srcs: ["pipeline/FacePipeline.cpp"],
+    export_include_dirs: ["pipeline"],
+    target: {
+        android: {
+            shared_libs: ["libcutils"],
+        },
+    },
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+    ],
+}
+
+cc_library_shared {
+    name: "libguardtalkface_jni",
+    vendor: true,
+    srcs: ["jni/GuardTalkFaceJni.cpp"],
+    local_include_dirs: ["pipeline"],
+    shared_libs: [
+        "libcutils",
+        "liblog",
+        "libnativehelper",
+    ],
+    static_libs: ["libguardtalkface_pipeline"],
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+    ],
+}
+
+cc_test {
+    name: "guardtalk_face_pipeline_test",
+    host_supported: true,
+    device_supported: false,
+    srcs: ["tests/FacePipelineTest.cpp"],
+    local_include_dirs: ["pipeline"],
+    static_libs: ["libguardtalkface_pipeline"],
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}

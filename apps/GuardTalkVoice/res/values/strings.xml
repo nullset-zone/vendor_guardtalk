@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GuardTalk Voice</string>
+    <string name="enabled_title">Voice filter enabled</string>
+    <string name="enabled_summary">Apply mic preprocessing on capture streams</string>
+    <string name="preset_title">Voice preset</string>
+    <string name="preset_natural">Natural (bypass)</string>
+    <string name="preset_deep">Deep</string>
+    <string name="preset_bright">Bright</string>
+    <string name="preset_masked">Masked</string>
+    <string name="preset_robot">Robot</string>
+    <string name="status_template">Enabled: %1$s · Preset: %2$s</string>
+</resources>

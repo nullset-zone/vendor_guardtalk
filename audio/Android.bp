@@ -1,0 +1,63 @@
+// GuardTalkOS mic voice filter (DEC-GT-003)
+package {
+    default_applicable_licenses: ["vendor_guardtalk_audio_license"],
+}
+
+license {
+    name: "vendor_guardtalk_audio_license",
+    visibility: [":__subpackages__"],
+    license_kinds: ["SPDX-license-identifier-Apache-2.0"],
+    license_text: ["NOTICE"],
+}
+
+cc_library_static {
+    name: "libguardtalkvoicedsp",
+    vendor: true,
+    host_supported: true,
+    srcs: ["dsp/VoicePitchShifter.cpp"],
+    export_include_dirs: ["dsp"],
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+    ],
+}
+
+cc_library_shared {
+    name: "libguardtalkvoicesw",
+    defaults: ["aidlaudioeffectservice_defaults"],
+    vendor: true,
+    srcs: [
+        "aidl/GuardTalkVoiceSw.cpp",
+        "//hardware/interfaces/audio/aidl/default:effectCommonFile",
+    ],
+    local_include_dirs: ["aidl", "dsp"],
+    export_include_dirs: ["aidl"],
+    static_libs: ["libguardtalkvoicedsp"],
+    relative_install_path: "soundfx",
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+        "-Wthread-safety",
+    ],
+}
+
+cc_test {
+    name: "guardtalk_voice_pitch_shifter_test",
+    host_supported: true,
+    srcs: ["tests/VoicePitchShifterTest.cpp"],
+    local_include_dirs: ["dsp"],
+    static_libs: ["libguardtalkvoicedsp"],
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}
+
+prebuilt_etc {
+    name: "guardtalk_audio_effects_config.xml",
+    vendor: true,
+    src: "config/audio_effects_config.xml",
+    filename: "audio_effects_config.xml",
+}
