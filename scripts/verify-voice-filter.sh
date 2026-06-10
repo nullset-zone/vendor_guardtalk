@@ -17,11 +17,21 @@ pass() {
 
 require_path() {
     if [[ ! -e "$1" ]]; then
-        fail "missing $1"
         return 1
     fi
     pass "found $1"
     return 0
+}
+
+require_path_one_of() {
+    local p
+    for p in "$@"; do
+        if require_path "$p"; then
+            return 0
+        fi
+    done
+    fail "missing all of: $*"
+    return 1
 }
 
 require_grep() {
@@ -38,9 +48,10 @@ echo "OUT=$OUT"
 
 require_path "$OUT/vendor/lib64/soundfx/libguardtalkvoicesw.so"
 require_path "$OUT/vendor/etc/audio_effects_config.xml"
-require_path "$OUT/system/priv-app/GuardTalkVoice/GuardTalkVoice.apk" || \
-    require_path "$OUT/product/priv-app/GuardTalkVoice/GuardTalkVoice.apk" || \
-    require_path "$OUT/system_ext/priv-app/GuardTalkVoice/GuardTalkVoice.apk"
+require_path_one_of \
+    "$OUT/system/priv-app/GuardTalkVoice/GuardTalkVoice.apk" \
+    "$OUT/product/priv-app/GuardTalkVoice/GuardTalkVoice.apk" \
+    "$OUT/system_ext/priv-app/GuardTalkVoice/GuardTalkVoice.apk"
 
 require_grep "$OUT/vendor/etc/audio_effects_config.xml" "guardtalk_voice_filter"
 require_grep "$OUT/vendor/etc/audio_effects_config.xml" "libguardtalkvoicesw.so"

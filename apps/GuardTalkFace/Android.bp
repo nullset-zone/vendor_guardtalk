@@ -17,6 +17,7 @@ android_app {
     sdk_version: "system_current",
     certificate: "platform",
     privileged: true,
+    system_ext_specific: true,
     required: ["privapp_whitelist_com.guardtalk.face"],
     optimize: {
         enabled: false,
@@ -28,4 +29,5 @@ prebuilt_etc {
     src: "privapp-permissions-com.guardtalk.face.xml",
     sub_dir: "permissions",
     filename_from_src: true,
+    system_ext_specific: true,
 }

@@ -33,7 +33,19 @@ echo "OUT=$OUT"
 require_path "$OUT/vendor/lib64/libguardtalkface_jni.so"
 require_path "$OUT/vendor/framework/androidx.camera.extensions.impl.guardtalk.jar"
 require_path "$OUT/vendor/etc/permissions/guardtalk_camera_extensions.xml"
-require_path "$OUT/system/priv-app/GuardTalkFace/GuardTalkFace.apk"
+require_path_one_of() {
+    local p
+    for p in "$@"; do
+        if [[ -e "$p" ]]; then pass "found $p"; return 0; fi
+    done
+    fail "missing all of: $*"
+    return 1
+}
+
+require_path_one_of \
+    "$OUT/system/priv-app/GuardTalkFace/GuardTalkFace.apk" \
+    "$OUT/product/priv-app/GuardTalkFace/GuardTalkFace.apk" \
+    "$OUT/system_ext/priv-app/GuardTalkFace/GuardTalkFace.apk"
 
 require_grep "$OUT/vendor/etc/permissions/guardtalk_camera_extensions.xml" "androidx.camera.extensions.impl.guardtalk.jar"
 require_grep "$OUT/vendor/etc/permissions/guardtalk_camera_extensions.xml" "androidx.camera.extensions.impl"
