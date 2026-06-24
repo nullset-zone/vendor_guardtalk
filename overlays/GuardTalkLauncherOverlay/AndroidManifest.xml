@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GuardTalkLauncherOverlay — F-HOME-LAYOUT (FR-E)
+     Static RRO on com.android.launcher3 that overrides the default
+     workspace layout (ALL 9 grids: 2x2, 3x3, 4x4, 4x5, 5x5, 5x8, 6x5,
+     7x3, 8x3) so the home screen + hotseat ship ONLY with the GuardTalk
+     app(s). Excised apps (Auditor, ExactCalculator, InfoApp, Messaging,
+     Dialer, TrichromeChrome, AppStore) are NOT pinned.
+     GT Info (com.guardtalk.validator) is the renamed Validator app and
+     is the sole GuardTalk app currently shipped; it is pinned to the
+     hotseat so the home screen is never empty/unusable. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.guardtalk.overlay.launcher">
+
+    <overlay
+        android:targetPackage="com.android.launcher3"
+        android:isStatic="true"
+        android:priority="999" />
+</manifest>

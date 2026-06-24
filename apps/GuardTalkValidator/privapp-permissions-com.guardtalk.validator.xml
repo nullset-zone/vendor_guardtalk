@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    GuardTalkValidator privapp-permissions whitelist.
+
+    Least-privilege set (FR-4 — least-privilege super-admin process viewer):
+
+    * QUERY_ALL_PACKAGES — needed so PackageManager.getPackagesForUid() can map
+      UID -> package name for every running process on Android 11+ (package
+      visibility filtering otherwise hides most packages). Read-only; grants no
+      write or launch capability over other apps.
+
+    * REAL_GET_TASKS (signature|privileged) — needed for
+      ActivityManager.getRunningAppProcesses() to return the FULL process list
+      (all UIDs), not just the caller's own. Verified in AOSP source:
+        - ActivityManagerService.java:10212  getRunningAppProcesses()
+            -> mAtmInternal.isGetTasksAllowed(...) sets allUids flag
+        - ProcessList.java:4353  getRunningAppProcessesLOSP() filters
+            (!allUids && app.uid != callingUid) -> skip
+        - ActivityTaskManagerService.java:3629  isGetTasksAllowed() grants
+            when REAL_GET_TASKS is held.
+      PACKAGE_USAGE_STATS is NOT in this code path (it gates
+      UsageStatsManager, a separate API) and is therefore NOT requested.
+
+    ACCESS_NETWORK_STATE is a normal permission (granted at install time, no
+    privapp entry needed) and is therefore not listed here.
+
+    No other permissions are requested. No root, no su, no shell exec, no
+    exported service/receiver, no world-readable IPC.
+-->
+<permissions>
+    <privapp-permissions package="com.guardtalk.validator">
+        <permission name="android.permission.QUERY_ALL_PACKAGES"/>
+        <permission name="android.permission.REAL_GET_TASKS"/>
+    </privapp-permissions>
+</permissions>

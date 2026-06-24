@@ -4,4 +4,29 @@
     <bool name="config_sms_capable">false</bool>
     <bool name="config_mobile_data_capable">false</bool>
     <bool name="config_wifi_only_device">true</bool>
+
+    <!-- T-W2-I2-FP: fingerprint HAL excision grace layer.
+         The HAL itself is dropped in feature-excised/fp-excised.mk (package +
+         VINTF + init .rc). These overlay values are defence-in-depth so the
+         framework never advertises a fingerprint sensor even if a stale
+         feature flag lingers. Face biometrics (config_biometric_sensors face
+         entry, config_faceMaxTemplatesPerUser) is intentionally NOT touched —
+         face is out of scope for this increment. -->
+    <integer name="config_fingerprintMaxTemplatesPerUser">0</integer>
+    <bool name="config_fingerprintSupportsGestures">false</bool>
+
+    <!-- T-W2-I5-LOC: GNSS HAL excision grace layer (location-only).
+         The GNSS HAL packages + the android.hardware.location.gps feature
+         prebuilt are dropped in feature-excised/loc-excised.mk, so
+         hasSystemFeature(FEATURE_LOCATION_GPS) returns false. FusedLocation
+         (com.android.location.fused, the AOSP network-location provider from
+         build/make/target/product/handheld_system.mk) is KEPT — only the GNSS
+         hardware HAL is removed. These overlay values are defence-in-depth so
+         the framework's GnssLocationProvider never tries to bind to a HAL
+         that is no longer installed. The LocationManager service itself stays
+         running and continues to serve network-based fixes from FusedLocation.
+         No config_gpsLocationGpsOnly or equivalent boolean exists in the
+         framework to override (verified: the GnssLocationProvider is gated on
+         FEATURE_LOCATION_GPS at construction, so dropping the feature is
+         sufficient); this entry documents the contract. -->
 </resources>

@@ -15,7 +15,10 @@ $(or \
   $(findstring shared_modem,$(1)), \
   $(findstring modem_ml,$(1)), \
   $(findstring fstab.modem,$(1)), \
-  $(findstring modem_stat,$(1)))
+  $(findstring liboemservice,$(1)), \
+  $(findstring modem_stat,$(1)), \
+  $(findstring cbd,$(1)), \
+  $(findstring rfsd,$(1)))
 endef
 
 _gt_filtered_product_copy_files :=

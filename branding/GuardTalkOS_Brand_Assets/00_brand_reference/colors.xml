@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GuardTalkOS brand colors — generated from the GuardTalk Brand Book -->
+<resources>
+    <!-- Core accent -->
+    <color name="guardtalk_signal">#FFC3FF61</color>        <!-- primary accent / "secure / your action" -->
+    <color name="guardtalk_signal_deep">#FFA6E83C</color>   <!-- pressed / hover -->
+    <color name="guardtalk_signal_ink">#FF4C6B12</color>    <!-- green text on light -->
+    <!-- Grounds -->
+    <color name="guardtalk_obsidian">#FF0A0B0C</color>      <!-- primary dark ground -->
+    <color name="guardtalk_black">#FF000000</color>         <!-- OLED true black -->
+    <color name="guardtalk_carbon">#FF121417</color>        <!-- raised surface -->
+    <color name="guardtalk_graphite">#FF1C2026</color>      <!-- secondary surface -->
+    <color name="guardtalk_steel">#FF363C45</color>         <!-- structure / borders -->
+    <color name="guardtalk_steel_line">#FF23272E</color>    <!-- hairline -->
+    <!-- Text -->
+    <color name="guardtalk_paper">#FFF6F7F5</color>         <!-- primary text on dark -->
+    <color name="guardtalk_fog">#FFA7AEB8</color>           <!-- secondary text on dark -->
+    <!-- Functional status (reserved) -->
+    <color name="guardtalk_tripwire">#FFFF5247</color>      <!-- threat detected/blocked -->
+    <color name="guardtalk_caution">#FFFFB020</color>       <!-- warning / degraded -->
+    <color name="guardtalk_anon">#FF5BC8FF</color>          <!-- Tor / anonymised / info -->
+</resources>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GuardTalkFrameworkBrandOverlay — colors.
+  T-W2-I6-THEME. PLACEHOLDER values mirrored from
+  vendor/guardtalk/branding/theme/colors.xml. Update the canonical file first,
+  then propagate here.
+
+  These override framework (`android`) resource defaults so user-facing
+  surfaces use GuardTalk brand colors. Only framework-defined resource names
+  that are documented as overridable are touched; no internal/private resource
+  ids are referenced (Law 8: Determinism / Law 4: Security First — no relying
+  on hidden APIs).
+-->
+<resources>
+    <!-- GuardTalk brand tokens (mirrors branding/theme/colors.xml). -->
+    <color name="guardtalk_primary" translatable="false">#FF0B6E99</color>
+    <color name="guardtalk_accent" translatable="false">#FF18C2D2</color>
+    <color name="guardtalk_background_dark" translatable="false">#FF0E1419</color>
+    <color name="guardtalk_surface_dark" translatable="false">#FF1A232C</color>
+    <color name="guardtalk_on_primary" translatable="false">#FFFFFFFF</color>
+    <color name="guardtalk_error" translatable="false">#FFFF5454</color>
+    <color name="guardtalk_success" translatable="false">#FF2DD4A7</color>
+</resources>

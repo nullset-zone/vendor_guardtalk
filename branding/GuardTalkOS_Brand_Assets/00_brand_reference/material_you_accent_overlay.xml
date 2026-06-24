@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Optional: force GuardTalk Signal as the Material You seed accent.
+     Place in an RRO/overlay targeting android (framework) res/values/.
+     This pins system accent to the brand instead of wallpaper-derived color. -->
+<resources>
+    <color name="system_accent1_500">#FFC3FF61</color>
+    <color name="system_accent1_100">#FFE8FFC0</color>
+    <color name="system_accent1_700">#FF8FC23A</color>
+</resources>

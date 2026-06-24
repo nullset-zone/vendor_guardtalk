@@ -1,0 +1,17 @@
+// GuardTalkLauncherOverlay — F-HOME-LAYOUT (FR-E)
+// Static RRO overriding com.android.launcher3 default_workspace_*.xml for ALL
+// 9 grids (2x2, 3x3, 4x4, 4x5, 5x5, 5x8, 6x5, 7x3, 8x3). The active grid for
+// tokay/Pixel 9 is 5_by_5 (per device_profiles.xml grid-option "5_by_5",
+// deviceCategory="phone|multi_display", minWidth 406dp) but ALL grids are
+// overridden so the GuardTalk layout wins regardless of which grid Launcher3
+// selects at runtime.
+//
+// Layout-only override: ships only GuardTalk app icon(s) on the default
+// home + hotseat. No app install/uninstall is performed here; excised
+// apps remain available in the all-apps drawer if still installed.
+runtime_resource_overlay {
+    name: "GuardTalkLauncherOverlay",
+    theme: "android",
+    sdk_version: "current",
+    product_specific: true,
+}

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GuardTalkSettingsOverlay — strings.
+  T-BRAND-001. Overrides Settings (`com.android.settings`) string defaults so
+  user-facing Settings surfaces read GuardTalkOS instead of the upstream OS
+  name.
+
+  Only Settings-defined, documented resource names are touched. Resource
+  *names* (e.g. supl_enabled_grapheneos_proxy) are immutable app contracts
+  and are NOT renamed — only their values are rebranded (Law 6: minimal
+  footprint). No new dependencies (Law 22).
+
+  Note: Settings also references the upstream OS domain / app package ids in
+  *non-string* resources (learn-more URLs hardcoded in .java, package-id
+  config keys). Those are infrastructure endpoints / installed package ids,
+  not user-visible brand strings, and are intentionally NOT overridden here
+  (Law 6 / Law 8 — renaming would break runtime resolution or point the
+  device at non-existent hosts). See GuardTalkFrameworkBrandOverlay
+  config.xml for the parallel scoping note.
+-->
+<resources>
+    <!-- SUPL proxy label -->
+    <string name="supl_enabled_grapheneos_proxy">GuardTalkOS proxy</string>
+
+    <!-- Remote attestation key provisioning -->
+    <string name="remote_provisioning_enabled_grapheneos_proxy">GuardTalkOS proxy</string>
+
+    <!-- Predicted Satellite Data Service -->
+    <string name="psds_enabled_grapheneos_server">GuardTalkOS server</string>
+
+    <!-- Connectivity checks -->
+    <string name="conn_checks_grapheneos_server">GuardTalkOS server</string>
+
+    <!-- Widevine provisioning -->
+    <string name="widevine_provisioning_enabled_grapheneos_proxy">GuardTalkOS proxy</string>
+
+    <!-- Network location -->
+    <string name="network_location_enabled_grapheneos_apple_proxy">GuardTalkOS Apple proxy</string>
+
+    <!-- Geocoder -->
+    <string name="geocoder_enabled_grapheneos_server">GuardTalkOS server</string>
+
+    <!--
+      Duress password description — rebrands the "will remain installed."
+      clause to GuardTalkOS.
+    -->
+    <string name="duress_pwd_description">"Duress password can be entered instead of the user password in any place that asks for it, such as the lock screen of any user and any user or work profile password prompt.
+
+Submitting the duress password will immediately make the storage contents permanently inaccessible, delete all eSIMs and then power off the device. GuardTalkOS will remain installed.
+
+Duress PIN works the same way duress password does."</string>
+
+    <!--
+      Play Integrity intro — rebrands the upstream OS name occurrences in the
+      explanatory paragraph. Paragraph content is preserved verbatim except
+      for the brand swap (Law 6: minimal footprint).
+    -->
+    <string name="app_play_integrity_top_intro">The Play Integrity API allows services to verify properties of a device through their app. Most services check for the device or strong integrity level which requires having the unmodified stock OS on a device licensing Google Mobile Services. Not every app using it will ban using GuardTalkOS. GuardTalkOS passes the basic integrity level and the miscellaneous checks for licensing, Play Protect, etc. work fine. We recommend leaving feedback for apps using it to ban GuardTalkOS asking them to stop banning using a much more secure OS. Apps can use the standard Android hardware attestation API to verify the hardware, OS and app with GuardTalkOS.</string>
+
+    <!-- Exploit protection compat mode summary -->
+    <string name="aep_compat_mode_summary">Improves compatibility by disabling some of the GuardTalkOS exploit protections for this app</string>
+</resources>

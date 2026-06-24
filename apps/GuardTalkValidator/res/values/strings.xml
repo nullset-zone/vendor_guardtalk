@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GT Info</string>
+    <string name="header_title">Excision ground truth</string>
+    <string name="summary_template">%1$d PASS · %2$d FAIL · %3$d READOUT</string>
+
+    <!-- FR-4 process-list viewer -->
+    <string name="process_view_title">Running processes</string>
+    <string name="process_view_summary">%1$d processes</string>
+    <string name="process_refresh">Refresh</string>
+    <string name="process_back">Back</string>
+    <string name="process_header_pid">PID</string>
+    <string name="process_header_uid">UID</string>
+    <string name="process_header_name">Name</string>
+    <string name="process_header_state">State</string>
+    <string name="process_unknown_uid">&lt;unknown&gt;</string>
+    <string name="process_unavailable">ActivityManager unavailable</string>
+    <string name="process_security_error">SecurityException: %1$s</string>
+</resources>

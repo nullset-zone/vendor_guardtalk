@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material You themed-icon layer: single-color silhouette; system applies tint -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+  <path android:fillColor="#FFFFFFFF" android:pathData="M 53.9834 40.767 L 80.0 55.7477 L 80.0 43.2469 L 53.9667 28.2496 L 28.0 43.2636 L 28.0 55.781 Z"/>
+  <path android:fillColor="#FFFFFFFF" android:pathData="M 75.8384 70.8116 L 80.0 68.365 L 80.0 60.6914 L 53.9667 45.6774 L 28.0 60.6914 L 28.0 68.3983 L 32.1616 70.8116 L 53.9667 58.1948 Z"/>
+  <path android:fillColor="#FFFFFFFF" android:pathData="M 53.9834 75.9388 L 60.5915 79.7504 L 71.4444 73.5083 L 53.9667 63.4214 L 36.5556 73.5083 L 47.4085 79.7504 Z"/>
+</vector>

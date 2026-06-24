@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GuardTalk brand strings (PLACEHOLDER).
+  T-W2-I6-THEME — placeholder values until the operator delivers the final
+  brand kit. See vendor/guardtalk/branding/README.md for the gap register.
+
+  These tokens are mirrored into the runtime-resource overlays under
+  vendor/guardtalk/overlays/GuardTalk*/res/values/strings.xml. Update here first,
+  then propagate.
+-->
+<resources>
+    <!-- OS display name — replaces "GrapheneOS" / upstream OS name in user-facing surfaces -->
+    <string name="guardtalk_os_name" translatable="false">GuardTalkOS</string>
+    <!-- Device display name -->
+    <string name="guardtalk_device_name" translatable="false">GuardTalk</string>
+    <!-- Manufacturer display string -->
+    <string name="guardtalk_manufacturer" translatable="false">GuardTalk</string>
+    <!-- About-phone tagline -->
+    <string name="guardtalk_tagline" translatable="false">Private by design.</string>
+</resources>

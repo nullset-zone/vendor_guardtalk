@@ -54,6 +54,7 @@ import androidx.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.Executor;
 import java.util.HashMap;
@@ -867,8 +868,15 @@ public abstract class BaseAdvancedExtenderImpl implements AdvancedExtenderImpl {
 
     @Override
     public List<Pair<CameraCharacteristics.Key, Object>> getAvailableCharacteristicsKeyValues() {
+        if (mCameraCharacteristics == null) {
+            return Collections.emptyList();
+        }
+
         int[] caps = mCameraCharacteristics
                 .get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
+        if (caps == null) {
+            return Collections.emptyList();
+        }
 
         Set<Integer> unsupportedCapabilities = new HashSet<>(Arrays.asList(
                 CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DEPTH_OUTPUT,
@@ -907,22 +915,24 @@ public abstract class BaseAdvancedExtenderImpl implements AdvancedExtenderImpl {
 
         Range<Float> zoomRange = mCameraCharacteristics
                     .get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE);
-        float zoomRangeLower = Math.max(1f, zoomRange.getLower());
-        float zoomRangeUpper = Math.min(10f, zoomRange.getUpper());
-        return Arrays.asList(
-                Pair.create(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES,
-                        extensionsCaps),
-                Pair.create(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE,
-                        Range.create(zoomRangeLower, zoomRangeUpper)),
-                Pair.create(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES,
-                        new int[]{
-                                CameraMetadata.CONTROL_AF_MODE_OFF,
-                                CameraMetadata.CONTROL_AF_MODE_AUTO
-                        }),
-                Pair.create(REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES_MAP,
-                        dynamicRangeProfileArray),
-                Pair.create(REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP,
-                        colorSpacesProfileArray)
-        );
+        List<Pair<CameraCharacteristics.Key, Object>> result = new ArrayList<>();
+        result.add(Pair.create(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES,
+                extensionsCaps));
+        if (zoomRange != null) {
+            float zoomRangeLower = Math.max(1f, zoomRange.getLower());
+            float zoomRangeUpper = Math.min(10f, zoomRange.getUpper());
+            result.add(Pair.create(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE,
+                    Range.create(zoomRangeLower, zoomRangeUpper)));
+        }
+        result.add(Pair.create(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES,
+                new int[]{
+                        CameraMetadata.CONTROL_AF_MODE_OFF,
+                        CameraMetadata.CONTROL_AF_MODE_AUTO
+                }));
+        result.add(Pair.create(REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES_MAP,
+                dynamicRangeProfileArray));
+        result.add(Pair.create(REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP,
+                colorSpacesProfileArray));
+        return result;
     }
 }

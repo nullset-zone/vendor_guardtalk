@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- T-W2-I2-FP: fingerprint HAL excision grace layer for SystemUI.
+         The HAL is dropped in feature-excised/fp-excised.mk. These overlay
+         values ensure SystemUI never listens for or surfaces fingerprint UI
+         even if a stale feature flag lingers. Face biometrics is intentionally
+         NOT touched (out of scope for this increment). -->
+    <!-- Empty list: no packages allowed to run fingerprint listening while
+         occluding the lock screen. -->
+    <string-array name="config_fingerprint_listen_on_occluding_activity_packages" translatable="false">
+    </string-array>
+
+    <!-- T-W2-I3-NFC: NFC HAL excision grace layer for SystemUI.
+         The NFC HAL feature-permission prebuilts are dropped in
+         feature-excised/nfc-excised.mk so hasSystemFeature(FEATURE_NFC)
+         returns false; NfcTile.isAvailable() (NfcTile.java:103-110) already
+         short-circuits on the missing feature. These overlays are
+         defence-in-depth: they also strip `nfc` from the QS tile stock and
+         default lists so the tile is never even considered for auto-add and
+         no restore-from-backup path can re-instate it. Bluetooth, Location,
+         and all other tiles intentionally NOT touched (out of scope). -->
+
+    <!-- T-BT-UI-SWEEP (FR-F §9): quick_settings_tiles_new_default with `bt`,
+         `nfc`, and `hearing_devices` removed.
+         Original (frameworks/base/packages/SystemUI/res/values/config.xml:109-111):
+         internet,bt,dnd,airplane,flashlight,rotation,alarm,screenrecord,
+         battery,mictoggle,cameratoggle,location,nfc
+         `hearing_devices` is a Bluetooth-profile tile (HearingDevicesTile depends
+         on LocalBluetoothManager / BluetoothAdapter; HearingDevicesChecker
+         short-circuits to false when LocalBluetoothManager is null, which it is
+         when FEATURE_BLUETOOTH is absent — see SettingsLibraryModule:41-44 and
+         LocalBluetoothAdapter.getInstance():74-83). Stripping it from the QS
+         lists is defence-in-depth so it never appears in the QS editor or
+         default slot and no restore-from-backup path can re-instate it (§11). -->
+    <string name="quick_settings_tiles_new_default" translatable="false">
+        internet,dnd,airplane,flashlight,rotation,alarm,screenrecord,battery,mictoggle,cameratoggle,location
+    </string>
+
+    <!-- T-BT-UI-SWEEP (FR-F §9): quick_settings_tiles_stock with `bt`, `nfc`,
+         and `hearing_devices` removed.
+         Original (frameworks/base/packages/SystemUI/res/values/config.xml:122-124):
+         internet,bt,flashlight,dnd,modes_dnd,alarm,airplane,controls,wallet,
+         rotation,battery,batteryShare,cast,screenrecord,mictoggle,
+         cameratoggle,location,nfc,hotspot,inversion,saver,dark,work,night,
+         reverse,reduce_brightness,qr_code_scanner,onehanded,color_correction,
+         dream,font_scaling,record_issue,hearing_devices,notes,desktopeffects
+         This is the list that populates the QS *edit* panel (TileQueryHelper
+         .addCurrentAndStockTiles:100-116 and StockTilesRepository.stockTiles:38-
+         45). Stripping `hearing_devices` here means it cannot be re-added by the
+         user via the QS editor — satisfying §9 "no BT tile in the QS editor". -->
+    <string name="quick_settings_tiles_stock" translatable="false">
+        internet,flashlight,dnd,modes_dnd,alarm,airplane,controls,wallet,rotation,battery,batteryShare,cast,screenrecord,mictoggle,cameratoggle,location,hotspot,inversion,saver,dark,work,night,reverse,reduce_brightness,qr_code_scanner,onehanded,color_correction,dream,font_scaling,record_issue,notes,desktopeffects
+    </string>
+
+    <!-- T-BT-QS-TILE / T-BT-UI-SWEEP: quick_settings_tiles_default with `bt`
+         removed.
+         Original (frameworks/base/packages/SystemUI/res/values/config.xml:104-106):
+         internet,bt,flashlight,dnd,alarm,airplane,controls,wallet,rotation,
+         battery,cast,screenrecord,mictoggle,cameratoggle,custom(com.android.
+         permissioncontroller/.permission.service.v33.SafetyCenterQsTileService)
+         `nfc` and `hearing_devices` are not in this list so only `bt` is
+         stripped. This is the third QS tile list (the default tiles shown on
+         first boot / after reset) and was the gap left by T-W2-I3-NFC +
+         T-W2-I4-BT, which only overrode quick_settings_tiles_new_default and
+         quick_settings_tiles_stock above. BluetoothTile.isAvailable() already
+         short-circuits on the missing FEATURE_BLUETOOTH, but this overlay is
+         defence-in-depth so the tile is never even considered for the default
+         slot and no restore-from-backup path can re-instate it (§11). -->
+    <string name="quick_settings_tiles_default" translatable="false">
+        internet,flashlight,dnd,alarm,airplane,controls,wallet,rotation,battery,cast,screenrecord,mictoggle,cameratoggle,custom(com.android.permissioncontroller/.permission.service.v33.SafetyCenterQsTileService)
+    </string>
+
+    <!-- T-BT-UI-SWEEP (FR-F §9): status bar BT icon auto-hide documentation.
+         No config boolean exists to override — verified: SystemUI does not gate
+         the status bar BT connected icon on a config bool. PhoneStatusBarPolicy
+         .updateBluetooth() (PhoneStatusBarPolicy.java:474-491) sets
+         `bluetoothVisible = false` by default and only flips it true when
+         mBluetooth.isBluetoothConnected() returns true. BluetoothControllerImpl
+         .isBluetoothSupported() (BluetoothControllerImpl.java:233-235) returns
+         `mLocalBluetoothManager != null`, and mLocalBluetoothManager is
+         @Nullable-injected (SettingsLibraryModule.java:41-44) as the return of
+         LocalBluetoothManager.create(), which returns null when
+         BluetoothAdapter.getDefaultAdapter() returns null — the case once
+         FEATURE_BLUETOOTH is excised. So isBluetoothConnected() short-circuits
+         to false and the status bar BT icon is never made visible. The new
+         Compose path (BluetoothIconViewModel.kt:49-54) is gated on
+         interactor.isBluetoothConnected, which flows from
+         BluetoothRepository.connectedDevices — empty when
+         localBluetoothManager is null (BluetoothRepositoryImpl.kt:73,130,183).
+         No overlay needed; this entry documents the contract (Law 8 / Law 19). -->
+
+</resources>

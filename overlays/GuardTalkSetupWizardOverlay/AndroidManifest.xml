@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.guardtalk.overlay.setupwizard">
+    <!--
+      T-W2-I6-THEME — RRO on SetupWizard2 (targetPackage
+      "com.android.setupwizard"). Static + priority 999 so the GuardTalk brand
+      always wins over the wizard's defaults.
+
+      This is the placeholder RRO structure for T-W2-I7-WIZ, which will add
+      the transparent-black logo source edit in packages/apps/SetupWizard2.
+      Until I7-WIZ lands, this overlay provides the brand colors + strings the
+      wizard reads; no upstream OS wizard branding is shipped.
+    -->
+    <overlay android:targetPackage="com.android.setupwizard" android:isStatic="true" android:priority="999"/>
+</manifest>

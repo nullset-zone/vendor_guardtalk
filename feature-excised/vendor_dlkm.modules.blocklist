@@ -1,0 +1,62 @@
+# GuardTalkOS — tokay (caimito-kernels) vendor_dlkm modules blocklist.
+#
+# T-BT-FULL (FR-3): Full Bluetooth removal. This file REPLACES the upstream
+# device/google/caimito-kernels/6.1/grapheneos/vendor_dlkm.modules.blocklist
+# via the BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE override set in
+# vendor/guardtalk/device/tokay/BoardConfig-excised-late.mk (the tail include
+# of vendor/google_devices/tokay/BoardConfig.mk, which runs AFTER
+# BoardConfig-common.mk:45 re-sets the makevar). It MUST be kept in sync with
+# the upstream blocklist so no upstream-blocklisted module is accidentally
+# re-enabled when GuardTalk swaps in this file.
+#
+# Tokay's kernel prebuilt is caimito-kernels (NOT tegu-kernels) — confirmed
+# via build/release/flag_values/cur/RELEASE_KERNEL_TOKAY_DIR.textproto and
+# out/soong/soong.tokay.variables:318
+#   "RELEASE_KERNEL_TOKAY_DIR": "device/google/caimito-kernels/6.1/grapheneos"
+# and out/soong/soong.tokay.variables:2142
+#   "VendorKernelBlocklistFile": "device/google/caimito-kernels/6.1/grapheneos/vendor_dlkm.modules.blocklist"
+#
+# Upstream caimito baseline mirrored below (as of 2026-02):
+#   aoc_unit_test_dev, mali_kutf, mali_kutf_clk_rate_trace_test_portal,
+#   sscoredump_sample_test.ko, sscoredump_test.ko, bcmdhd4390, cs40l26_i2c,
+#   gs-panel-common-test.ko, panel-gs-tk4c-test.ko, pwm_exynos, rt4539_bl,
+#   sec_touch, syna_touch
+#
+# Note on bcmdhd4390: the WiFi driver IS upstream-blocklisted here on purpose.
+# It is skipped during the common bulk modprobe pass (init.common.cfg:
+# `modprobe|vendor -b *` → modprobe -b, which honors this blocklist) and then
+# explicitly re-loaded WITHOUT -b in init.insmod.tokay.cfg:9
+# (`modprobe|bcmdhd4390.ko`). This two-phase load is an upstream ordering
+# mechanism; GuardTalk preserves it verbatim. WiFi is NOT broken by this
+# entry. (verified: system/core/libmodprobe/libmodprobe.cpp:142-152 IsBlocklisted
+# + libmodprobe.cpp:164-169 LoadModulesParallel skip; vendor/bin/insmod.sh:86-106
+# modprobe case; device/google/caimito-kernels/6.1/grapheneos/init.insmod.tokay.cfg)
+#
+# GuardTalk addition (FR-3): nitrous — the BCM4390 BT power/rfkill driver.
+# Blocking it prevents the BT driver from loading in the common bulk pass
+# (nitrous is in vendor_dlkm.modules.load:52 but is NOT in
+# init.insmod.tokay.cfg, so the no-blocklist device-specific pass never loads
+# it either). The GKI bluetooth.ko / hci_uart.ko / btbcm.ko remain in
+# system_dlkm but are harmless without nitrous (no rfkill power-on, no HCI
+# transport). WiFi (bcmdhd4390.ko over PCIe) is on a separate bus and is NOT
+# touched here beyond the upstream-intentional blocklist entry.
+
+blocklist aoc_unit_test_dev
+blocklist mali_kutf
+blocklist mali_kutf_clk_rate_trace_test_portal
+blocklist sscoredump_sample_test.ko
+blocklist sscoredump_test.ko
+
+blocklist bcmdhd4390
+blocklist cs40l26_i2c
+blocklist gs-panel-common-test.ko
+blocklist panel-gs-tk4c-test.ko
+blocklist pwm_exynos
+blocklist rt4539_bl
+blocklist sec_touch
+blocklist syna_touch
+
+# T-BT-FULL (FR-3): Bluetooth power/rfkill driver — BCM4390 BT on UART.
+# Leaves cfg80211.ko, mac80211.ko, bcm_dbg.ko, wlan_ptracker.ko untouched.
+# (bcmdhd4390.ko WiFi is handled per the upstream two-phase note above.)
+blocklist nitrous

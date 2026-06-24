@@ -5,6 +5,10 @@
 GUARDTALK_VOICE_FILTER := true
 GUARDTALK_FACE_FILTER := true
 
+# GuardTalk Branding
+PRODUCT_COPY_FILES += \
+    vendor/guardtalk/branding/GuardTalkOS_Brand_Assets/01_boot_animation/bootanimation.zip:$(TARGET_COPY_OUT_PRODUCT)/media/bootanimation.zip
+
 # Framework + Settings overlays (telephony flag tweaks; safe on emulator)
 PRODUCT_PACKAGES += \
     GuardTalkFrameworksBaseOverlay \

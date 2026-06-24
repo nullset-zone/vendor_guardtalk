@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright (C) 2026 GuardTalkOS Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,19 @@ import android.util.Pair;
 import android.util.Range;
 import android.util.Size;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Stub advanced extender implementation for eyes free videography.
+ * Non-throwing stub advanced extender implementation for eyes free videography.
  *
- * <p>This class should be implemented by OEM and deployed to the target devices.
+ * <p>GuardTalk does not implement the eyes-free-videography extension. The class exists only
+ * because the CameraX/Camera2 reflection contract enumerates advanced extenders by name. It
+ * previously threw {@link RuntimeException} on every call, which caused proprietary camera
+ * services (e.g. {@code ProxyCameraProviderService}) to crash-loop with an NPE when they probed
+ * the extension during camera enumeration. All methods now return safe "unavailable" defaults so
+ * enumeration completes cleanly.
  *
  * @since 1.5
  */
@@ -48,68 +54,67 @@ public class EyesFreeVideographyAdvancedExtenderImpl implements AdvancedExtender
     @Override
     public void init(String cameraId,
             Map<String, CameraCharacteristics> characteristicsMap) {
-        throw new RuntimeException("Stub, replace with implementation.");
     }
 
     @Override
     public Range<Long> getEstimatedCaptureLatencyRange(
             String cameraId, Size size, int imageFormat) {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public Map<Integer, List<Size>> getSupportedPreviewOutputResolutions(
             String cameraId) {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return Collections.emptyMap();
     }
 
 
     @Override
     public Map<Integer, List<Size>> getSupportedCaptureOutputResolutions(
             String cameraId) {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return Collections.emptyMap();
     }
 
     @Override
     public Map<Integer, List<Size>> getSupportedPostviewResolutions(
             Size captureSize) {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return Collections.emptyMap();
     }
 
     @Override
     public List<Size> getSupportedYuvAnalysisResolutions(
             String cameraId) {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public SessionProcessorImpl createSessionProcessor() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return Collections.emptyList();
     }
 
     @Override
     public List<CaptureResult.Key> getAvailableCaptureResultKeys() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return Collections.emptyList();
     }
 
     @Override
     public boolean isCaptureProcessProgressAvailable() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return false;
     }
 
     @Override
     public boolean isPostviewAvailable() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return false;
     }
 
     @Override
     public List<Pair<CameraCharacteristics.Key, Object>>
             getAvailableCharacteristicsKeyValues() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return Collections.emptyList();
     }
 }

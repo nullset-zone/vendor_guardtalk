@@ -1,0 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.guardtalk.overlay.frameworkbrand">
+    <!--
+      T-W2-I6-THEME — RRO on the framework (targetPackage "android").
+      Overrides OS/device/manufacturer display strings + the framework accent
+      color so user-facing surfaces (About phone, settings headers, system
+      dialogs) read GuardTalk instead of the upstream OS name. Static
+      + priority 999 so it always wins over the framework defaults.
+    -->
+    <overlay android:targetPackage="android" android:isStatic="true" android:priority="999"/>
+</manifest>

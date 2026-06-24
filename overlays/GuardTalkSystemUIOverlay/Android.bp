@@ -1,0 +1,6 @@
+runtime_resource_overlay {
+    name: "GuardTalkSystemUIOverlay",
+    theme: "android",
+    sdk_version: "current",
+    product_specific: true,
+}

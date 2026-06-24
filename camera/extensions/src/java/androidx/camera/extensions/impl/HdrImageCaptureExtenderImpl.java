@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright (C) 2026 GuardTalkOS Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,15 @@ import android.util.Size;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
- * Stub implementation for HDR image capture use case.
+ * Non-throwing stub for HDR image capture use case.
  *
- * <p>This class should be implemented by OEM and deployed to the target devices.
+ * <p>See {@link BeautyImageCaptureExtenderImpl} for the rationale. GuardTalk implements the HDR
+ * extension via the advanced extender path
+ * ({@link androidx.camera.extensions.impl.advanced.HdrAdvancedExtenderImpl}).
  *
  * @since 1.0
  */
@@ -41,100 +44,97 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
     @Override
     public boolean isExtensionAvailable(@NonNull String cameraId,
             @Nullable CameraCharacteristics cameraCharacteristics) {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return false;
     }
 
     @Override
     public void init(String cameraId, CameraCharacteristics cameraCharacteristics) {
-        throw new RuntimeException("Stub, replace with implementation.");
     }
 
     @Override
     public CaptureProcessorImpl getCaptureProcessor() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public List<CaptureStageImpl> getCaptureStages() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return Collections.emptyList();
     }
 
     @Override
     public int getMaxCaptureStage() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return 0;
     }
 
     @Override
     public void onInit(String cameraId, CameraCharacteristics cameraCharacteristics,
             Context context) {
-        throw new RuntimeException("Stub, replace with implementation.");
     }
 
     @Override
     public void onDeInit() {
-        throw new RuntimeException("Stub, replace with implementation.");
     }
 
     @Override
     public CaptureStageImpl onPresetSession() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public CaptureStageImpl onEnableSession() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public CaptureStageImpl onDisableSession() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public List<Pair<Integer, Size[]>> getSupportedResolutions() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public List<Pair<Integer, Size[]>> getSupportedPostviewResolutions(Size captureSize) {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Nullable
     @Override
     public Range<Long> getEstimatedCaptureLatencyRange(@NonNull Size captureOutputSize) {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Nullable
     @Override
     public List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return Collections.emptyList();
     }
 
     @Nullable
     @Override
     public List<CaptureResult.Key> getAvailableCaptureResultKeys() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return Collections.emptyList();
     }
 
     @Override
     public int onSessionType() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return -1;
     }
 
     @Override
     public boolean isCaptureProcessProgressAvailable() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return false;
     }
 
     @Override
     public Pair<Long, Long> getRealtimeCaptureLatency() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public boolean isPostviewAvailable() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return false;
     }
 }

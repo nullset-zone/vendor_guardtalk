@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GuardTalkSetupWizardOverlay — REAL transparent GuardTalk welcome mark.
+  T-WIZ-LOGO (Wave-5-Fix). Replaces the previous PLACEHOLDER (which filled a
+  shield shape with opaque #0E1419 — an opaque dark square on device).
+
+  This drawable overrides guardtalk_welcome_square.png shipped in
+  packages/apps/SetupWizard2 at runtime (RRO priority 999), so the Welcome +
+  Finish wizard screens render the real GuardTalk chevron mark in brand lime
+  (#C3FF61) on a TRANSPARENT background — no opaque dark square.
+
+  Geometry is sourced from the brand kit SVG at
+  vendor/guardtalk/branding/GuardTalkOS_Brand_Assets/07_setup_wizard/guardtalk_welcome.svg
+  (1080x2400). The three chevron paths span x:378-702, y:847-1168 in SVG space,
+  centered at (540, 1008). They are mapped into a 360x360 viewport via a
+  <group> translate of (-360, -828), placing the mark center at (180, 180).
+  The opaque SVG background rect (#0A0B0C) is intentionally DROPPED so the
+  drawable renders transparent. A semi-transparent radial glow circle (lime
+  #C3FF61 at low opacity) is kept for visual depth — it is translucent, not
+  opaque, so transparency is preserved.
+
+  Contract: drawable name `guardtalk_welcome_square` is unchanged. Reversible
+  via single-file edit (Law 11).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="256dp"
+    android:height="256dp"
+    android:viewportWidth="360"
+    android:viewportHeight="360">
+
+    <!-- Semi-transparent radial glow circle (lime, low opacity) for visual depth.
+         Translucent — does NOT break transparency. Center maps to (180,180). -->
+    <path android:pathData="M180,180m-453.6,0a453.6,453.6 0 1,0 907.2,0a453.6,453.6 0 1,0 -907.2,0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="453.6"
+                android:centerX="180"
+                android:centerY="180">
+                <item android:offset="0"   android:color="#1AC3FF61" />
+                <item android:offset="1"   android:color="#00C3FF61" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- GuardTalk chevron mark, three paths in brand lime #C3FF61.
+         Group translates SVG coords (mark center 540,1008) into 360x360
+         viewport (mark center 180,180). -->
+    <group android:translateX="-360" android:translateY="-828">
+        <!-- Path 1: top chevron -->
+        <path
+            android:fillColor="#C3FF61"
+            android:pathData="M 539.8963 925.5485 L 702.0 1018.8896 L 702.0 941.0 L 539.7926 847.5552 L 378.0 941.1037 L 378.0 1019.097 Z" />
+        <!-- Path 2: middle chevron -->
+        <path
+            android:fillColor="#C3FF61"
+            android:pathData="M 676.0703 1112.7492 L 702.0 1097.505 L 702.0 1049.6923 L 539.7926 956.1438 L 378.0 1049.6923 L 378.0 1097.7124 L 403.9297 1112.7492 L 539.7926 1034.1371 Z" />
+        <!-- Path 3: bottom chevron -->
+        <path
+            android:fillColor="#C3FF61"
+            android:pathData="M 539.8963 1144.6956 L 581.0702 1168.4448 L 648.6923 1129.5518 L 539.7926 1066.7023 L 431.3077 1129.5518 L 498.9298 1168.4448 Z" />
+    </group>
+</vector>

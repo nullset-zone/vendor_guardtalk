@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      T-W2-I6-THEME / T-WALLPAPER — GuardTalkFrameworkBrandOverlay config.
+      Points the framework at the GuardTalk brand. The default wallpaper is
+      now wired (T-WALLPAPER / FR-2) via the default_wallpaper drawable
+      override in res/drawable-*/. Remaining logo-drawable asset paths
+      activate when the operator delivers the rest of the brand kit (see
+      vendor/guardtalk/branding/README.md gap register).
+
+      Only framework-defined, documented config keys are referenced. No
+      hidden/private resource ids (Law 4 / Law 8).
+    -->
+
+    <!--
+      T-WALLPAPER (FR-2) — Default wallpaper wiring.
+
+      AOSP does NOT expose a `config_default_wallpaper` config key. The
+      default static wallpaper is resolved in
+      frameworks/base/core/java/android/app/WallpaperManager.java:3438 via the
+      hardcoded reference `R.drawable.default_wallpaper`, then loaded through
+      `context.getResources().openRawResource(defaultResId)` (line 3450). The
+      framework ships `default_wallpaper.png` under
+      frameworks/base/core/res/res/drawable-nodpi/ (and -sw600dp-nodpi /
+      -sw720dp-nodpi for tablets).
+
+      Because this RRO targets `android` (targetPackage="android",
+      isStatic="true", priority="999" — see AndroidManifest.xml), a
+      `default_wallpaper.png` placed in this overlay's drawable buckets
+      overrides the framework drawable at resource resolution time. There is
+      no config-string or string-array to set; the drawable name itself is
+      the override key.
+
+      Drawable bucket placement (mirrors AOSP's density layout):
+        res/drawable-nodpi/default_wallpaper.png     1440x3120 (universal fallback)
+        res/drawable-xxhdpi/default_wallpaper.png    1080x2424 (Pixel 9 / tokay)
+        res/drawable-xxxhdpi/default_wallpaper.png   1280x2856 (Pixel 9 Pro XL)
+
+      Sources copied verbatim from vendor/guardtalk/branding/wallpapers/
+      (wallpaper_guardtalk_default_nodpi.png, _default.png, _default_proxl.png).
+
+      Effect: WallpaperManager.openDefaultWallpaper(ctx, FLAG_SYSTEM) returns
+      the GuardTalk logo (obsidian) stream on first boot AND after every
+      `wallpaperManager.clearWallpaper()` call, which is the path taken by
+      WallpaperUpdateReceiver.updateWallpaper() on
+      ACTION_DEVICE_CUSTOMIZATION_READY (e.g. factory reset). §9 (first boot)
+      and §11 (factory reset re-apply) are both satisfied by the same
+      resource-override mechanism.
+    -->
+
+    <!--
+      T-BRAND-001 scoping note — the following framework config entries
+      reference "grapheneos" but are intentionally NOT overridden here:
+
+      - config_locationProviderPackageNames: contains the package id
+        `app.grapheneos.networklocation` — this is the *installed package
+        name* of the NetworkLocation app, not a brand string. Renaming it
+        here would break package resolution at runtime (Law 8 determinism /
+        Law 6 minimal footprint). The NetworkLocation app's own package id
+        is owned by packages/apps/NetworkLocation and is out of scope for a
+        brand-string sweep.
+      - config_httpsTimeUrls: contains the upstream OS HTTPS time-check
+        hostname (`https://time.<upstream-os>.org/...`) — this is the
+        *actual* HTTPS time-check hostname operated as infrastructure.
+        Replacing the bare brand string would point the device at a
+        non-existent host and break network time sync. The operator must
+        stand up a guardtalk.io mirror before this can be repointed; tracked
+        as an infra deliverable, not a brand-string change.
+      - config_defaultQrCodeComponent: contains
+        `app.grapheneos.camera/...` — installed package/component id, same
+        rationale as config_locationProviderPackageNames.
+
+      User-visible brand strings that DO surface in framework UI (e.g.
+      deprecated_abi_message_grapheneos) are overridden in strings.xml.
+    -->
+    <!--
+      T-THEME-DARK (FR-1) — Force GuardTalkOS to dark theme only on first boot.
+
+      config_defaultNightMode = 2 (MODE_NIGHT_YES). UiModeManagerService.onStart()
+      (frameworks/base/services/core/java/com/android/server/UiModeManagerService.java)
+      reads this integer as the initial value of mNightMode for every user, and
+      updateNightModeFromSettingsLocked() uses it as the fallback when
+      Settings.Secure.UI_NIGHT_MODE is unset (i.e. fresh boot / new user). Setting
+      it to 2 guarantees the very first UI configuration of every user is
+      UI_MODE_NIGHT_YES, so SystemUI, Settings, SetupWizard and all framework
+      surfaces render dark from first boot.
+
+      This is reinforced by the upstream framework default
+      config_lockDayNightMode = true (see frameworks/base core config.xml:890),
+      which gates UiModeManager.setNightMode[Activated]() behind the
+      signature|privileged|role permission MODIFY_DAY_NIGHT_MODE. Settings
+      (com.android.settings) does NOT hold that permission
+      (frameworks/base/data/etc/privapp-permissions-platform.xml:705), so the
+      Settings dark-theme toggle + scheduling rows are functionally inert:
+      they still render but every setNightMode[Activated]() call is rejected
+      by UiModeManagerService with "Night mode locked, requires
+      MODIFY_DAY_NIGHT_MODE permission".
+
+      Known gap (out of scope, documented for the Architect): com.android.shell
+      IS granted MODIFY_DAY_NIGHT_MODE
+      (frameworks/base/data/etc/privapp-permissions-platform.xml:279), so
+      `adb shell cmd uimode night no` can still flip the mode at runtime. A
+      system-property / init.rc lock would be required to fully close this
+      path; that is T-BT-FULL / Wave-4 territory and explicitly out of scope
+      for T-THEME-DARK (no init.rc edits).
+    -->
+    <integer name="config_defaultNightMode" translatable="false">2</integer>
+</resources>

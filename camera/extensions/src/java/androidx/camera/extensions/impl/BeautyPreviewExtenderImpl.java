@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright (C) 2026 GuardTalkOS Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,15 @@ import androidx.annotation.Nullable;
 import java.util.List;
 
 /**
- * Stub implementation for beauty preview use case.
+ * Non-throwing stub for beauty preview use case.
  *
- * <p>This class should be implemented by OEM and deployed to the target devices.
+ * <p>GuardTalk implements the extension solely via the advanced extender path
+ * ({@link androidx.camera.extensions.impl.advanced.BeautyAdvancedExtenderImpl}). These basic
+ * extender classes exist only because the CameraX/Camera2 reflection contract enumerates them by
+ * name. They previously threw {@link RuntimeException} on every call, which caused proprietary
+ * camera services (e.g. {@code ProxyCameraProviderService}) to crash-loop with an NPE when they
+ * probed the extension during camera enumeration. All methods now return safe "unavailable"
+ * defaults so enumeration completes cleanly and falls back to the advanced extender.
  *
  * @since 1.0
  */
@@ -40,62 +46,59 @@ public final class BeautyPreviewExtenderImpl implements PreviewExtenderImpl {
     @Override
     public boolean isExtensionAvailable(@NonNull String cameraId,
             @Nullable CameraCharacteristics cameraCharacteristics) {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return false;
     }
 
     @Override
     public void init(String cameraId, CameraCharacteristics cameraCharacteristics) {
-        throw new RuntimeException("Stub, replace with implementation.");
     }
 
     @Override
     public CaptureStageImpl getCaptureStage() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public ProcessorType getProcessorType() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return ProcessorType.PROCESSOR_TYPE_NONE;
     }
 
     @Override
     public ProcessorImpl getProcessor() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public void onInit(String cameraId, CameraCharacteristics cameraCharacteristics,
             Context context) {
-        throw new RuntimeException("Stub, replace with implementation.");
     }
 
     @Override
     public void onDeInit() {
-        throw new RuntimeException("Stub, replace with implementation.");
     }
 
     @Override
     public CaptureStageImpl onPresetSession() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public CaptureStageImpl onEnableSession() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public CaptureStageImpl onDisableSession() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public List<Pair<Integer, Size[]>> getSupportedResolutions() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return null;
     }
 
     @Override
     public int onSessionType() {
-        throw new RuntimeException("Stub, replace with implementation.");
+        return -1;
     }
 }

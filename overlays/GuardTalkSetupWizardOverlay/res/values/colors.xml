@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GuardTalkSetupWizardOverlay — colors.
+  T-W2-I6-THEME. PLACEHOLDER values mirrored from
+  vendor/guardtalk/branding/theme/colors.xml. Update the canonical file first,
+  then propagate here.
+
+  These override SetupWizard2 defaults so the Welcome screen + wizard pages
+  use GuardTalk brand colors. T-W2-I7-WIZ will add the transparent-black logo
+  source edit in packages/apps/SetupWizard2; this overlay supplies the color
+  table the wizard reads.
+-->
+<resources>
+    <color name="guardtalk_primary" translatable="false">#FF0B6E99</color>
+    <color name="guardtalk_accent" translatable="false">#FF18C2D2</color>
+    <color name="guardtalk_background_dark" translatable="false">#FF0E1419</color>
+    <color name="guardtalk_surface_dark" translatable="false">#FF1A232C</color>
+    <color name="guardtalk_on_primary" translatable="false">#FFFFFFFF</color>
+    <color name="guardtalk_error" translatable="false">#FFFF5454</color>
+    <color name="guardtalk_success" translatable="false">#FF2DD4A7</color>
+</resources>

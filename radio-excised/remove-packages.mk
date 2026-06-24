@@ -55,6 +55,15 @@ GUARDTALK_RADIO_PACKAGES := \
     ril-extension \
     rild_exynos \
     shared_modem_platform \
+    OemRilService \
+    OemRilHookService \
+    ShannonIms \
+    ShannonRcs \
+    ShannonIms__tokay__auto_generated_rro_product \
+    liboemservice \
+    liboemservice_proxy_default \
+    lassen_dmd_constants \
+    adevtool_vintf_fragment_vendor_liboemservice_proxy.xml \
     vendor.samsung_slsi.telephony.hardware.oemservice@1.0 \
     vendor.samsung_slsi.telephony.hardware.oemservice@1.0.system_ext \
     vendor.samsung_slsi.telephony.hardware.radioExternal@1.0 \
@@ -69,7 +78,16 @@ GUARDTALK_RADIO_PACKAGES := \
     vendor.radio.protocol.sit.json \
     vendor.radio.protocol.sit.stream \
     adevtool_vintf_fragment_vendor_manifest_radioext.xml \
-    adevtool_vintf_fragment_vendor_vendor.google.radio_ext-default.xml
+    adevtool_vintf_fragment_vendor_vendor.google.radio_ext-default.xml \
+    com.android.phone \
+    com.android.telephony.imsmedia \
+    telephony-ext \
+    Dialer \
+    Messaging \
+    cbd \
+    rfsd \
+    MmsService \
+    PixelImsMediaService
 
 # Orphans still pulled via base_vendor.mk (libreference-ril) if late filter did not run.
 GT_RADIO_ORPHAN_PACKAGES := \
@@ -100,7 +118,17 @@ $(or \
   $(findstring libreference-ril,$(1)), \
   $(findstring radio-service,$(1)), \
   $(findstring radio.config@,$(1)), \
-  $(findstring radio-library,$(1)))
+  $(findstring Shannon,$(1)), \
+  $(findstring OemRil,$(1)), \
+  $(findstring liboemservice,$(1)), \
+  $(findstring lassen_dmd,$(1)), \
+  $(findstring radio-library,$(1)), \
+  $(findstring telephony,$(1)), \
+  $(findstring imsmedia,$(1)), \
+  $(findstring ImsMedia,$(1)), \
+  $(findstring Mms,$(1)), \
+  $(findstring Telephony,$(1)), \
+  $(findstring TeleService,$(1)))
 endef
 
 _gt_filtered_product_packages :=

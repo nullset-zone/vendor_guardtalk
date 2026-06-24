@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GuardTalkSetupWizardOverlay — strings.
+  T-BRAND-001. Overrides SetupWizard2 (`com.android.setupwizard`) defaults so
+  the Welcome screen and wizard pages read GuardTalkOS instead of the upstream
+  OS name.
+
+  Only wizard-defined, documented resource names are touched. The resource
+  *names* (e.g. welcome_to_grapheneos) are immutable app contracts and are
+  NOT renamed — only their values are rebranded (Law 6: minimal footprint).
+  No new dependencies (Law 22).
+-->
+<resources>
+    <!-- Brand tokens mirrored from vendor/guardtalk/branding/theme/strings.xml -->
+    <string name="guardtalk_os_name" translatable="false">GuardTalkOS</string>
+    <string name="guardtalk_device_name" translatable="false">GuardTalk</string>
+    <string name="guardtalk_manufacturer" translatable="false">GuardTalk</string>
+    <string name="guardtalk_tagline" translatable="false">Private by design.</string>
+
+    <!--
+      T-BRAND-001: override the wizard strings that still surfaced the
+      upstream OS brand in their VALUES (the source file
+      packages/apps/SetupWizard2/res/values/strings.xml already rebranded
+      welcome_to_grapheneos and grapheneos_desc; these four remained and
+      are mirrored here as direct edits + overlay defence-in-depth).
+    -->
+
+    <!-- Rebrands the upstream OS proxy label -->
+    <string name="network_location_enabled_desc">Enable network location to determine your location better (such as when indoors) and more efficiently. Nearby wireless signal identifiers will be sent to an Apple server through a GuardTalkOS proxy only when network location is being used.</string>
+
+    <!-- Rebrands the hosted-by upstream OS clause -->
+    <string name="geocoder_enabled_desc">Enable geocoder to allow apps to use a network-based service hosted by GuardTalkOS to convert between geographic coordinates and human-readable addresses. Some apps need this for critical functionality.</string>
+
+    <!-- Rebrands the previous-device clause -->
+    <string name="data_restore_desc">If you have a backup from your previous GuardTalkOS device, you can restore it here.</string>
+
+    <!--
+      Rebrands the OEM unlock URL host. Per task scope the operator is
+      responsible for standing up the guardtalk.io endpoint; this is the
+      brand-string change, infra mirroring tracked separately.
+    -->
+    <string name="oem_lock_url" translatable="false">guardtalk.io/UBL</string>
+</resources>

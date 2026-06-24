@@ -4,4 +4,172 @@
     <bool name="config_show_sim_info">false</bool>
     <bool name="config_show_communal_settings_mobile">false</bool>
     <bool name="config_show_glanceable_hub_toggle_setting_mobile">false</bool>
+
+    <!-- T-W2-I2-FP: fingerprint HAL excision grace layer.
+         Defence-in-depth: the fingerprint HAL feature XML
+         (android.hardware.fingerprint.prebuilt.xml) is dropped in
+         feature-excised/fp-excised.mk, so hasSystemFeature(FEATURE_FINGERPRINT)
+         already returns false and Settings' biometric controllers hide the
+         fingerprint preference at runtime. No Settings-specific config_fingerprint
+         boolean exists to override (verified: packages/apps/Settings gates
+         fingerprint UI on PackageManager.FEATURE_FINGERPRINT, not a config bool).
+         This file documents the contract; the real hiding is the runtime feature
+         check. Face biometrics intentionally NOT touched (out of scope). -->
+
+    <!-- T-W2-I3-NFC: NFC HAL excision grace layer.
+         The NFC HAL feature-permission prebuilts
+         (android.hardware.nfc.prebuilt.xml / .hce. / .hcef. / .ese.) are
+         dropped in feature-excised/nfc-excised.mk, so hasSystemFeature(
+         FEATURE_NFC) and FEATURE_NFC_HOST_CARD_EMULATION return false and
+         Settings' connected-device NFC controllers hide the NFC preference at
+         runtime (NfcAndPaymentFragmentController.getAvailabilityStatus()
+         returns UNSUPPORTED_ON_DEVICE). No Settings-specific config_nfc
+         boolean exists to override (verified: packages/apps/Settings gates
+         NFC UI on PackageManager features, not a config bool). This entry
+         documents the contract; the real hiding is the runtime feature check. -->
+
+    <!-- T-W2-I4-BT: Bluetooth HAL excision grace layer.
+         The BT HAL feature-permission prebuilts
+         (android.hardware.bluetooth.prebuilt.xml,
+         android.hardware.bluetooth_le.prebuilt.xml) are dropped in
+         feature-excised/bt-excised.mk, so hasSystemFeature(FEATURE_BLUETOOTH)
+         and FEATURE_BLUETOOTH_LE return false and the BluetoothAdapter is
+         never created. Settings' Bluetooth/ConnectedDevice controllers hide
+         all BT entry points at runtime (they gate on the adapter being
+         available, which requires the feature). No Settings-specific
+         config_bluetooth boolean exists to override (verified: packages/apps/
+         Settings gates BT UI on the BluetoothAdapter / FEATURE_BLUETOOTH, not
+         a config bool). This entry documents the contract; the real hiding is
+         the runtime feature/adapter check. -->
+
+    <!-- T-BT-UI-SWEEP (FR-F §9): residual BT UI in Settings — audit.
+         After the Wave-3 HAL/feature-XML excision, residual BT UI in Settings
+         was audited (grep -rn "bluetooth\|bt_" packages/apps/Settings/res/xml/).
+         Every BT preference/fragment is feature-gated on FEATURE_BLUETOOTH or
+         on BluetoothAdapter.getDefaultAdapter() returning non-null, so they
+         ALL auto-hide once the feature is absent. No Settings overlay boolean
+         exists to override any of them (verified — Settings does not gate BT
+         UI on a config_* bool). No resource edit is therefore needed; this
+         block documents the auto-hidden items (Law 8 determinism / Law 19
+         documentation completeness). Items:
+
+         1. connected_devices.xml — `bt_nearby_slice`, `add_bt_devices`
+            (BluetoothPairingDetail fragment), `bluetooth_off_footer`
+            (DiscoverableFooterPreferenceController): gated via
+            AddDevicePreferenceController.getAvailabilityStatus():80,
+            ConnectedDeviceGroupController.getAvailabilityStatus():197,299,
+            DiscoverableFooterPreferenceController.getAvailabilityStatus():76
+            — all return UNSUPPORTED_ON_DEVICE when
+            hasSystemFeature(FEATURE_BLUETOOTH) is false.
+
+         2. exploit_protection_settings.xml — `bluetooth_auto_off`
+            (BluetoothAutoOffPrefController): getAvailabilityStatus():21-28
+            returns UNSUPPORTED_ON_DEVICE when hasSystemFeature(
+            FEATURE_BLUETOOTH) is false.
+
+         3. tether_prefs.xml — `enable_bluetooth_tethering`
+            (BluetoothTetherSwitchPreference): isAvailable():58-63 returns
+            false when BluetoothAdapter.getDefaultAdapter() is null.
+
+         4. accessibility_hearing_aids.xml — `hearing_device_add_bt_devices`
+            (AvailableHearingDevicePreferenceController) and saved-device
+            controller: parent BaseBluetoothDevicePreferenceController
+            .getAvailabilityStatus():44-45 returns UNSUPPORTED_ON_DEVICE when
+            hasSystemFeature(FEATURE_BLUETOOTH) is false. The fragment page
+            is also de-indexed from search via AccessibilityHearingAidsFragment
+            .isPageSearchEnabled() → HearingAidHelper.isHearingAidSupported(),
+            which NPE-guards on mBluetoothAdapter == null
+            (HearingAidHelper.java:61-62, 94-98) — the search-index path
+            returns false (page not indexed) once the adapter is null.
+
+         5. hearing_device_pairing_detail.xml /
+            bluetooth_device_details_fragment.xml /
+            snoop_logger_filters_settings.xml — all reached only via the
+            connected-devices or developer-options entry points above, which
+            are already hidden. SnoopLoggerFiltersPreferenceController
+            .getAvailabilityStatus():45-53 additionally returns
+            DISABLED_DEPENDENT_SETTING unless BluetoothProperties.snoop_log_mode
+            is FILTERED (default DISABLED), so the snoop-logs BT group is
+            hidden regardless of the BT feature.
+
+         6. location_settings.xml — `ic_bluetooth_more_vert` is a drawable
+            NAME only (a "more" vertical-dots icon that happens to share the
+            bluetooth_ prefix); it is not BT UI and is intentionally NOT
+            touched (Law 6).
+
+         Restore-from-backup (§11): Settings preferences do not carry backup
+         metadata that could re-instate a hidden BT preference — Settings
+         backup is keyed on the preference XML, and the controllers' runtime
+         feature check runs after every restore, so a restored preference row
+         is filtered out by getAvailabilityStatus() on the next attach. -->
+
+
+    <!-- T-W2-I5-LOC: GNSS HAL excision grace layer (location-only).
+         The GPS feature-permission prebuilt
+         (android.hardware.location.gps.prebuilt.xml) is dropped in
+         feature-excised/loc-excised.mk, so hasSystemFeature(
+         FEATURE_LOCATION_GPS) returns false while FEATURE_LOCATION (network
+         location) stays true. Settings' Location screen STAYS visible —
+         network-based location via FusedLocation is retained, so the master
+         location toggle and network source rows are meaningful. The GPS-only
+         source row is hidden at runtime by Settings' LocationSettings base
+         controller gating the GPS source on FEATURE_LOCATION_GPS (verified:
+         packages/apps/Settings gates the GPS source on the feature, not on a
+         config boolean). No Settings-specific config_gps boolean exists to
+         override; this entry documents the contract. The real hiding is the
+         runtime FEATURE_LOCATION_GPS absence. -->
+
+    <!--
+      T-THEME-DARK (FR-1) — Dark-theme toggle + scheduling lock in Settings.
+
+      GuardTalkOS is forced to dark-only via the framework overlay
+      config_defaultNightMode = 2 (see GuardTalkFrameworkBrandOverlay) plus
+      the upstream framework default config_lockDayNightMode = true
+      (frameworks/base/core/res/res/values/config.xml:890). The lock gates
+      UiModeManager.setNightMode(), setNightModeActivated(),
+      setCustomNightModeStart/End() behind MODIFY_DAY_NIGHT_MODE
+      (signature|privileged|role). com.android.settings does NOT hold that
+      permission (verified at
+      frameworks/base/data/etc/privapp-permissions-platform.xml:705 — only
+      INSTALL_DYNAMIC_SYSTEM, BIND_CELL_BROADCAST_SERVICE, MANAGE_SAFETY_CENTER,
+      READ_SAFETY_CENTER_STATUS, SEND_SAFETY_CENTER_UPDATE,
+      READ_SYSTEM_GRAMMATICAL_GENDER). Therefore every dark-theme control in
+      Settings is functionally inert at runtime:
+
+        - display_settings.xml: dark_ui_mode (DarkUIPreferenceController) →
+          setNightModeActivated() → rejected by UiModeManagerService.
+        - dark_mode_settings.xml: dark_ui_activated (MainSwitchPreference,
+          DarkModeActivationPreferenceController) → setNightModeActivated()
+          → rejected.
+        - dark_mode_settings.xml: dark_ui_auto_mode (DropDownPreference,
+          DarkModeScheduleSelectorController) → setNightMode() → rejected.
+        - dark_mode_settings.xml: dark_theme_start_time / dark_theme_end_time
+          (DarkModeCustomPreferenceController) → setCustomNightModeStart/End()
+          → rejected.
+
+      No Settings resource (bool / config_*) exists to *hide* the toggle
+      preference from the layout — Settings does not gate the dark-theme
+      preference on a config boolean (verified: DarkUIPreferenceController.
+      getAvailabilityStatus() unconditionally returns AVAILABLE; the
+      preference is declared statically in display_settings.xml). An RRO can
+      only override existing resources, not remove <Preference> elements from
+      XML, so the toggle row remains visible. It is cosmetic only: tapping it
+      dispatches a setNightModeActivated() call that UiModeManagerService
+      silently rejects. This matches FR-1 §11 negative-test intent ("Cannot
+      switch to light via Settings") — the user cannot effect a mode change.
+
+      Why no config_show_dark_theme_toggle bool is added here: no such key
+      exists in packages/apps/Settings to override (Law 8 determinism — we
+      only override framework-defined, documented keys). Adding a fabricated
+      key would be a no-op and would misleadingly suggest the toggle is
+      hidden when it is not.
+
+      Gap (documented, out of scope for T-THEME-DARK): com.android.shell and
+      com.android.systemui both hold MODIFY_DAY_NIGHT_MODE, so the QS dark
+      tile (UiModeNightTile) and `adb shell cmd uimode night no` can still
+      flip the mode at runtime. Fully locking those paths requires an
+      init.rc / system-property gate — explicitly out of scope (no init.rc
+      edits per task spec). Tracked for T-BT-FULL / Wave-4.
+    -->
+
 </resources>

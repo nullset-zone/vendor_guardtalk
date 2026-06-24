@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GuardTalkFrameworkBrandOverlay — strings.
+  T-BRAND-001. Overrides framework (`android`) resource defaults so user-facing
+  surfaces (About phone, system dialogs, toast messages) read GuardTalkOS
+  instead of the upstream OS name.
+
+  Only framework-defined, documented resource names are touched. No private/
+  hidden resource ids (Law 4 / Law 8). No new dependencies (Law 22).
+
+  Note: the system property `ro.build.product` / `ro.product.manufacturer`
+  drive the *literal* device name surfaced in some places (e.g. fastboot,
+  bootloader). Those are owned by vendor/google_devices and are NOT modified
+  here (forbidden paths). The overlay instead covers the res-table strings
+  that the Settings/UI layer reads.
+-->
+<resources>
+    <!-- OS display name — replaces the upstream OS name string in framework UI. -->
+    <string name="guardtalk_os_name" translatable="false">GuardTalkOS</string>
+    <string name="guardtalk_device_name" translatable="false">GuardTalk</string>
+    <string name="guardtalk_manufacturer" translatable="false">GuardTalk</string>
+    <string name="guardtalk_tagline" translatable="false">Private by design.</string>
+
+    <!--
+      T-BRAND-001: override the framework-defined 32-bit ABI deprecation message
+      so it reads GuardTalkOS instead of the upstream OS name. The resource
+      name is a framework java-symbol (symbols.xml:
+      deprecated_abi_message_grapheneos); only its value is rebranded here.
+      The resource name itself is an immutable framework contract and is NOT
+      renamed (Law 6: minimal footprint — renaming would break java-symbol
+      resolution).
+    -->
+    <string name="deprecated_abi_message_grapheneos">This app only supports 32-bit and therefore isn\'t compatible with more recent devices. If the app is still developed, switch to a build for modern devices. GuardTalkOS plans to phase out 32-bit app support on older devices for improved security.</string>
+</resources>
