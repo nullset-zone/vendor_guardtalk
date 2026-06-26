@@ -17,19 +17,20 @@
 # telephony-features.mk and are listed above for documentation only.
 
 # T-W2-I2-FP — SystemUI overlay (HAL excision grace layer).
+# PARTITION MATCH (T-HOME-ROOTCAUSE): SystemUI is system_ext_specific, so this
+# overlay is system_ext_specific in its Android.bp. DEVICE_PACKAGE_OVERLAYS is
+# NOT used — it is a build-time resource resolution path, irrelevant to runtime
+# RRO installation, and previously caused mis-packaging into /product/overlay.
 PRODUCT_PACKAGES += GuardTalkSystemUIOverlay
 
 PRODUCT_SOONG_NAMESPACES += \
     vendor/guardtalk/overlays/GuardTalkSystemUIOverlay
 
-DEVICE_PACKAGE_OVERLAYS += \
-    vendor/guardtalk/overlays/GuardTalkSystemUIOverlay
-
 # T-W2-I6-THEME — GuardTalk brand theme overlays.
-# GuardTalkFrameworkBrandOverlay: RRO on `android` (framework). Replaces
-# upstream/GrapheneOS-branded framework UI surfaces (OS name, device name,
-# manufacturer string, brand colors) with GuardTalk. PLACEHOLDER values until
-# the operator delivers the brand kit; see vendor/guardtalk/branding/README.md.
+# GuardTalkFrameworkBrandOverlay: RRO on `android` (framework-res, in /system).
+# Stays product_specific — /product/overlay CAN target /system packages on
+# Android 14+ (product > system in partition hierarchy). DEVICE_PACKAGE_OVERLAYS
+# is kept here for build-time resource resolution of framework branding.
 PRODUCT_PACKAGES += GuardTalkFrameworkBrandOverlay
 
 PRODUCT_SOONG_NAMESPACES += \
@@ -42,12 +43,12 @@ DEVICE_PACKAGE_OVERLAYS += \
 # colors + strings to SetupWizard2. Ties to T-W2-I7-WIZ, which adds the
 # transparent-black logo source edit in packages/apps/SetupWizard2 and
 # confirms the fingerprint enrollment step is removed (T-W2-I2-FP).
+# PARTITION MATCH (T-HOME-ROOTCAUSE): SetupWizard2 is system_ext_specific, so
+# this overlay is system_ext_specific in its Android.bp. DEVICE_PACKAGE_OVERLAYS
+# is NOT used (same rationale as above).
 PRODUCT_PACKAGES += GuardTalkSetupWizardOverlay
 
 PRODUCT_SOONG_NAMESPACES += \
-    vendor/guardtalk/overlays/GuardTalkSetupWizardOverlay
-
-DEVICE_PACKAGE_OVERLAYS += \
     vendor/guardtalk/overlays/GuardTalkSetupWizardOverlay
 
 # F-HOME-LAYOUT (FR-E) — Launcher3 default workspace override. Static RRO on
@@ -60,24 +61,17 @@ DEVICE_PACKAGE_OVERLAYS += \
 # TrichromeChrome, AppStore) are NOT pinned. Layout-only; apps remain in the
 # all-apps drawer. Depends on T-RM-APPS excising those packages concurrently.
 #
-# Wiring: BOTH DEVICE_PACKAGE_OVERLAYS and PRODUCT_PACKAGE_OVERLAYS are set.
-# DEVICE_PACKAGE_OVERLAYS is the historical AOSP mechanism; for product-built
-# apps like Launcher3 (Trebuchet/Tips) the RRO must also be reachable via the
-# product overlay path. The operator reported (F-HOME-LAYOUT) that with
-# DEVICE_PACKAGE_OVERLAYS alone the overlay APK shipped in the image
-# (product/overlay/android/GuardTalkLauncherOverlay.apk) but the layout was
-# NOT applied at runtime on the flashed Pixel 9 — stock Gallery/Contacts/
-# Camera icons persisted. Adding PRODUCT_PACKAGE_OVERLAYS ensures the overlay
-# is registered in the product partition's overlay lookup used by the
-# Launcher3 process. Keeping both is harmless (idempotent path registration).
+# PARTITION MATCH (T-HOME-ROOTCAUSE): Launcher3 is system_ext_specific, so the
+# overlay is system_ext_specific in its Android.bp and installs to
+# /system_ext/overlay/. DEVICE_PACKAGE_OVERLAYS / PRODUCT_PACKAGE_OVERLAYS are
+# NOT used here — they are build-time resource resolution paths and are
+# irrelevant to runtime RRO installation; setting them for a system_ext RRO
+# previously caused the overlay to be mis-packaged into /product/overlay where
+# OverlayManager silently ignored it (cross-partition static RRO filter on
+# Android 14+ SDK 34+). The runtime overlay targetPackage in the APK manifest
+# is what matters, plus correct partition placement via system_ext_specific.
 PRODUCT_PACKAGES += GuardTalkLauncherOverlay
 
 PRODUCT_SOONG_NAMESPACES += \
-    vendor/guardtalk/overlays/GuardTalkLauncherOverlay
-
-DEVICE_PACKAGE_OVERLAYS += \
-    vendor/guardtalk/overlays/GuardTalkLauncherOverlay
-
-PRODUCT_PACKAGE_OVERLAYS += \
     vendor/guardtalk/overlays/GuardTalkLauncherOverlay
 

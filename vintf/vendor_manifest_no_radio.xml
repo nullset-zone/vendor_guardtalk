@@ -71,6 +71,6 @@
         <fqname>IBluetoothSar/default</fqname>
     </hal>
     <sepolicy>
-        <version>202604</version>
+        <version>202504</version>
     </sepolicy>
 </manifest>

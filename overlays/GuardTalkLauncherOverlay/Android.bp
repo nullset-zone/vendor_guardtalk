@@ -9,9 +9,16 @@
 // Layout-only override: ships only GuardTalk app icon(s) on the default
 // home + hotseat. No app install/uninstall is performed here; excised
 // apps remain available in the all-apps drawer if still installed.
+//
+// PARTITION MATCH (T-HOME-ROOTCAUSE): Launcher3 is system_ext_specific
+// (packages/apps/Launcher3/Android.bp). On Android 14+ (SDK 34+), OverlayManager
+// filters out static RROs whose target is in a DIFFERENT partition than the
+// overlay itself. A product-specific overlay targeting a system_ext app is
+// silently ignored at boot. This overlay MUST be system_ext_specific so it
+// lands in /system_ext/overlay/ alongside its target.
 runtime_resource_overlay {
     name: "GuardTalkLauncherOverlay",
     theme: "android",
     sdk_version: "current",
-    product_specific: true,
+    system_ext_specific: true,
 }

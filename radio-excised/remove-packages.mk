@@ -123,7 +123,8 @@ $(or \
   $(findstring liboemservice,$(1)), \
   $(findstring lassen_dmd,$(1)), \
   $(findstring radio-library,$(1)), \
-  $(findstring telephony,$(1)), \
+  $(findstring telephony-ext,$(1)), \
+  $(findstring com.android.telephony.imsmedia,$(1)), \
   $(findstring imsmedia,$(1)), \
   $(findstring ImsMedia,$(1)), \
   $(findstring Mms,$(1)), \

@@ -21,7 +21,7 @@ FASTBOOT="${FASTBOOT:-fastboot}"
 # -----------------------------------------------------------------------------
 FW_IMAGES=(bootloader.img radio.img)
 AB_IMAGES=(boot.img init_boot.img vendor_boot.img vendor_kernel_boot.img pvmfw.img)
-NOAB_IMAGES=(dtbo.img vbmeta.img)
+NOAB_IMAGES=(dtbo.img vbmeta.img vbmeta_system.img vbmeta_vendor.img)
 LOGICAL_IMAGES=(system.img system_ext.img product.img vendor.img vendor_dlkm.img system_dlkm.img)
 EXTRA_FILES=(super_empty.img avb_pkmd.bin)
 
@@ -64,11 +64,52 @@ log "current-slot: ${CURRENT_SLOT:-unknown}"
 TARGET_SLOT="$CURRENT_SLOT"
 
 # -----------------------------------------------------------------------------
+# Step 0b — Offer to purge stale cached images
+# -----------------------------------------------------------------------------
+echo ""
+echo "[flash] Local work dir: $LOCAL_WORK_DIR"
+STALE_COUNT=$(find "$LOCAL_WORK_DIR" -maxdepth 1 -type f \( -name '*.img' -o -name '*.bin' \) 2>/dev/null | wc -l | tr -d ' ')
+if [[ "$STALE_COUNT" -gt 0 ]]; then
+    log "Found $STALE_COUNT cached .img/.bin file(s) in $LOCAL_WORK_DIR"
+    read -r -p "[flash] Delete all local .img and .bin files before downloading fresh copies? [Y/n] " ans
+    case "${ans:-Y}" in
+        [Yy]*|"")
+            log "Purging stale .img and .bin files..."
+            find "$LOCAL_WORK_DIR" -maxdepth 1 -type f \( -name '*.img' -o -name '*.bin' \) -delete
+            log "Purged ✓"
+            ;;
+        *)
+            warn "Keeping cached files (force-re-download still applies to logical/boot/vbmeta images)"
+            ;;
+    esac
+else
+    log "No cached .img/.bin files found — will download fresh."
+fi
+
+# -----------------------------------------------------------------------------
 # Step 1 — Download images from build server
 # -----------------------------------------------------------------------------
 step "1/8  Download images from build server"
 
 for f in "${ALL_DOWNLOADS[@]}"; do
+    # Force re-download vbmeta_system and vbmeta_vendor (they may be stale
+    # 256-byte empty copies from a previous attempt; we now use the full
+    # 8192-byte root vbmeta for all three partitions).
+    if [[ "$f" == "vbmeta_system.img" || "$f" == "vbmeta_vendor.img" ]]; then
+        log "  force re-downloading $f (vbmeta fix)..."
+        rm -f "$LOCAL_WORK_DIR/$f"
+    fi
+    # Force re-download logical partition images (system/product/system_ext/vendor/
+    # vendor_dlkm/system_dlkm). These are rebuilt on every code change and the local
+    # cache from a prior flash will be STALE, causing the old (broken) system image to
+    # be flashed. Bootloader/radio/boot images are large and rarely change, so keep
+    # caching for those.
+    case "$f" in
+        system.img|system_ext.img|product.img|vendor.img|vendor_dlkm.img|system_dlkm.img|vbmeta.img|boot.img|init_boot.img|vendor_boot.img)
+            log "  force re-downloading $f (logical/boot/vbmeta image — always fresh)..."
+            rm -f "$LOCAL_WORK_DIR/$f"
+            ;;
+    esac
     if [[ -f "$LOCAL_WORK_DIR/$f" ]]; then
         log "  $f already present, skipping download"
         continue
@@ -135,31 +176,45 @@ log "Wiping metadata..."
 "$FASTBOOT" erase metadata 2>/dev/null || warn "metadata erase failed (non-fatal)"
 
 # -----------------------------------------------------------------------------
-# Step 4 — AVB key handling + erase stale vbmeta_system/vendor
+# Step 4 — AVB key handling + flash vbmeta_system/vendor
 # -----------------------------------------------------------------------------
-step "4/8  AVB key handling + erase stale vbmeta partitions"
+step "4/8  AVB key handling + flash vbmeta_system/vendor"
 
 # AVB key: build uses test keys (testkey_rsa4096.pem).
 # Pixel 9 has secure-boot: PRODUCTION and no avb_custom_key partition.
-# Solution: flash vbmeta with --disable-verification (done in step 6).
-# Also erase stale vbmeta_system + vbmeta_vendor — our build uses single root
-# vbmeta (all hashes inline, no chaining), so these stale partitions cause
-# verification conflicts.
+# Even if avb_custom_key flashes successfully, the root vbmeta.img has Flags: 0
+# (verification ENABLED) with inline hash trees for ALL partitions. If the root
+# vbmeta is flashed WITHOUT --disable-verification, the bootloader will attempt
+# dm-verity hash tree verification on the modified partitions and fail with
+# "dm-verity device corrupted" (reboot mode 0x50).
+#
+# FIX: ALWAYS use --disable-verification for ALL vbmeta partitions, regardless
+# of avb_custom_key status. This sets AVB_VBMETA_IMAGE_FLAGS_HASHTREE_DISABLED
+# (flags=2) so the bootloader skips dm-verity verification entirely.
 AVB_DISABLE_VERIFICATION=1
 
-log "Trying avb_custom_key flash (may fail on Pixel 9 — no partition)..."
+log "Trying avb_custom_key flash (informational only — does NOT affect --disable-verification)..."
 "$FASTBOOT" erase avb_custom_key 2>/dev/null || true
 if "$FASTBOOT" flash avb_custom_key "$LOCAL_WORK_DIR/avb_pkmd.bin" 2>/dev/null; then
-    log "avb_custom_key flashed ✓"
-    AVB_DISABLE_VERIFICATION=
+    log "avb_custom_key flashed ✓ (still using --disable-verification on all vbmeta)"
 else
-    warn "avb_custom_key flash failed (partition not present) — will use --disable-verification on vbmeta"
-    AVB_DISABLE_VERIFICATION=1
+    warn "avb_custom_key flash failed (partition not present) — using --disable-verification on all vbmeta"
 fi
 
-log "Erasing stale vbmeta_system + vbmeta_vendor..."
-"$FASTBOOT" --slot "$CURRENT_SLOT" erase vbmeta_system 2>/dev/null || warn "vbmeta_system erase failed (may not exist)"
-"$FASTBOOT" --slot "$CURRENT_SLOT" erase vbmeta_vendor 2>/dev/null || warn "vbmeta_vendor erase failed (may not exist)"
+log "Flashing vbmeta_system + vbmeta_vendor with --disable-verification..."
+# The build produces a single root vbmeta (all hashes inline, no chaining).
+# The device has separate vbmeta_system and vbmeta_vendor partitions (64KB).
+# Previously, the script ERASED these partitions, which left stale hash trees
+# from the previous OS and triggered dm-verity corruption (reboot mode 0x50).
+#
+# FIX: Flash the root vbmeta.img (8192 bytes, contains all hashtree descriptors)
+# to ALL three vbmeta partitions with --disable-verification. fastboot sets
+# AVB_VBMETA_IMAGE_FLAGS_HASHTREE_DISABLED (flags=2) on flash, which tells the
+# bootloader to skip dm-verity verification entirely.
+"$FASTBOOT" --disable-verification --slot "$CURRENT_SLOT" flash vbmeta_system "$LOCAL_WORK_DIR/vbmeta_system.img" \
+    || die "failed to flash vbmeta_system with --disable-verification"
+"$FASTBOOT" --disable-verification --slot "$CURRENT_SLOT" flash vbmeta_vendor "$LOCAL_WORK_DIR/vbmeta_vendor.img" \
+    || die "failed to flash vbmeta_vendor with --disable-verification"
 
 # -----------------------------------------------------------------------------
 # Step 5 — Flash physical A/B partitions (with --slot)
@@ -181,11 +236,11 @@ step "6/8  Flash non-A/B partitions (dtbo + vbmeta)"
 
 for img in "${NOAB_IMAGES[@]}"; do
     part="${img%.img}"
-    if [[ "$part" == "vbmeta" && -n "${AVB_DISABLE_VERIFICATION:-}" ]]; then
+    if [[ "$part" == vbmeta* && -n "${AVB_DISABLE_VERIFICATION:-}" ]]; then
         log "  flash $part (--disable-verification — test-key build on production-secure device)"
         "$FASTBOOT" --disable-verification --slot "$CURRENT_SLOT" flash "$part" "$LOCAL_WORK_DIR/$img" \
             || die "failed to flash $part with --disable-verification"
-    else
+    elif [[ "$part" == dtbo ]]; then
         log "  flash $part (no slot)"
         "$FASTBOOT" flash "$part" "$LOCAL_WORK_DIR/$img" \
             || die "failed to flash $part"

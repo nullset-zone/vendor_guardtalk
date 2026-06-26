@@ -1,6 +1,9 @@
+// PARTITION MATCH (T-HOME-ROOTCAUSE): SetupWizard2 is system_ext_specific,
+// so this overlay MUST be system_ext_specific to be honored by OverlayManager
+// on Android 14+ (SDK 34+), which filters out cross-partition static RROs.
 runtime_resource_overlay {
     name: "GuardTalkSetupWizardOverlay",
     theme: "android",
     sdk_version: "current",
-    product_specific: true,
+    system_ext_specific: true,
 }
