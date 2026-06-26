@@ -32,14 +32,22 @@ ifeq ($(GUARDTALK_FEATURE_EXCISED_WAVE2),true)
 # Messaging + Auditor + ExactCalculator + InfoApp).
 include vendor/guardtalk/feature-excised/apps-excised.mk
 
-# INCREMENTAL EXCISION (debugging boot failure):
-# The 3 HAL excision files below (nfc/fp/loc) are temporarily disabled while
-# isolating a boot failure introduced when all 4 excision files ran for the
-# first time. Re-enable one at a time after confirming each prior increment
-# boots successfully.
-# include vendor/guardtalk/feature-excised/nfc-excised.mk
-# include vendor/guardtalk/feature-excised/fp-excised.mk
-# include vendor/guardtalk/feature-excised/loc-excised.mk
+# T-W2-I2-FP — Fingerprint HAL excision.
+# Re-enabled 2026-06-26: the boot failure that caused these to be disabled was
+# the SELinux denial on UserRecoveryManagerService, now FIXED (committed in
+# system/sepolicy: user_recovery_service type + service_contexts entry). All 4
+# HAL excision files run together in this consolidated build.
+include vendor/guardtalk/feature-excised/fp-excised.mk
+
+# T-W2-I3-NFC — NFC HAL excision.
+include vendor/guardtalk/feature-excised/nfc-excised.mk
+
+# T-W2-I4-BT / T-BT-FULL — Bluetooth HAL excision (userspace layer; the
+# kernel-side nitrous blocklist is wired via BoardConfig-excised-late.mk).
+include vendor/guardtalk/feature-excised/bt-excised.mk
+
+# T-W2-I5-LOC / T-LOC-FULL — Location/GNSS HAL excision.
+include vendor/guardtalk/feature-excised/loc-excised.mk
 
 # T-W2-I6-THEME / F-HOME-LAYOUT — GuardTalk overlay wiring (SystemUI,
 # FrameworkBrand, SetupWizard, Launcher). Adds PRODUCT_PACKAGES entries for
