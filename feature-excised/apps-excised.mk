@@ -25,6 +25,28 @@
 # Both are PRODUCT_PACKAGES entries (sourced via aosp_base_telephony.mk /
 # aosp_product.mk), so the late filter-out removes the APK and its whitelist
 # in the same pass. Mirrors the proven Dialer/AppStore filter pattern.
+#
+# PixelCameraServicesConnectivityClient (T-CAM-CRASH): the proprietary
+# com.google.android.apps.camera.services app (product/priv-app/
+# PixelCameraServicesConnectivityClient/) contains
+# ProxyCameraProviderService in its connectivity.service package. After Wave 0's
+# T-HCH-WIRE fix (handheld_core_hardware override removes
+# android.hardware.bluetooth + android.hardware.location feature
+# declarations), the service NPEs at construction:
+#   java.lang.NullPointerException: Attempt to invoke virtual method
+#   'java.lang.Class java.lang.Object.getClass()' on a null object reference
+#     at dsx.b -> dsv.a -> hda.d (obfuscated connectivity init)
+# Root cause: ProxyCameraProviderService.onCreate queries a manager
+# (BluetoothManager.getAdapter() / LocationManager) that returns null because
+# FEATURE_BLUETOOTH / FEATURE_LOCATION are now absent. The app has no config
+# flag to disable the service, and patching a proprietary prebuilt APK is not
+# viable. Excising the entire app is safe: it provides camera-to-camera
+# connectivity (e.g. using the phone as a webcam / connecting to external/BT
+# cameras) — functionality that is moot now that BT is excised. The main
+# Google Camera app uses the AIDL android.hardware.camera.provider@2.7 HAL
+# (vendor/google_devices/tokay/vintf/vendor/manifest/
+# android.hardware.camera.provider@2.7-service-google-apex.xml), NOT this
+# connectivity client, so camera functionality is unaffected.
 GUARDTALK_APPS_PACKAGES := \
     TrichromeChrome \
     TrichromeChromeDualArch \
@@ -37,7 +59,8 @@ GUARDTALK_APPS_PACKAGES := \
     Auditor \
     etc_sysconfig_app.attestation.auditor.xml \
     ExactCalculator \
-    InfoApp
+    InfoApp \
+    PixelCameraServicesConnectivityClient
 
 # WebView provider packages that must NEVER be dropped by any feature-excision
 # filter. Listed explicitly so future subsystem filters (bt/nfc/fp/loc) can
