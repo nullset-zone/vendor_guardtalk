@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- GuardTalk default workspace override — F-HOME-LAYOUT
+<!-- GuardTalk default workspace override — F-HOME-ONLY
      Overrides com.android.launcher3 R.xml.default_workspace_5x5.
 
-     §9 Acceptance: first boot / factory reset → only GuardTalk icon(s)
+     §9 Acceptance: first boot / factory reset → ONLY GuardTalk icon(s)
      on the default home screen + hotseat. No other default favorites.
+
+     F-HOME-ONLY change: the Settings workspace favorite has been REMOVED
+     so the home screen shows ONLY GT Info. Settings remains reachable via
+     the all-apps drawer (it is still installed as a system app). This
+     satisfies the brief requirement "home must show ONLY GT Info".
+
      §11: no pinned-but-missing icons (excised apps not referenced);
           launcher remains usable (GT Info pinned in hotseat).
 
      Pinned inventory (exhaustive):
        Hotseat screen 0: GT Info (com.guardtalk.validator/.ValidatorActivity)
-                         — the renamed Validator app, the sole GuardTalk
+                         — the sole pinned app; the only GuardTalk
                            launcher app currently shipped.
-       Workspace screen 0, x=0 y=0: Settings (com.android.settings/.Settings)
-                         — kept accessible from the default home so the
-                           device remains manageable; also present in the
-                           all-apps drawer.
 
      Excised apps NOT pinned (T-RM-APPS dependency): Auditor,
      ExactCalculator, InfoApp, Messaging, Dialer, TrichromeChrome, AppStore.
@@ -29,13 +31,5 @@
         launcher:y="0"
         launcher:packageName="com.guardtalk.validator"
         launcher:className="com.guardtalk.validator.ValidatorActivity" />
-
-    <!-- Workspace screen 0: Settings (kept reachable from default home). -->
-    <favorite
-        launcher:screen="0"
-        launcher:x="0"
-        launcher:y="0"
-        launcher:packageName="com.android.settings"
-        launcher:className="com.android.settings.Settings" />
 
 </favorites>

@@ -170,10 +170,15 @@ log "current-slot after bootloader: ${CURRENT_SLOT:-unknown}"
 # -----------------------------------------------------------------------------
 step "3/8  Wipe userdata + metadata"
 
+# CRITICAL: userdata wipe is REQUIRED for first-boot defaults (launcher
+# workspace, setup wizard) to apply. Without it, the old launcher database
+# persists and the new home-layout overlay never takes effect.
 log "Wiping userdata..."
-"$FASTBOOT" erase userdata 2>&1 || warn "userdata erase failed (may be DCK-locked — non-fatal)"
+"$FASTBOOT" erase userdata \
+    || die "userdata erase failed. The launcher home-layout overlay will NOT apply without a clean wipe. Manual fix: fastboot -w"
 log "Wiping metadata..."
-"$FASTBOOT" erase metadata 2>/dev/null || warn "metadata erase failed (non-fatal)"
+"$FASTBOOT" erase metadata \
+    || warn "metadata erase failed (may not be present on all devices — non-fatal)"
 
 # -----------------------------------------------------------------------------
 # Step 4 — AVB key handling + flash vbmeta_system/vendor
@@ -211,9 +216,9 @@ log "Flashing vbmeta_system + vbmeta_vendor with --disable-verification..."
 # to ALL three vbmeta partitions with --disable-verification. fastboot sets
 # AVB_VBMETA_IMAGE_FLAGS_HASHTREE_DISABLED (flags=2) on flash, which tells the
 # bootloader to skip dm-verity verification entirely.
-"$FASTBOOT" --disable-verification --slot "$CURRENT_SLOT" flash vbmeta_system "$LOCAL_WORK_DIR/vbmeta_system.img" \
+"$FASTBOOT" --disable-verification flash vbmeta_system "$LOCAL_WORK_DIR/vbmeta_system.img" \
     || die "failed to flash vbmeta_system with --disable-verification"
-"$FASTBOOT" --disable-verification --slot "$CURRENT_SLOT" flash vbmeta_vendor "$LOCAL_WORK_DIR/vbmeta_vendor.img" \
+"$FASTBOOT" --disable-verification flash vbmeta_vendor "$LOCAL_WORK_DIR/vbmeta_vendor.img" \
     || die "failed to flash vbmeta_vendor with --disable-verification"
 
 # -----------------------------------------------------------------------------
@@ -230,17 +235,27 @@ done
 log "A/B partitions flashed ✓"
 
 # -----------------------------------------------------------------------------
-# Step 6 — Flash physical non-A/B partitions (vbmeta with --disable-verification)
+# Step 6 — Flash physical non-A/B partitions (dtbo + root vbmeta only)
 # -----------------------------------------------------------------------------
-step "6/8  Flash non-A/B partitions (dtbo + vbmeta)"
+step "6/8  Flash non-A/B partitions (dtbo + root vbmeta)"
 
+# NOTE: vbmeta_system and vbmeta_vendor were ALREADY flashed in Step 4 with
+# --disable-verification. They are non-sloted shared partitions on Pixel 9,
+# so flashing them again here with --slot would either be a no-op (harmless)
+# or could re-flash with a stale image if the download cache is wrong.
+# To avoid double-flashing, we ONLY flash the root vbmeta (vbmeta.img) and
+# dtbo here. The root vbmeta is the authoritative one (contains all hashtree
+# descriptors); vbmeta_system/vbmeta_vendor are flashed from the same root
+# vbmeta.img in Step 4.
 for img in "${NOAB_IMAGES[@]}"; do
     part="${img%.img}"
-    if [[ "$part" == vbmeta* && -n "${AVB_DISABLE_VERIFICATION:-}" ]]; then
+    # SKIP vbmeta_system and vbmeta_vendor — already flashed in Step 4
+    [[ "$part" == "vbmeta_system" || "$part" == "vbmeta_vendor" ]] && continue
+    if [[ "$part" == "vbmeta" && -n "${AVB_DISABLE_VERIFICATION:-}" ]]; then
         log "  flash $part (--disable-verification — test-key build on production-secure device)"
         "$FASTBOOT" --disable-verification --slot "$CURRENT_SLOT" flash "$part" "$LOCAL_WORK_DIR/$img" \
             || die "failed to flash $part with --disable-verification"
-    elif [[ "$part" == dtbo ]]; then
+    elif [[ "$part" == "dtbo" ]]; then
         log "  flash $part (no slot)"
         "$FASTBOOT" flash "$part" "$LOCAL_WORK_DIR/$img" \
             || die "failed to flash $part"
@@ -256,24 +271,53 @@ step "7/8  Flash logical partitions (super) via fastbootd"
 log "Rebooting to fastbootd..."
 "$FASTBOOT" reboot fastboot 2>/dev/null || true
 
-# Wait for fastbootd to come up
+# Wait for fastbootd to come up.
+# CRITICAL: fastbootd (userspace) is required for logical-partition operations
+# (wipe-super, flash system/product/vendor/etc.). In bootloader fastboot these
+# commands silently fail or error. fastbootd devices report with the
+# "fastbootd" keyword in getvar, so we verify we're actually in fastbootd
+# before proceeding — not just that a device is visible.
 log "Waiting for fastbootd..."
+FASTBOOTD_READY=0
 for i in $(seq 1 30); do
     sleep 2
+    # Check device is visible AND in fastbootd mode (not bootloader)
+    FB_MODE="$("$FASTBOOT" getvar is-userspace 2>&1 | grep -m1 '^is-userspace:' | awk '{print $2}' || true)"
     DEVICES="$("$FASTBOOT" devices 2>/dev/null || true)"
-    if [[ -n "$DEVICES" ]]; then
-        log "fastbootd ready after ${i} attempts"
+    if [[ -n "$DEVICES" && "$FB_MODE" == "yes" ]]; then
+        log "fastbootd ready after ${i} attempts (is-userspace=yes)"
+        FASTBOOTD_READY=1
         break
     fi
-    [[ $((i % 5)) -eq 0 ]] && log "  still waiting for fastbootd... (${i}/30)"
+    [[ $((i % 5)) -eq 0 ]] && log "  still waiting for fastbootd... (${i}/30) [is-userspace=${FB_MODE:-unknown}]"
 done
-DEVICES="$("$FASTBOOT" devices 2>/dev/null || true)"
-[[ -n "$DEVICES" ]] || die "device lost when entering fastbootd (waited 60s)"
+if [[ "$FASTBOOTD_READY" -ne 1 ]]; then
+    DEVICES="$("$FASTBOOT" devices 2>/dev/null || true)"
+    [[ -n "$DEVICES" ]] || die "device lost when entering fastbootd (waited 60s)"
+    # Device is visible but NOT in fastbootd — this means reboot fastboot failed.
+    # Try once more.
+    warn "Device visible but not in fastbootd (is-userspace=${FB_MODE:-unknown}). Retrying reboot fastboot..."
+    "$FASTBOOT" reboot fastboot 2>/dev/null || true
+    sleep 5
+    for i in $(seq 1 15); do
+        sleep 2
+        FB_MODE="$("$FASTBOOT" getvar is-userspace 2>&1 | grep -m1 '^is-userspace:' | awk '{print $2}' || true)"
+        if [[ "$FB_MODE" == "yes" ]]; then
+            log "fastbootd ready on retry"
+            FASTBOOTD_READY=1
+            break
+        fi
+        [[ $((i % 5)) -eq 0 ]] && log "  retry: still waiting... (${i}/15)"
+    done
+    [[ "$FASTBOOTD_READY" -eq 1 ]] || die "FAILED to enter fastbootd after 2 attempts. Logical partitions (system/product/vendor) CANNOT be flashed in bootloader mode. Manual fix: 'fastboot reboot fastboot' then re-run this script from Step 7."
+fi
 
-# Wipe super and flash super_empty to reset logical partitions
+# Wipe super and flash super_empty to reset logical partitions.
+# CRITICAL: this MUST succeed — without it, the old logical partitions persist
+# and the new images cannot be flashed correctly. Changed from warn to die.
 log "Wiping super partition..."
-"$FASTBOOT" wipe-super "$LOCAL_WORK_DIR/super_empty.img" 2>/dev/null \
-    || warn "wipe-super failed (may need manual: fastboot wipe-super super_empty.img)"
+"$FASTBOOT" wipe-super "$LOCAL_WORK_DIR/super_empty.img" \
+    || die "wipe-super failed. The old logical partitions were NOT reset. Manual fix: ensure device is in fastbootd ('fastboot getvar is-userspace' should say 'yes'), then run: fastboot wipe-super super_empty.img"
 
 # Flash logical partitions
 for img in "${LOGICAL_IMAGES[@]}"; do
