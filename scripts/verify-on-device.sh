@@ -44,6 +44,11 @@ echo ""
 # -----------------------------------------------------------------------------
 hdr "1. De-brand: no user-visible GrapheneOS text"
 
+# Check device model (Wave 5 rebrand)
+MODEL=$(adb shell getprop ro.product.model 2>/dev/null | tr -d '\r')
+echo "  (info: ro.product.model = '$MODEL')"
+[[ "$MODEL" == "GuardTalk Pixel 9" ]] && ok "Device model rebranded to 'GuardTalk Pixel 9'" || fail "Device model not rebranded: '$MODEL' (expected 'GuardTalk Pixel 9')"
+
 # Check system app label
 LABEL=$(adb shell dumpsys package android 2>/dev/null | grep -i 'label=' | head -1)
 echo "$LABEL" | grep -qi 'guardtalk' && ok "System app label is GuardTalkOS" || fail "System app label not GuardTalkOS: $LABEL"
@@ -162,10 +167,38 @@ echo "  (visual: confirm transparent GuardTalk welcome logo on factory reset)"
 hdr "9. App icons + theme"
 
 # Check bootanimation exists
-BOOTANIM=$(adb shell ls /system/media/bootanimation.zip 2>/dev/null | tr -d '\r')
-[[ -n "$BOOTANIM" ]] && ok "Bootanimation present" || skip "Bootanimation check (may need visual)"
+BOOTANIM=$(adb shell ls /product/media/bootanimation.zip 2>/dev/null | tr -d '\r')
+[[ -n "$BOOTANIM" ]] && ok "Bootanimation (light) present in /product/media/" || skip "Bootanimation check (may need visual)"
 
 ok "App icons (visual verification needed — confirm GuardTalk icons on home screen)"
+
+# -----------------------------------------------------------------------------
+# 9b. Wave 0: GT Info (GuardTalkValidator) installed
+# -----------------------------------------------------------------------------
+hdr "9b. Wave 0: GT Info (GuardTalkValidator)"
+
+GTINFO=$(adb shell pm list packages 2>/dev/null | grep -ci 'com.guardtalk.validator')
+[[ "$GTINFO" -gt 0 ]] && ok "GuardTalkValidator (GT Info) installed" || fail "GuardTalkValidator NOT installed"
+
+# Check GT Info is privileged
+GTINFO_PRIV=$(adb shell dumpsys package com.guardtalk.validator 2>/dev/null | grep -ci 'prim.*priv\|privileged=true')
+echo "  (info: privileged flag: $GTINFO_PRIV)"
+
+# -----------------------------------------------------------------------------
+# 9c. Wave 0: handheld_core_hardware override (FEATURE_BT/LOCATION gone)
+# -----------------------------------------------------------------------------
+hdr "9c. Wave 0: handheld_core_hardware override (grace layer)"
+
+# These are the critical checks that Wave 0's T-HCH-WIRE fix is live on device.
+# If these FAIL, the BT/Location UI grace layer is broken (features still present).
+BT_FEAT_HCH=$(adb shell pm has-system-feature android.hardware.bluetooth 2>/dev/null | tr -d '\r')
+[[ "$BT_FEAT_HCH" == "false" ]] && ok "FEATURE_BLUETOOTH absent (HCH override live)" || fail "FEATURE_BLUETOOTH present: HCH override NOT live ($BT_FEAT_HCH)"
+
+LOC_FEAT_HCH=$(adb shell pm has-system-feature android.hardware.location 2>/dev/null | tr -d '\r')
+[[ "$LOC_FEAT_HCH" == "false" ]] && ok "FEATURE_LOCATION absent (HCH override live)" || fail "FEATURE_LOCATION present: HCH override NOT live ($LOC_FEAT_HCH)"
+
+LOC_NET_FEAT_HCH=$(adb shell pm has-system-feature android.hardware.location.network 2>/dev/null | tr -d '\r')
+[[ "$LOC_NET_FEAT_HCH" == "false" ]] && ok "FEATURE_LOCATION_NETWORK absent (HCH override live)" || fail "FEATURE_LOCATION_NETWORK present: HCH override NOT live ($LOC_NET_FEAT_HCH)"
 
 # -----------------------------------------------------------------------------
 # 10. Boot stability
