@@ -34,7 +34,7 @@ guardtalk_bootanim_dir := vendor/guardtalk/branding/bootanimation
 guardtalk_bootanim := $(guardtalk_bootanim_dir)/bootanimation.zip
 guardtalk_bootanim_dark := $(guardtalk_bootanim_dir)/bootanimation-dark.zip
 ifneq ($(wildcard $(guardtalk_bootanim)),)
-PRODUCT_COPY_FILES += $(guardtalk_bootanim):system/media/bootanimation.zip
+PRODUCT_COPY_FILES += $(guardtalk_bootanim):$(TARGET_COPY_OUT_PRODUCT)/media/bootanimation.zip
 endif
 ifneq ($(wildcard $(guardtalk_bootanim_dark)),)
 PRODUCT_COPY_FILES += $(guardtalk_bootanim_dark):$(TARGET_COPY_OUT_PRODUCT)/media/bootanimation-dark.zip
