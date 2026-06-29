@@ -1,6 +1,14 @@
+// CERTIFICATE FIX (T-HOME-ROOTCAUSE): framework-res (target package "android")
+// is always signed with the platform key. On Android 12+ (SDK 31+),
+// OverlayManager applies a static RRO that overrides NON-overlayable resources
+// ONLY when the overlay is signed with the SAME certificate as its target.
+// Most framework-res resources (config_*, strings) are NOT declared
+// `<overlayable>`, so a test-key static RRO is silently dropped at boot —
+// the GuardTalk framework-base overrides never apply. Signing with "platform"
+// matches framework-res' cert so OverlayManager enables it.
 runtime_resource_overlay {
     name: "GuardTalkFrameworksBaseOverlay",
-    theme: "android",
     sdk_version: "current",
     product_specific: true,
+    certificate: "platform",
 }

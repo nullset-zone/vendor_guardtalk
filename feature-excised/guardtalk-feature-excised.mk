@@ -62,12 +62,39 @@ include vendor/guardtalk/feature-excised/feature-overlays.mk
 # full overlay set (6 RROs) is wired through the single executing bridge.
 include vendor/guardtalk/radio-excised/telephony-features.mk
 
-# T-W2-I6-THEME — GuardTalk bootanimation + wallpaper wiring. guardtalk-theme.mk
-# was originally meant to be included from guardtalk-tokay.mk (never included in
-# the build chain), so the GuardTalk bootanimation.zip was silently never copied
-# into the image. Include it here so the brand assets (which exist in
-# vendor/guardtalk/branding/bootanimation/) are picked up. The makefile is
-# self-gated (ifeq wildcard) on asset existence.
-include vendor/guardtalk/device/tokay/guardtalk-theme.mk
+  # T-W2-I6-THEME — GuardTalk bootanimation + wallpaper wiring. guardtalk-theme.mk
+  # was originally meant to be included from guardtalk-tokay.mk (never included in
+  # the build chain), so the GuardTalk bootanimation.zip was silently never copied
+  # into the image. Include it here so the brand assets (which exist in
+  # vendor/guardtalk/branding/bootanimation/) are picked up. The makefile is
+  # self-gated (ifeq wildcard) on asset existence.
+  include vendor/guardtalk/device/tokay/guardtalk-theme.mk
+
+  # =====================================================================
+  # T-PKG-EXCISE-WAVES P2 — APEX-dormant feature-gates (documentation only).
+  # No PRODUCT_PACKAGES filter (APEX modules are delivered via mainline and
+  # are out of reach of a PRODUCT_PACKAGES filter-out). Grace is achieved via
+  # the feature-permission prebuilt XML removal done in prior waves:
+  #   - com.android.bluetooth       -> bt-excised.mk (BT feature prebuilts dropped)
+  #   - com.android.nfcservices     -> nfc-excised.mk (NFC feature prebuilts dropped)
+  #   - com.android.cellbroadcast    -> radio-excised (radio/IMS excision; the
+  #                                    legacy CellBroadcastLegacyApp is also
+  #                                    filtered in apps-excised.mk P0)
+  #   - com.android.adservices       -> feature-permission XML already absent
+  #   - com.android.healthfitness     -> feature-permission XML already absent
+  #   - com.android.ondevicepersonalization -> feature-permission XML already absent
+  #   - com.android.uwb              -> feature-permission XML already absent
+  #   - com.android.profiling        -> feature-permission XML already absent
+  #   - com.android.uprobestats      -> feature-permission XML already absent
+  #   - com.android.devicelock       -> feature-permission XML already absent
+  # With the feature declarations gone, hasSystemFeature() returns false for
+  # each corresponding PackageManager.FEATURE_* constant, so the APEX mainline
+  # stack stays dormant (its components key off the feature flags at runtime)
+  # and Settings/SystemUI hide all entry points. No further action required.
+  #
+  # KEPT ACTIVE (conservative): com.android.appsearch. SettingsIntelligence may
+  # depend on AppSearch for search indexing; excising it risks breaking the
+  # Settings search UI. Left in place pending a dedicated dependency audit.
+  # =====================================================================
 
 endif # GUARDTALK_FEATURE_EXCISED_WAVE2

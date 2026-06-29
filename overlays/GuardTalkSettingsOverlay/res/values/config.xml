@@ -5,6 +5,24 @@
     <bool name="config_show_communal_settings_mobile">false</bool>
     <bool name="config_show_glanceable_hub_toggle_setting_mobile">false</bool>
 
+    <!-- T-CD-CRASH (FR-F §9): hide the top-level "Connected devices" entry.
+         Root cause: the Connected Devices dashboard (ConnectedDeviceDashboard
+         Fragment + PreviouslyConnectedDeviceDashboardFragment) constructs a
+         LocalBluetoothManager via BluetoothAdapter.getDefaultAdapter() at
+         fragment onCreate(). With the BT HAL excised (bt-excised.mk) +
+         handheld_core_hardware override removing FEATURE_BLUETOOTH,
+         getDefaultAdapter() returns null and the manager NPEs, crashing
+         Settings when the user taps "Connected devices". The BT-aware
+         controllers DO feature-gate individual rows, but the parent fragment
+         eagerly initialises the BluetoothManager before the per-controller
+         availability check runs — so hiding the rows is insufficient.
+         Hiding the top-level entry (TopLevelConnectedDevicesPreference
+         Controller.getAvailabilityStatus() reads this bool and returns
+         UNSUPPORTED_ON_DEVICE when false) is the cleanest fix and removes the
+         crash surface entirely. NFC/USB device rows are reached via the
+         System UI that already feature-gates them. -->
+    <bool name="config_show_top_level_connected_devices">false</bool>
+
     <!-- T-W2-I2-FP: fingerprint HAL excision grace layer.
          Defence-in-depth: the fingerprint HAL feature XML
          (android.hardware.fingerprint.prebuilt.xml) is dropped in
@@ -119,6 +137,38 @@
          override; this entry documents the contract. The real hiding is the
          runtime FEATURE_LOCATION_GPS absence. -->
 
+    <!-- T-SETTINGS-REDUCE2: hide top-level Settings entries that are either
+         non-functional on a radio-excised / minimal GuardTalkOS image or
+         intentionally pared back per the GuardTalk UX scope.
+
+         Entries handled HERE (overlay bool/string overrides that AOSP already
+         consumes in the controller's getAvailabilityStatus / XML
+         isPreferenceVisible):
+           * Data Saver (config_show_data_saver=false): sub-page of Network
+             and Internet. Radio is excised so there is no mobile data to meter;
+             Data Saver is meaningless. Controller:
+             DataSaverController.kt / DataSaverSummary.kt / DataSaverScreen.kt
+             + network_provider_internet.xml line 93
+             (settings:isPreferenceVisible="@bool/config_show_data_saver").
+           * Wallpaper & Style (top_level_wallpaper): override
+             config_wallpaper_picker_package to empty so
+             TopLevelWallpaperPreferenceController.getAvailabilityStatus()
+             (packages/apps/Settings/src/com/android/settings/display/
+             TopLevelWallpaperPreferenceController.java:85-90) returns
+             UNSUPPORTED_ON_DEVICE. Cleaner than a source edit because AOSP
+             already treats an empty picker package as "no wallpaper picker"
+             and hides the row.
+
+         Entries handled in SOURCE (no config_* bool exists in AOSP Settings
+         to override; verified): Safety Center, Location, Passwords and
+         passkeys, Hotspot and Tethering. See the per-controller source edits
+         in packages/apps/Settings/src/. -->
+    <bool name="config_show_data_saver">false</bool>
+
+    <!-- Empty => "No Wallpaper picker specified!" -> row hidden.
+         T-SETTINGS-REDUCE2. -->
+    <string name="config_wallpaper_picker_package" translatable="false"></string>
+
     <!--
       T-THEME-DARK (FR-1) — Dark-theme toggle + scheduling lock in Settings.
 
@@ -171,5 +221,52 @@
       init.rc / system-property gate — explicitly out of scope (no init.rc
       edits per task spec). Tracked for T-BT-FULL / Wave-4.
     -->
+
+    <!-- T-SET-HIDE-A11Y (Settings Reduction v3): hide the top-level
+         Accessibility entry. TopLevelAccessibilityPreferenceController
+         .getAvailabilityStatus() returns AVAILABLE iff
+         R.bool.config_show_top_level_accessibility is true (default).
+         Setting it false hides the entry AND de-indexes it from Settings
+         search (the search indexer respects the controller's availability).
+         Framework a11y services / APIs are NOT affected — only the Settings
+         top-level row. -->
+    <bool name="config_show_top_level_accessibility">false</bool>
+
+    <!-- T-SET-HIDE-SAFETY-EMERG (Settings Reduction v3): hide the top-level
+         Safety & Emergency entry + its dashboard. Consumed by
+         settings:isPreferenceVisible in top_level_settings.xml AND by
+         EmergencyDashboardFragment.java / EmergencyDashboardScreen.kt.
+         Pairs with T-APP-RM-EMERGENCY (com.android.emergency excision). -->
+    <bool name="config_show_emergency_settings">false</bool>
+
+    <!-- T-DNS-LOCK: hide the Private DNS Settings UI row.
+         PrivateDnsPreferenceController.getAvailabilityStatus():87-94 reads
+         R.bool.config_show_private_dns_settings and returns UNSUPPORTED_ON_DEVICE
+         when false, hiding the row AND de-indexing it from Settings search.
+         AOSP default is true (packages/apps/Settings/res/values/config.xml:401).
+
+         This is the UI-hiding half of T-DNS-LOCK. The enforcement half —
+         forcing Settings.Global.private_dns_mode="hostname" (3),
+         private_dns_specifier="dns.guardtalk.io", and
+         private_dns_default_mode="hostname", plus the
+         DISALLOW_CONFIG_PRIVATE_DNS user restriction (a DEVICE_OWNER-only
+         restriction per UserRestrictionsUtils.java:203-208, settable only by
+         a SYSTEM_UID process or device owner) — is deferred to T-GTCONFIG-APP,
+         the platform-signed privileged GuardTalkConfig system_ext app
+         (vendor/guardtalk/apps/GuardTalkConfig), which already holds
+         WRITE_SECURE_SETTINGS + MANAGE_USERS. The dispatch packet explicitly
+         permits this follow-up path ("If too complex for this task, document
+         it as a follow-up for T-GTCONFIG-APP"). The .io TLD (not .local) is
+         used because .local fails strict DoT validation.
+
+         Mechanism chosen for the defaults (documented for T-GTCONFIG-APP):
+         Settings.Global.putString(PRIVATE_DNS_MODE, "hostname"),
+         putString(PRIVATE_DNS_SPECIFIER, "dns.guardtalk.io"),
+         putString(PRIVATE_DNS_DEFAULT_MODE, "hostname") on first boot via a
+         BOOT_COMPLETED receiver in GuardTalkConfig. No init.rc / sysprop path
+         exists for Settings.Global rows (they are not sysprops), and the
+         SettingsProvider defaults.xml does not seed private_dns_* keys
+         (verified: no def_private_dns_* resource exists). -->
+    <bool name="config_show_private_dns_settings">false</bool>
 
 </resources>

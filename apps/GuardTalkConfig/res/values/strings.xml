@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GT Config</string>
+    <string name="header_title">GuardTalk Configuration</string>
+    <string name="btn_scan">Scan Configuration QR</string>
+    <string name="btn_apply">Apply</string>
+    <string name="paste_hint">…or paste QR payload here</string>
+    <string name="scan_failed">Scan failed or cancelled. Paste the QR payload below.</string>
+    <string name="no_scanner">No QR scanner installed. Paste the QR payload below (or use adb am start -a android.intent.action.SEND -t text/plain --es android.intent.extra.TEXT \'…\').</string>
+    <string name="parse_failed">Rejected: %1$s</string>
+    <string name="parse_failed_toast">QR rejected (signature/parse failure)</string>
+    <string name="secure_level_is">Secure level: %1$s</string>
+    <string name="apply_ok">Configuration applied</string>
+    <string name="apply_partial">Configuration partially applied — see log</string>
+</resources>

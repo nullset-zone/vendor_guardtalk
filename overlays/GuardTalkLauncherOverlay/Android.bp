@@ -16,9 +16,18 @@
 // overlay itself. A product-specific overlay targeting a system_ext app is
 // silently ignored at boot. This overlay MUST be system_ext_specific so it
 // lands in /system_ext/overlay/ alongside its target.
+// CERTIFICATE FIX (T-HOME-ROOTCAUSE): Launcher3 ships with NO `certificate:`
+// field, so Soong signs it with the platform key (the AOSP default for
+// privileged system apps). On Android 12+ (SDK 31+), OverlayManager applies a
+// static RRO that overrides NON-overlayable resources ONLY when the overlay is
+// signed with the SAME certificate as its target package. `default_workspace_*`
+// is NOT declared `<overlayable>` in Launcher3, so a test-key static RRO is
+// silently dropped at boot — the home layout never changes, even after a clean
+// userdata wipe. Signing the overlay with "platform" matches Launcher3's cert
+// so OverlayManager enables it and the GuardTalk workspace wins on first boot.
 runtime_resource_overlay {
     name: "GuardTalkLauncherOverlay",
-    theme: "android",
     sdk_version: "current",
     system_ext_specific: true,
+    certificate: "platform",
 }

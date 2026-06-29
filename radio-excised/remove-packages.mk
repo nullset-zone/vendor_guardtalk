@@ -1,4 +1,23 @@
 # Remove cellular/RIL packages (must be included from tokay.mk, not inherit-product).
+#
+# T-PKG-EXCISE-WAVES P1 — IMS/IWLAN/CarrierConfig triad. With the radio/RIL
+# stack excised above, IMS, IWLAN, and CarrierConfig2 have no transport and
+# would only emit binders to a missing radio HAL. All three are removed
+# together (atomic dependency group). Names verified as Soong modules in
+# out/soong/late-tokay.mk and as PRODUCT_PACKAGES entries:
+#   Iwlan                -> vendor/google_devices/tokay/tokay.mk:117
+#   ImsServiceEntitlement -> build/make/target/product/telephony_product.mk:23
+#   CarrierConfig2       -> vendor/adevtool/config/mk/google_devices/common/
+#                           device-common.mk:63 (gated by BOARD_WITHOUT_RADIO;
+#                           tokay does not set that flag, so CarrierConfig2 is
+#                           pulled in). Note: CarrierConfig2 also pulls the
+#                           GosTelephonyProviderOverlay + GosTelephonyOverlay
+#                           RROs in the same PRODUCT_PACKAGES line — those RROs
+#                           are GuardTalk keep-set-adjacent (GrapheneOS-sourced
+#                           telephony overlays) and are NOT removed here. They
+#                           are harmless with the radio gone (overlay targets
+#                           a telephony framework that no-ops without a HAL).
+# Reversible (filter-out only; Law 11).
 GUARDTALK_RADIO_PACKAGES := \
     android.hardware.radio-V2-ndk.vendor \
     android.hardware.radio.config-V2-ndk.vendor \
@@ -87,7 +106,31 @@ GUARDTALK_RADIO_PACKAGES := \
     cbd \
     rfsd \
     MmsService \
-    PixelImsMediaService
+    PixelImsMediaService \
+    EuiccGoogle \
+    EuiccSupportPixel-P23 \
+    EuiccGoogleOverlay \
+    EuiccSupportPixelPermissions \
+    EuiccSupportPixelOverlay \
+    Iwlan \
+    ImsServiceEntitlement \
+    CarrierConfig2 \
+    CarrierConfig \
+    CellBroadcastReceiverOverlay \
+    com.android.cellbroadcast
+
+# T-PKG-ARCHITECT-FIX: EuiccSupportPixel-P23 data files are delivered via
+# PRODUCT_COPY_FILES (tokay.mk:1548-1550), NOT via PRODUCT_PACKAGES, so the
+# filter-out above does NOT catch them. The APK itself (EuiccSupportPixel-P23)
+# IS in PRODUCT_PACKAGES and IS filtered above, but the three data files
+# (DKA_0302_24.up, esim-full-v1.img, Felica_Tag_66_Changer.apdu) leak through.
+# Strip them from PRODUCT_COPY_FILES here (same reversibility — filter-out only).
+# Also strip the com.google.pixel.euicc.update APEX copy (tokay.mk:648 / line
+# near 1550) since EuiccGoogle is gone.
+PRODUCT_COPY_FILES := $(filter-out $(TARGET_COPY_OUT_SYSTEM_EXT)/priv-app/EuiccSupportPixel-P23/%,$(PRODUCT_COPY_FILES))
+PRODUCT_COPY_FILES := $(filter-out %/EuiccSupportPixel-P23/DKA_0302_24.up,$(PRODUCT_COPY_FILES))
+PRODUCT_COPY_FILES := $(filter-out %/EuiccSupportPixel-P23/esim-full-v1.img,$(PRODUCT_COPY_FILES))
+PRODUCT_COPY_FILES := $(filter-out %/EuiccSupportPixel-P23/Felica_Tag_66_Changer.apdu,$(PRODUCT_COPY_FILES))
 
 # Orphans still pulled via base_vendor.mk (libreference-ril) if late filter did not run.
 GT_RADIO_ORPHAN_PACKAGES := \

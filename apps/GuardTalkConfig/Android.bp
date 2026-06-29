@@ -1,0 +1,47 @@
+package {
+    default_applicable_licenses: ["vendor_guardtalk_config_app_license"],
+}
+
+license {
+    name: "vendor_guardtalk_config_app_license",
+    visibility: [":__subpackages__"],
+    license_kinds: ["SPDX-license-identifier-Apache-2.0"],
+    license_text: ["NOTICE"],
+}
+
+// GuardTalkConfig — privileged system_ext app that consumes an Ed25519-signed
+// QR payload to apply Syndicate/Community secure-level configuration (WiFi,
+// IKEv2/IPsec VPN, Private DNS, connectivity server, WiFi lockdown).
+//
+// Mirrors the GuardTalkValidator packaging contract:
+//   * certificate: "platform" — platform-signed so it is exempted from user
+//     restrictions (WifiServiceImpl.java bypass for isPrivileged/isSystem).
+//   * privileged: true + system_ext_specific: true — lands in
+//     system_ext/priv-app and requires a privapp-permissions whitelist.
+//   * sdk_version: "system_current" — gives access to the system APIs
+//     (WifiManager#addNetworkPrivileged, VpnManager, DevicePolicyManager,
+//     Settings.Global put-string with WRITE_SECURE_SETTINGS).
+//   * required: privapp_whitelist_* — pulls the permissions XML into the
+//     system_ext image automatically.
+android_app {
+    name: "GuardTalkConfig",
+    srcs: ["src/**/*.kt"],
+    resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
+    sdk_version: "system_current",
+    certificate: "platform",
+    privileged: true,
+    system_ext_specific: true,
+    required: ["privapp_whitelist_com.guardtalk.config"],
+    optimize: {
+        enabled: false,
+    },
+}
+
+prebuilt_etc {
+    name: "privapp_whitelist_com.guardtalk.config",
+    src: "privapp-permissions-com.guardtalk.config.xml",
+    sub_dir: "permissions",
+    filename_from_src: true,
+    system_ext_specific: true,
+}

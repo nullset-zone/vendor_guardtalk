@@ -44,6 +44,15 @@
 # Out of scope (MUST NOT touch in this increment): Bluetooth, Location,
 # Fingerprint, Face biometrics.
 
+# T-PKG-EXCISE-WAVES P0 — com.android.se / SecureElement paired with the NFC
+# subsystem. com.android.se is the off-host SecureElement app (OMAPI/SIM
+# access) and is functionally bound to the NFC HAL (the ST21NFC eSE channel is
+# its only transport on tokay). Excising it with the NFC filter (rather than
+# apps-excised.mk) keeps the SE/NFC pair atomically removed so no orphaned SE
+# app references a missing HAL. Module name verified as a Soong module in
+# out/soong/late-tokay.mk:242517 and as a PRODUCT_PACKAGES entry in
+# build/make/target/product/handheld_system.mk:73. Reversible (filter-out only).
+
 # ---------------------------------------------------------------------------
 # Layer 1 — Package layer: NFC HAL packages, daemons, apps, and overlays.
 # ---------------------------------------------------------------------------
@@ -58,7 +67,8 @@ GUARDTALK_NFC_PACKAGES := \
     nfc_nci.st21nfc.default \
     PixelNfc \
     PixelNfcOverlayCommon \
-    PixelNfcOverlayTokay
+    PixelNfcOverlayTokay \
+    SecureElement
 
 # Defence-in-depth: catch any other NFC-named packages that a future adevtool
 # regen might slide into PRODUCT_PACKAGES. The wildcard match is scoped to

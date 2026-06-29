@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    GuardTalkConfig privapp-permissions whitelist.
+
+    Mirrors the privileged/signature permissions requested in AndroidManifest.xml.
+    Each entry is required because the app is installed in system_ext/priv-app
+    (privileged: true). Without this whitelist the framework refuses to grant
+    the permission and the app crashes at first use (privapp-permissions
+    enforcement is mandatory for privileged apps on AOSP 11+).
+
+    * WRITE_SECURE_SETTINGS (signature|privileged) — required to write
+      Settings.Global strings (guardtalk_secure_level, private_dns_mode,
+      private_dns_specifier). Verified at
+      frameworks/base/core/java/android/provider/Settings.java: the
+      Settings.Global.putString path checks WRITE_SECURE_SETTINGS via
+      SystemServicesUtil.callMethod.
+
+    * CHANGE_NETWORK_STATE / CHANGE_WIFI_STATE / ACCESS_WIFI_STATE /
+      ACCESS_NETWORK_STATE — required by WifiManager.addOrUpdateNetwork /
+      enableNetwork and by ConnectivityManager. CHANGE_WIFI_STATE is
+      signature|privileged when invoked from a non-system-server context.
+
+    * CONTROL_VPN (signature|privileged) — required for
+      VpnManager.provisionVpnProfile() to return null (silent, no-consent)
+      instead of an Intent that would force a user dialog. Verified at
+      frameworks/base/services/core/java/com/android/server/connectivity/
+      Vpn.java:4142-4174 — isVpnProfilePreConsented() checks
+      OPSTR_ACTIVATE_PLATFORM_VPN appop OR CONTROL_VPN.
+
+    * MANAGE_DEVICE_POLICY_WIFI (signature|privileged) — required for
+      DevicePolicyManager.setWifiSsidPolicy() / getWifiSsidPolicy() per
+      DevicePolicyManager.java:18195 @RequiresPermission. This is the
+      allowlist enforcement API for the WiFi lockdown (Task 2).
+
+    * MANAGE_USERS (signature|privileged) — required for the
+      UserManager.setUserRestriction() write path that installs
+      DISALLOW_ADD_WIFI_CONFIG / DISALLOW_CONFIG_WIFI_SHARED /
+      DISALLOW_CONFIG_WIFI_PRIVATE for the Syndicate lockdown (Task 2).
+      Documented in the dispatch packet's "Alternative" path; this avoids
+      needing a full Device Owner / DPC setup at provisioning time.
+
+    * CAMERA (normal) — listed here for completeness; normal permissions do
+      not strictly require a privapp entry, but including it is harmless and
+      keeps the manifest in sync.
+-->
+<permissions>
+    <privapp-permissions package="com.guardtalk.config">
+        <permission name="android.permission.WRITE_SECURE_SETTINGS"/>
+        <permission name="android.permission.CHANGE_NETWORK_STATE"/>
+        <permission name="android.permission.CHANGE_WIFI_STATE"/>
+        <permission name="android.permission.ACCESS_WIFI_STATE"/>
+        <permission name="android.permission.ACCESS_NETWORK_STATE"/>
+        <permission name="android.permission.CONTROL_VPN"/>
+        <permission name="android.permission.CONTROL_ALWAYS_ON_VPN"/>
+        <permission name="android.permission.MANAGE_DEVICE_POLICY_WIFI"/>
+        <permission name="android.permission.MANAGE_USERS"/>
+        <permission name="android.permission.CAMERA"/>
+    </privapp-permissions>
+</permissions>

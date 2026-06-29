@@ -47,6 +47,19 @@ ifneq ($(filter %/tokay/tokay.mk,$(INTERNAL_PRODUCT)),)
   PRODUCT_PACKAGES += GuardTalkValidator
   PRODUCT_SOONG_NAMESPACES += vendor/guardtalk/apps/GuardTalkValidator
 
+  # T-GTCONFIG-APP: ship GuardTalkConfig (the "GT Config" privileged app)
+  # in the image. Same packaging contract as GuardTalkValidator above:
+  # system_ext/priv-app, platform-signed, privileged: true, and the
+  # privapp_whitelist_* is pulled in via the `required:` entry in
+  # Android.bp. PRODUCT_SOONG_NAMESPACES is required because
+  # vendor/guardtalk/apps/ is not a default namespace.
+  #
+  # T-WIFI-LOCK-SYNDICATE: the WiFi lockdown lives inside this app's
+  # ConfigApplier.applyWifiLockdown() (invoked when the scanned QR's
+  # secure_level == "syndicate"); no separate package needed.
+  PRODUCT_PACKAGES += GuardTalkConfig
+  PRODUCT_SOONG_NAMESPACES += vendor/guardtalk/apps/GuardTalkConfig
+
   # =====================================================================
 
   # T-BRAND-PROPS (Wave 5): rebrand the user-visible device model in Settings →

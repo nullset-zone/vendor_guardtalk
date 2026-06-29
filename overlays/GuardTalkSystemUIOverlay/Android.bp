@@ -1,9 +1,17 @@
 // PARTITION MATCH (T-HOME-ROOTCAUSE): SystemUI is system_ext_specific, so
 // this overlay MUST be system_ext_specific to be honored by OverlayManager
 // on Android 14+ (SDK 34+), which filters out cross-partition static RROs.
+// CERTIFICATE FIX (T-HOME-ROOTCAUSE): SystemUI is always signed with the
+// platform key (it is part of the framework). On Android 12+ (SDK 31+),
+// OverlayManager applies a static RRO that overrides NON-overlayable resources
+// ONLY when the overlay is signed with the SAME certificate as its target.
+// SystemUI string/layout/drawable resources are NOT declared `<overlayable>`,
+// so a test-key static RRO is silently dropped at boot — the GuardTalk
+// SystemUI branding overrides never apply. Signing with "platform" matches
+// SystemUI's cert so OverlayManager enables it.
 runtime_resource_overlay {
     name: "GuardTalkSystemUIOverlay",
-    theme: "android",
     sdk_version: "current",
     system_ext_specific: true,
+    certificate: "platform",
 }

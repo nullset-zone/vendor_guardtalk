@@ -1,9 +1,18 @@
 // PARTITION MATCH (T-HOME-ROOTCAUSE): SetupWizard2 is system_ext_specific,
 // so this overlay MUST be system_ext_specific to be honored by OverlayManager
 // on Android 14+ (SDK 34+), which filters out cross-partition static RROs.
+// CERTIFICATE FIX (T-HOME-ROOTCAUSE): SetupWizard2 is signed with the platform
+// certificate (packages/apps/SetupWizard2/Android.bp:14 certificate: "platform").
+// On Android 12+ (SDK 31+), OverlayManager applies a static RRO that overrides
+// NON-overlayable resources ONLY when the overlay is signed with the SAME
+// certificate as its target. SetupWizard2 string/layout resources are NOT
+// declared `<overlayable>`, so a test-key static RRO is silently dropped at
+// boot — the GuardTalk welcome-string / branding overrides never apply.
+// Signing with "platform" matches SetupWizard2's cert so OverlayManager
+// enables it.
 runtime_resource_overlay {
     name: "GuardTalkSetupWizardOverlay",
-    theme: "android",
     sdk_version: "current",
     system_ext_specific: true,
+    certificate: "platform",
 }

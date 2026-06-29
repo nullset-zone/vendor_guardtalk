@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.guardtalk.config">
+
+    <!--
+        GuardTalkConfig — privileged system_ext app.
+
+        Platform signing (set in Android.bp via certificate: "platform") +
+        privileged: true is the trust anchor. Per WifiServiceImpl.java:4587
+        (Phase-1 audit finding) the connection path checks
+        `isPrivileged || isAdmin || isSystem`; a platform-signed privileged app
+        therefore BYPASSES the user restrictions (DISALLOW_ADD_WIFI_CONFIG,
+        DISALLOW_CONFIG_WIFI_SHARED/PRIVATE) that this very app installs for the
+        Syndicate lockdown, so it can still update the GMP SSID later while the
+        user cannot. No sharedUserId is required (Law 6: Minimal Footprint).
+
+        All signature|privileged permissions below are mirrored in the privapp
+        whitelist XML so the framework grants them at install time.
+    -->
+
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CONTROL_VPN" />
+    <uses-permission android:name="android.permission.CONTROL_ALWAYS_ON_VPN" />
+    <uses-permission android:name="android.permission.MANAGE_DEVICE_POLICY_WIFI" />
+    <uses-permission android:name="android.permission.MANAGE_USERS" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- IKEv2/IPsec VPN profile provisioning (Ikev2VpnProfile.Builder
+         @RequiresFeature). Optional so the app still installs on devices
+         without the IPsec tunnel transport; the VPN apply step will simply
+         fail at runtime there. Tokay (Pixel 9) advertises this feature. -->
+    <uses-feature android:name="android.software.ipsec_tunnels" android:required="false"/>
+
+    <application
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:theme="@android:style/Theme.DeviceDefault.Settings"
+        android:allowBackup="false"
+        android:supportsRtl="true">
+
+        <activity
+            android:name=".ConfigActivity"
+            android:exported="true"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Accept text shares carrying a QR payload so QA / adb can drive
+                 the flow without a camera scanner installed. This is the
+                 "ZXing not available" fallback the dispatch packet permits. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

@@ -26,27 +26,28 @@
 # aosp_product.mk), so the late filter-out removes the APK and its whitelist
 # in the same pass. Mirrors the proven Dialer/AppStore filter pattern.
 #
-# PixelCameraServicesConnectivityClient (T-CAM-CRASH): the proprietary
-# com.google.android.apps.camera.services app (product/priv-app/
-# PixelCameraServicesConnectivityClient/) contains
-# ProxyCameraProviderService in its connectivity.service package. After Wave 0's
-# T-HCH-WIRE fix (handheld_core_hardware override removes
-# android.hardware.bluetooth + android.hardware.location feature
-# declarations), the service NPEs at construction:
-#   java.lang.NullPointerException: Attempt to invoke virtual method
-#   'java.lang.Class java.lang.Object.getClass()' on a null object reference
-#     at dsx.b -> dsv.a -> hda.d (obfuscated connectivity init)
-# Root cause: ProxyCameraProviderService.onCreate queries a manager
-# (BluetoothManager.getAdapter() / LocationManager) that returns null because
-# FEATURE_BLUETOOTH / FEATURE_LOCATION are now absent. The app has no config
-# flag to disable the service, and patching a proprietary prebuilt APK is not
-# viable. Excising the entire app is safe: it provides camera-to-camera
-# connectivity (e.g. using the phone as a webcam / connecting to external/BT
-# cameras) — functionality that is moot now that BT is excised. The main
-# Google Camera app uses the AIDL android.hardware.camera.provider@2.7 HAL
-# (vendor/google_devices/tokay/vintf/vendor/manifest/
-# android.hardware.camera.provider@2.7-service-google-apex.xml), NOT this
-# connectivity client, so camera functionality is unaffected.
+# T-PKG-EXCISE-WAVES P0 — Safe leaf removals. Each module name verified as a real
+# Soong module via `out/soong/late-tokay.mk` and as a PRODUCT_PACKAGES entry in
+# build/make/target/product/*.mk before being added here. No source deletion;
+# pure late filter-out (Law 11: Reversibility). Package-name → module-name
+# mapping confirmed per-module (see completion report for the verification grep
+# of each name):
+#   Stk                      -> build/make/target/product/generic_system.mk:36
+#   CarrierDefaultApp        -> build/make/target/product/telephony_system.mk:22
+#   SimAppDialog             -> build/make/target/product/handheld_system.mk:75
+#   ONS                      -> build/make/target/product/telephony_system.mk:21
+#   CellBroadcastLegacyApp   -> build/make/target/product/telephony_system.mk:25
+#                              (legacy com.android.cellbroadcastreceiver app;
+#                               the com.android.cellbroadcast mainline APEX is
+#                               out of PRODUCT_PACKAGES reach — see P2 below)
+#   Tag                      -> build/make/target/product/generic_system.mk:37
+#   BookmarkProvider         -> build/make/target/product/handheld_system.mk:41
+#   PartnerBookmarksProvider -> build/make/target/product/generic_system.mk:34
+#   HTMLViewer               -> build/make/target/product/media_system.mk:32
+#   CallLogBackup            -> build/make/target/product/telephony_system.mk:23
+#   BlockedNumberProvider    -> build/make/target/product/handheld_system.mk:39
+# NOTE: com.android.se / SecureElement is paired with the NFC subsystem and is
+# therefore excised in nfc-excised.mk (not here) — see that file.
 GUARDTALK_APPS_PACKAGES := \
     TrichromeChrome \
     TrichromeChromeDualArch \
@@ -60,7 +61,58 @@ GUARDTALK_APPS_PACKAGES := \
     etc_sysconfig_app.attestation.auditor.xml \
     ExactCalculator \
     InfoApp \
-    PixelCameraServicesConnectivityClient
+    Stk \
+    CarrierDefaultApp \
+    SimAppDialog \
+    ONS \
+    CellBroadcastLegacyApp \
+    Tag \
+    BookmarkProvider \
+    PartnerBookmarksProvider \
+    HTMLViewer \
+    CallLogBackup \
+    BlockedNumberProvider
+
+# T-PKG-EXCISE-WAVES P1 — Print subsystem + BasicDreams (dependency-checked).
+# All three print-related modules are removed together: no printer drivers ship
+# on a phone and the print framework degrades gracefully (no Spooler → no
+# print UI; user can reinstall if needed). Names verified as Soong modules in
+# out/soong/late-tokay.mk and as PRODUCT_PACKAGES entries in
+# build/make/target/product/handheld_system.mk:38/68/69.
+#   PrintSpooler              -> handheld_system.mk:69
+#   PrintRecommendationService -> handheld_system.mk:68
+#   BasicDreams               -> handheld_system.mk:38 (PhotoTable already kept
+#                               as the dream; screensaver is non-essential)
+# "Bips" from the brief is NOT a Soong module — it is the java package name
+# (com.android.bips) of BuiltInPrintService. BuiltInPrintService is NOT excised
+# here (conservative: it is the system print-service implementation; removing
+# the spooler + recommendation service is sufficient to disable the print UI).
+GUARDTALK_APPS_PACKAGES += \
+    PrintSpooler \
+    PrintRecommendationService \
+    BasicDreams \
+    EmergencyInfo
+
+# T-APP-RM-EMERGENCY (Settings Reduction v3): EmergencyInfo (com.android.emergency)
+# excised above. The emergency info app (medical info, emergency contacts, SOS
+# from lock screen settings). Paired with config_show_emergency_settings=false
+# overlay which hides the Safety & Emergency Settings entry + dashboard. The
+# lock-screen emergency DIALER (frameworks/com.android.phone) is SEPARATE and
+# is NOT affected by this removal. Verified: no hard dependency on this app
+# from Settings (the dashboard is gated by the overlay bool) or from SystemUI.
+
+# T-CAM-BLACK (camera black preview): PixelCameraServicesConnectivityClient is
+# INTENTIONALLY NOT excised. Initial assumption (T-CAM-CRASH) was that its
+# ProxyCameraProviderService NPE on missing BT/Location features was fatal and
+# that excising the app was safe. On-device logcat proved this wrong: the camera
+# HAL (com.google.pixel.camera.hal APEX) depends on PersistentBackgroundCamera
+# Services, which in turn binds to ICameraProvider exported by this package.
+# Removing the package → "proxy_camera_provider.cc: Not bound to ICameraProvider
+# service" → "Unable to get proxy camera IDs" → capture-session configureStreams
+# times out after 5000ms → ANR → black preview. The original ProxyCameraProvider
+# NPE was a non-fatal background-service crash; the app must stay installed for
+# the main camera pipeline to work. The NPE in the connectivity.service is
+# non-fatal (caught/recovered) and does not affect the main camera path.
 
 # WebView provider packages that must NEVER be dropped by any feature-excision
 # filter. Listed explicitly so future subsystem filters (bt/nfc/fp/loc) can
