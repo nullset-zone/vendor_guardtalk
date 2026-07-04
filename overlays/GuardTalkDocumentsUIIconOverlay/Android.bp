@@ -1,0 +1,28 @@
+// PARTITION NOTE (Law 7 verification, overrides Q-ICON-VERIFY finding):
+// Q-ICON-VERIFY flagged this overlay as "cross-partition mismatch" claiming
+// OverlayManager silently drops static RROs in /product targeting /system apps
+// on Android 14+. Source-code verification of frameworks/base shows this is a
+// FALSE POSITIVE:
+//   - OverlayConfig.java:198-206 configures static overlays as immutable +
+//     default-enabled per-partition with NO cross-partition filter.
+//   - OverlayManagerServiceImpl.calculateNewState() (line 1046) only checks
+//     target existence + idmap status, never partition.
+//   - IdmapManager.calculateFulfilledPolicies() (line 304-328) uses partition
+//     only to compute a policy bitmask governing <overlayable> resources.
+//   - ic_launcher is NOT inside DocumentsUI's <overlayable> declaration
+//     (packages/apps/DocumentsUI/res/values/overlayable.xml) — it is a public
+//     resource any overlay can override regardless of partition policy.
+//   - Google's own PixelDocumentsUIGoogleOverlay ships in /product/overlay/
+//     targeting com.android.documentsui in /system/ (same cross-partition
+//     pattern), confirming the runtime honors this configuration.
+// Additionally, runtime_resource_overlay has NO /system partition directive:
+// Soong defaults it to /product and only supports product_specific,
+// system_ext_specific, soc_specific (vendor), device_specific (odm). The QA
+// recommendation "system_specific: true" is not a valid Soong property
+// (verified: build error "unrecognized property system_specific").
+// Therefore the overlay is correct as-is — no partition directive needed.
+runtime_resource_overlay {
+    name: "GuardTalkDocumentsUIIconOverlay",
+    sdk_version: "current",
+    certificate: "platform",
+}

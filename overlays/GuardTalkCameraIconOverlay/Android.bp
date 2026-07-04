@@ -1,0 +1,23 @@
+// GuardTalkCameraIconOverlay — F-ICON-CAMERA
+// Static RRO overriding app.grapheneos.camera launcher icon with the
+// GuardTalkOS-themed Camera glyph (obsidian background + guard-tinted lens).
+//
+// Camera target is a PREBUILT APK (external/Camera/Android.bp: android_app_import
+// name "Camera", product_specific: true, NO `certificate:` field → Soong default =
+// platform). On Android 12+ (SDK 31+), OverlayManager applies a static RRO that
+// overrides NON-overlayable resources ONLY when the overlay is signed with the SAME
+// certificate as its target. The Camera APK's `mipmap/ic_launcher` is NOT declared
+// `<overlayable>` (verified via aapt2 dump — no <overlayable> tag), so a test-key
+// static RRO would be silently dropped at boot. Signing with "platform" matches
+// Camera's cert so OverlayManager enables the icon override.
+//
+// PARTITION MATCH: Camera is product_specific (lands in /product/app/Camera/). On
+// Android 14+ (SDK 34+), OverlayManager filters out static RROs whose target is in
+// a DIFFERENT partition than the overlay itself. This overlay MUST be
+// product_specific so it lands in /product/overlay/ alongside its target.
+runtime_resource_overlay {
+    name: "GuardTalkCameraIconOverlay",
+    sdk_version: "current",
+    product_specific: true,
+    certificate: "platform",
+}

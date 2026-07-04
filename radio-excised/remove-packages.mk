@@ -18,6 +18,23 @@
 #                           are harmless with the radio gone (overlay targets
 #                           a telephony framework that no-ops without a HAL).
 # Reversible (filter-out only; Law 11).
+#
+# T-PKG-EXCISE-WAVE-A — Telecom call-routing framework. With radio/RIL
+# fully excised above, there is no cellular transport, so Telecom has no
+# calls to route. The operator has decided to REMOVE it. Verified Soong
+# module: packages/services/Telecomm/Telecom ->
+#   out/soong/late-tokay.mk:262156 (Telecom-android_common-*; installs
+#   to system/priv-app/Telecom/Telecom.apk). PRODUCT_PACKAGES source:
+#   build/make/target/product/handheld_system.mk:110,113. Dependency
+# audit: SystemUI and Settings reference only the
+# android.telecom.TelecomManager framework class (in frameworks/base/
+# telecomm), NOT the Telecom.apk module (com.android.server.telecom).
+# Removing the APK removes the call-routing service impl; the framework
+# API class remains and degrades gracefully (returns null/defaults when
+# no backing service). tokay.mk has no Telecom PRODUCT_PACKAGES entry.
+# RRO overlay Telecom__tokay__auto_generated_rro_product also removed
+# (verified at out/soong/late-tokay.mk:262414). Reversible (filter-out
+# only; Law 11).
 GUARDTALK_RADIO_PACKAGES := \
     android.hardware.radio-V2-ndk.vendor \
     android.hardware.radio.config-V2-ndk.vendor \
@@ -112,12 +129,38 @@ GUARDTALK_RADIO_PACKAGES := \
     EuiccGoogleOverlay \
     EuiccSupportPixelPermissions \
     EuiccSupportPixelOverlay \
+    com.google.pixel.euicc.update \
     Iwlan \
     ImsServiceEntitlement \
     CarrierConfig2 \
     CarrierConfig \
     CellBroadcastReceiverOverlay \
-    com.android.cellbroadcast
+    com.android.cellbroadcast \
+    \
+    Telecom \
+    Telecom__tokay__auto_generated_rro_product \
+    \
+    PixelQualifiedNetworksService
+
+# T-PKG-EXCISE-WAVE-CAT5 — A-REPORT-INVESTIGATE item 17b. With the radio/RIL
+# stack fully excised above, PixelQualifiedNetworksService is dead weight:
+# frameworks/base/core/api/system-current.txt:17457-17467 declares the abstract
+# QualifiedNetworksService class, and
+# frameworks/base/telephony/java/android/telephony/data/IQualifiedNetworksService.aidl:25
+# is the AIDL for telephony IMS/data network selection. With no modem/SIM/IMS
+# substrate (radio-excised/remove-packages.mk above),
+# onCreateNetworkAvailabilityProvider(int slotIndex) has nothing to provide.
+# Sibling telephony services (PixelImsMediaService above, ShannonIms, ShannonRcs)
+# were excised on the same rationale. Operator decision (dispatched 2026-07-02):
+# APPROVED for removal (LOW risk). Soong module:
+# vendor/google_devices/tokay/proprietary/Android.bp:437 (android_app_import,
+# system_ext/priv-app). PRODUCT_PACKAGES source:
+# vendor/google_devices/tokay/tokay.mk:561. RRO audit: no
+# PixelQualifiedNetworksService__tokay__auto_generated_rro_product sibling
+# exists (grep vendor/google_devices/tokay/ + device/google/ returned only the
+# app and its .apk; the ShannonQualifiedNetworksService variant on
+# oriole/raven/bluejay is a different SoC family and not built for tokay).
+# Reversible (filter-out only; Law 11).
 
 # T-PKG-ARCHITECT-FIX: EuiccSupportPixel-P23 data files are delivered via
 # PRODUCT_COPY_FILES (tokay.mk:1548-1550), NOT via PRODUCT_PACKAGES, so the
@@ -125,8 +168,12 @@ GUARDTALK_RADIO_PACKAGES := \
 # IS in PRODUCT_PACKAGES and IS filtered above, but the three data files
 # (DKA_0302_24.up, esim-full-v1.img, Felica_Tag_66_Changer.apdu) leak through.
 # Strip them from PRODUCT_COPY_FILES here (same reversibility — filter-out only).
-# Also strip the com.google.pixel.euicc.update APEX copy (tokay.mk:648 / line
-# near 1550) since EuiccGoogle is gone.
+# A-PKG-FINAL audit catch (INV-5): com.google.pixel.euicc.update APEX copy
+# (tokay.mk:648) is in PRODUCT_PACKAGES, so it is now filtered above alongside
+# the other Euicc* entries. Earlier this comment claimed the strip was done
+# but the filter entry was missing — auditor flagged the residual APEX
+# /vendor/apex/com.google.pixel.euicc.update.apex. Fixed by adding
+# com.google.pixel.euicc.update to GUARDTALK_RADIO_PACKAGES.
 PRODUCT_COPY_FILES := $(filter-out $(TARGET_COPY_OUT_SYSTEM_EXT)/priv-app/EuiccSupportPixel-P23/%,$(PRODUCT_COPY_FILES))
 PRODUCT_COPY_FILES := $(filter-out %/EuiccSupportPixel-P23/DKA_0302_24.up,$(PRODUCT_COPY_FILES))
 PRODUCT_COPY_FILES := $(filter-out %/EuiccSupportPixel-P23/esim-full-v1.img,$(PRODUCT_COPY_FILES))

@@ -5,9 +5,10 @@
 # GUARDTALK_FEATURE_EXCISED_WAVE2) so the overlay packages are built and
 # installed only when Wave 2 feature excision is enabled.
 #
-# Overlay inventory (5 RROs total):
+# Overlay inventory (6 RROs total):
 #   - GuardTalkFrameworksBaseOverlay    — wired via radio-excised/telephony-features.mk (HAL excision grace)
 #   - GuardTalkSettingsOverlay          — wired via radio-excised/telephony-features.mk (HAL excision grace)
+#   - GuardTalkSettingsIconOverlay      — wired via feature-excised/icon-overlays.mk (T-ICON-WIRING, brand icon)
 #   - GuardTalkSystemUIOverlay          — wired HERE (T-W2-I2-FP, HAL excision grace)
 #   - GuardTalkFrameworkBrandOverlay    — wired HERE (T-W2-I6-THEME, brand theme)
 #   - GuardTalkSetupWizardOverlay       — wired HERE (T-W2-I6-THEME, wizard brand; ties to T-W2-I7-WIZ)

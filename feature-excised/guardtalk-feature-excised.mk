@@ -55,6 +55,12 @@ include vendor/guardtalk/feature-excised/loc-excised.mk
 # overlays are never stripped.
 include vendor/guardtalk/feature-excised/feature-overlays.mk
 
+# T-ICON-WIRING — GuardTalk icon RRO overlays (5 overlays). Consolidated
+# wiring for all icon overlays; runs AFTER the excision filter-outs (same
+# rationale as feature-overlays.mk above) so the icon RROs are never
+# accidentally stripped. See icon-overlays.mk for the per-overlay rationale.
+include vendor/guardtalk/feature-excised/icon-overlays.mk
+
 # Telephony overlay wiring — GuardTalkFrameworksBaseOverlay + GuardTalkSettingsOverlay.
 # telephony-features.mk was originally meant to be included from
 # guardtalk-tokay.mk (which is never included in the build chain), so the two
@@ -95,6 +101,28 @@ include vendor/guardtalk/radio-excised/telephony-features.mk
   # KEPT ACTIVE (conservative): com.android.appsearch. SettingsIntelligence may
   # depend on AppSearch for search indexing; excising it risks breaking the
   # Settings search UI. Left in place pending a dedicated dependency audit.
+  #
+  # T-APEX-BCP-WAVE (2026-07-02) — Cat 3 lockstep BCP excision. The 3 APEX
+  # above marked "feature-permission XML already absent" (adservices,
+  # healthfitness, ondevicepersonalization) are now FULLY excised, not just
+  # dormant: apex-bcp-excised.mk filters their framework-* / service-* jars
+  # out of PRODUCT_APEX_BOOT_JARS / PRODUCT_APEX_SYSTEM_SERVER_JARS in
+  # lockstep with the PRODUCT_PACKAGES filter-out, so the dexpreopt check no
+  # longer orphans a BCP entry. The feature-permission XML removal above is
+  # now defence-in-depth (the APEX itself is gone). See apex-bcp-excised.mk
+  # for the full rationale + the runtime smoke-test requirement (Q-APEX-BCP).
   # =====================================================================
+
+# T-APEX-BCP-WAVE — Cat 3 mainline APEX lockstep BCP excision. MUST run
+# AFTER apps-excised.mk (so its PRODUCT_PACKAGES filter-out has already
+# fired) and AFTER all upstream inherit-product merges (guaranteed by the
+# product-config-late.mk hook that pulls this bridge in).
+#
+# NOTE: uses `include` (not `inherit-product-if-exists`) because this bridge
+# runs from product-config-late.mk AFTER import-nodes has already processed
+# the INHERIT_PRODUCTS chain — a late `inherit-product-if-exists` would
+# silently never fire. Matches the proven pattern used by every sibling
+# excision file in this directory (apps-excised.mk, nfc-excised.mk, etc.).
+include vendor/guardtalk/feature-excised/apex-bcp-excised.mk
 
 endif # GUARDTALK_FEATURE_EXCISED_WAVE2

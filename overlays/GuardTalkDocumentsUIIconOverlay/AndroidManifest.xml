@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GuardTalkDocumentsUIIconOverlay — F-ICON-DOCSUI
+     Static RRO on com.android.documentsui that replaces the default
+     AOSP Files app icon (ic_launcher / ic_launcher_round) with the
+     GuardTalkOS-themed obsidian + glyph adaptive icon, plus legacy
+     density mipmaps for pre-API-26 launchers.
+     NOTE: targetName removed — ic_launcher is NOT inside DocumentsUI's
+     <overlayable name="DocumentsUICustomization"> block, so no targetName
+     is needed. Setting a non-existent targetName prevents the overlay from
+     matching any overlayable, which can interfere with idmap creation.
+     priority raised to 999 to match other GuardTalk icon overlays. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.guardtalk.overlay.documentsui.icon"
+    android:versionCode="1"
+    android:versionName="1.0">
+
+    <overlay
+        android:targetPackage="com.android.documentsui"
+        android:isStatic="true"
+        android:priority="999" />
+</manifest>

@@ -1,0 +1,30 @@
+// GuardTalkContactsIconOverlay — F-ICON-CONTACTS
+// Static RRO overriding com.android.contacts launcher icon (adaptive + legacy).
+//
+// TARGET: com.android.contacts (packages/apps/Contacts/AndroidManifest.xml
+//   android:icon="@mipmap/ic_launcher"  android:roundIcon="@mipmap/ic_launcher_round").
+//
+// PARTITION MATCH: Contacts is `product_specific` + `privileged: true`
+//   (packages/apps/Contacts/Android.bp; ships at product/priv-app/Contacts/).
+//   On Android 14+ OverlayManager silently drops static RROs whose target
+//   lives in a different partition than the overlay. This overlay MUST be
+//   `product_specific: true` so it ships in /product/overlay/ alongside its
+//   target.
+//
+// CERTIFICATE MATCH: Contacts is signed with the SHARED key
+//   (`certificate: "shared"` in packages/apps/Contacts/Android.bp, verified
+//   2026-06-30). The F-ICON-CONTACTS task brief stated "platform (Contacts is
+//   platform-signed)" — that is INCORRECT per Law 7 (Structured Self-Doubt) /
+//   Law 8 (Determinism); the canonical source (Android.bp) shows
+//   `certificate: "shared"`. OverlayManager enables a static RRO that
+//   overrides NON-overlayable resources (the legacy raster mipmaps + adaptive
+//   foreground/background drawables are NOT declared <overlayable> in Contacts
+//   — no overlayable.xml exists under packages/apps/Contacts/res/) only when
+//   the overlay shares the target's signing certificate. This overlay uses
+//   `certificate: "shared"` to match Contacts so the override wins at boot.
+runtime_resource_overlay {
+    name: "GuardTalkContactsIconOverlay",
+    sdk_version: "current",
+    product_specific: true,
+    certificate: "shared",
+}

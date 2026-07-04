@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GuardTalkContactsIconOverlay — F-ICON-CONTACTS
+     Static RRO on com.android.contacts that replaces the default AOSP Contacts
+     launcher icon (adaptive + legacy raster) with the GuardTalkOS-themed glyph
+     on the obsidian background.
+     Overrides:
+       mipmap-anydpi-v26/ic_launcher.xml        -> adaptive (fg+bg PNG drawables)
+       mipmap-anydpi-v26/ic_launcher_round.xml  -> adaptive (fg+bg PNG drawables)
+       drawable-xxxhdpi/ic_launcher_foreground.png -> 432px foreground glyph
+       drawable-xxxhdpi/ic_launcher_background.png -> 432px obsidian background
+       mipmap-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}/ic_launcher.png        -> legacy
+       mipmap-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}/ic_launcher_round.png  -> legacy
+     Resource names MATCH the existing Contacts references verified via:
+       grep -E 'android:icon|android:roundIcon' packages/apps/Contacts/AndroidManifest.xml
+         android:icon="@mipmap/ic_launcher"
+         android:roundIcon="@mipmap/ic_launcher_round" -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.guardtalk.overlay.contacts.icon">
+
+    <overlay
+        android:targetPackage="com.android.contacts"
+        android:isStatic="true"
+        android:priority="999" />
+</manifest>

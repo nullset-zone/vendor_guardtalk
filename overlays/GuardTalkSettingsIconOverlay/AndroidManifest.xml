@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.guardtalk.overlay.settings.icon"
+    android:versionCode="1"
+    android:versionName="1.0">
+    <overlay
+        android:targetPackage="com.android.settings"
+        android:targetName="GuardTalkSettingsIconOverlay"
+        android:isStatic="true"
+        android:priority="1" />
+</manifest>

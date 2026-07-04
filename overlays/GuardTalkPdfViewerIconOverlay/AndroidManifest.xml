@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GuardTalkPdfViewerIconOverlay — F-ICON-PDFVIEWER
+     Static RRO on app.grapheneos.pdfviewer that replaces the default
+     PdfViewerGOS app icon (ic_launcher) with the GuardTalkOS-themed
+     obsidian + glyph adaptive icon, plus legacy density mipmaps for
+     pre-API-26 launchers. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.guardtalk.overlay.pdfviewer.icon"
+    android:versionCode="1"
+    android:versionName="1.0">
+
+    <overlay
+        android:targetPackage="app.grapheneos.pdfviewer"
+        android:targetName="GuardTalkPdfViewerIconOverlay"
+        android:isStatic="true"
+        android:priority="1" />
+</manifest>

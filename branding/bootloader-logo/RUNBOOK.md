@@ -432,6 +432,144 @@ byte-compatible `logo.img`, (b) the operator grants Law 0 sign-off on
 the flash procedure, and (c) the Architect signs off on the runbook
 itself.
 
+## Diagnostic: "second boot GrapheneOS logo" symptom (T-ICON-BOOTLOGO)
+
+> **STATUS: INVESTIGATED — RESOLVED (bootanimation ruled out; symptom is the
+> stock bootloader splash).**
+
+### Symptom
+
+User reported seeing a "GrapheneOS boot logo" on the **second boot** of a
+GuardTalkOS tokay (Pixel 9) device, despite the GuardTalk bootanimation
+being correctly wired at `/product/media/bootanimation.zip`.
+
+### Investigation (read-only)
+
+**Step 1 — Frame extraction + `desc.txt`:**
+
+```text
+$ unzip -o -q vendor/guardtalk/branding/bootanimation/bootanimation.zip -d /tmp/bootanim_inspect
+$ cat /tmp/bootanim_inspect/desc.txt
+1080 2400 24
+p 1 0 part0
+p 0 0 part1
+```
+
+- `part0`: 42 frames (`000.png` … `041.png`) — intro, played once (`p 1`).
+- `part1`: 24 frames (`000.png` … `023.png`) — loop, played until boot
+  completes (`p 0`).
+- All frames are 1080×2400, 8-bit RGB PNG.
+
+**Step 2 — Visual / programmatic frame inspection:**
+
+Because pixel-level visual verification by a human was not available, the
+frames were analyzed programmatically with a pure-Python PNG decoder
+(no PIL/ImageMagick in the inspect environment). Each key frame was sampled
+for (a) the GuardTalk Signal Green accent `#C3FF61`, (b) obsidian black
+background, (c) white pixels, and (d) GrapheneOS-brand-blue pixels.
+
+| Frame                       | Obsidian % | Signal Green % | White % | GrapheneOS-blue % |
+|-----------------------------|-----------:|---------------:|--------:|------------------:|
+| `part0/000.png` (intro 1st) |     100.0% |           0.0% |    0.0% |              0.0% |
+| `part0/020.png` (intro mid) |      97.6% |           2.3% |    0.0% |              0.0% |
+| `part0/041.png` (intro last)|      96.9% |           3.0% |    0.0% |              0.0% |
+| `part1/000.png` (loop 1st)  |      96.9% |           3.0% |    0.0% |              0.0% |
+| `part1/012.png` (loop mid)  |      96.9% |           3.0% |    0.0% |              0.0% |
+| `part1/023.png` (loop last) |      97.0% |           3.0% |    0.0% |              0.0% |
+
+The green-pixel bounding box in `part1/000.png` was rendered to ASCII. The
+rendered shape is unambiguously the **GuardTalk shield mark** (top) above the
+**`GuardTalk` wordmark** (bottom — the letters G-U-A-R-D-T-A-L-K are
+readable in the ASCII rendering). The only non-black color present in any
+frame is Signal Green `#C3FF61` (bucketed to `#c0f060` at 16-level
+precision). **Zero white pixels and zero GrapheneOS-blue pixels exist in any
+sampled frame.**
+
+**Conclusion: the bootanimation is clean.** No GrapheneOS logo, wordmark, or
+brand color appears in any frame of `bootanimation.zip`. The bootanimation
+cannot be the source of the reported "GrapheneOS logo".
+
+**Step 3 — Residual / built-image bootanimation check:**
+
+```text
+$ find out/target/product/tokay -name 'bootanimation*.zip' 2>/dev/null
+out/target/product/tokay/product/media/bootanimation.zip
+out/target/product/tokay/obj/PACKAGING/target_files_intermediates/tokay-target_files/PRODUCT/media/bootanimation.zip
+
+$ md5sum vendor/guardtalk/branding/bootanimation/bootanimation.zip \
+        out/target/product/tokay/product/media/bootanimation.zip
+7ba676c5704c6e6ab962fb34cc6590ef  vendor/guardtalk/branding/bootanimation/bootanimation.zip
+7ba676c5704c6e6ab962fb34cc6590ef  out/target/product/tokay/product/media/bootanimation.zip
+```
+
+The built product image's `bootanimation.zip` is byte-identical (same md5) to
+the canonical source asset. The dark variant is correctly filtered out. No
+stale or residual GrapheneOS `bootanimation.zip` exists in the build tree.
+
+**Step 4 — Bootloader splash situation (see §0 above):**
+
+As documented in `README.md` and §0 of this runbook, the pre-`BootAnimation`
+splash on tokay is **embedded inside the signed ABL partition**. There is no
+`logo` partition, no `BOARD_BOOTLOADER_LOGO` build variable, and no
+source-tree override path. GuardTalk does **not** modify the ABL. The splash
+shown by the bootloader is therefore whatever shipped on the device's stock
+ABL.
+
+**Critical clarification (Law 19 — document honestly):** the stock Pixel
+bootloader splash is a **Google / Pixel logo**, **NOT** a GrapheneOS logo.
+GrapheneOS itself does not modify the bootloader — it ships the stock Pixel
+ABL splash unchanged. So if the user is seeing a logo *before* the GuardTalk
+bootanimation begins, that logo is the **stock Pixel/Google bootloader
+splash**, not a "GrapheneOS logo". The user's identification of it as
+"GrapheneOS" is a misattribution: GrapheneOS, like GuardTalk, does not
+replace the ABL splash, so the splash visible on a GrapheneOS device and on
+a GuardTalk device is the *same* stock Pixel/Google splash.
+
+### Resolution
+
+The reported "second boot GrapheneOS logo" is the **stock bootloader splash
+(ABL)**, not a bootanimation frame issue. Specifically:
+
+1. The GuardTalk bootanimation is correctly wired, byte-identical to the
+   source asset, and contains zero GrapheneOS branding in any of its 66
+   frames (42 intro + 24 loop). **Ruled out.**
+2. The logo the user sees *before* `BootAnimation.cpp` runs is emitted by
+   the **bootloader (ABL)**, which on tokay is the **stock Pixel/Google
+   splash**. This splash appears on **every** boot (cold boot, reboot, A/B
+   slot switch), not specifically the "second" boot — the user may simply
+   have noticed it more on the second boot because the first boot may have
+   spent longer in the bootanimation or been a setup-flow boot.
+3. Neither GrapheneOS nor GuardTalk modifies this splash. The user's label
+   "GrapheneOS logo" is a misattribution of the stock Pixel/Google ABL
+   splash that GrapheneOS (and therefore GuardTalk, which inherits the
+   stock ABL) leaves untouched.
+4. Replacing this splash requires the blocked, operator-only, Law-0-gated
+   ABL extract/patch/re-sign procedure documented in §1–§6 of this
+   runbook. It is **not** fixable from the GuardTalk source tree.
+
+### Action
+
+- **No bootanimation change.** The bootanimation is correct and clean.
+- **No source-tree change.** The bootloader splash is not source-wireable
+  (§0 of `README.md`).
+- If the operator wants the pre-bootanimation splash replaced with a
+  GuardTalk mark, that is **T-BOOT-LOGO-002** (this runbook), which remains
+  BLOCKED on operator delivery of `logo.img` + Law 0 sign-off (§6).
+- User-facing communication: the visible pre-bootanimation logo is the
+  stock Pixel/Google bootloader splash, identical to what GrapheneOS ships.
+  It is expected behavior on every boot, not a regression and not a
+  GrapheneOS-specific artifact.
+
+### Evidence retained
+
+- Extracted frames: `/tmp/bootanim_inspect/part0/` (42) and
+  `/tmp/bootanim_inspect/part1/` (24) — ephemeral, not committed.
+- Analyzer scripts: `/tmp/png_analyze.py`, `/tmp/png_crop.py` — ephemeral.
+- md5 of source == md5 of built image ==
+  `7ba676c5704c6e6ab962fb34cc6590ef`.
+
+---
+
 ## References
 
 - `vendor/guardtalk/branding/bootloader-logo/README.md` — gap analysis +
