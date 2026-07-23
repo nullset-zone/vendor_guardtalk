@@ -1,7 +1,21 @@
 # Runs from build/make/core/product_config.mk after all product inherits are merged.
-# Match tokay product path: GUARDTALK_RADIO_EXCISED may not be visible here yet when
-# guardtalk-flags.mk was only inherit-product-linked (deferred until import-nodes).
-ifneq ($(filter %/tokay/tokay.mk,$(INTERNAL_PRODUCT)),)
+#
+# T-PORT-SHARED-CORE (2026-07-04): the gate is now device-driven via
+# GUARDTALK_RADIO_EXCISED instead of a hardcoded `tokay` INTERNAL_PRODUCT
+# match. GUARDTALK_RADIO_EXCISED is set by the device's late include of
+# vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk (which the
+# operator adds to vendor/google_devices/<codename>/<codename>.mk per
+# vendor/guardtalk/device/REGEN_HOOKS.md), so it is true ONLY for a
+# GuardTalkOS product and false for every other product (emu64a, AOSP, …).
+# This makes the late pass fire once per GuardTalkOS product regardless of
+# codename, with no per-device registration list to keep in sync.
+#
+# Brand rebrand (T-BRAND-PROPS) is per-device: each device layer sets
+# GUARDTALK_PRODUCT_MODEL in its guardtalk-flags.mk (e.g. "GuardTalk Pixel 9"
+# for tokay, "GuardTalk Pixel 9 Pro" for caiman, etc.). When unset, the
+# rebrand step is skipped (Law 9: graceful degradation — the image still
+# builds, just with the upstream PRODUCT_MODEL).
+ifneq ($(GUARDTALK_RADIO_EXCISED),)
   $(eval PRODUCT_PACKAGES := $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_PACKAGES))
   $(eval PRODUCT_COPY_FILES := $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_COPY_FILES))
   $(eval DEVICE_MANIFEST_FILE := $(PRODUCTS.$(INTERNAL_PRODUCT).DEVICE_MANIFEST_FILE))
@@ -67,8 +81,16 @@ ifneq ($(filter %/tokay/tokay.mk,$(INTERNAL_PRODUCT)),)
   # About phone. Settings' MyDeviceInfoScreen.kt:57 reads Build.MODEL (from
   # ro.product.model, derived from PRODUCT_MODEL) for the device-name row when
   # Settings.Global.DEVICE_NAME is unset (first boot). Overriding PRODUCT_MODEL
-  # here — after tokay.mk sets it to "Pixel 9" at line 21 — rebrands that row
-  # to "GuardTalk Pixel 9" without touching the *_FOR_ATTESTATION variants.
+  # here — after the device's <codename>.mk sets it to the upstream value (e.g.
+  # "Pixel 9" for tokay) — rebrands that row to "<GUARDTALK_PRODUCT_MODEL>"
+  # without touching the *_FOR_ATTESTATION variants.
+  #
+  # T-PORT-SHARED-CORE (2026-07-04): the rebrand string is now per-device via
+  # GUARDTALK_PRODUCT_MODEL (set in vendor/guardtalk/device/<codename>/
+  # guardtalk-flags.mk). When unset, the rebrand step is skipped so the build
+  # still succeeds with the upstream PRODUCT_MODEL (Law 9: graceful
+  # degradation). This makes the late pass safe to run for any future GuardTalk
+  # device before its brand string has been chosen.
   #
   # WHY ONLY MODEL: the user chose the minimal rebrand (T-BRAND-PROPS option
   # "minimal"). PRODUCT_BRAND and PRODUCT_MANUFACTURER stay "google"/"Google"
@@ -77,9 +99,11 @@ ifneq ($(filter %/tokay/tokay.mk,$(INTERNAL_PRODUCT)),)
   # vendor-side check that keys on ro.product.vendor.brand=google. The
   # *_FOR_ATTESTATION vars (PRODUCT_BRAND_FOR_ATTESTATION etc.) are NEVER
   # touched here — they back the hardware-attestation brand claim and must stay
-  # "google"/"Google"/"Pixel 9" so Play Integrity / keymint attestation still
-  # matches the signed vendor image (Law 4: Security First).
-  $(eval PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_MODEL := GuardTalk Pixel 9)
+  # "google"/"Google"/"<upstream model>" so Play Integrity / keymint attestation
+  # still matches the signed vendor image (Law 4: Security First).
+  ifneq ($(GUARDTALK_PRODUCT_MODEL),)
+    $(eval PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_MODEL := $(GUARDTALK_PRODUCT_MODEL))
+  endif
 
   $(eval PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_PACKAGES := $(PRODUCT_PACKAGES))
   $(eval PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_COPY_FILES := $(PRODUCT_COPY_FILES))

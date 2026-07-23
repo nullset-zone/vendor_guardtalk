@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  F-SEC-P1-SETTINGS-UI + T-SEC-P1-CONTACTS: Launcher show/hide via
+  AppFilter.filtered_components. Components listed here are omitted from
+  all-apps / launcher / Show all apps drawer UI surfaces.
+  ContactsProvider / Contacts APK remain installed (UI hide only).
+  Settings/search/Default-apps hardening is owned by Settings
+  GuardTalkContactsVisibility + GuardTalkSettingsOverlay.
+  GT Config (com.guardtalk.config) and GT Info (com.guardtalk.validator)
+  are intentionally NOT filtered — kept visible via LAUNCHER + workspace pin.
+-->
+<resources>
+    <string-array name="filtered_components" translatable="false">
+        <!-- Contacts main launcher activity (PeopleActivity). -->
+        <item>com.android.contacts/com.android.contacts.activities.PeopleActivity</item>
+    </string-array>
+</resources>

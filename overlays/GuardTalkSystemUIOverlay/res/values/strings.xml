@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  F-SEC-P3-QS-EDITOR: Product-facing QS editor / tile labels for Phase-3 tiles.
+  Specs: mictoggle, cameratoggle, battery, autoreboot (see QS_TILES_POLICY.md).
+  Do not introduce Lockdown / USB / Secure wipe / Duress tile strings.
+-->
+<resources>
+    <!-- Editor + tile label: Mic (spec mictoggle). Shorter than AOSP "Mic access". -->
+    <string name="quick_settings_mic_label">Mic</string>
+    <!-- Editor + tile label: Camera (spec cameratoggle). -->
+    <string name="quick_settings_camera_label">Camera</string>
+    <!-- Battery Saver tile uses battery_detail_switch_title (spec battery, not saver). -->
+    <string name="battery_detail_switch_title">Battery Saver</string>
+    <!-- Auto-reboot catalog tile (spec autoreboot); catalog-only, not default panel. -->
+    <string name="quick_settings_auto_reboot_label">Auto-reboot</string>
+</resources>

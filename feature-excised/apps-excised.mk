@@ -325,6 +325,12 @@ GUARDTALK_APPS_PACKAGES += \
 # if a future Wave inadvertently lists them. Listed explicitly so the filter
 # below can restore them as defence-in-depth. Operator decision for Wave C:
 # Contacts + ContactsProvider are KEPT (only Calendar/CalendarProvider removed).
+#
+# T-SEC-P1-CONTACTS: UI hide only — do NOT add Contacts / ContactsProvider to
+# GUARDTALK_APPS_PACKAGES. User-facing suppression is via
+# GuardTalkLauncherOverlay filtered_components + Settings
+# GuardTalkContactsVisibility + PackageManagerHooks package-visibility.
+# Messenger independence is a prerequisite before any APK removal.
 GUARDTALK_APPS_KEEP := \
     Contacts \
     ContactsProvider

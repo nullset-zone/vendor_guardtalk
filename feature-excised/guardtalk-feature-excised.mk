@@ -76,6 +76,14 @@ include vendor/guardtalk/radio-excised/telephony-features.mk
   # self-gated (ifeq wildcard) on asset existence.
   include vendor/guardtalk/device/tokay/guardtalk-theme.mk
 
+  # T-SEC-P4-PRIVACY / T-SEC-P4-PERMS — packages that lived only in
+  # guardtalk-tokay.mk (never inherited). Wire through this live bridge so they
+  # enter PRODUCT_PACKAGES for the image (props are live via
+  # guardtalk-product-props.mk included from guardtalk-radio-excised.mk).
+  PRODUCT_PACKAGES += init.guardtalk.privacy_tmpfs.rc
+  PRODUCT_PACKAGES += init.guardtalk.hardening.rc
+  PRODUCT_PACKAGES += default-permissions-com.guardtalk.messenger
+
   # =====================================================================
   # T-PKG-EXCISE-WAVES P2 — APEX-dormant feature-gates (documentation only).
   # No PRODUCT_PACKAGES filter (APEX modules are delivered via mainline and

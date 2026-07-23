@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<!--
+  Copyright (C) 2026 The GuardTalkOS Project
+  SPDX-License-Identifier: Apache-2.0
+
+  T-SEC-P4-PERMS — default runtime grants for GuardTalk Messenger.
+
+  Package: com.guardtalk.messenger
+  GAP: Messenger APK is not yet in-tree. This file installs to
+  product/etc/default-permissions/ and takes effect when a matching
+  system (or cert-matching) package with that name is present and
+  requests these permissions. Companion code path in
+  DefaultPermissionGrantPolicy also grants via grantIgnoringSystemPackage
+  when the package exists as a non-system install.
+
+  fixed=false — user-revocable; product grants at first boot / user create.
+-->
+<exceptions>
+    <exception package="com.guardtalk.messenger">
+        <permission name="android.permission.POST_NOTIFICATIONS" fixed="false"/>
+        <permission name="android.permission.RECORD_AUDIO" fixed="false"/>
+        <permission name="android.permission.CAMERA" fixed="false"/>
+        <permission name="android.permission.READ_CONTACTS" fixed="false"/>
+        <permission name="android.permission.WRITE_CONTACTS" fixed="false"/>
+        <permission name="android.permission.GET_ACCOUNTS" fixed="false"/>
+        <permission name="android.permission.READ_MEDIA_IMAGES" fixed="false"/>
+        <permission name="android.permission.READ_MEDIA_VIDEO" fixed="false"/>
+        <permission name="android.permission.READ_MEDIA_AUDIO" fixed="false"/>
+        <permission name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" fixed="false"/>
+        <permission name="android.permission.ACCESS_MEDIA_LOCATION" fixed="false"/>
+    </exception>
+</exceptions>

@@ -269,4 +269,187 @@
          (verified: no def_private_dns_* resource exists). -->
     <bool name="config_show_private_dns_settings">false</bool>
 
+    <!--
+      F-SEC-P1-SETTINGS-UI: Main Settings keep/hide matrix (overlayable bools).
+      Security homepage row order is owned by top_level_settings*.xml
+      (Security immediately after Apps). Network stays under Network & internet —
+      never under Security. See vendor/guardtalk/docs/SETTINGS_VISIBILITY_POLICY.md.
+
+      KEEP: network, apps, notifications, sound, priority_modes, display,
+            storage, battery, system, about_device, security, privacy
+      HIDE: connected_devices (above), wallpaper (empty picker pkg above),
+            safety_center, location, accounts, emergency (above),
+            accessibility (above)
+    -->
+    <bool name="config_use_guardtalk_security_dashboard">true</bool>
+    <bool name="config_show_top_level_security">true</bool>
+    <bool name="config_show_top_level_safety_center">false</bool>
+    <bool name="config_show_top_level_location">false</bool>
+    <bool name="config_show_top_level_accounts">false</bool>
+    <bool name="config_show_top_level_network">true</bool>
+    <bool name="config_show_top_level_apps">true</bool>
+    <bool name="config_show_top_level_notifications">true</bool>
+    <bool name="config_show_top_level_sound">true</bool>
+    <bool name="config_show_top_level_priority_modes">true</bool>
+    <bool name="config_show_top_level_display">true</bool>
+    <bool name="config_show_top_level_storage">true</bool>
+    <bool name="config_show_top_level_battery">true</bool>
+    <bool name="config_show_top_level_system">true</bool>
+    <bool name="config_show_top_level_about_device">true</bool>
+    <bool name="config_show_top_level_privacy">true</bool>
+
+    <!--
+      T-SEC-P1-DEVOPTS: About-phone keep/hide + Developer Options unlock block.
+      Build number stays visible; seven taps must NOT unlock Dev Options.
+      See vendor/guardtalk/docs/ABOUT_PHONE_DEVOPTS_POLICY.md.
+    -->
+    <bool name="config_show_about_build_number">true</bool>
+    <bool name="config_show_about_firmware_version">true</bool>
+    <bool name="config_show_about_battery_info">true</bool>
+    <bool name="config_guardtalk_block_developer_options_unlock">true</bool>
+
+    <!--
+      T-SEC-P2-LOCK: Password-only device lock.
+      PIN/pattern/biometric/Smart Lock enrollment blocked in Settings UI.
+      Server fail-closed via ro.guardtalk.password_only_lock.
+      See vendor/guardtalk/docs/PASSWORD_ONLY_LOCK_POLICY.md.
+    -->
+    <bool name="config_guardtalk_password_only_lock">true</bool>
+    <bool name="config_guardtalk_block_smart_lock">true</bool>
+    <bool name="config_guardtalk_block_biometric_enroll">true</bool>
+    <bool name="config_hide_none_security_option">true</bool>
+    <bool name="config_hide_swipe_security_option">true</bool>
+
+    <!--
+      T-SEC-P2-SENSOR: Mic/camera denied when locked + pre-first-unlock.
+      Lockdown fail-closed (sensors + network). No Lockdown QS tile.
+      Server: ro.guardtalk.sensor_privacy_when_locked / lockdown_fail_closed.
+      See vendor/guardtalk/docs/SENSOR_PRIVACY_LOCKDOWN_POLICY.md.
+    -->
+    <bool name="config_guardtalk_sensor_privacy_when_locked">true</bool>
+    <bool name="config_guardtalk_lockdown_fail_closed">true</bool>
+    <!--
+      T-SEC-P2-USB: USB data OFF when locked + pre-first-unlock (fail-closed).
+      Charging-only; no USB QS tile. Server: ro.guardtalk.usb_protection_fail_closed.
+      See vendor/guardtalk/docs/USB_PROTECTION_POLICY.md.
+    -->
+    <bool name="config_guardtalk_usb_protection_fail_closed">true</bool>
+    <!--
+      T-SEC-P2-AUTOREBOOT: Off/1h/2h/4h/8h profiles + exclusion windows.
+      No Auto-reboot QS tile (Phase 3). Server: ro.guardtalk.auto_reboot_profiles.
+      See vendor/guardtalk/docs/AUTO_REBOOT_POLICY.md.
+    -->
+    <bool name="config_guardtalk_auto_reboot_profiles">true</bool>
+    <!--
+      T-SEC-P2-WIPE: Shared SecureWipeEngine + Duress + HW-backed anti-bruteforce@10.
+      No Wipe/Duress QS tiles. Server: ro.guardtalk.secure_wipe_enabled.
+      See vendor/guardtalk/docs/SECURE_WIPE_SERVICE.md.
+    -->
+    <bool name="config_guardtalk_secure_wipe_enabled">true</bool>
+
+    <!--
+      F-SEC-P1-ABOUT-APPS: About phone keep/hide matrix.
+      KEEP: device_name, device_model, firmware, battery, build_number, uptime
+      HIDE: branded_account, wifi IP/MAC, manual, legal/safety/regulatory,
+            bt_address, device_feedback, fcc; SIM already false above.
+      NEVER set config_show_about_build_number=false.
+    -->
+    <bool name="config_show_device_name">true</bool>
+    <bool name="config_show_device_model">true</bool>
+    <bool name="config_show_branded_account_in_device_info">false</bool>
+    <bool name="config_show_wifi_ip_address">false</bool>
+    <bool name="config_show_wifi_mac_address">false</bool>
+    <bool name="config_show_manual">false</bool>
+    <bool name="config_show_about_legal_info">false</bool>
+    <bool name="config_show_about_safety_info">false</bool>
+    <bool name="config_show_regulatory_info">false</bool>
+    <bool name="config_show_about_bt_address">false</bool>
+    <bool name="config_show_about_uptime">true</bool>
+    <bool name="config_show_about_device_feedback">false</bool>
+    <bool name="config_show_about_fcc_equipment_id">false</bool>
+
+    <!--
+      F-SEC-P1-ABOUT-APPS: Apps menu keep/hide + Maintenance-gated Special access.
+      KEEP: All apps / See all / Default apps / Unused apps / App battery usage
+      HIDE: aspect ratio; cloned apps already off via config_cloned_apps_page_enabled
+      GATE: special_access requires GT Config maintenance session after password.
+    -->
+    <bool name="config_show_apps_default_apps">true</bool>
+    <bool name="config_show_apps_special_access">true</bool>
+    <bool name="config_show_apps_aspect_ratio">false</bool>
+    <bool name="config_show_apps_hibernated">true</bool>
+    <bool name="config_show_apps_battery_usage">true</bool>
+    <bool name="config_apps_special_access_requires_maintenance">true</bool>
+    <bool name="config_cloned_apps_page_enabled">false</bool>
+
+    <!--
+      F-SEC-P1-ABOUT-APPS: Network & internet keep/hide (NEVER under Security).
+      KEEP: Internet/Wi-Fi, Airplane, VPN
+      HIDE: Hotspot/tether, Data Saver, Private DNS, Adaptive connectivity
+      Mobile/Calls/SMS/Cellular already feature-gated by radio excision.
+    -->
+    <bool name="config_show_internet_settings">true</bool>
+    <bool name="config_show_wifi_settings">true</bool>
+    <bool name="config_show_toggle_airplane">true</bool>
+    <bool name="config_show_vpn_options">true</bool>
+    <bool name="config_show_wifi_hotspot_settings">false</bool>
+    <bool name="config_show_adaptive_connectivity">false</bool>
+    <!-- data_saver + private_dns already false above -->
+
+    <!--
+      T-SEC-P1-CONTACTS: Suppress Contacts / Contacts Storage from Settings
+      Apps lists, search, and Contacts storage preference. Packages stay
+      installed (see GUARDTALK_APPS_KEEP). Launcher hide is owned by
+      GuardTalkLauncherOverlay filtered_components.
+    -->
+    <bool name="config_guardtalk_hide_contacts_ui">true</bool>
+
+    <!--
+      F-SEC-P4-SYSTEM-UI: Notifications / Sound / Modes / Display / Storage /
+      Battery / System keep-hide matrices (UI hide only). Top-level categories
+      stay KEEP (true above). No network rows under Security.
+      See vendor/guardtalk/docs/SETTINGS_VISIBILITY_POLICY.md.
+
+      Notifications KEEP: app notifications, history, lock-screen controls
+      Notifications HIDE: bubbles, summarization, bundling (cloud/AI surfaces)
+      Sound KEEP: media / alarm / notification volumes + ringtones + UI sounds
+      Sound HIDE: call volume (radio excised — no telephony path)
+      Modes: top-level KEEP; stock Zen/Modes pages retained (no sub-hide)
+      Display KEEP: brightness, timeout, dark/night, rotation
+      Display HIDE: Wi‑Fi Display cast menu; smooth display; wallpaper (empty pkg)
+      Storage KEEP: dashboard; HIDE smart storage toggle
+      Battery KEEP: usage / saver; HIDE wireless-charging restrict row
+      System KEEP: languages, keyboards, date/time, gestures, updates, reset
+      System HIDE: assist/voice input, view logs (forensics surface)
+    -->
+    <bool name="config_show_notification_bubbles">false</bool>
+    <bool name="config_show_notification_summarization">false</bool>
+    <bool name="config_show_notification_bundling">false</bool>
+
+    <bool name="config_show_media_volume">true</bool>
+    <bool name="config_show_alarm_volume">true</bool>
+    <bool name="config_show_notification_volume">true</bool>
+    <bool name="config_show_notification_ringtone">true</bool>
+    <bool name="config_show_screen_locking_sounds">true</bool>
+    <bool name="config_show_charging_sounds">true</bool>
+    <bool name="config_show_touch_sounds">true</bool>
+    <bool name="config_show_call_volume">false</bool>
+
+    <bool name="config_show_wifi_display_enable_menu">false</bool>
+    <bool name="config_show_smooth_display">false</bool>
+
+    <bool name="config_show_smart_storage_toggle">false</bool>
+    <bool name="config_show_restrict_to_wireless_charging">false</bool>
+
+    <bool name="config_show_phone_language">true</bool>
+    <bool name="config_show_system_update_settings">true</bool>
+    <bool name="config_show_reset_dashboard">true</bool>
+    <bool name="config_show_assist_and_voice_input">false</bool>
+    <bool name="config_show_tts_settings_summary">false</bool>
+    <bool name="config_show_view_logs">false</bool>
+
+    <!-- Security mutations (lock/sensor/USB/lockdown/reboot/duress/wipe) require
+         main device password via GT Config gate before opening. -->
+    <bool name="config_security_mutations_require_password">true</bool>
+
 </resources>

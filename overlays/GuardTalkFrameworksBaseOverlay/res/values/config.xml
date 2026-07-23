@@ -29,4 +29,12 @@
          framework to override (verified: the GnssLocationProvider is gated on
          FEATURE_LOCATION_GPS at construction, so dropping the feature is
          sufficient); this entry documents the contract. -->
+
+    <!-- T-SEC-P5-HARDEN: default SYSTEM-user restriction — block unknown-source
+         installs at first-user creation. Defence-in-depth with
+         GuardTalkProductionHardeningPolicy.mustBlockUnknownSources() in
+         ComputerEngine (covers existing users + secondary profiles). -->
+    <string-array translatable="false" name="config_defaultFirstUserRestrictions">
+        <item>no_install_unknown_sources</item>
+    </string-array>
 </resources>

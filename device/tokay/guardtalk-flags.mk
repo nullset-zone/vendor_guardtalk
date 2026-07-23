@@ -1,5 +1,12 @@
 # Loaded first from device.mk so later inherits can branch on this flag.
 GUARDTALK_RADIO_EXCISED := true
+# T-PORT-SHARED-CORE (2026-07-04): per-device brand rebrand string consumed by
+# vendor/guardtalk/radio-excised/product-config-late.mk. Each GuardTalkOS
+# device sets its own value here; the late pass skips the rebrand when unset
+# (Law 9). This is the minimal-rebrand knob (T-BRAND-PROPS option "minimal"):
+# only Build.MODEL is overridden; *_FOR_ATTESTATION variants stay upstream so
+# Play Integrity / keymint attestation still matches the signed vendor image.
+GUARDTALK_PRODUCT_MODEL := GuardTalk Pixel 9
 # Wave 2 feature excision master gate. T-W2-I1-UI-APPS currently enables only
 # the non-HAL UI app removal (Browser + AppStore + Dialer) via apps-excised.mk.
 # Later increments (bt/nfc/fp/loc) wire their own <sub>-excised.mk files into

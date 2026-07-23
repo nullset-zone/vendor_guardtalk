@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- GuardTalkContactsIconOverlay — F-ICON-CONTACTS
+<!-- GuardTalkContactsIconOverlay — F-ICON-CONTACTS / F-SEC-P1-SETTINGS-UI /
+     T-SEC-P1-CONTACTS
      Static RRO on com.android.contacts that replaces the default AOSP Contacts
      launcher icon (adaptive + legacy raster) with the GuardTalkOS-themed glyph
      on the obsidian background.
+
+     Launcher UI hide (all-apps / drawer) is owned by GuardTalkLauncherOverlay
+     filtered_components → PeopleActivity. Settings/search hide is owned by
+     GuardTalkContactsVisibility. This overlay does NOT uninstall
+     Contacts / ContactsProvider (UI-only policy).
      Overrides:
        mipmap-anydpi-v26/ic_launcher.xml        -> adaptive (fg+bg PNG drawables)
        mipmap-anydpi-v26/ic_launcher_round.xml  -> adaptive (fg+bg PNG drawables)

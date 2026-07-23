@@ -1,0 +1,21 @@
+//
+// Copyright (C) 2026 The GuardTalkOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+// T-SEC-P4-PRIVACY — privacy_tmpfs init mount.
+// T-SEC-P5-HARDEN — production hardening sysctls.
+//
+
+prebuilt_etc {
+    name: "init.guardtalk.privacy_tmpfs.rc",
+    src: "init.guardtalk.privacy_tmpfs.rc",
+    sub_dir: "init",
+    filename_from_src: true,
+}
+
+prebuilt_etc {
+    name: "init.guardtalk.hardening.rc",
+    src: "init.guardtalk.hardening.rc",
+    sub_dir: "init",
+    filename_from_src: true,
+}

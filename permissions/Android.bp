@@ -1,0 +1,14 @@
+//
+// Copyright (C) 2026 The GuardTalkOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+// T-SEC-P4-PERMS — product default-permissions for GuardTalk Messenger.
+//
+
+prebuilt_etc {
+    name: "default-permissions-com.guardtalk.messenger",
+    product_specific: true,
+    sub_dir: "default-permissions",
+    src: "default-permissions-com.guardtalk.messenger.xml",
+    filename_from_src: true,
+}

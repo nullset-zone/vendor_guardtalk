@@ -16,7 +16,7 @@
 -->
 <favorites xmlns:launcher="http://schemas.android.com/apk/res-auto/com.android.launcher3">
 
-    <!-- Hotseat: GT Info (sole GuardTalk app; ensures non-empty usable home). -->
+    <!-- Hotseat: GT Info (kept visible — F-SEC-P1-SETTINGS-UI). -->
     <favorite
         launcher:container="-101"
         launcher:screen="0"
@@ -24,6 +24,15 @@
         launcher:y="0"
         launcher:packageName="com.guardtalk.validator"
         launcher:className="com.guardtalk.validator.ValidatorActivity" />
+
+    <!-- Hotseat: GT Config (F-SEC-P1-SETTINGS-UI — keep visible). -->
+    <favorite
+        launcher:container="-101"
+        launcher:screen="0"
+        launcher:x="1"
+        launcher:y="0"
+        launcher:packageName="com.guardtalk.config"
+        launcher:className="com.guardtalk.config.ConfigActivity" />
 
     <!-- Workspace screen 0: Settings (kept reachable from default home). -->
     <favorite

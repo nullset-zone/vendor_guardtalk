@@ -1,0 +1,14 @@
+# GuardTalk privacy_tmpfs (T-SEC-P4-PRIVACY)
+#
+# Mounts a RAM-backed tmpfs for sensitive ephemeral logs/cache. Contents do not
+# survive reboot. This .rc is PRODUCT_PACKAGES-gated (GuardTalk products only).
+# Property ro.guardtalk.privacy_tmpfs=1 documents intent / frontend status;
+# mount is unconditional when this script is present (fail-closed privacy).
+# Path must stay aligned with GuardTalkPrivacyPolicy.DEFAULT_PRIVACY_TMPFS_PATH.
+
+on init
+    mkdir /mnt/guardtalk_privacy 0700 root root
+    mount tmpfs tmpfs /mnt/guardtalk_privacy nosuid nodev noexec mode=0700,uid=0,gid=1000,size=64m
+    restorecon /mnt/guardtalk_privacy
+    mkdir /mnt/guardtalk_privacy/logs 0770 system system
+    mkdir /mnt/guardtalk_privacy/cache 0770 system system

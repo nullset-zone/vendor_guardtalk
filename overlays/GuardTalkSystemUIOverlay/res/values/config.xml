@@ -13,12 +13,9 @@
     <!-- T-W2-I3-NFC: NFC HAL excision grace layer for SystemUI.
          The NFC HAL feature-permission prebuilts are dropped in
          feature-excised/nfc-excised.mk so hasSystemFeature(FEATURE_NFC)
-         returns false; NfcTile.isAvailable() (NfcTile.java:103-110) already
-         short-circuits on the missing feature. These overlays are
-         defence-in-depth: they also strip `nfc` from the QS tile stock and
-         default lists so the tile is never even considered for auto-add and
-         no restore-from-backup path can re-instate it. Bluetooth, Location,
-         and all other tiles intentionally NOT touched (out of scope). -->
+         returns false; NfcTile.isAvailable() already short-circuits on the
+         missing feature. Overlay strips `nfc` from QS stock/default lists so
+         the tile is never considered for auto-add / restore-from-backup. -->
 
     <!-- T-BT-UI-SWEEP (FR-F §9): quick_settings_tiles_new_default with `bt`,
          `nfc`, and `hearing_devices` removed.
@@ -32,40 +29,26 @@
          LocalBluetoothAdapter.getInstance():74-83). Stripping it from the QS
          lists is defence-in-depth so it never appears in the QS editor or
          default slot and no restore-from-backup path can re-instate it (§11). -->
+    <!-- F-SEC-P3-QS-EDITOR: Mic / Camera / Battery Saver remain on default /
+         new_default panels (product baseline). Auto-reboot MUST NOT appear here
+         — catalog-only via quick_settings_tiles_stock. See QS_TILES_POLICY.md. -->
     <string name="quick_settings_tiles_new_default" translatable="false">
         internet,dnd,airplane,flashlight,rotation,alarm,screenrecord,battery,mictoggle,cameratoggle,location
     </string>
 
-    <!-- T-BT-UI-SWEEP (FR-F §9): quick_settings_tiles_stock with `bt`, `nfc`,
-         and `hearing_devices` removed.
-         Original (frameworks/base/packages/SystemUI/res/values/config.xml:122-124):
-         internet,bt,flashlight,dnd,modes_dnd,alarm,airplane,controls,wallet,
-         rotation,battery,batteryShare,cast,screenrecord,mictoggle,
-         cameratoggle,location,nfc,hotspot,inversion,saver,dark,work,night,
-         reverse,reduce_brightness,qr_code_scanner,onehanded,color_correction,
-         dream,font_scaling,record_issue,hearing_devices,notes,desktopeffects
-         This is the list that populates the QS *edit* panel (TileQueryHelper
-         .addCurrentAndStockTiles:100-116 and StockTilesRepository.stockTiles:38-
-         45). Stripping `hearing_devices` here means it cannot be re-added by the
-         user via the QS editor — satisfying §9 "no BT tile in the QS editor". -->
+    <!-- T-BT-UI-SWEEP + T-SEC-P3-QS + F-SEC-P3-QS-EDITOR:
+         Editor / catalog list (StockTilesRepository → EditTilesListInteractor).
+         Phase-3 GuardTalk tiles grouped for discoverability in edit mode:
+           battery (Battery Saver), mictoggle, cameratoggle, autoreboot
+         `saver` remains Data Saver (AOSP) — distinct from Battery Saver `battery`.
+         Forbidden tiles absent: lockdown, usb, wipe, duress.
+         bt / nfc / hearing_devices stripped (BT/NFC excision). -->
     <string name="quick_settings_tiles_stock" translatable="false">
-        internet,flashlight,dnd,modes_dnd,alarm,airplane,controls,wallet,rotation,battery,batteryShare,cast,screenrecord,mictoggle,cameratoggle,location,hotspot,inversion,saver,dark,work,night,reverse,reduce_brightness,qr_code_scanner,onehanded,color_correction,dream,font_scaling,record_issue,notes,desktopeffects
+        internet,flashlight,dnd,modes_dnd,alarm,airplane,controls,wallet,rotation,battery,mictoggle,cameratoggle,autoreboot,batteryShare,cast,screenrecord,location,hotspot,inversion,saver,dark,work,night,reverse,reduce_brightness,qr_code_scanner,onehanded,color_correction,dream,font_scaling,record_issue,notes,desktopeffects
     </string>
 
     <!-- T-BT-QS-TILE / T-BT-UI-SWEEP: quick_settings_tiles_default with `bt`
-         removed.
-         Original (frameworks/base/packages/SystemUI/res/values/config.xml:104-106):
-         internet,bt,flashlight,dnd,alarm,airplane,controls,wallet,rotation,
-         battery,cast,screenrecord,mictoggle,cameratoggle,custom(com.android.
-         permissioncontroller/.permission.service.v33.SafetyCenterQsTileService)
-         `nfc` and `hearing_devices` are not in this list so only `bt` is
-         stripped. This is the third QS tile list (the default tiles shown on
-         first boot / after reset) and was the gap left by T-W2-I3-NFC +
-         T-W2-I4-BT, which only overrode quick_settings_tiles_new_default and
-         quick_settings_tiles_stock above. BluetoothTile.isAvailable() already
-         short-circuits on the missing FEATURE_BLUETOOTH, but this overlay is
-         defence-in-depth so the tile is never even considered for the default
-         slot and no restore-from-backup path can re-instate it (§11). -->
+         removed. F-SEC-P3-QS-EDITOR: no `autoreboot` on first-boot / reset panel. -->
     <string name="quick_settings_tiles_default" translatable="false">
         internet,flashlight,dnd,alarm,airplane,controls,wallet,rotation,battery,cast,screenrecord,mictoggle,cameratoggle,custom(com.android.permissioncontroller/.permission.service.v33.SafetyCenterQsTileService)
     </string>

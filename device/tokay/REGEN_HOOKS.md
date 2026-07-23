@@ -1,5 +1,10 @@
 # Re-apply after `adevtool generate-all -d tokay`
 
+> **T-PORT-SHARED-CORE (2026-07-04):** the device-agnostic add-a-device
+> recipe now lives at `vendor/guardtalk/device/REGEN_HOOKS.md`. The steps
+> below are the tokay-specific instance of that recipe — keep them in sync
+> with the template when the shared recipe changes.
+
 Add to **end** of `vendor/google_devices/tokay/BoardConfig.mk`:
 
 ```makefile

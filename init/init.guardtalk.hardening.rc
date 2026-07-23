@@ -1,0 +1,31 @@
+# GuardTalk production hardening sysctls (T-SEC-P5-HARDEN)
+#
+# Applied when PRODUCT_PACKAGES includes this .rc (GuardTalk products only).
+# Property ro.guardtalk.sysctl_hardening=1 documents intent / Security status.
+#
+# Intentionally NOT set here (would brick or break Pixel bring-up):
+#   - kernel.modules_disabled=1  (vendor_dlkm / late module loads)
+#   - debugfs unmount forks      (GrapheneOS/AOSP sepolicy already restricts)
+#
+# Fail-soft: if a write is denied by sepolicy/kernel, init logs and continues.
+
+on late-init
+    # Hide kernel pointers from unprivileged readers.
+    write /proc/sys/kernel/kptr_restrict 2
+    # Restrict dmesg to CAP_SYSLOG.
+    write /proc/sys/kernel/dmesg_restrict 1
+    # Yama: ptrace only of descendants (1). Scope 2 can break debugger tooling
+    # on userdebug; production user builds still benefit from 1 + no adbd root.
+    write /proc/sys/kernel/yama/ptrace_scope 1
+    # Block new kexec image loads after boot.
+    write /proc/sys/kernel/kexec_load_disabled 1
+    # Perf: deny unprivileged perf_event_open.
+    write /proc/sys/kernel/perf_event_paranoid 3
+
+on property:ro.guardtalk.sysctl_hardening=1 && property:sys.boot_completed=1
+    # Re-assert after boot in case early writers relaxed values.
+    write /proc/sys/kernel/kptr_restrict 2
+    write /proc/sys/kernel/dmesg_restrict 1
+    write /proc/sys/kernel/yama/ptrace_scope 1
+    write /proc/sys/kernel/kexec_load_disabled 1
+    write /proc/sys/kernel/perf_event_paranoid 3

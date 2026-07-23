@@ -1,29 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- GuardTalk default workspace override — F-HOME-ONLY
+<!-- GuardTalk default workspace override — F-HOME-ONLY / F-SEC-P1-SETTINGS-UI
      Overrides com.android.launcher3 R.xml.default_workspace_5x5.
 
      §9 Acceptance: first boot / factory reset → ONLY GuardTalk icon(s)
      on the default home screen + hotseat. No other default favorites.
 
-     F-HOME-ONLY change: the Settings workspace favorite has been REMOVED
-     so the home screen shows ONLY GT Info. Settings remains reachable via
-     the all-apps drawer (it is still installed as a system app). This
-     satisfies the brief requirement "home must show ONLY GT Info".
+     F-HOME-ONLY: Settings workspace favorite removed (reachable via all-apps).
+     F-SEC-P1-SETTINGS-UI: keep GT Info + GT Config pinned; Contacts hidden
+     via filtered_components (not pinned; AppFilter excludes PeopleActivity).
 
      §11: no pinned-but-missing icons (excised apps not referenced);
-          launcher remains usable (GT Info pinned in hotseat).
+          launcher remains usable (GT Info + GT Config in hotseat).
 
      Pinned inventory (exhaustive):
-       Hotseat screen 0: GT Info (com.guardtalk.validator/.ValidatorActivity)
-                         — the sole pinned app; the only GuardTalk
-                           launcher app currently shipped.
+       Hotseat screen 0 x=0: GT Info (com.guardtalk.validator/.ValidatorActivity)
+       Hotseat screen 0 x=1: GT Config (com.guardtalk.config/.ConfigActivity)
 
      Excised apps NOT pinned (T-RM-APPS dependency): Auditor,
      ExactCalculator, InfoApp, Messaging, Dialer, TrichromeChrome, AppStore.
 -->
 <favorites xmlns:launcher="http://schemas.android.com/apk/res-auto/com.android.launcher3">
 
-    <!-- Hotseat: GT Info (sole GuardTalk app; ensures non-empty usable home). -->
+    <!-- Hotseat: GT Info (kept visible — F-SEC-P1-SETTINGS-UI). -->
     <favorite
         launcher:container="-101"
         launcher:screen="0"
@@ -31,5 +29,14 @@
         launcher:y="0"
         launcher:packageName="com.guardtalk.validator"
         launcher:className="com.guardtalk.validator.ValidatorActivity" />
+
+    <!-- Hotseat: GT Config (F-SEC-P1-SETTINGS-UI — keep visible). -->
+    <favorite
+        launcher:container="-101"
+        launcher:screen="0"
+        launcher:x="1"
+        launcher:y="0"
+        launcher:packageName="com.guardtalk.config"
+        launcher:className="com.guardtalk.config.ConfigActivity" />
 
 </favorites>

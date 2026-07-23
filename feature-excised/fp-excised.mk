@@ -1,9 +1,34 @@
-# T-W2-I2-FP — 5-layer graceful excision of the fingerprint HAL.
+# T-PORT-SHARED-CORE-FIX — 5-layer graceful excision of the fingerprint HAL.
 #
-# Scope: Qualcomm QFP fingerprint HAL (android.hardware.biometrics.fingerprint),
-# the qfp-daemon vendor service, its VINTF fragment, the feature-permission XML,
-# the dump tooling, and the fingerprint init .rc files. SetupWizard2 fingerprint
-# enrollment step is handled in packages/apps/SetupWizard2 (source edit).
+# Scope: BOTH the Qualcomm QFP fingerprint HAL AND the Goodix fingerprint HAL,
+# covering every fingerprint HAL family present in the supported Pixel line-up.
+#   - QFP family (tokay, caiman): android.hardware.biometrics.fingerprint-V3-ndk.
+#            vendor, the qfp-daemon vendor service, its VINTF fragment, the
+#            feature-permission XML, the dump tooling, and the qfp-daemon /
+#            init.fingerprint.dump init .rc files.
+#   - Goodix family (akita, rango,    android.hardware.biometrics.fingerprint-
+#     tegu):                                service.goodix AIDL service,
+#                                            libvendor.goodix.hardware.
+#                                            biometrics.fingerprint@2.1, the
+#                                            rango-specific goodixfingerprint /
+#                                            goodix_sfps_suez / goodixbinderservice-
+#                                            aidl-V1-ndk blobs, the Goodix VINTF
+#                                            fragment, and the fingerprint-goodix.rc
+#                                            init file.
+# SetupWizard2 fingerprint enrollment step is handled in packages/apps/SetupWizard2
+# (source edit).
+#
+# Rationale: the original filter was QFP-only. akita (zuma), rango (laguna), and
+# tegu (zuma) all use the Goodix fingerprint HAL, NOT QFP (verified in
+# vendor/adevtool/vendor-skels/google_devices/{akita,rango,tegu}/). On those
+# devices the QFP-only filter was a silent no-op → fingerprint feature was not
+# actually removed → feature parity with tokay was broken. This fix extends
+# every layer to catch both HAL families. (Note: caiman is QFP, not Goodix as
+# the dispatch brief claimed — verified caiman.mk has qfp-daemon, libqfp-service,
+# qfp-daemon.rc and NO goodix tokens; surface for Architect.) filter-out is
+# idempotent and device-agnostic: a package that is not present on the building
+# device is simply not matched, so filtering both QFP and Goodix unconditionally
+# is safe on every device.
 #
 # Pattern: same late product-config filter-out as apps-excised.mk and
 # radio-excised/remove-packages.mk. Idempotent and order-independent.
@@ -13,7 +38,10 @@
 # HAL package (com.android.hardware.biometrics.face.virtual). Dropping it would
 # break the face subsystem, which is OUT OF SCOPE for this increment
 # (task: "Do NOT touch Bluetooth/NFC/Location" — face is similarly reserved).
-# Only fingerprint-named packages are removed.
+# Only fingerprint-named packages are removed. The Goodix findstrings below are
+# scoped to fingerprint-only tokens (vendor.goodix.hardware.biometrics.fingerprint,
+# fingerprint-service.goodix, goodixfingerprint, goodix_sfps, goodixbinderservice)
+# so they cannot accidentally hit a hypothetical non-fingerprint Goodix package.
 #
 # CRITICAL INVARIANT: ro.build.fingerprint (a build property referenced by
 # init.zumapro.board.rc:523-524) is UNRELATED to the fingerprint HAL and MUST
@@ -30,7 +58,12 @@ GUARDTALK_FP_PACKAGES := \
     com.google.hardware.biometrics.fingerprint.fingerprint-ext-V2-ndk \
     vendor.qti.hardware.fingerprint.aidl-V1-ndk \
     dump_fingerprint \
-    qfp-daemon
+    qfp-daemon \
+    android.hardware.biometrics.fingerprint-service.goodix \
+    libvendor.goodix.hardware.biometrics.fingerprint@2.1 \
+    goodixfingerprint \
+    goodix_sfps_suez \
+    goodixbinderservice-aidl-V1-ndk
 
 # Defence-in-depth: catch any other fingerprint-named packages that a future
 # adevtool regen might slide into PRODUCT_PACKAGES. The wildcard match is
@@ -45,7 +78,13 @@ $(or \
   $(findstring vendor.qti.hardware.fingerprint,$(1)), \
   $(findstring dump_fingerprint,$(1)), \
   $(findstring qfp-daemon,$(1)), \
-  $(findstring android.hardware.fingerprint.prebuilt,$(1)))
+  $(findstring android.hardware.fingerprint.prebuilt,$(1)), \
+  $(findstring vendor.goodix.hardware.biometrics.fingerprint,$(1)), \
+  $(findstring fingerprint-service.goodix,$(1)), \
+  $(findstring libvendor.goodix.hardware.biometrics.fingerprint,$(1)), \
+  $(findstring goodixfingerprint,$(1)), \
+  $(findstring goodix_sfps,$(1)), \
+  $(findstring goodixbinderservice,$(1)))
 endef
 
 # Packages that must NEVER be dropped by this filter. Listed explicitly so the
@@ -80,29 +119,48 @@ PRODUCT_PACKAGES += $(filter $(GUARDTALK_FP_KEEP),$(GUARDTALK_FP_PACKAGES))
 # ---------------------------------------------------------------------------
 # Layer 3 — VINTF fragment layer: remove fingerprint HAL from vendor manifest.
 # ---------------------------------------------------------------------------
-# The qfp-daemon VINTF fragment (adevtool_vintf_fragment_vendor_qfp-daemon.xml)
-# declares android.hardware.biometrics.fingerprint IFingerprint/default and
-# vendor.qti.hardware.fingerprint IQfpExtendedFingerprint/default to the vendor
-# manifest. Dropping the fragment module from PRODUCT_PACKAGES (Layer 1 above
-# via the wildcard, plus explicit listing of qfp-daemon covers the binary; the
-# fragment is dropped explicitly here) removes the HAL declaration so libvintf
-# compatibility checks no longer expect a fingerprint HAL to be running.
+# Two fingerprint VINTF fragments exist across the supported Pixel family:
+#   - QFP (tokay):     adevtool_vintf_fragment_vendor_qfp-daemon.xml
+#                      declares android.hardware.biometrics.fingerprint
+#                      IFingerprint/default AND vendor.qti.hardware.fingerprint
+#                      IQfpExtendedFingerprint/default.
+#   - Goodix (akita,  adevtool_vintf_fragment_vendor_fingerprint-goodix.xml
+#     rango, tegu):   declares android.hardware.biometrics.fingerprint
+#                     IFingerprint/default AND vendor.goodix.hardware.
+#                     biometrics.fingerprint IGoodixFingerprintDaemon/default.
+# Dropping both fragment modules from PRODUCT_PACKAGES (Layer 1 above via the
+# wildcard, plus the explicit filter-out here) removes the HAL declaration so
+# libvintf compatibility checks no longer expect a fingerprint HAL to be running
+# on either QFP or Goodix devices. filter-out is idempotent: a fragment not
+# present on the building device is simply not matched.
 PRODUCT_PACKAGES := $(filter-out \
-    adevtool_vintf_fragment_vendor_qfp-daemon.xml,$(PRODUCT_PACKAGES))
+    adevtool_vintf_fragment_vendor_qfp-daemon.xml \
+    adevtool_vintf_fragment_vendor_fingerprint-goodix.xml,$(PRODUCT_PACKAGES))
 
 # ---------------------------------------------------------------------------
 # Layer 4 — init .rc layer: remove fingerprint service init lines.
 # ---------------------------------------------------------------------------
-# The fingerprint HAL service is started by qfp-daemon.rc (service qfp-daemon
-# /vendor/bin/hw/qfp-daemon, interface aidl android.hardware.biometrics.fingerprint).
-# init.fingerprint.dump.rc creates the /data/vendor/tombstones/fingerprint dir.
-# Both are copied into vendor/etc/init via PRODUCT_COPY_FILES in tokay.mk
-# (lines 1708 and 1737). Filter them out of PRODUCT_COPY_FILES so init never
-# loads the fingerprint service definitions.
+# Two fingerprint init .rc families exist across the supported Pixel family:
+#   - QFP (tokay):   qfp-daemon.rc (service qfp-daemon /vendor/bin/hw/qfp-daemon,
+#                    interface aidl android.hardware.biometrics.fingerprint) and
+#                    init.fingerprint.dump.rc (creates /data/vendor/tombstones/
+#                    fingerprint). Both copied into vendor/etc/init via
+#                    PRODUCT_COPY_FILES in tokay.mk (lines 1708 and 1737).
+#   - Goodix         fingerprint-goodix.rc (service for the
+#     (akita/rango/   android.hardware.biometrics.fingerprint-service.goodix
+#     tegu):          AIDL HAL). Copied into vendor/etc/init via
+#                    PRODUCT_COPY_FILES in akita.mk:1640 / tegu.mk:1671 /
+#                    rango.mk:1730 (verified exact name — do NOT guess
+#                    init.goodix.fp.rc / init.fingerprint.goodix.rc; the actual
+#                    file is fingerprint-goodix.rc).
+# Filter them out of PRODUCT_COPY_FILES so init never loads any fingerprint
+# service definitions on either QFP or Goodix devices. filter-out is idempotent
+# (an .rc not present on the building device is simply not matched).
 define _gt-fp-copy-file-drop
 $(or \
   $(findstring init.fingerprint.dump.rc,$(1)), \
-  $(findstring qfp-daemon.rc,$(1)))
+  $(findstring qfp-daemon.rc,$(1)), \
+  $(findstring fingerprint-goodix.rc,$(1)))
 endef
 
 _gt_fp_filtered_copy_files :=
