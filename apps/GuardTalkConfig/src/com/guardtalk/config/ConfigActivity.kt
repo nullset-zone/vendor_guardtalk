@@ -1,7 +1,10 @@
 package com.guardtalk.config
 
 import android.app.Activity
+import android.app.KeyguardManager
 import android.content.Intent
+import android.guardtalk.GuardTalkConfigGateManager
+import android.guardtalk.GuardTalkConfigMutations
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.view.View
@@ -13,18 +16,17 @@ import android.widget.Toast
 /**
  * Main UI for GuardTalkConfig.
  *
+ * <p>Browse/UI is ungated. Applying a payload requires a GT Config password
+ * session ({@code gt_config_write}) — fail-closed (T-SEC-ACTIVATE).
+ *
  * Flow:
  *   1. "Scan Configuration QR" → launches the ZXing scanner (via
  *      [QrScannerFragment]); if no scanner is installed, the UI flips to the
  *      manual-paste path so QA / adb can still drive the flow.
- *   2. "Apply" → [QrPayloadParser.parse] (Ed25519 verify) → [ConfigApplier.apply].
+ *   2. "Apply" → confirm device credential if needed → [QrPayloadParser.parse]
+ *      (Ed25519 verify) → [ConfigApplier.apply].
  *   3. Result is shown in a scrollable text view; success/failure is also
  *      surfaced as a Toast.
- *
- * The activity is also a [android.content.Intent.ACTION_SEND] receiver for
- * `text/plain`, so an operator can share a QR string (or `adb shell am
- * start -a android.intent.action.SEND -t text/plain --es android.intent.extra.TEXT '<qr>' -n com.guardtalk.config/.ConfigActivity`)
- * and have it dropped straight into the apply path.
  */
 class ConfigActivity : Activity(), QrScannerFragment.Callback {
 
@@ -33,6 +35,9 @@ class ConfigActivity : Activity(), QrScannerFragment.Callback {
     private lateinit var applyBtn: Button
     private lateinit var pasteField: EditText
     private lateinit var scanner: QrScannerFragment
+
+    /** Pending raw payload waiting for credential confirm → session → apply. */
+    private var pendingApplyRaw: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,11 +59,15 @@ class ConfigActivity : Activity(), QrScannerFragment.Callback {
         scanBtn.setOnClickListener { scanner.startScan() }
         applyBtn.setOnClickListener { onApply(pasteField.text.toString()) }
 
+        refreshBrowseStatus()
+
         // ACTION_SEND shortcut: drop shared text straight into the apply path.
         val sharedText = intent?.takeIf { it.action == Intent.ACTION_SEND }
             ?.let { it.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString() }
         if (!sharedText.isNullOrBlank()) {
             pasteField.setText(sharedText)
+            pasteField.visibility = View.VISIBLE
+            applyBtn.visibility = View.VISIBLE
             onApply(sharedText)
         }
     }
@@ -84,7 +93,64 @@ class ConfigActivity : Activity(), QrScannerFragment.Callback {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Keep post-unlock / session messaging honest without forcing Apply.
+        if (pasteField.text.isNullOrBlank() && pendingApplyRaw == null) {
+            refreshBrowseStatus()
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == REQUEST_CONFIRM_FOR_WRITE) {
+            val raw = pendingApplyRaw
+            pendingApplyRaw = null
+            if (resultCode != RESULT_OK || raw.isNullOrBlank()) {
+                statusView.text = getString(R.string.write_denied)
+                Toast.makeText(this, R.string.write_denied_toast, Toast.LENGTH_LONG).show()
+                return
+            }
+            val opened = GuardTalkConfigGateManager.onDeviceCredentialConfirmed(this)
+            if (!opened) {
+                statusView.text = getString(R.string.write_denied)
+                Toast.makeText(this, R.string.write_denied_toast, Toast.LENGTH_LONG).show()
+                return
+            }
+            applyAuthorized(raw)
+            return
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
     private fun onApply(raw: String) {
+        if (raw.isBlank()) {
+            return
+        }
+        if (isWriteAuthorized()) {
+            applyAuthorized(raw)
+            return
+        }
+        // Fail-closed until password session opens.
+        val km = getSystemService(KeyguardManager::class.java)
+        if (km == null || !km.isDeviceSecure) {
+            statusView.text = getString(R.string.write_denied)
+            Toast.makeText(this, R.string.write_denied_toast, Toast.LENGTH_LONG).show()
+            return
+        }
+        val confirm = km.createConfirmDeviceCredentialIntent(
+            getString(R.string.app_name),
+            getString(R.string.write_confirm_details)
+        )
+        if (confirm == null) {
+            statusView.text = getString(R.string.write_denied)
+            Toast.makeText(this, R.string.write_denied_toast, Toast.LENGTH_LONG).show()
+            return
+        }
+        pendingApplyRaw = raw
+        startActivityForResult(confirm, REQUEST_CONFIRM_FOR_WRITE)
+    }
+
+    private fun applyAuthorized(raw: String) {
         val payload = try {
             QrPayloadParser.parse(raw)
         } catch (e: Exception) {
@@ -104,7 +170,23 @@ class ConfigActivity : Activity(), QrScannerFragment.Callback {
         ).show()
     }
 
+    private fun refreshBrowseStatus() {
+        statusView.text = if (isWriteAuthorized()) {
+            getString(R.string.browse_ready_authorized)
+        } else {
+            getString(R.string.browse_ready_locked)
+        }
+    }
+
+    private fun isWriteAuthorized(): Boolean {
+        return GuardTalkConfigGateManager.isMutationAuthorized(
+            userId,
+            GuardTalkConfigMutations.GT_CONFIG_WRITE
+        )
+    }
+
     companion object {
         private const val TAG_SCANNER = "qr_scanner"
+        private const val REQUEST_CONFIRM_FOR_WRITE = 7602
     }
 }

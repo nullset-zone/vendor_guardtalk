@@ -39,11 +39,14 @@ scope** (Phase 2 / `T-SEC-P2-WIPE`).
 6. Unauthorized ⇒ SecurityException / false (fail-closed)
 ```
 
-### Security dashboard mutations (`F-SEC-P4-SYSTEM-UI`)
+### Security dashboard mutations (`F-SEC-P4-SYSTEM-UI` / `T-SEC-ACTIVATE`)
 
 When overlay `config_security_mutations_require_password=true`,
 `GuardTalkSecurityDashboardFragment` gates these rows behind the same
-confirm→session flow (mutation keys below):
+confirm→session flow (mutation keys below). **Browsing** the Security
+dashboard, status, anti-bruteforce, and GT Info does **not** require a
+password. Credential OK without a successful session open is fail-closed
+(`GuardTalkConfigGateClient.wasSessionOpened()`).
 
 | Preference key | Mutation key |
 |----------------|--------------|
@@ -54,9 +57,15 @@ confirm→session flow (mutation keys below):
 | `guardtalk_security_auto_reboot` | `security_auto_reboot` |
 | `guardtalk_security_duress` | `security_duress_config` |
 | `guardtalk_security_secure_wipe` | `security_secure_wipe` |
-| `guardtalk_gt_config` | `gt_config_write` (launch) |
+| `guardtalk_gt_config` | `gt_config_write` (Settings launch when mutations require password) |
+
+**Writes:** `com.guardtalk.config.ConfigApplier` asserts `gt_config_write`
+before applying any payload. `ConfigActivity` may confirm the device
+credential and open a session when Apply is pressed without an active
+session. Browse/UI of ConfigActivity is ungated; Apply is fail-closed.
 
 Status rows remain read-only (no gate). Network controls must never appear.
+See also `SECURITY_ACTIVATION_DIAGNOSIS.md`.
 
 ### Request code
 

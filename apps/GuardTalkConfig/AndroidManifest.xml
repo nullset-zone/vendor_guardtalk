@@ -28,6 +28,9 @@
     <uses-permission android:name="android.permission.MANAGE_DEVICE_POLICY_WIFI" />
     <uses-permission android:name="android.permission.MANAGE_USERS" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- T-SUW-LOCK-APPLY: LockPatternUtils.setLockCredential (password-only) -->
+    <uses-permission android:name="android.permission.SET_AND_VERIFY_LOCKSCREEN_CREDENTIALS" />
+    <uses-permission android:name="android.permission.SET_INITIAL_LOCK" />
 
     <!-- IKEv2/IPsec VPN profile provisioning (Ikev2VpnProfile.Builder
          @RequiresFeature). Optional so the app still installs on devices

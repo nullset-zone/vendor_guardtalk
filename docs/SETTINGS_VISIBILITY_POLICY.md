@@ -120,9 +120,22 @@ Battery / System remain **KEEP**. Sub-item matrices (overlayable bools):
 | Item | Config bool | Overlay |
 |------|-------------|---------|
 | Languages / updates / reset | `config_show_phone_language`, `*_system_update_*`, `*_reset_*` | **true** |
+| Gestures (`gesture_settings`) | `config_show_gesture_settings` | **false** |
 | Assist & voice input | `config_show_assist_and_voice_input` | **false** |
 | TTS summary | `config_show_tts_settings_summary` | **false** |
 | View logs | `config_show_view_logs` | **false** |
+
+### Privacy — Backup (`F-SYS-HIDE-GESTURE-BACKUP`)
+
+| Item | Config bool | Overlay |
+|------|-------------|---------|
+| Backup data / configure / auto-restore / inactive / management | `config_show_backup_settings` | **false** |
+| `UserBackupSettingsActivity` search raw index | same bool (search gate) | **false** |
+
+Hide = UI + Settings search only. BackupManager / transport services / APKs stay installed.
+Gestures: `GesturesSettingPreferenceController` + gesture `@SearchIndexable` pages gate on
+`config_show_gesture_settings`. Backup: `PrivacySettingsUtils.getInvisibleKey` + related
+controllers / search providers gate on `config_show_backup_settings`.
 
 ### Security mutations password UX
 

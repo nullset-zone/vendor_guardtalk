@@ -71,9 +71,17 @@ Dev Options unlock block stays `true`. Never set `config_show_about_build_number
 **Display HIDE:** Wi‑Fi Display, smooth display (wallpaper already empty pkg)  
 **Storage HIDE:** smart storage toggle  
 **Battery HIDE:** wireless-charging restrict  
-**System HIDE:** assist/voice input, TTS summary, view logs  
+**System HIDE:** gestures (`config_show_gesture_settings`), assist/voice input,
+TTS summary, view logs  
+**Privacy HIDE:** backup (`config_show_backup_settings` — `backup_data` + related)  
 **Security:** `config_security_mutations_require_password=true` — mutation rows
 require main password via GT Config gate. No network under Security.
+
+### F-SYS-HIDE-GESTURE-BACKUP
+
+- `config_show_gesture_settings=false` — System → Gestures + gesture search pages
+- `config_show_backup_settings=false` — Privacy backup_* rows + Backup search index
+- Hide ≠ delete BackupManager / gesture services / APKs
 
 **API docs:** `SETTINGS_VISIBILITY_POLICY.md`, `FILES_UI_NOTES.md`,
 `GT_CONFIG_PASSWORD_GATE_API.md`

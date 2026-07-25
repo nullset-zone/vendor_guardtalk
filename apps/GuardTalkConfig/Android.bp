@@ -28,7 +28,8 @@ android_app {
     srcs: ["src/**/*.kt"],
     resource_dirs: ["res"],
     manifest: "AndroidManifest.xml",
-    sdk_version: "system_current",
+    // platform_apis: access @hide GuardTalkConfigGateManager for write authorize.
+    platform_apis: true,
     certificate: "platform",
     privileged: true,
     system_ext_specific: true,

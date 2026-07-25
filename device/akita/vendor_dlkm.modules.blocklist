@@ -1,0 +1,26 @@
+# GuardTalkOS — akita (zuma / akita-kernels) vendor_dlkm modules blocklist.
+#
+# T-PORT-AKITA-LAYER: REPLACES upstream
+# device/google/akita-kernels/6.1/grapheneos/vendor_dlkm.modules.blocklist
+# via BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE in
+# vendor/guardtalk/device/akita/BoardConfig-excised-late.mk.
+#
+# Baseline: akita-kernels grapheneos channel (bcmdhd4383, goodix_brl_touch).
+# Do NOT use the tokay/caimito shared blocklist (bcmdhd4390 / sec_touch / etc.).
+#
+# GuardTalk addition: blocklist nitrous (BCM BT power/rfkill; present in
+# vendor_dlkm.modules.load). WiFi two-phase load (blocklist + init.insmod
+# re-modprobe) preserved verbatim from upstream.
+
+blocklist aoc_unit_test_dev
+blocklist mali_kutf
+blocklist mali_kutf_clk_rate_trace_test_portal
+blocklist sscoredump_sample_test.ko
+blocklist sscoredump_test.ko
+
+blocklist bcmdhd4383
+blocklist cs40l26_i2c
+blocklist goodix_brl_touch
+
+# T-BT-FULL (FR-3): Bluetooth power/rfkill — nitrous.ko on akita vendor_dlkm.
+blocklist nitrous

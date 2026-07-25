@@ -1,20 +1,40 @@
 #!/usr/bin/env bash
 # =============================================================================
-# GuardTalkOS tokay (Pixel 9) — remote flash script
-# Pulls images from the build server and flashes them to the device via fastboot.
+# GuardTalkOS — remote flash script (multi-device)
+# Pulls images from the build server and flashes them via fastboot.
+#
+# Auto-detects the plugged device (fastboot `product` or adb `ro.product.device`)
+# and selects the matching desktop-flash bundle on the build host:
+#   tokay (Pixel 9)  → releases/desktop-flash/latest
+#   akita (Pixel 8a) → releases/desktop-flash/akita-latest
+#
+# If the phone is booted into Android (adb state=device) — or recovery —
+# the script reboots it into the bootloader (fastboot) automatically.
+#
+# Overrides (optional):
+#   DEVICE=tokay|akita
+#   REMOTE_BUILD_DIR=...   REMOTE_KEY_DIR=...
+#   REMOTE_HOST=...        REMOTE_TREE=...
 # =============================================================================
 set -euo pipefail
 
 # -----------------------------------------------------------------------------
-# Configuration — EDIT THESE
+# Configuration
 # -----------------------------------------------------------------------------
 REMOTE_HOST="${REMOTE_HOST:-openstatestack@192.168.1.4}"
-REMOTE_BUILD_DIR="${REMOTE_BUILD_DIR:-/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/target/product/tokay}"
-REMOTE_KEY_DIR="${REMOTE_KEY_DIR:-/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/keys/tokay}"
+REMOTE_TREE="${REMOTE_TREE:-/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree}"
+
+# Empty = auto from plugged device (or DEVICE=). Explicit env wins.
+REMOTE_BUILD_DIR="${REMOTE_BUILD_DIR:-}"
+REMOTE_KEY_DIR="${REMOTE_KEY_DIR:-}"
+DEVICE="${DEVICE:-}"   # optional: tokay | akita
 
 LOCAL_WORK_DIR="${LOCAL_WORK_DIR:-.}"
 
 FASTBOOT="${FASTBOOT:-fastboot}"
+ADB="${ADB:-adb}"
+# Seconds to wait after adb reboot bootloader before giving up
+FASTBOOT_WAIT_SECS="${FASTBOOT_WAIT_SECS:-60}"
 
 # -----------------------------------------------------------------------------
 # Images to download
@@ -35,10 +55,154 @@ warn() { echo "[flash] WARNING: $*" >&2; }
 die()  { echo "[flash] FATAL: $*" >&2; exit 1; }
 step() { echo ""; echo "=== $* ==="; }
 
+# Normalize fastboot/adb product string → GuardTalk flash codename.
+normalize_device() {
+    local raw="${1:-}"
+    raw="$(echo "$raw" | tr '[:upper:]' '[:lower:]' | tr -d '\r')"
+    case "$raw" in
+        tokay) echo "tokay" ;;
+        akita) echo "akita" ;;
+        *) echo "" ;;
+    esac
+}
+
+device_pretty() {
+    case "$1" in
+        tokay) echo "Pixel 9 (tokay)" ;;
+        akita) echo "Pixel 8a (akita)" ;;
+        *) echo "$1" ;;
+    esac
+}
+
+# Set REMOTE_BUILD_DIR / REMOTE_KEY_DIR from codename unless already set.
+apply_remote_paths() {
+    local codename="$1"
+    local auto_build auto_key
+    case "$codename" in
+        tokay)
+            auto_build="${REMOTE_TREE}/releases/desktop-flash/latest"
+            auto_key="${REMOTE_TREE}/releases/desktop-flash/latest"
+            ;;
+        akita)
+            auto_build="${REMOTE_TREE}/releases/desktop-flash/akita-latest"
+            auto_key="${REMOTE_TREE}/releases/desktop-flash/akita-latest"
+            ;;
+        *)
+            die "Unsupported device codename '$codename' (supported: tokay, akita)"
+            ;;
+    esac
+    if [[ -z "$REMOTE_BUILD_DIR" ]]; then
+        REMOTE_BUILD_DIR="$auto_build"
+    else
+        log "REMOTE_BUILD_DIR override in effect: $REMOTE_BUILD_DIR"
+    fi
+    if [[ -z "$REMOTE_KEY_DIR" ]]; then
+        REMOTE_KEY_DIR="$auto_key"
+    else
+        log "REMOTE_KEY_DIR override in effect: $REMOTE_KEY_DIR"
+    fi
+}
+
+# Read product from fastboot (stderr: "product: tokay") or adb.
+detect_product_fastboot() {
+    "$FASTBOOT" getvar product 2>&1 | grep -m1 '^product:' | awk '{print $2}' | tr -d '\r' || true
+}
+
+detect_product_adb() {
+    if ! command -v "$ADB" >/dev/null 2>&1; then
+        return 0
+    fi
+    "$ADB" shell getprop ro.product.device 2>/dev/null | tr -d '\r' || true
+}
+
+# First line from `adb devices` that looks like a transport (skip header/empty).
+# Prints: "<serial>\t<state>" or empty.
+adb_first_transport() {
+    if ! command -v "$ADB" >/dev/null 2>&1; then
+        return 0
+    fi
+    "$ADB" devices 2>/dev/null \
+        | awk 'NR>1 && $1 != "" { print $1 "\t" $2; exit }' \
+        || true
+}
+
+# Wait until `fastboot devices` is non-empty. Args: label seconds
+wait_for_fastboot() {
+    local label="${1:-fastboot}"
+    local max_secs="${2:-$FASTBOOT_WAIT_SECS}"
+    local attempts=$(( (max_secs + 1) / 2 ))
+    local i
+    for i in $(seq 1 "$attempts"); do
+        sleep 2
+        DEVICES="$("$FASTBOOT" devices 2>/dev/null || true)"
+        if [[ -n "$DEVICES" ]]; then
+            log "device entered fastboot after ${i} attempts ($(( i * 2 ))s) [$label]"
+            return 0
+        fi
+        [[ $((i % 5)) -eq 0 ]] && log "  still waiting for fastboot... (${i}/${attempts})"
+    done
+    DEVICES="$("$FASTBOOT" devices 2>/dev/null || true)"
+    [[ -n "$DEVICES" ]]
+}
+
+# If phone is in Android (or recovery) via adb, reboot into bootloader.
+# Leaves DEVICES set to `fastboot devices` output when ready.
+ensure_device_in_fastboot() {
+    DEVICES="$("$FASTBOOT" devices 2>/dev/null || true)"
+    if [[ -n "$DEVICES" ]]; then
+        log "Device already in fastboot"
+        return 0
+    fi
+
+    local transport serial state
+    transport="$(adb_first_transport)"
+    if [[ -z "$transport" ]]; then
+        if ! command -v "$ADB" >/dev/null 2>&1; then
+            die "No device in fastboot, and adb is not installed. Install platform-tools, or boot into fastboot manually (vol-down + power)."
+        fi
+        die "No device in fastboot or adb. Boot into Android with USB debugging enabled, or hold vol-down + power for fastboot, then retry."
+    fi
+
+    serial="$(printf '%s' "$transport" | awk -F'\t' '{print $1}')"
+    state="$(printf '%s' "$transport" | awk -F'\t' '{print $2}')"
+
+    case "$state" in
+        device)
+            DETECTED_RAW="$(detect_product_adb)"
+            log "Phone is booted into Android (adb serial=$serial, product=${DETECTED_RAW:-unknown})"
+            log "Rebooting into fastboot (bootloader) automatically..."
+            ;;
+        recovery)
+            DETECTED_RAW="$(detect_product_adb)"
+            log "Phone is in recovery (adb serial=$serial, product=${DETECTED_RAW:-unknown})"
+            log "Rebooting into fastboot (bootloader) automatically..."
+            ;;
+        sideload)
+            log "Phone is in sideload mode (adb serial=$serial)"
+            log "Rebooting into fastboot (bootloader) automatically..."
+            ;;
+        unauthorized)
+            die "adb device is unauthorized. Unlock the phone, accept the RSA fingerprint prompt, then re-run."
+            ;;
+        offline)
+            die "adb device is offline (serial=$serial). Unplug/replug USB, toggle USB debugging, then re-run."
+            ;;
+        *)
+            die "adb device state='$state' (serial=$serial) cannot auto-enter fastboot. Boot into fastboot manually (vol-down + power)."
+            ;;
+    esac
+
+    "$ADB" reboot bootloader \
+        || die "adb reboot bootloader failed. Boot into fastboot manually (vol-down + power) and retry."
+
+    wait_for_fastboot "adb reboot bootloader" "$FASTBOOT_WAIT_SECS" \
+        || die "Device did not enter fastboot after adb reboot bootloader (waited ${FASTBOOT_WAIT_SECS}s). Manual: vol-down + power, then re-run."
+}
+
 # -----------------------------------------------------------------------------
-# Step 0 — Sanity checks
+# Step 0 — Sanity checks + device detect
 # -----------------------------------------------------------------------------
-step "0/8  Sanity checks"
+step "0/8  Sanity checks + device detect"
 
 command -v "$FASTBOOT" >/dev/null 2>&1 || die "fastboot not found in PATH"
 command -v scp >/dev/null 2>&1 || die "scp not found in PATH"
@@ -46,21 +210,62 @@ command -v ssh >/dev/null 2>&1 || die "ssh not found in PATH"
 
 log "fastboot: $($FASTBOOT --version 2>&1 | head -1)"
 log "remote:   $REMOTE_HOST"
-log "build dir: $REMOTE_BUILD_DIR"
+log "tree:     $REMOTE_TREE"
 log "local work: $LOCAL_WORK_DIR"
 
-# Check device is in fastboot
-DEVICES="$("$FASTBOOT" devices 2>/dev/null || true)"
-if [[ -z "$DEVICES" ]]; then
-    die "No device in fastboot mode. Boot the Pixel 9 into fastboot (vol-down + power) and retry."
-fi
+DETECTED_RAW=""
+ensure_device_in_fastboot
 log "device: $DEVICES"
+
+# Resolve codename: DEVICE= override > adb detect > fastboot product
+if [[ -n "$DEVICE" ]]; then
+    FLASH_DEVICE="$(normalize_device "$DEVICE")"
+    [[ -n "$FLASH_DEVICE" ]] || die "DEVICE='$DEVICE' not supported (use tokay or akita)"
+    log "DEVICE override: $FLASH_DEVICE ($(device_pretty "$FLASH_DEVICE"))"
+else
+    if [[ -z "$DETECTED_RAW" ]]; then
+        DETECTED_RAW="$(detect_product_fastboot)"
+    fi
+    # If still empty, try fastboot anyway (adb path may have missed prop)
+    if [[ -z "$DETECTED_RAW" ]]; then
+        DETECTED_RAW="$(detect_product_fastboot)"
+    fi
+    FLASH_DEVICE="$(normalize_device "$DETECTED_RAW")"
+    if [[ -z "$FLASH_DEVICE" ]]; then
+        die "Could not map product '${DETECTED_RAW:-unknown}' to a flash bundle. Set DEVICE=tokay or DEVICE=akita explicitly."
+    fi
+    log "Detected product='$DETECTED_RAW' → $(device_pretty "$FLASH_DEVICE")"
+fi
+
+# Fail closed if fastboot product disagrees with DEVICE override
+FB_PRODUCT="$(detect_product_fastboot)"
+FB_NORM="$(normalize_device "$FB_PRODUCT")"
+if [[ -n "$FB_NORM" && "$FB_NORM" != "$FLASH_DEVICE" ]]; then
+    die "Plugged device is '$FB_PRODUCT' but flash target is '$FLASH_DEVICE'. Unplug the other phone or set DEVICE=$FB_NORM."
+fi
+
+apply_remote_paths "$FLASH_DEVICE"
+log "build dir: $REMOTE_BUILD_DIR"
+log "key dir:   $REMOTE_KEY_DIR"
 
 # Get current slot
 CURRENT_SLOT="$("$FASTBOOT" getvar current-slot 2>&1 | grep -m1 '^current-slot:' | awk '{print $2}' || true)"
 log "current-slot: ${CURRENT_SLOT:-unknown}"
 
-# Get the OTHER slot (we flash to current slot for simplicity)
+# Fail closed if bootloader is locked (flash will fail with a cryptic remote error).
+UNLOCKED="$("$FASTBOOT" getvar unlocked 2>&1 | grep -m1 '^unlocked:' | awk '{print $2}' | tr -d '\r' || true)"
+UNLOCKED_LC="$(printf '%s' "$UNLOCKED" | tr '[:upper:]' '[:lower:]')"
+log "unlocked: ${UNLOCKED:-unknown}"
+if [[ "$UNLOCKED_LC" != "yes" ]]; then
+    die "Bootloader is LOCKED (unlocked=${UNLOCKED:-unknown}). Unlock first:
+  1) Boot Android → Developer options → enable OEM unlocking
+  2) Reboot to fastboot:  adb reboot bootloader
+  3) Unlock (THIS WIPES THE PHONE):  fastboot flashing unlock
+  4) Confirm Unlock on the device screen, wait for wipe + reboot
+  5) Re-enter fastboot and re-run this script"
+fi
+
+# Flash to current slot
 TARGET_SLOT="$CURRENT_SLOT"
 
 # -----------------------------------------------------------------------------
@@ -212,13 +417,19 @@ log "Flashing vbmeta_system + vbmeta_vendor with --disable-verification..."
 # Previously, the script ERASED these partitions, which left stale hash trees
 # from the previous OS and triggered dm-verity corruption (reboot mode 0x50).
 #
-# FIX: Flash the root vbmeta.img (8192 bytes, contains all hashtree descriptors)
+# FIX: Flash the root vbmeta.img (65536 bytes, contains all hashtree descriptors)
 # to ALL three vbmeta partitions with --disable-verification. fastboot sets
 # AVB_VBMETA_IMAGE_FLAGS_HASHTREE_DISABLED (flags=2) on flash, which tells the
 # bootloader to skip dm-verity verification entirely.
-"$FASTBOOT" --disable-verification flash vbmeta_system "$LOCAL_WORK_DIR/vbmeta_system.img" \
+#
+# NOTE: We use vbmeta.img (the root, 64KB) for ALL three partitions instead of
+# the partition-specific vbmeta_system.img/vbmeta_vendor.img (8KB each). The
+# root vbmeta is authoritative and always fresh; the 8KB images can go stale
+# if Soong considers them up-to-date when they aren't. Flashing the root to
+# all three with --disable-verification is the safest approach.
+"$FASTBOOT" --disable-verification flash vbmeta_system "$LOCAL_WORK_DIR/vbmeta.img" \
     || die "failed to flash vbmeta_system with --disable-verification"
-"$FASTBOOT" --disable-verification flash vbmeta_vendor "$LOCAL_WORK_DIR/vbmeta_vendor.img" \
+"$FASTBOOT" --disable-verification flash vbmeta_vendor "$LOCAL_WORK_DIR/vbmeta.img" \
     || die "failed to flash vbmeta_vendor with --disable-verification"
 
 # -----------------------------------------------------------------------------
@@ -372,6 +583,8 @@ log "Rebooting device..."
 echo ""
 echo "============================================================"
 echo "  GuardTalkOS flash complete!"
-echo "  The device will boot. First boot may take a few minutes."
+echo "  Device:   $(device_pretty "$FLASH_DEVICE")"
+echo "  Remote:   $REMOTE_BUILD_DIR"
 echo "  Work dir: $LOCAL_WORK_DIR"
+echo "  First boot may take a few minutes."
 echo "============================================================"

@@ -419,8 +419,10 @@
       Display HIDE: Wi‑Fi Display cast menu; smooth display; wallpaper (empty pkg)
       Storage KEEP: dashboard; HIDE smart storage toggle
       Battery KEEP: usage / saver; HIDE wireless-charging restrict row
-      System KEEP: languages, keyboards, date/time, gestures, updates, reset
-      System HIDE: assist/voice input, view logs (forensics surface)
+      System KEEP: languages, keyboards, date/time, updates, reset
+      System HIDE: gestures (F-SYS-HIDE-GESTURE-BACKUP), assist/voice input,
+                   view logs (forensics surface)
+      Privacy HIDE: backup_data + related backup_* (F-SYS-HIDE-GESTURE-BACKUP)
     -->
     <bool name="config_show_notification_bubbles">false</bool>
     <bool name="config_show_notification_summarization">false</bool>
@@ -447,6 +449,15 @@
     <bool name="config_show_assist_and_voice_input">false</bool>
     <bool name="config_show_tts_settings_summary">false</bool>
     <bool name="config_show_view_logs">false</bool>
+
+    <!--
+      F-SYS-HIDE-GESTURE-BACKUP: UI-hide System → Gestures and Privacy → Backup
+      (incl. Settings search). Controllers return UNSUPPORTED_ON_DEVICE when
+      false. Does NOT delete BackupManager / gesture services / APKs.
+      See vendor/guardtalk/docs/SETTINGS_VISIBILITY_POLICY.md.
+    -->
+    <bool name="config_show_gesture_settings">false</bool>
+    <bool name="config_show_backup_settings">false</bool>
 
     <!-- Security mutations (lock/sensor/USB/lockdown/reboot/duress/wipe) require
          main device password via GT Config gate before opening. -->

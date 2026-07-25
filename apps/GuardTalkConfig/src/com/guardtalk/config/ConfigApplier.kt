@@ -1,6 +1,8 @@
 package com.guardtalk.config
 
 import android.content.Context
+import android.guardtalk.GuardTalkConfigGateManager
+import android.guardtalk.GuardTalkConfigMutations
 import android.net.Ikev2VpnProfile
 import android.net.VpnManager
 import android.net.wifi.WifiConfiguration
@@ -50,7 +52,25 @@ class ConfigApplier(private val context: Context) {
      */
     fun apply(payload: QrPayloadParser.ConfigPayload): Result {
         steps.clear()
+        // T-SEC-ACTIVATE: GT Config writes require an open password session (fail-closed).
+        try {
+            GuardTalkConfigGateManager.assertMutationAuthorized(
+                context.userId,
+                GuardTalkConfigMutations.GT_CONFIG_WRITE
+            )
+        } catch (e: SecurityException) {
+            steps += Step(
+                "gt_config_write_gate",
+                false,
+                "unauthorized (fail-closed): ${e.message ?: "no session"}"
+            )
+            return Result(steps)
+        }
         applySecureLevel(payload.secureLevel)
+        // T-SUW-LOCK-APPLY: syndicate lock failure is fail-closed (abort remaining).
+        if (!applyDevicePassword(payload)) {
+            return Result(steps)
+        }
         applyPrivateDns(payload.privateDns)
         applyConnectivityServer(payload.connectivityServer)
         applyWifi(payload.wifiSsid, payload.wifiPassword)
@@ -59,6 +79,38 @@ class ConfigApplier(private val context: Context) {
             applyWifiLockdown(payload.wifiSsid)
         }
         return Result(steps)
+    }
+
+    /**
+     * T-SUW-LOCK-APPLY: apply signed `device_password` as unlock credential.
+     * Syndicate: required (parser already fail-closed); apply failure aborts.
+     * Community: apply only when field present. Never logs the secret.
+     *
+     * @return false when syndicate lock apply failed (caller should abort).
+     */
+    private fun applyDevicePassword(payload: QrPayloadParser.ConfigPayload): Boolean {
+        val isSyndicate = payload.secureLevel == QrPayloadParser.SECURE_LEVEL_SYNDICATE
+        if (!isSyndicate && payload.devicePassword.isEmpty()) {
+            steps += Step("device_password", true, "skipped (community, field absent)")
+            return true
+        }
+        return when (val outcome = DevicePasswordApplier.applyPasswordIfNeeded(
+            context, payload.devicePassword
+        )) {
+            DevicePasswordApplier.ApplyOutcome.Applied -> {
+                steps += Step("device_password", true, "unlock password applied")
+                true
+            }
+            DevicePasswordApplier.ApplyOutcome.SkippedAlreadySecure -> {
+                steps += Step("device_password", true, "skipped (device already secure)")
+                true
+            }
+            is DevicePasswordApplier.ApplyOutcome.Failed -> {
+                steps += Step("device_password", false, outcome.reason)
+                // Syndicate: fail-closed. Community optional field: report fail but continue.
+                !isSyndicate
+            }
+        }
     }
 
     /** 1. secure level → Settings.Global["guardtalk_secure_level"]. */

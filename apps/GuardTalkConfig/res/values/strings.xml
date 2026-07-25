@@ -12,4 +12,9 @@
     <string name="secure_level_is">Secure level: %1$s</string>
     <string name="apply_ok">Configuration applied</string>
     <string name="apply_partial">Configuration partially applied — see log</string>
+    <string name="write_confirm_details">Confirm your device password to apply GuardTalk configuration</string>
+    <string name="write_denied">Write denied — password session required (fail-closed)</string>
+    <string name="write_denied_toast">Password required to apply GT Config</string>
+    <string name="browse_ready_locked">Browse mode — scan or paste a payload. Applying changes requires your device password (fail-closed).</string>
+    <string name="browse_ready_authorized">Write session active — scan or paste a payload, then Apply.</string>
 </resources>

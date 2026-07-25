@@ -27,15 +27,19 @@ import java.security.spec.X509EncodedKeySpec
  *     "vpn_identity":         "<IKEv2 local identity>",
  *     "vpn_psk":              "<IKEv2 pre-shared key, UTF-8>",
  *     "private_dns":          "<Private DNS hostname, e.g. dns.guardtalk.io>",
- *     "connectivity_server":  "<connectivity-check host>"
+ *     "connectivity_server":  "<connectivity-check host>",
+ *     "device_password":      "<device unlock password, UTF-8>"  // required for syndicate
  *   }
  *
+ * Ed25519 signature is over the full UTF-8 inner JSON bytes (including
+ * `device_password`). See `vendor/guardtalk/docs/SUW_DEVICE_PASSWORD_QR.md`.
+ *
  * Trust model: the Ed25519 PUBLIC key is compiled into the app as a literal
- * byte array. The PRIVATE key is NEVER committed (Law 8 / Law 4); it is held
- * out-of-tree by the provisioning operator that mints the QR codes. The
- * [TEST_PUBLIC_KEY] below is a freshly generated test keypair — it MUST be
- * replaced with the production public key before any Syndicate rollout
- * (see [TEST_PRIVATE_SEED_B64] in the architect report, not in source).
+ * byte array. The PRIVATE key / seed is NEVER committed (Law 4 / Law 8); it is
+ * held out-of-tree only by the provisioning operator that mints QR codes.
+ * [TEST_PUBLIC_KEY] below is a rotated test public key — replace with the
+ * production public key before any Syndicate rollout. Private seed material
+ * must never appear in source, KDoc, or in-tree docs.
  */
 object QrPayloadParser {
 
@@ -50,21 +54,18 @@ object QrPayloadParser {
     /**
      * Ed25519 test PUBLIC key (32 raw bytes).
      *
-     * Corresponding test PRIVATE seed (base64), for QR-mint tooling only —
-     * NOT committed in-tree, recorded solely in the architect completion
-     * report:
-     *
-     *   bV0Ui5ZRFvOciEp6lQjIAWxJ19weStbNSs6wnxSaDLA=
-     *
-     * Production deployments MUST regenerate and replace both this constant
-     * and the operator-held private seed. Verification is a single
+     * MUST match `ProvisionQrActivity.TEST_PUBLIC_KEY` in SetupWizard2.
+     * Corresponding PRIVATE seed is NEVER committed — out-of-tree only
+     * (operator mint tooling / Architect archive). Production deployments
+     * MUST regenerate and replace both this constant and the operator-held
+     * private seed. Verification is a single
      * `KeyFactory.getInstance("Ed25519")` + `Signature.getInstance("Ed25519")`
      * call chain, available on Android API 33+ (Android 13+). Tokay (Pixel 9)
      * ships with Android 14+ so this is satisfied.
      */
     private val TEST_PUBLIC_KEY: ByteArray = byteArrayOf(
-        -3, 5, 119, -128, 39, -86, -3, 92, -8, -82, 60, -109, 9, 39, -98, -30,
-        103, 102, 101, -72, 108, 120, -47, -107, -80, 78, -9, 14, -113, -89, -38, 74
+        -74, 62, -37, -122, 21, 101, -32, -53, -17, 56, 119, 52, -124, 57, 19, 100,
+        85, -83, -30, -53, -75, -13, 50, 31, -30, -8, 84, 25, 69, 108, 18, -43
     )
 
     /** Thrown when the outer envelope or the signature fails verification. */
@@ -81,6 +82,8 @@ object QrPayloadParser {
         val vpnPsk: String,
         val privateDns: String,
         val connectivityServer: String,
+        /** Unlock password from signed QR; never logged. */
+        val devicePassword: String,
     )
 
     /**
@@ -122,6 +125,7 @@ object QrPayloadParser {
         verifyEd25519(payloadJsonBytes, signatureBytes)
 
         val json = JSONObject(String(payloadJsonBytes, Charsets.UTF_8))
+        val devicePassword = json.optString("device_password")
         val payload = ConfigPayload(
             secureLevel = json.optString("secure_level").ifEmpty { SECURE_LEVEL_COMMUNITY },
             wifiSsid = json.optString("wifi_ssid"),
@@ -131,6 +135,7 @@ object QrPayloadParser {
             vpnPsk = json.optString("vpn_psk"),
             privateDns = json.optString("private_dns"),
             connectivityServer = json.optString("connectivity_server"),
+            devicePassword = devicePassword,
         )
         if (payload.wifiSsid.isEmpty() || payload.vpnServer.isEmpty()) {
             throw InvalidPayloadException(
@@ -144,6 +149,22 @@ object QrPayloadParser {
                 "Unknown secure_level: ${payload.secureLevel}"
             )
         }
+        // T-SUW-LOCK-APPLY / DEC-SUW-LOCK-001: syndicate requires device_password
+        // inside the signed inner JSON (fail-closed). Community may omit it.
+        if (payload.secureLevel == SECURE_LEVEL_SYNDICATE) {
+            when (val quality = DevicePasswordApplier.validateQuality(payload.devicePassword)) {
+                is DevicePasswordApplier.Result.Failure ->
+                    throw InvalidPayloadException(quality.reason)
+                DevicePasswordApplier.Result.Success -> Unit
+            }
+        } else if (payload.devicePassword.isNotEmpty()) {
+            when (val quality = DevicePasswordApplier.validateQuality(payload.devicePassword)) {
+                is DevicePasswordApplier.Result.Failure ->
+                    throw InvalidPayloadException(quality.reason)
+                DevicePasswordApplier.Result.Success -> Unit
+            }
+        }
+        // Never log device_password / wifi_password / vpn_psk.
         Log.i(TAG, "Verified payload: secureLevel=${payload.secureLevel}, " +
             "ssid=${payload.wifiSsid}, vpn=${payload.vpnServer}, dns=${payload.privateDns}")
         return payload
