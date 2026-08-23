@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "product": "tokay",
+  "advertisedDevices": [
+    "tokay"
+  ],
+  "reservedProducts": [],
+  "channel": "dev",
+  "bootState": "unlocked",
+  "channelLabel": "dev/unlocked",
+  "verifiedBootClaim": "none",
+  "releaseId": "20260725-102506",
+  "unixEpoch": 1784975106,
+  "sourceStamp": "tokay-20260725-102506",
+  "flashOrder": [
+    "firmware",
+    "avb_custom_key",
+    "os"
+  ],
+  "factoryZip": null,
+  "factoryZipFollowOn": "Not packed this wave: a full -install- zip would be multi-GiB and must not invent flash order. Flashcore consumes files.txt + SHA256SUMS. Any later zip MUST keep firmware \u2192 avb_custom_key \u2192 os (DEC-006).",
+  "avb": {
+    "publicKeyFile": "avb_pkmd.bin",
+    "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+    "size": 1032
+  },
+  "artifacts": [
+    {
+      "name": "avb_pkmd.bin",
+      "phase": "avb",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032
+    },
+    {
+      "name": "boot.img",
+      "phase": "os",
+      "sha256": "69c1c54c55854ad05a28dfd812cac96fe197ee37cf90dcdfb0a126a2cc43771d",
+      "size": 67108864
+    },
+    {
+      "name": "bootloader.img",
+      "phase": "firmware",
+      "sha256": "822b1c33c19bac96365376a228d730e02e74ab5b9741d0c213258d779e014f57",
+      "size": 18896828
+    },
+    {
+      "name": "dtbo.img",
+      "phase": "os",
+      "sha256": "76840075528008d51bd45314277fda6386c103447a398e415f729defba095884",
+      "size": 16777216
+    },
+    {
+      "name": "init_boot.img",
+      "phase": "os",
+      "sha256": "b5f08536b404bb479497c6bb8403d67c6977eaff3e2ea859e7e5627b7fa9186a",
+      "size": 8388608
+    },
+    {
+      "name": "product.img",
+      "phase": "os",
+      "sha256": "92f24df8b213cead4553751ef4ad84b3b4c3b23903cabd1a0a5883053b150cf2",
+      "size": 703672320
+    },
+    {
+      "name": "pvmfw.img",
+      "phase": "os",
+      "sha256": "01488f54dfdc30231d1088ab695459332c686ed435bc14ff22a6755367f9fa59",
+      "size": 921600
+    },
+    {
+      "name": "radio.img",
+      "phase": "firmware",
+      "sha256": "ca41313e50ff1f867bd7979383c884737eff23396cbb5071f887719a51d3c77f",
+      "size": 136634508
+    },
+    {
+      "name": "super_empty.img",
+      "phase": "os",
+      "sha256": "34cbe5c51a222b464a1983ec800a4877fec147481bf907ff326454b5d380c036",
+      "size": 5184
+    },
+    {
+      "name": "system.img",
+      "phase": "os",
+      "sha256": "8e09cec994259f829ed40d289d156198eaaf6ed23cb17b028c9a16f1e090fed7",
+      "size": 928436224
+    },
+    {
+      "name": "system_dlkm.img",
+      "phase": "os",
+      "sha256": "4d5605af6f88cb85efe48f81bfc51d2d859094769446c71175ef0f04fb3b9916",
+      "size": 11051008
+    },
+    {
+      "name": "system_ext.img",
+      "phase": "os",
+      "sha256": "4966fede7b26388911735dba8039c550d8b0179325adab710e021a606dde3db5",
+      "size": 362643456
+    },
+    {
+      "name": "vbmeta.img",
+      "phase": "os",
+      "sha256": "c70e60524ef2b9522c1db5725d37e649928bf03583a2f08ec5952a23f4ba0d53",
+      "size": 65536
+    },
+    {
+      "name": "vbmeta_system.img",
+      "phase": "os",
+      "sha256": "c70e60524ef2b9522c1db5725d37e649928bf03583a2f08ec5952a23f4ba0d53",
+      "size": 65536
+    },
+    {
+      "name": "vbmeta_vendor.img",
+      "phase": "os",
+      "sha256": "c70e60524ef2b9522c1db5725d37e649928bf03583a2f08ec5952a23f4ba0d53",
+      "size": 65536
+    },
+    {
+      "name": "vendor.img",
+      "phase": "os",
+      "sha256": "0b6a3d1bef40402039628327a2582a7223fb68ea136373b7f5986931f2758291",
+      "size": 805400576
+    },
+    {
+      "name": "vendor_boot.img",
+      "phase": "os",
+      "sha256": "289dbdb7d669d34ba08711636b6dba5830836689509b6df3175c6af4a593bb9b",
+      "size": 67108864
+    },
+    {
+      "name": "vendor_dlkm.img",
+      "phase": "os",
+      "sha256": "5b1580e7481fbe36119b7f94465fb496f31d84c723e6493708308962e5b931a6",
+      "size": 32174080
+    },
+    {
+      "name": "vendor_kernel_boot.img",
+      "phase": "os",
+      "sha256": "854c4d393fe5450d0401047615f5692285c35b5e7dda089ca42cf77965ecaeae",
+      "size": 67108864
+    }
+  ],
+  "signature": {
+    "required": false,
+    "mode": "hash-only",
+    "file": null,
+    "allowedSigners": null,
+    "note": "No in-tree public channel signer. CHANNEL=dev is hash-only. CHANNEL=production fails closed when a signature is missing. Do not generate or commit private keys."
+  }
+}

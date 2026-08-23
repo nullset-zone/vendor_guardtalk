@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "strict": true,
+    "noImplicitAny": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    // DOM.Iterable matches tsconfig.lib.json — NodeListOf is iterated in lib/ui.
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"]
+  },
+  // Aggregate typecheck over the current product graphs (lib + routes + the
+  // src/test/wizard trees). Scoped configs: tsconfig.lib.json, .wizard.json,
+  // .avb.json, .routes.json.
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts",
+    "test/fixtures/**/*",
+    "wizard/**/*.ts",
+    "lib/**/*.ts",
+    "routes/**/*.ts"
+  ]
+}

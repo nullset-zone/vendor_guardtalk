@@ -75,24 +75,29 @@ BOARD_KERNEL_CMDLINE += androidboot.radio.disabled=1
 
 # T-BT-FULL (FR-3): override the upstream vendor_dlkm.modules.blocklist with
 # the GuardTalk version that adds `blocklist nitrous` (BCM4390 BT power/rfkill
-# driver). Verify the upstream blocklist path for <codename> — zuma (akita)
-# uses a different kernels dir than zumapro (tokay/caiman/rango). Point at the
-# GuardTalk blocklist under vendor/guardtalk/feature-excised/ (it mirrors the
-# upstream baseline and appends the nitrous entry).
-BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE := vendor/guardtalk/feature-excised/vendor_dlkm.modules.blocklist
+# driver). Verify the upstream blocklist path for <codename> — SoC families
+# differ (see SoC note below). Prefer a per-device blocklist under
+# vendor/guardtalk/device/<codename>/ when the shared feature-excised file
+# is not an exact upstream mirror (akita/zuma, rango/laguna).
+BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE := vendor/guardtalk/device/<codename>/vendor_dlkm.modules.blocklist
 ```
 
-> **SoC note (zuma vs zumapro):** tokay/caiman/rango are `zumapro`
-> (caimito-kernels); akita is `zuma` (tegu-kernels). The
-> `vendor_dlkm.modules.blocklist` in `vendor/guardtalk/feature-excised/` is
-> currently mirrored from the caimito (zumapro) upstream baseline. Before
-> building akita, diff it against
-> `device/google/tegu-kernels/<ver>/grapheneos/vendor_dlkm.modules.blocklist`
-> and reconcile any upstream-only entries so no upstream-blocklisted module
-> is accidentally re-enabled. This is the only shared-core file that may need
-> a per-SoC variant; document the delta in
-> `vendor/guardtalk/device/<codename>/BoardConfig-excised-late.mk` when you
-> create it.
+> **SoC note (zuma / zumapro / laguna):**
+> - **tokay / caiman** = `zumapro` (caimito-kernels 6.1). Shared
+>   `vendor/guardtalk/feature-excised/vendor_dlkm.modules.blocklist` is the
+>   caimito baseline + nitrous.
+> - **akita** = `zuma` (akita-kernels 6.1). Uses
+>   `vendor/guardtalk/device/akita/vendor_dlkm.modules.blocklist`.
+> - **rango** = `laguna` (laguna-kernels 6.6). Uses
+>   `vendor/guardtalk/device/rango/vendor_dlkm.modules.blocklist`
+>   (upstream grapheneos/rango baseline + `nitrous.ko`). **Do not** label
+>   rango as zumapro — that REGEN_HOOKS debt caused wrong blocklist advice.
+>
+> Before building a new SoC, diff the upstream
+> `device/google/<family>-kernels/.../vendor_dlkm.modules.blocklist` and
+> reconcile so no upstream-blocklisted module is accidentally re-enabled.
+> Document the delta in
+> `vendor/guardtalk/device/<codename>/BoardConfig-excised-late.mk`.
 
 ## 4. device.mk / <codename>.mk hooks
 
@@ -145,7 +150,7 @@ Create `vendor/guardtalk/device/<codename>/` with:
 
   Substitute `<UpstreamModel>` with the value `<codename>.mk` sets for
   `PRODUCT_MODEL` (e.g. `Pixel 9 Pro` for caiman, `Pixel 8a` for akita,
-  `Pixel 9 Pro Fold` for rango). The rebrand step in
+  `Pixel 10 Pro Fold` for rango / laguna). The rebrand step in
   `product-config-late.mk` is skipped when `GUARDTALK_PRODUCT_MODEL` is
   unset, so a new device still builds before its brand string is chosen
   (Law 9).

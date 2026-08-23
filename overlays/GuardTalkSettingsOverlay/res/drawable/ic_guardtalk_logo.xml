@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  F-BRAND-UI — Settings About mark from brand kit
+  vendor/guardtalk/branding/GuardTalkOS_Brand_Assets/06_settings_about/
+  Compact GuardTalk chevron for About-phone / Settings brand surfaces.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#C3FF61"
+        android:pathData="M 53.977 35.6774 L 90.0 56.4199 L 90.0 39.1111 L 53.9539 18.3456 L 18.0 39.1342 L 18.0 56.466 Z" />
+    <path
+        android:fillColor="#C3FF61"
+        android:pathData="M 84.2378 77.2776 L 90.0 73.89 L 90.0 63.265 L 53.9539 42.4764 L 18.0 63.265 L 18.0 73.9361 L 23.7622 77.2776 L 53.9539 59.8082 Z" />
+    <path
+        android:fillColor="#C3FF61"
+        android:pathData="M 53.977 84.3768 L 63.1267 89.6544 L 78.1538 81.0115 L 53.9539 67.045 L 29.8462 81.0115 L 44.8733 89.6544 Z" />
+</vector>

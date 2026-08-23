@@ -1,0 +1,80 @@
+<!--
+  GuardTalkOS — rango (Pixel 10 Pro Fold / laguna) vendor device manifest
+  without cellular radio HALs.
+
+  Derived from vendor/google_devices/rango/vintf/vendor/manifest.xml by
+  removing radio / RIL / SIM secure-element / gril antenna entries.
+
+  media.c2 IComponentStore/default is NOT declared here — stock rango
+  provides it via adevtool_vintf_fragment_vendor_manifest_media_c2_cnm.xml
+  (unlike tokay/akita, which inline default/default1 in the main manifest).
+
+  Foldable twoshay touchflow_outer is preserved.
+
+  Selected by vendor/guardtalk/radio-excised/vintf-excised.mk when
+  PRODUCT_DEVICE=rango.
+-->
+<manifest version="9.0" type="device" target-level="202504">
+    <hal format="aidl">
+        <name>android.hardware.bluetooth</name>
+        <fqname>IBluetoothHci/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.bluetooth.finder</name>
+        <fqname>IBluetoothFinder/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.bluetooth.ranging</name>
+        <fqname>IBluetoothChannelSounding/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.boot</name>
+        <fqname>IBootControl/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.security.keymint</name>
+        <version>3</version>
+        <fqname>IRemotelyProvisionedComponent/strongbox</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input</name>
+        <version>6</version>
+        <fqname>ITouchContextService/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input</name>
+        <version>6</version>
+        <fqname>ITwoshayNotificationService/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input</name>
+        <version>6</version>
+        <fqname>ITwoshayFileDumpService/touchflow_default</fqname>
+        <fqname>ITwoshayFileDumpService/touchflow_outer</fqname>
+        <fqname>ITwoshayFileDumpService/twoshay</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input.algos.spd</name>
+        <version>6</version>
+        <fqname>IScreenProtectorDetectorService/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input.gia.core</name>
+        <version>2</version>
+        <fqname>IGiaService/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>vendor.google.bluetooth_ext</name>
+        <version>4</version>
+        <fqname>IBTChannelAvoidance/default</fqname>
+        <fqname>IBluetoothCcc/default</fqname>
+        <fqname>IBluetoothCco/default</fqname>
+        <fqname>IBluetoothEwp/default</fqname>
+        <fqname>IBluetoothExt/default</fqname>
+        <fqname>IBluetoothFinder/default</fqname>
+        <fqname>IBluetoothSar/default</fqname>
+    </hal>
+    <sepolicy>
+        <version>202504</version>
+    </sepolicy>
+</manifest>

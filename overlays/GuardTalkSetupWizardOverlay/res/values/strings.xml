@@ -18,12 +18,15 @@
     <string name="guardtalk_tagline" translatable="false">Private by design.</string>
 
     <!--
-      T-BRAND-001: override the wizard strings that still surfaced the
-      upstream OS brand in their VALUES (the source file
-      packages/apps/SetupWizard2/res/values/strings.xml already rebranded
-      welcome_to_grapheneos and grapheneos_desc; these four remained and
-      are mirrored here as direct edits + overlay defence-in-depth).
+      T-BRAND-001 / T-BRAND-SWEEP: override wizard strings so VALUES read
+      GuardTalkOS. Resource *names* (welcome_to_grapheneos, grapheneos_desc)
+      are immutable app contracts and are NOT renamed — only values change.
+      packages/apps/SetupWizard2/res/values/strings.xml is also rebranded;
+      these overlay entries are defence-in-depth.
     -->
+
+    <string name="welcome_to_grapheneos">Welcome to GuardTalkOS</string>
+    <string name="grapheneos_desc">Privacy and security, crafted for your mobile device, usable by everyone.</string>
 
     <!-- Rebrands the upstream OS proxy label -->
     <string name="network_location_enabled_desc">Enable network location to determine your location better (such as when indoors) and more efficiently. Nearby wireless signal identifiers will be sent to an Apple server through a GuardTalkOS proxy only when network location is being used.</string>
@@ -40,4 +43,10 @@
       brand-string change, infra mirroring tracked separately.
     -->
     <string name="oem_lock_url" translatable="false">guardtalk.io/UBL</string>
+
+    <!--
+      F-BRAND-UI — defence-in-depth for Syndicate QR scanner missing-app copy.
+      Base SetupWizard2 value is already GuardTalkOS; overlay mirrors it.
+    -->
+    <string name="no_qr_scanner">No QR scanner app found. Install a barcode scanner or use the GuardTalkOS camera app.</string>
 </resources>

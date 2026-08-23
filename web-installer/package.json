@@ -1,0 +1,30 @@
+{
+  "name": "@guardtalk/web-installer-flashcore",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "GuardTalkOS tokay web installer: flashcore + wizard (dev/unlocked).",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "tsc --noEmit && tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "routes:typecheck": "tsc -p tsconfig.routes.json --noEmit",
+    "plan": "tsx src/cli.ts",
+    "wizard:build": "tsc -p tsconfig.wizard.json",
+    "wizard:serve": "python3 -m http.server 4173 --bind 0.0.0.0",
+    "channels:pack": "bash ../../scripts/pack-wizard-hosted-channels.sh",
+    "routes:build": "bash scripts/build-site.sh",
+    "routes:serve": "python3 -m http.server 8080 --directory dist/site"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.5",
+    "tsx": "4.19.3",
+    "typescript": "5.7.3"
+  }
+}

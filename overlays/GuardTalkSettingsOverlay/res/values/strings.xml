@@ -59,4 +59,20 @@ Duress PIN works the same way duress password does."</string>
 
     <!-- Exploit protection compat mode summary -->
     <string name="aep_compat_mode_summary">Improves compatibility by disabling some of the GuardTalkOS exploit protections for this app</string>
+
+    <!--
+      F-UIHIDE-SETTINGS: System top-level tile summary.
+      Gestures (F-SYS-HIDE-GESTURE-BACKUP) and Backup (config_show_backup_settings)
+      are UI-hidden; do not advertise them in the parent dashboard summary.
+      Keyboard + time remain visible on SystemDashboardFragment.
+    -->
+    <string name="system_dashboard_summary">Languages, keyboard, time</string>
+
+    <!--
+      F-BRAND-UI — About-phone / Settings dashboard copy polish.
+      Rebrands generic About summary so the Settings entry surfaces GuardTalkOS.
+    -->
+    <string name="about_settings_summary">View GuardTalkOS version, status, and device details</string>
+    <string name="guardtalk_os_name" translatable="false">GuardTalkOS</string>
+    <string name="guardtalk_tagline" translatable="false">Private by design.</string>
 </resources>

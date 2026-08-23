@@ -1,0 +1,26 @@
+{
+  "$comment": "Build-time posture manifest (PLAN.md §0). Never fetched at runtime — D-006 forbids runtime network; values are baked into the posture pill at build/render time. See DECISION_LOG D-009/D-011/D-013.",
+  "installer": "alpha",
+  "keyCustody": "alpha",
+  "releaseState": "alpha",
+  "preLaunch": true,
+  "onion": {
+    "recommended": true,
+    "address": null,
+    "$comment_address": "Q-05 unresolved: onion address pending human confirmation; UI shows // confirm placeholder until then."
+  },
+  "routes": {
+    "install": "/install",
+    "update": "/install/update",
+    "verifyDevice": "/install/verify-device",
+    "recover": "/install/recover"
+  },
+  "flashCapability": {
+    "implemented": true,
+    "liveFlashClaimed": false,
+    "$comment": "D-011: full fastboot command set implemented; every automated path simulated. LIVE_FLASH_CLAIMED stays false until a human performs a real flash with launch flags flipped (see PROGRESS.md)."
+  },
+  "targets": ["tokay", "rango"],
+  "experimentalTargets": ["akita"],
+  "noOta": true
+}

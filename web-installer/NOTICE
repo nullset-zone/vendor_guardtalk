@@ -1,0 +1,41 @@
+GuardTalkOS web-installer
+Copyright (c) 2026 GuardTalkOS contributors
+
+Flashcore (T-WEBINSTALL-FLASHCORE) is original TypeScript. It does not copy
+GrapheneOS HTML, CSS, JavaScript, or marketing copy (DEC-WEBINSTALL-005).
+
+Test/build tools (devDependencies, pinned in package.json):
+
+  typescript 5.7.3     Apache-2.0   https://github.com/microsoft/TypeScript
+  tsx 4.19.3           MIT          https://github.com/privatenumber/tsx
+  @types/node 22.10.5  MIT          https://github.com/DefinitelyTyped/DefinitelyTyped
+
+Intended browser WebUSB transport (not installed this wave; no factory zip):
+
+  android-fastboot (kdrag0n/fastboot.js)  MIT
+    pin ≥ commit ffe7e270061b95fe0f0f3abd1aa7d3c28999d1d9
+  @zip.js/zip.js                          BSD-3-Clause
+  pako                                    MIT
+
+F-WEBINSTALL-WIZARD did **not** add android-fastboot. The wizard calls
+`adaptAndroidFastboot` only when a `FastbootDevice` is supplied at runtime
+(`window.FastbootDevice`). Dry-run / plan preview do not need WebUSB.
+
+Wizard UI (`wizard/index.html`, `wizard/styles.css`, `wizard/main.ts`) is
+original GuardTalkOS work. It does not copy GrapheneOS HTML, CSS, JavaScript,
+or marketing copy.
+
+WebUSB ADB reboot (`wizard/adb-*.ts`) is original GuardTalkOS code. It speaks
+the public ADB USB protocol (`reboot:bootloader`) and does not bundle a third
+party ADB library. It is not a live flash path.
+
+Key-at-rest disclosure: the wizard persists its ADB host key as a full RSA
+private JWK (including `d`) **unencrypted in `localStorage`** under
+`guardtalk.webadb.rsa-jwk`. Any script in the wizard origin or anyone with
+access to the browser profile can read it; exposure is limited to ADB
+debugging trust. Clear it with
+`localStorage.removeItem("guardtalk.webadb.rsa-jwk")` (see README,
+"Browser ADB key storage").
+
+SHA-256 in flashcore is a portable implementation (`src/sha256-portable.ts`)
+so the wizard can verify artifacts in the browser without `node:crypto`.

@@ -1,0 +1,37 @@
+# GuardTalkOS — rango (laguna / laguna-kernels) vendor_dlkm modules blocklist.
+#
+# T-PORT-RANGO-LAYER: REPLACES upstream
+# device/google/laguna-kernels/6.6/grapheneos/rango/vendor_dlkm.modules.blocklist
+# via BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE in
+# vendor/guardtalk/device/rango/BoardConfig-excised-late.mk.
+#
+# Baseline: laguna-kernels grapheneos/rango channel (verbatim upstream list,
+# .ko suffixes). Do NOT use the tokay/caimito shared blocklist.
+#
+# GuardTalk addition: blocklist nitrous.ko (BCM BT power/rfkill; present in
+# vendor_dlkm.modules.load). WiFi two-phase load (blocklist bcmdhd4390.ko +
+# init.insmod.rango.cfg re-modprobe) preserved verbatim from upstream.
+
+blocklist bcmdhd4383.ko
+blocklist bcmdhd4390.ko
+blocklist cs40l26-i2c.ko
+blocklist g_serial.ko
+blocklist irq-gia-google-test.ko
+blocklist sscoredump_sample_test.ko
+blocklist sscoredump_test.ko
+blocklist syna_touch.ko
+blocklist focal_touch.ko
+blocklist fst2.ko
+blocklist trusty-test.ko
+blocklist google_gem_test.ko
+blocklist ebu-google.ko
+blocklist google-cpm-tracepoint.ko
+
+# Display
+blocklist gs-panel-common-test.ko
+
+# IOMMU
+blocklist iommu_map_benchmark.ko
+
+# T-BT-FULL (FR-3): Bluetooth power/rfkill — nitrous.ko on rango vendor_dlkm.
+blocklist nitrous.ko

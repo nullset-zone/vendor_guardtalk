@@ -1,0 +1,23 @@
+{
+  // AVB-phase verification config. Kept separate from tsconfig.lib.json so the
+  // AVB gate stays honest while sibling builders (fastboot/keys) land code.
+  // When all phases stabilize, fold this include list back into
+  // tsconfig.lib.json idempotently rather than overwriting it.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "strict": true,
+    "noImplicitAny": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "noEmit": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"]
+  },
+  "include": ["lib/avb/**/*.ts", "test/avb.test.ts"]
+}

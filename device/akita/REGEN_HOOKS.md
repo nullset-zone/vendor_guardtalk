@@ -15,6 +15,9 @@ include vendor/guardtalk/device/akita/BoardConfig-excised-late.mk
 ```makefile
 # Late pass: remove RIL/modem packages and copy-files (must include, not inherit-product)
 include vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk
+
+# GuardTalkOS akita: install init.insmod.akita.cfg (symlink TARGET_KERNEL_DIR breaks find-copy)
+include vendor/guardtalk/device/akita/guardtalk-insmod.mk
 ```
 
 ## Per-device notes

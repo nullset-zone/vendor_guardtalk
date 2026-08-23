@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright (C) 2026 GuardTalkOS
+  F-UIHIDE-LOCALE-SUMMARY: System dashboard summary — languages, keyboard, time only.
+  Matches EN overlay: Languages, keyboard, time
+-->
+<resources>
+    <string name="system_dashboard_summary">Lugha, kibodi, saa</string>
+</resources>

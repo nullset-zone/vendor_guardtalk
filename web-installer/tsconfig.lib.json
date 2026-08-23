@@ -1,0 +1,31 @@
+{
+  // Phase-2 AVB foundations scope. Later phases: EXTEND "include"
+  // idempotently (e.g. add "lib/fastboot/**/*.ts") rather than overwrite.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "strict": true,
+    "noImplicitAny": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "noEmit": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"]
+  },
+  "include": [
+    "lib/**/*.ts",
+    "routes/**/*.ts",
+    "test/avb.test.ts",
+    "test/fastboot.test.ts",
+    "test/keys.test.ts",
+    "test/cli-export.test.ts",
+    "test/ui.test.ts",
+    "test/route-install-late.test.ts",
+    "test/fixtures/**/*"
+  ]
+}

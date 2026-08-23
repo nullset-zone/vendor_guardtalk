@@ -421,8 +421,10 @@
       Battery KEEP: usage / saver; HIDE wireless-charging restrict row
       System KEEP: languages, keyboards, date/time, updates, reset
       System HIDE: gestures (F-SYS-HIDE-GESTURE-BACKUP), assist/voice input,
-                   view logs (forensics surface)
-      Privacy HIDE: backup_data + related backup_* (F-SYS-HIDE-GESTURE-BACKUP)
+                   view logs (forensics surface); Backup site-map
+                   (config_show_backup_settings — T-UIHIDE-KEYS)
+      Privacy HIDE: backup_*; Agents; geodata sharing updates; Health Connect
+                   (T-UIHIDE-KEYS). Security HIDE: Trust agents.
     -->
     <bool name="config_show_notification_bubbles">false</bool>
     <bool name="config_show_notification_summarization">false</bool>
@@ -458,6 +460,23 @@
     -->
     <bool name="config_show_gesture_settings">false</bool>
     <bool name="config_show_backup_settings">false</bool>
+
+    <!--
+      T-UIHIDE-KEYS: Privacy / Security / System listed entry hides (UI+search).
+      Does NOT delete Health Connect / Backup / Trust-agent APKs or services.
+      Keys: privacy_app_function_access (Agents),
+            privacy_app_data_sharing_updates (geodata transmission),
+            Health Connect IA tile (com.android.healthconnect.controller),
+            manage_trust_agents (+ trust_agent_click_intent),
+            backup (config_show_backup_settings above; System site-map parent).
+      See vendor/guardtalk/docs/SETTINGS_VISIBILITY_POLICY.md and
+      vendor/guardtalk/docs/T-UIHIDE-KEYS.md.
+    -->
+    <bool name="config_show_app_function_access">false</bool>
+    <bool name="config_show_app_data_sharing_updates">false</bool>
+    <bool name="config_show_health_connect_settings">false</bool>
+    <bool name="config_show_manage_trust_agents">false</bool>
+    <bool name="config_show_trust_agent_click_intent">false</bool>
 
     <!-- Security mutations (lock/sensor/USB/lockdown/reboot/duress/wipe) require
          main device password via GT Config gate before opening. -->

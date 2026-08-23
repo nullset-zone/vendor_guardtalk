@@ -1,0 +1,63 @@
+{
+  "task_id": "T-PORT-RANGO-PREFLIGHT",
+  "date": "2026-07-25",
+  "decision": "DEC-PORT-RANGO-001",
+  "verdict": "GO",
+  "codename": {
+    "device": "rango",
+    "model": "Pixel 10 Pro Fold",
+    "platform": "laguna",
+    "evidence": [
+      "vendor/adevtool/vendor-skels/google_devices/rango/rango.mk: PRODUCT_MODEL := Pixel 10 Pro Fold",
+      "vendor/adevtool/config/device/common/gen10pixel.yml: platform: laguna",
+      "vendor/adevtool/config/mk/google_devices/device/rango/BoardConfig-base.mk → platform/laguna",
+      "vendor/adevtool/config/mk/google_devices/device/rango/device.mk: TARGET_KERNEL_DIR := device/google/laguna-kernels/6.6/grapheneos/rango"
+    ]
+  },
+  "inventory": {
+    "adevtool_config": "vendor/adevtool/config/device/rango.yml",
+    "vendor_skel": "vendor/adevtool/vendor-skels/google_devices/rango/",
+    "live_vendor": "vendor/google_devices/rango/",
+    "guardtalk_layer": null,
+    "kernel_grapheneos": "device/google/laguna-kernels/6.6/grapheneos/rango",
+    "kernel_trunk_staging_expected": "device/google/laguna-kernels/6.6/trunk-14072179/rango",
+    "kernel_trunk_staging_present": false,
+    "build_id": "BP4A.260205.001",
+    "backport_build_id": "CP1A.260505.005",
+    "factory_primary": {
+      "path": "vendor/adevtool/dl/rango-bp4a.260205.001-factory-f2b43fde.zip",
+      "sha256": "f2b43fde15fab871529887872d9a11436126be708670db38253f1b45e92ea238",
+      "download_exit": 0
+    },
+    "factory_backport": {
+      "path": "vendor/adevtool/dl/rango-cp1a.260505.005-factory-18bf79d9.zip",
+      "sha256": "18bf79d917dfc411a062ada4494c573cb26ca4bcbca7c3f6ea4576e4fc883b37",
+      "download_via": "generate-all",
+      "generate_exit": 0
+    }
+  },
+  "lunch": "rango-trunk_staging-userdebug",
+  "commands": {
+    "download": "vendor/adevtool/bin/run download -d rango -t factory -b BP4A.260205.001",
+    "generate": "ADEVTOOL_SKIP_DEP_BUILD=1 vendor/adevtool/bin/run generate-all -d rango",
+    "kernel_symlink_layer": "ln -sfn grapheneos device/google/laguna-kernels/6.6/trunk-14072179",
+    "lunch": "source build/envsetup.sh && lunch rango-trunk_staging-userdebug"
+  },
+  "delta": {
+    "fingerprint": "Goodix (like akita; not QFP/tokay)",
+    "wifi_insmod": "bcmdhd4390",
+    "bt_rfkill": "nitrous",
+    "nfc": "st21nfc",
+    "foldable": ["hinge_angle", "unfold_transition", "dual_panel_rgea_rgeb", "rango_unfolded_systemui_overlays"]
+  },
+  "frontend": {
+    "task_id": "F-PORT-RANGO-FOLD",
+    "recommendation": "N/A",
+    "rationale": "Shared values/bool/locale overlays sufficient; fold RROs come from adevtool; escalate only if posture smoke fails"
+  },
+  "layer_residuals": [
+    "trunk-14072179 → grapheneos symlink",
+    "vendor/guardtalk/device/rango/ + laguna blocklist + nitrous",
+    "Fix REGEN_HOOKS.md incorrect zumapro claim for rango"
+  ]
+}

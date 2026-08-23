@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GuardTalkOS — threat model</title>
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'" />
+    <link rel="stylesheet" href="../install/styles-route.css" />
+  </head>
+  <body>
+    <main id="installer-main" class="installer">
+      <h1>What this installer does not cover</h1>
+      <p>Verified boot checks what your key signs. The items below stay outside that check. This page is static and makes no network request.</p>
+      <ul>
+        <li>Firmware beneath AVB (baseband, boot ROM) is not signed by your key.</li>
+        <li>A signing machine already compromised can produce a valid signature on the wrong image.</li>
+        <li>A key copied without your knowledge is still a valid key.</li>
+        <li>The Gateway is a network-defence boundary for messages, not an absolute one.</li>
+        <li>This installer cannot detect coercion or a stolen backup passphrase.</li>
+      </ul>
+      <nav>
+        <a href="../install/">Back to install</a>
+        <a href="../install/update/">Update</a>
+        <a href="../install/recover/">Recover</a>
+      </nav>
+    </main>
+  </body>
+</html>

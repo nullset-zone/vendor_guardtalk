@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guardtalk.local/web-installer/schema/channel-manifest.schema.json",
+  "title": "GuardTalkOS web-install channel manifest",
+  "description": "Metadata a future flashcore can fetch. MVP channel is tokay + dev/unlocked (DEC-WEBINSTALL-007). Not a GrapheneOS-equivalent locked verified-boot claim.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "product",
+    "advertisedDevices",
+    "channel",
+    "bootState",
+    "channelLabel",
+    "verifiedBootClaim",
+    "releaseId",
+    "unixEpoch",
+    "sourceStamp",
+    "flashOrder",
+    "factoryZip",
+    "avb",
+    "artifacts",
+    "signature"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "product": {
+      "type": "string",
+      "enum": ["tokay", "akita"],
+      "description": "Advertised devices: Pixel 9 (tokay) and Pixel 8a (akita). Packer fails closed on rango/shiba/husky."
+    },
+    "advertisedDevices": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "items": { "enum": ["tokay", "akita"] },
+      "description": "Public allowlist. tokay and/or akita. Must include product."
+    },
+    "reservedProducts": {
+      "type": "array",
+      "items": { "type": "string", "not": { "enum": ["tokay", "akita", "rango"] } },
+      "description": "Must not list advertised devices or rango."
+    },
+    "channel": {
+      "type": "string",
+      "enum": ["dev"],
+      "description": "GOS-like channel token. MVP is dev, not stable."
+    },
+    "bootState": {
+      "type": "string",
+      "enum": ["unlocked"],
+      "description": "DEC-WEBINSTALL-007: this channel is unlocked."
+    },
+    "channelLabel": {
+      "type": "string",
+      "const": "dev/unlocked"
+    },
+    "verifiedBootClaim": {
+      "type": "string",
+      "const": "none",
+      "description": "Do not claim GrapheneOS-equivalent locked verified boot."
+    },
+    "releaseId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "description": "First token of the channel pointer file."
+    },
+    "unixEpoch": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Second token of the channel pointer file (UTC seconds)."
+    },
+    "sourceStamp": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Basename of the desktop-flash stamp this channel was packed from."
+    },
+    "flashOrder": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        { "const": "firmware" },
+        { "const": "avb_custom_key" },
+        { "const": "os" }
+      ],
+      "items": false,
+      "description": "DEC-WEBINSTALL-006. Channel must not emit a zip that contradicts this order."
+    },
+    "factoryZip": {
+      "type": ["string", "null"],
+      "description": "Null this wave. A full -install- zip is a documented follow-on."
+    },
+    "factoryZipFollowOn": {
+      "type": "string"
+    },
+    "avb": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publicKeyFile", "sha256", "size"],
+      "properties": {
+        "publicKeyFile": {
+          "type": "string",
+          "const": "avb_pkmd.bin"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "phase", "sha256", "size"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._-]+$",
+            "not": { "pattern": "\\.(pem|pk8)$" }
+          },
+          "phase": {
+            "type": "string",
+            "enum": ["firmware", "avb", "os"],
+            "description": "firmware first, then avb (avb_pkmd.bin), then os."
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "mode"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "mode": {
+          "type": "string",
+          "enum": ["hash-only", "openssh-signify"]
+        },
+        "file": { "type": ["string", "null"] },
+        "allowedSigners": { "type": ["string", "null"] },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}

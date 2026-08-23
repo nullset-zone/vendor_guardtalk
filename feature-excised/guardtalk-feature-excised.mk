@@ -68,13 +68,19 @@ include vendor/guardtalk/feature-excised/icon-overlays.mk
 # full overlay set (6 RROs) is wired through the single executing bridge.
 include vendor/guardtalk/radio-excised/telephony-features.mk
 
-  # T-W2-I6-THEME — GuardTalk bootanimation + wallpaper wiring. guardtalk-theme.mk
-  # was originally meant to be included from guardtalk-tokay.mk (never included in
-  # the build chain), so the GuardTalk bootanimation.zip was silently never copied
-  # into the image. Include it here so the brand assets (which exist in
-  # vendor/guardtalk/branding/bootanimation/) are picked up. The makefile is
-  # self-gated (ifeq wildcard) on asset existence.
-  include vendor/guardtalk/device/tokay/guardtalk-theme.mk
+  # T-W2-I6-THEME / T-BRAND-SWEEP / T-PORT-AKITA-THEME-WIRE — GuardTalk
+  # bootanimation + wallpaper wiring via PRODUCT_DEVICE (not tokay-hardcoded).
+  # Per-device wrappers under device/<codename>/guardtalk-theme.mk include the
+  # shared branding/guardtalk-theme.mk. Fallback to the shared file if a
+  # per-device wrapper is missing so lunch stays green for new ports.
+  _gt_theme_mk := vendor/guardtalk/device/$(PRODUCT_DEVICE)/guardtalk-theme.mk
+  ifeq ($(wildcard $(_gt_theme_mk)),)
+    _gt_theme_mk := vendor/guardtalk/branding/guardtalk-theme.mk
+  endif
+  ifneq ($(wildcard $(_gt_theme_mk)),)
+    include $(_gt_theme_mk)
+  endif
+
 
   # T-SEC-P4-PRIVACY / T-SEC-P4-PERMS — packages that lived only in
   # guardtalk-tokay.mk (never inherited). Wire through this live bridge so they

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GuardTalkOS installer — Pixel 9 / Pixel 8a</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">Skip to installer steps</a>
+    <header class="masthead">
+      <p class="eyebrow">GuardTalkOS</p>
+      <h1>Web installer</h1>
+      <p class="lede">
+        Install a <strong>dev/unlocked</strong> Pixel 9 (tokay) or Pixel 8a (akita)
+        image. The server loads the matching channel when you pick a device.
+        Flash order comes from flashcore, not from this page.
+      </p>
+    </header>
+
+    <aside class="banners" aria-label="Channel limits">
+      <p class="banner banner-dev" data-dec="007">
+        <strong>dev/unlocked.</strong>
+        This channel is not GrapheneOS-equivalent locked verified boot.
+        Locking the bootloader here does not create a production verified-boot install.
+      </p>
+      <p class="banner banner-parity" data-dec="008">
+        Flashcore writes firmware artifacts once, then reconnects.
+        It does not replay the desktop dual-slot bootloader dance and is
+        <strong>not</strong> a substitute for <code>flash-from-remote.sh</code>.
+      </p>
+      <p class="banner banner-hold" data-dec="009">
+        <strong>DEC-009 HOLD.</strong>
+        Live Flash/Lock are HOLD. Dry-run is the only shipped execute path.
+        This is <strong>not</strong> <code>flash-from-remote.sh</code>.
+      </p>
+    </aside>
+
+    <div class="layout">
+      <nav class="steps" aria-label="Installer sequence">
+        <ol>
+          <li>Check this computer</li>
+          <li>If the phone is in Android, reboot it to Fastboot from this page</li>
+          <li>Choose Pixel 9 (tokay) or Pixel 8a (akita)</li>
+          <li>Server loads the matching channel</li>
+          <li>Review the flashcore plan</li>
+          <li>Connect in Fastboot Mode</li>
+          <li>Unlock the bootloader</li>
+          <li>Flash the plan</li>
+          <li>Reconnect after reboot-bootloader</li>
+          <li>Lock only after flash completes</li>
+        </ol>
+      </nav>
+
+      <main id="workspace" class="workspace">
+        <section class="panel" aria-labelledby="host-title">
+          <h2 id="host-title">1. Host check</h2>
+          <ul class="checklist">
+            <li>Use a current Chromium, Chrome, Edge, or Brave window — not Firefox or Safari for live USB.</li>
+            <li>
+              <strong>Private / Incognito windows are not a supported path.</strong>
+              Origin storage in those windows is too small to hold the real artifacts.
+            </li>
+            <li>On Linux, stop <code>fwupd</code> if it claims the fastboot device (<code>systemctl stop fwupd.service</code>).</li>
+            <li>
+              Stock Android: enable OEM unlocking and USB debugging on the Pixel,
+              plug USB into <strong>this computer</strong>, then use
+                  <strong>Reboot to Fastboot</strong> below. This page talks WebUSB ADB
+                  and sends <code>adb reboot bootloader</code>
+              (<code>reboot:bootloader</code>). The first time, unlock the phone
+              and tap Allow USB debugging. Stop a local <code>adb</code> daemon
+              first (<code>adb kill-server</code>) or the browser cannot claim
+              the USB interface.
+            </li>
+            <li>
+              Manual fallback: hold volume-down + power, or run
+              <code>vendor/guardtalk/scripts/reboot-to-fastboot.sh</code> on the
+              USB host. <code>flash-from-remote.sh</code> still auto-reboots when
+              the phone is in Android.
+            </li>
+          </ul>
+          <div class="actions">
+            <button id="btn-reboot-fastboot" type="button">Reboot to Fastboot</button>
+          </div>
+          <p id="webusb-note" class="note"></p>
+          <label class="check">
+            <input id="private-hint" type="checkbox" />
+            I am in a private or Incognito window (unsupported)
+          </label>
+        </section>
+
+        <section class="panel" aria-labelledby="device-title">
+          <h2 id="device-title">2. Device</h2>
+          <label class="field" for="device">Advertised device</label>
+          <select id="device" name="device"></select>
+          <p class="note">Pixel 9 (tokay) and Pixel 8a (akita) are offered. Pixel 8 (shiba), Pixel 8 Pro (husky), and rango are rejected.</p>
+        </section>
+
+        <section class="panel" aria-labelledby="channel-title">
+          <h2 id="channel-title">3. Channel</h2>
+          <p>
+            Images come from this server:
+            <code id="channel-url">../channels/tokay/</code>
+            Changing the device reloads that folder. No local file picker.
+          </p>
+          <p id="channel-status" class="note">Waiting for the hosted channel…</p>
+          <div id="quota-box" class="callout" role="alert" hidden>
+            <h3>Storage quota</h3>
+            <p id="quota-text"></p>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="plan-title">
+          <h2 id="plan-title">4. Flashcore plan</h2>
+          <p id="plan-meta" class="note">Load a channel to see firmware → avb_custom_key → os.</p>
+          <ol id="plan-list" class="plan"></ol>
+          <div class="actions">
+            <button id="btn-preview" type="button" class="secondary" disabled>Refresh plan preview</button>
+            <button id="btn-dry-run" type="button" class="secondary">Use dry-run transport</button>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="device-actions-title">
+          <h2 id="device-actions-title">5–9. Connect, unlock, flash, lock</h2>
+          <p class="note">
+            Buttons call flashcore. Unlock is required before flash. Lock is
+            rejected until the plan completes. Unlock and lock wipe user data
+            when the Pixel accepts the command.
+          </p>
+          <div class="actions">
+            <button id="btn-connect" type="button">Connect</button>
+            <button id="btn-unlock" type="button" class="danger" disabled>Unlock bootloader</button>
+            <button id="btn-flash" type="button" class="danger" disabled>Flash plan</button>
+            <button id="btn-lock" type="button" class="danger" disabled>Lock bootloader</button>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="reconnect-title">
+          <h2 id="reconnect-title">Reconnect after reboot-bootloader</h2>
+          <p>
+            When firmware or OS flashing reboots the bootloader, this page loses
+            the USB session. Leave the Pixel in Fastboot Mode, then use
+            <strong>Reconnect</strong> in the dialog. If you are installing from
+            another phone, turn off desktop-site mode or the session will drop again.
+          </p>
+        </section>
+
+        <section class="panel" aria-labelledby="log-title">
+          <h2 id="log-title">Activity</h2>
+          <p id="alert-text" class="status alert" role="alert"></p>
+          <p id="status-text" class="status" role="status">Starting…</p>
+          <div id="event-log" class="log" aria-live="polite"></div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="reconnect-dialog" aria-labelledby="reconnect-dialog-title">
+      <h2 id="reconnect-dialog-title">Reconnect the Pixel</h2>
+      <p>
+        The bootloader reboot ended this browser's USB session. Confirm the
+        device is in Fastboot Mode, attach the cable again, then continue.
+      </p>
+      <p>
+        This is expected after reboot-bootloader. It is not a failed flash by itself.
+      </p>
+      <button id="reconnect-btn" type="button">Reconnect</button>
+    </dialog>
+
+    <footer class="foot">
+      <p>
+        GuardTalkOS web installer · tokay + akita · channel label
+        <strong>dev/unlocked</strong> · flashcore plan, not a factory
+        <code>-install-</code> zip.
+      </p>
+    </footer>
+    <script type="module" src="../dist/wizard/main.js"></script>
+  </body>
+</html>

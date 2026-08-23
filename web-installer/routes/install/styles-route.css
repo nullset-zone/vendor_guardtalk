@@ -1,0 +1,390 @@
+/*
+ * /install route styles (Route Builder A, steps 0–4).
+ * Token inventory inherited from wizard/styles.css :root — obsidian ground,
+ * signal green (--ok) ONLY for verified states, caution amber for
+ * alpha/pending, tripwire red ONLY for failures. No inline styles anywhere
+ * (CSP: style-src 'self').
+ */
+
+.installer {
+  width: min(1120px, calc(100% - 2rem));
+  margin-inline: auto;
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 0 3rem;
+}
+
+.installer-top {
+  display: flex;
+  align-items: center;
+}
+
+.installer-rail {
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: var(--bg-rail);
+  padding: 0.75rem;
+}
+
+.installer-main {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.installer-foot {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.step-headline {
+  margin: 0;
+  font-size: clamp(1.25rem, 2.2vw, 1.7rem);
+}
+
+.posture-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.lede,
+.note {
+  color: var(--muted);
+  margin: 0;
+}
+
+.claim {
+  margin: 0;
+}
+
+.claim a {
+  color: var(--copper);
+}
+
+.claim-limit {
+  border-left: 4px solid var(--warn);
+  padding-left: 0.75rem;
+}
+
+.claim-hardening {
+  border-left: 4px solid var(--ok);
+  padding-left: 0.75rem;
+}
+
+.confirm-marker {
+  display: block;
+  font-family: ui-monospace, monospace;
+  color: var(--warn);
+}
+
+.confirm-placeholder {
+  font-family: ui-monospace, monospace;
+  color: var(--warn);
+}
+
+.mono,
+code.mono,
+pre.cmd-block {
+  font-family: ui-monospace, "Cascadia Mono", "Source Code Pro", monospace;
+}
+
+/* Step 0 ------------------------------------------------------------------ */
+
+.custody-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.target-table,
+.flow-compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.target-table caption,
+.flow-compare caption {
+  text-align: left;
+  color: var(--muted);
+  padding: 0.25rem 0;
+}
+
+.target-table th,
+.target-table td,
+.flow-compare th,
+.flow-compare td {
+  border: 1px solid var(--line);
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.flow-compare tbody th,
+.target-table tbody th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.fetch-points {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-family: ui-monospace, monospace;
+}
+
+.file-slots {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.file-slot {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.file-slot input[type="file"] {
+  color: var(--ink);
+}
+
+/* Chips inherit .chip styles from the shared token inventory; route-local
+ * sizing only. */
+
+.chip {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--line-strong);
+}
+
+.chip-verified {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.chip-caution {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.chip-tripwire {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.chip-neutral {
+  color: var(--ink);
+}
+
+/* Side-by-side ------------------------------------------------------------ */
+
+.sbs-row {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.sbs-label {
+  color: var(--muted);
+}
+
+.sbs-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.sbs-col-head {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.sbs-value {
+  overflow-wrap: anywhere;
+}
+
+/* Step 2 verdicts ---------------------------------------------------------- */
+
+.verdict-row {
+  margin: 0;
+}
+
+.stop-banner {
+  margin: 0;
+}
+
+.stop-label {
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--danger);
+}
+
+.stop-reason {
+  margin: 0;
+  border-left: 4px solid var(--danger);
+  padding-left: 0.75rem;
+}
+
+.stop-detail {
+  margin: 0;
+  color: var(--muted);
+}
+
+.release-meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  font-family: ui-monospace, monospace;
+}
+
+.release-meta dt {
+  color: var(--muted);
+}
+
+.release-meta dd {
+  margin: 0;
+}
+
+/* Step 3 ------------------------------------------------------------------ */
+
+.flow-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.9rem;
+}
+
+.flow-card {
+  border: 1px solid var(--line-strong);
+  border-radius: 0.6rem;
+  padding: 0.9rem 1rem;
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+}
+
+.flow-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.flow-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.fingerprint-row {
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.fingerprint-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.retype-row {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.retype-row input {
+  max-width: 12ch;
+  padding: 0.35rem 0.5rem;
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: 0.35rem;
+}
+
+.check-row {
+  margin: 0;
+}
+
+/* Step 4 ------------------------------------------------------------------ */
+
+.algo-row {
+  margin: 0;
+}
+
+.algo-label {
+  color: var(--muted);
+}
+
+.confirm-line {
+  margin: 0;
+  color: var(--warn);
+  font-family: ui-monospace, monospace;
+}
+
+.cmd-block {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  overflow-x: auto;
+  white-space: pre;
+  margin: 0;
+}
+
+/* Buttons ------------------------------------------------------------------ */
+
+.btn-primary,
+.btn-secondary {
+  font: inherit;
+  border-radius: 0.45rem;
+  padding: 0.55rem 0.95rem;
+  cursor: pointer;
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  background: var(--bg);
+}
+
+.btn-primary {
+  border-color: var(--copper);
+  background: var(--copper);
+  color: var(--copper-ink);
+  font-weight: 700;
+}
+
+.btn-primary:hover {
+  background: var(--copper-hover);
+}
+
+.btn-primary:active {
+  background: var(--copper-active);
+}
+
+.btn-primary[disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.btn-secondary:hover {
+  border-color: var(--copper);
+}
+
+:where(button, a, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

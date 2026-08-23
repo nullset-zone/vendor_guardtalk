@@ -1,0 +1,22 @@
+{
+  // Site build config (PLAN.md §0 named command). Compiles the browser graphs
+  // (lib/** + routes/**) to dist/routes-js; scripts/build-site.sh then copies
+  // the emitted JS beside the static assets under dist/site so every module
+  // specifier resolves relatively and the tree serves fully offline (D-006).
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": false,
+    "outDir": "dist/routes-js",
+    "rootDir": ".",
+    "types": []
+  },
+  "include": [
+    "lib/**/*.ts",
+    "routes/**/*.ts",
+    "src/hash.ts",
+    "src/errors.ts",
+    "src/sha256-portable.ts"
+  ],
+  "exclude": ["lib/claims/lint-claims.ts"]
+}

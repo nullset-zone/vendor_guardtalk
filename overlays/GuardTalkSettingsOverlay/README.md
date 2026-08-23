@@ -73,7 +73,9 @@ Dev Options unlock block stays `true`. Never set `config_show_about_build_number
 **Battery HIDE:** wireless-charging restrict  
 **System HIDE:** gestures (`config_show_gesture_settings`), assist/voice input,
 TTS summary, view logs  
-**Privacy HIDE:** backup (`config_show_backup_settings` — `backup_data` + related)  
+**Privacy HIDE:** backup (`config_show_backup_settings` — `backup_data` + related);
+Agents; geodata sharing updates; Health Connect (`T-UIHIDE-KEYS`)  
+**Security HIDE:** Trust agents (`config_show_manage_trust_agents`)  
 **Security:** `config_security_mutations_require_password=true` — mutation rows
 require main password via GT Config gate. No network under Security.
 
@@ -83,5 +85,28 @@ require main password via GT Config gate. No network under Security.
 - `config_show_backup_settings=false` — Privacy backup_* rows + Backup search index
 - Hide ≠ delete BackupManager / gesture services / APKs
 
-**API docs:** `SETTINGS_VISIBILITY_POLICY.md`, `FILES_UI_NOTES.md`,
+### T-UIHIDE-KEYS
+
+- `config_show_app_function_access=false` — Privacy → Agents
+- `config_show_app_data_sharing_updates=false` — Privacy → geodata transmission
+- `config_show_health_connect_settings=false` — Privacy → Health Connect tile
+- `config_show_manage_trust_agents=false` (+ `config_show_trust_agent_click_intent`)
+- Backup remains gated by `config_show_backup_settings=false`
+
+### F-UIHIDE-SETTINGS (residual UI polish)
+
+- Overlay `system_dashboard_summary` → `Languages, keyboard, time`
+  (removes user-visible "gestures" / "backup" from System parent tile)
+- Controllers/bools from T-UIHIDE-KEYS unchanged; no APK deletes
+
+### F-UIHIDE-LOCALE-SUMMARY
+
+- Matching `system_dashboard_summary` overrides in `res/values-*/` for all
+  **85** Settings locales that translated the old summary
+- EN `values/strings.xml` preserved: `Languages, keyboard, time`
+- Docs: `F-UIHIDE-LOCALE-SUMMARY.md`,
+  `F-UIHIDE-LOCALE-SUMMARY-translations.json`
+
+**API docs:** `SETTINGS_VISIBILITY_POLICY.md`, `T-UIHIDE-KEYS.md`,
+`F-UIHIDE-SETTINGS.md`, `F-UIHIDE-LOCALE-SUMMARY.md`, `FILES_UI_NOTES.md`,
 `GT_CONFIG_PASSWORD_GATE_API.md`

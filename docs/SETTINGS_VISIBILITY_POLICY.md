@@ -125,17 +125,44 @@ Battery / System remain **KEEP**. Sub-item matrices (overlayable bools):
 | TTS summary | `config_show_tts_settings_summary` | **false** |
 | View logs | `config_show_view_logs` | **false** |
 
-### Privacy — Backup (`F-SYS-HIDE-GESTURE-BACKUP`)
+### Privacy — Backup (`F-SYS-HIDE-GESTURE-BACKUP` / `T-UIHIDE-KEYS`)
 
 | Item | Config bool | Overlay |
 |------|-------------|---------|
 | Backup data / configure / auto-restore / inactive / management | `config_show_backup_settings` | **false** |
 | `UserBackupSettingsActivity` search raw index | same bool (search gate) | **false** |
+| System site-map parent (`CustomSiteMapRegistry` → System) | same bool | **false** |
 
 Hide = UI + Settings search only. BackupManager / transport services / APKs stay installed.
 Gestures: `GesturesSettingPreferenceController` + gesture `@SearchIndexable` pages gate on
 `config_show_gesture_settings`. Backup: `PrivacySettingsUtils.getInvisibleKey` + related
 controllers / search providers gate on `config_show_backup_settings`.
+
+### Privacy / Security — T-UIHIDE-KEYS
+
+| Item (user-facing) | Preference key / surface | Config bool | Overlay |
+|--------------------|--------------------------|-------------|---------|
+| Health and fitness (Health Connect) | Injected IA tile `com.android.healthconnect.controller` | `config_show_health_connect_settings` | **false** |
+| Agents | `privacy_app_function_access` | `config_show_app_function_access` | **false** |
+| Changes in geodata transmission | `privacy_app_data_sharing_updates` | `config_show_app_data_sharing_updates` | **false** |
+| Trust agents | `manage_trust_agents` (+ Smart Lock list) | `config_show_manage_trust_agents` / `config_show_trust_agent_click_intent` | **false** |
+| Backup (System) | `UserBackupSettingsActivity` / `backup_*` | `config_show_backup_settings` | **false** |
+
+Controllers return `UNSUPPORTED_ON_DEVICE` / injected tiles skipped via
+`GuardTalkPrivacyVisibility` + `DashboardFragment.displayTile` +
+`SettingsSearchIndexablesProvider.isEligibleForIndexing`. No APK/service deletion.
+
+### Parent dashboard summaries (`F-UIHIDE-SETTINGS`)
+
+| Surface | String | Overlay value | Notes |
+|---------|--------|---------------|-------|
+| System top-level tile | `system_dashboard_summary` | `Languages, keyboard, time` | Removes "gestures" + "backup" (both UI-hidden) |
+| Privacy top-level tile | `privacy_dashboard_summary` | *(unchanged)* | Already omits Agents / HC / geodata / Backup |
+| Security top-level tile | `security_dashboard_summary` | *(unchanged)* | Already omits Trust agents |
+
+Localized `system_dashboard_summary` is RRO-overlaid for all **85** Settings
+`values-*` locales (`F-UIHIDE-LOCALE-SUMMARY`). See
+`F-UIHIDE-LOCALE-SUMMARY.md` (uncovered Settings translators: **0**).
 
 ### Security mutations password UX
 
