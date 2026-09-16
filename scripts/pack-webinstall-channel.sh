@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # pack-webinstall-channel.sh
 #
-# Adapt an existing tokay desktop-flash stamp into a GuardTalkOS web-install
+# Adapt an existing tokay, akita, or komodo desktop-flash stamp into a GuardTalkOS web-install
 # channel (manifest + SHA256SUMS + GOS-like pointer). Does not rebuild images.
 #
-# DEC-WEBINSTALL-001/010: advertised allowlist is tokay + akita.
+# DEC-WEBINSTALL-001/010 + DEC-PORT-KOMODO-004: advertised allowlist is
+# tokay + akita + komodo.
 # DEC-WEBINSTALL-006: flashOrder is firmware → avb_custom_key → os.
 # DEC-WEBINSTALL-007: this channel is labeled dev/unlocked. Not GOS-equivalent
 #   locked verified boot. Do not generate or commit private keys.
@@ -21,7 +22,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
-readonly ADVERTISED_DEVICES=(tokay akita)
+readonly ADVERTISED_DEVICES=(tokay akita komodo)
 readonly CHANNEL_DEFAULT="dev"
 readonly BOOT_STATE="unlocked"
 readonly CHANNEL_LABEL="dev/unlocked"
@@ -32,9 +33,9 @@ log() { echo "$*"; }
 
 usage() {
     cat <<'EOF'
-pack-webinstall-channel.sh — tokay/akita desktop-flash → web-install channel
+pack-webinstall-channel.sh — tokay/akita/komodo desktop-flash → web-install channel
 
-Reads an existing tokay or akita stamp (default: releases/desktop-flash/latest).
+Reads an existing tokay, akita, or komodo stamp (default: latest).
 Emits a GOS-like pointer, SHA256SUMS, public avb_pkmd.bin, and manifest.json.
 Does not rebuild Android images. Does not write *.pem / *.pk8 / .env.
 
@@ -113,7 +114,7 @@ assert_advertised_product() {
     for allowed in "${ADVERTISED_DEVICES[@]}"; do
         [[ "$product" == "$allowed" ]] && return 0
     done
-    die "product '$product' is not in the advertised allowlist (tokay, akita)"
+    die "product '$product' is not in the advertised allowlist (tokay, akita, komodo)"
 }
 
 assert_public_avb() {
@@ -275,6 +276,7 @@ find_signature() {
         "${dir}/manifest.json.sig" \
         "${dir}/tokay-dev.sig" \
         "${dir}/akita-dev.sig" \
+        "${dir}/komodo-dev.sig" \
         "${dir}/SHA256SUMS.sig"; do
         [[ -f "$cand" ]] && { echo "$cand"; return 0; }
     done
@@ -322,19 +324,19 @@ verify_channel_dir() {
     local hash_root="${2:-$dir}"
     local pointer="" cand
     shopt -s nullglob
-    for cand in "$dir"/tokay-dev "$dir"/akita-dev; do
+    for cand in "$dir"/tokay-dev "$dir"/akita-dev "$dir"/komodo-dev; do
         [[ -f "$cand" ]] && pointer="$cand"
     done
     shopt -u nullglob
     local sums="${dir}/SHA256SUMS"
     local manifest="${dir}/manifest.json"
-    [[ -n "$pointer" && -f "$pointer" ]] || die "missing channel pointer: tokay-dev or akita-dev"
+    [[ -n "$pointer" && -f "$pointer" ]] || die "missing channel pointer: tokay-dev, akita-dev, or komodo-dev"
     [[ -f "$sums" ]] || die "missing SHA256SUMS"
     [[ -f "$manifest" ]] || die "missing manifest.json"
     [[ -f "${dir}/avb_pkmd.bin" ]] || die "missing public avb_pkmd.bin"
     local body
     body="$(tr -d '\r' <"$pointer")"
-    [[ "$body" =~ ^[A-Za-z0-9._-]+[[:space:]]+[0-9]+[[:space:]]+(tokay|akita)[[:space:]]+(dev|unlocked)$ ]] \
+    [[ "$body" =~ ^[A-Za-z0-9._-]+[[:space:]]+[0-9]+[[:space:]]+(tokay|akita|komodo)[[:space:]]+(dev|unlocked)$ ]] \
         || die "pointer must be: ${POINTER_FORMAT} (or unlocked)"
     local product
     product="$(awk '{print $3}' <<<"$body")"
@@ -411,18 +413,22 @@ pack_channel() {
 }
 
 self_test() {
-    local tmp tokay_stamp akita_stamp rango_stamp out
+    local tmp tokay_stamp akita_stamp komodo_stamp rango_stamp out
     tmp="$(mktemp -d)"
     tokay_stamp="${tmp}/tokay-20990101-000000"
     akita_stamp="${tmp}/akita-20990101-000000"
+    komodo_stamp="${tmp}/komodo-20990101-000000"
     rango_stamp="${tmp}/rango-20990101-000000"
-    mkdir -p "$tokay_stamp" "$akita_stamp" "$rango_stamp"
+    mkdir -p "$tokay_stamp" "$akita_stamp" "$komodo_stamp" "$rango_stamp"
     printf 'public-avb-blob\n' >"${tokay_stamp}/avb_pkmd.bin"
     printf 'fw\n' >"${tokay_stamp}/bootloader.img"
     printf 'os\n' >"${tokay_stamp}/boot.img"
     cp -p -- "${tokay_stamp}/avb_pkmd.bin" "${akita_stamp}/avb_pkmd.bin"
     printf 'fw\n' >"${akita_stamp}/bootloader.img"
     printf 'os\n' >"${akita_stamp}/boot.img"
+    cp -p -- "${tokay_stamp}/avb_pkmd.bin" "${komodo_stamp}/avb_pkmd.bin"
+    printf 'fw\n' >"${komodo_stamp}/bootloader.img"
+    printf 'os\n' >"${komodo_stamp}/boot.img"
     cp -p -- "${tokay_stamp}/avb_pkmd.bin" "${rango_stamp}/avb_pkmd.bin"
     printf 'fw\n' >"${rango_stamp}/bootloader.img"
     out="${tmp}/out-tokay"
@@ -432,6 +438,11 @@ self_test() {
     CHANNEL_TOKEN="dev" DRY_RUN=0 COPY_IMAGES=0 \
         pack_channel "$akita_stamp" "${tmp}/out-akita"
     CHANNEL_TOKEN="dev" verify_channel_dir "${tmp}/out-akita"
+    CHANNEL_TOKEN="dev" DRY_RUN=0 COPY_IMAGES=0 \
+        pack_channel "$komodo_stamp" "${tmp}/out-komodo"
+    CHANNEL_TOKEN="dev" verify_channel_dir "${tmp}/out-komodo"
+    [[ -f "${tmp}/out-komodo/komodo-dev" ]] \
+        || die "self-test: komodo-dev pointer missing"
     if ( CHANNEL_TOKEN="dev" DRY_RUN=0 COPY_IMAGES=0 \
         pack_channel "$rango_stamp" "${tmp}/out-rango" ) 2>"${tmp}/rango.err"; then
         die "self-test: rango stamp must be rejected"

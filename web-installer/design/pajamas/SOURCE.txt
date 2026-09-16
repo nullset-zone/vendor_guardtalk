@@ -1,0 +1,64 @@
+GuardTalk Pajamas — vendored compiled CSS + --gl-* tokens
+
+Exact source URLs (fetched 2026-08-23):
+  https://design.guardtalk.io/pajamas/
+  https://design.guardtalk.io/pajamas/#/templates/
+  https://design.guardtalk.io/pajamas/assets/index-BFboFyqJ.css
+  https://design.guardtalk.io/pajamas/assets/index-D1E98FVb.js
+
+Fetch date: 2026-08-23
+Host: Netlify (design.guardtalk.io)
+HTML Content-Length: 936
+HTML ETag: 9e73b6a2abb29681279da7528804f668-ssl
+index.html SHA-256: 89c9066261d2a7dd49419b74620f7e0a66fcadd06db26d5b4ca1f588bbbd186c
+Compiled CSS asset: /pajamas/assets/index-BFboFyqJ.css
+Compiled CSS SHA-256: 6628d695ba3eb77f4113ccc2b5d9db64b8b13039effe0662a609ce60f16d6a46
+SPA JS asset (inspected, NOT vendored — React/Tailwind app):
+  /pajamas/assets/index-D1E98FVb.js
+  SHA-256: 15626c7b642022aae4818bf87c8809e89de4d645c46c23807551a21924b42409
+
+npm: guardtalk-pajamas and @guardtalk/pajamas are not published (registry 404).
+Practical source is the published compiled stylesheet, not an npm package.
+
+Version / hash:
+  published-css-asset: index-BFboFyqJ.css
+  sha256:6628d695ba3eb77f4113ccc2b5d9db64b8b13039effe0662a609ce60f16d6a46
+  html-etag: 9e73b6a2abb29681279da7528804f668-ssl
+
+What was extracted:
+  - --gl-* Style-Dictionary tokens from :root (tokens.css + tokens.json)
+  - Template / chrome layout CSS (templates.css) for /pajamas/#/templates/
+  - Documented .gl-* component CSS (components.css)
+  - 18-template catalog (templates/CATALOG.*)
+  - Exact compiled CSS kept as compiled/index-BFboFyqJ.css
+
+Deliberately NOT vendored:
+  - index-D1E98FVb.js (runtime React SPA)
+  - Google Fonts <link> from the published HTML (fonts.googleapis.com / gstatic)
+  - @font-face files (none existed in the compiled CSS)
+  - Remote images (picsum / pravatar referenced only in the SPA, not in CSS)
+
+Runtime policy (D-006): zero network from the installer.
+  CSS contains no url(), no @import, no design.guardtalk.io references.
+  Font tokens fall back to system-ui / ui-monospace.
+
+Vendored file list (relative to design/pajamas/):
+  compiled/index-BFboFyqJ.css  150350  sha256:6628d695ba3eb77f4113ccc2b5d9db64b8b13039effe0662a609ce60f16d6a46
+  components.css  133075  sha256:cc6634cb0df3b788b97b378e5b4881bd2cbe6352416202954561fae56e4288e3
+  reset.css  767  sha256:baa208696f550d219495495c6e89e7d48386569916e8dea4d2e4fbe9087b071b
+  templates/CATALOG.json  3904  sha256:ef9412eb279e285eb9ab48d4a3ed9c64a43d439290656d6a72fc370abeaa4146
+  templates/CATALOG.txt  2650  sha256:08978f524bd8b7f4b8638fbcc1174af4d577a0e4949d604f0ec9136825120f65
+  templates.css  13843  sha256:99d463b0fc63a85bfd4af47321bc5b2698a83ebf6582eb6983e9d31e81194d67
+  tokens.css  5521  sha256:01d2c7c66184ffef36a0ccfe05d6d1c1c4405bf3d1a9d97b89c0a2a19c7566f4
+  tokens.json  5573  sha256:90664fe417af2cd5983531218528c5f025b9462c07d8f91ad94789cea4a65cb1
+  SOURCE.txt  (this file)
+
+Installer chrome patches (F-WEBINSTALL-PAJAMAS-CONTRAST / DEC-WEBINSTALL-013):
+  Published components.css is unchanged. Installer sheets override:
+  - .gl-button--confirm-primary color → --gl-button-confirm-text (Law 21)
+  - --gl-border-color-strong remapped in wizard/styles.css to
+    --gl-color-neutral-500 so dashed/secondary borders meet ≥3:1
+  - .flow-pick / .gl-button--default-secondary / --default-dashed /
+    .btn-secondary border-color → --gl-color-neutral-500
+  reset.css header comment now records that build-site.sh concatenates it.
+

@@ -40,6 +40,7 @@ import {
   verifyStepHtml,
 } from "./late-steps.js";
 import { FIRMWARE_ORDER, OS_ORDER, runFlashPlan } from "./flash-runner.js";
+import { GL_BTN_CONFIRM } from "../../lib/ui/pajamas.js";
 
 interface Session {
   state: InstallState;
@@ -124,7 +125,7 @@ function stepHtml(): string {
       notice +
       `<label for="file-release-key">Release public key PEM (Q-04 is not baked into this build)</label>` +
       `<input type="file" id="file-release-key" data-role="release-key" />` +
-      `<button type="button" class="btn-primary" data-action="verify-release">Verify release</button>`
+      `<button type="button" class="${GL_BTN_CONFIRM}" data-action="verify-release">Verify release</button>`
     );
   }
   if (step === 3) {
@@ -160,8 +161,8 @@ function stepHtml(): string {
             }
           : {}),
       }) +
-      `<button type="button" class="btn-primary" data-action="oem-unlock-acked">I understand unlocking wipes the phone</button>` +
-      `<button type="button" class="btn-primary" data-action="device-matched">Continue once the product matches</button>`
+      `<button type="button" class="${GL_BTN_CONFIRM}" data-action="oem-unlock-acked">I understand unlocking wipes the phone</button>` +
+      `<button type="button" class="${GL_BTN_CONFIRM}" data-action="device-matched">Continue once the product matches</button>`
     );
   }
   if (step === 6) {
@@ -176,14 +177,14 @@ function stepHtml(): string {
         })
         .join("") +
       `</section>` +
-      `<button type="button" class="btn-primary" data-action="flash">Flash enrolment, images, then user-signed vbmeta</button>`
+      `<button type="button" class="${GL_BTN_CONFIRM}" data-action="flash">Flash enrolment, images, then user-signed vbmeta</button>`
     );
   }
   if (step === 7) {
     return (
       notice +
       lockStepHtml({ sim: sim(), locked: false }) +
-      `<button type="button" class="btn-primary" data-action="lock-confirmed">I confirmed lock on the device</button>`
+      `<button type="button" class="${GL_BTN_CONFIRM}" data-action="lock-confirmed">I confirmed lock on the device</button>`
     );
   }
   if (step === 8) {
@@ -226,6 +227,10 @@ async function readText(input: HTMLInputElement): Promise<string | undefined> {
 
 async function onAction(action: string, target: HTMLElement): Promise<void> {
   session.notice = undefined;
+  if (action === "back") {
+    dispatch({ type: "back" });
+    return;
+  }
   if (action === "acknowledge-intro") {
     dispatch({ type: "acknowledge-intro" });
     return;

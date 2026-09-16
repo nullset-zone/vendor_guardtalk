@@ -1,385 +1,641 @@
 /*
- * /install route styles (Route Builder A, steps 0–4).
- * Token inventory inherited from wizard/styles.css :root — obsidian ground,
- * signal green (--ok) ONLY for verified states, caution amber for
- * alpha/pending, tripwire red ONLY for failures. No inline styles anywhere
- * (CSP: style-src 'self').
+ * /install route chrome — Pajamas onboarding + settings/alerts.
+ * Tokens are vendored --gl-* only. Signal green is reserved for confirm
+ * actions and verified chips. No remote imports.
  */
 
-.installer {
-  width: min(1120px, calc(100% - 2rem));
+/* H1 / DEC-013: published .gl-button--confirm-primary uses
+   --gl-action-primary-text on brand (1.10:1). Installer chrome
+   overrides color to --gl-button-confirm-text (16.69:1). */
+.gl-button--confirm-primary {
+  color: var(--gl-button-confirm-text);
+}
+
+.installer,
+.route,
+body.route-update {
+  width: min(720px, calc(100% - 2 * var(--gl-spacing-8)));
   margin-inline: auto;
-  display: grid;
-  gap: 1rem;
-  padding: 1rem 0 3rem;
-}
-
-.installer-top {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: var(--gl-spacing-8);
+  padding: var(--gl-spacing-9) 0 var(--gl-spacing-11);
+  font-family: var(--gl-font-family);
 }
 
-.installer-rail {
-  border: 1px solid var(--line);
-  border-radius: 0.6rem;
-  background: var(--bg-rail);
-  padding: 0.75rem;
+.installer-top,
+.installer-head,
+.route-header,
+.gl-onboarding__header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gl-spacing-4);
 }
 
-.installer-main {
-  background: var(--bg-elev);
-  border: 1px solid var(--line);
-  border-radius: 0.6rem;
-  padding: 1.25rem;
+.installer-rail,
+.route nav[aria-label="Installer steps"] {
+  overflow-x: auto;
+  padding-bottom: var(--gl-spacing-3);
+}
+
+.installer-rail .gl-progress-steps,
+.rail.gl-progress-steps {
+  min-width: 36rem;
+}
+
+.rail-step-button {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rail-step[data-status="stopped"] .gl-progress-steps__marker {
+  border-color: var(--gl-feedback-danger);
+  color: var(--gl-feedback-danger);
+}
+
+.rail-stop-reason {
+  display: block;
+  margin-top: var(--gl-spacing-2);
+  color: var(--gl-feedback-danger);
+  font-size: var(--gl-font-size-sm);
+}
+
+.installer-main,
+.step-panel,
+.route .phase,
+.route .capability,
+.threat-card {
+  background: var(--gl-background-color-section);
+  border: 1px solid var(--gl-border-color-default);
+  border-radius: var(--gl-border-radius-base);
+  box-shadow: var(--gl-shadow-sm);
+  padding: var(--gl-spacing-8);
   display: grid;
-  gap: 0.9rem;
+  gap: var(--gl-spacing-6);
 }
 
-.installer-foot {
-  color: var(--muted);
-  font-size: 0.9rem;
+.installer-foot,
+.route-footer {
+  color: var(--gl-text-color-subtle);
+  font-size: var(--gl-font-size-sm);
 }
 
-.step-headline {
+.step-headline,
+.installer-main h1,
+.installer-main h2,
+.route h1,
+.route h2,
+.step-panel h2 {
   margin: 0;
-  font-size: clamp(1.25rem, 2.2vw, 1.7rem);
+  font-size: var(--gl-font-size-h2);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--gl-text-color-default);
+}
+
+/*
+ * Page title size → --gl-font-size-h1 (36px, vendored). The onboarding /
+ * settings / content templates size the page title at h1; the per-step
+ * headline (install), the route <h1> (update / verify / recover) and the
+ * section heading (threat-model) are each the page title of their route.
+ * Subsection h2/h3 stay at --gl-font-size-h2 to preserve hierarchy.
+ * Alignment stays left: no vendored template/component centres an onboarding
+ * title, and a 36px centred sentence above left-aligned dense body copy hurts
+ * scannability (Law 21). Centre alignment + the 560px column are recorded as
+ * Architect-bound residuals pending T-WEBINSTALL-PAJAMAS-TEMPLATE-EXTRACT.
+ */
+.installer-main h1,
+.installer-main h2.step-headline,
+.route h1,
+.installer-head h1,
+.gl-onboarding__header h1 {
+  font-size: var(--gl-font-size-h1);
 }
 
 .posture-row {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--gl-spacing-4);
   flex-wrap: wrap;
 }
 
+.pill-posture {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--gl-font-size-sm);
+  font-weight: 600;
+  padding: var(--gl-spacing-2) var(--gl-spacing-5);
+  border-radius: var(--gl-border-radius-base);
+  background: var(--gl-badge-neutral-bg);
+  color: var(--gl-badge-neutral-text);
+}
+
 .lede,
-.note {
-  color: var(--muted);
+.note,
+.route-intro,
+.lead {
+  color: var(--gl-text-color-subtle);
   margin: 0;
+  line-height: var(--gl-line-height-base);
+}
+
+.route-intro-strong {
+  color: var(--gl-text-color-default);
+  font-weight: 600;
 }
 
 .claim {
   margin: 0;
+  padding: var(--gl-spacing-6);
+  border-radius: var(--gl-border-radius-base);
+  border: 1px solid var(--gl-border-color-default);
+  background: var(--gl-background-color-subtle);
+  color: var(--gl-text-color-default);
 }
 
 .claim a {
-  color: var(--copper);
+  color: var(--gl-text-color-link);
 }
 
 .claim-limit {
-  border-left: 4px solid var(--warn);
-  padding-left: 0.75rem;
+  border-left: 4px solid var(--gl-feedback-warning);
+  background: var(--gl-feedback-warning-bg);
 }
 
 .claim-hardening {
-  border-left: 4px solid var(--ok);
-  padding-left: 0.75rem;
+  border-left: 4px solid var(--gl-feedback-info);
+  background: var(--gl-feedback-info-bg);
+}
+
+.claim-lineage {
+  border-left: 4px solid var(--gl-border-color-strong);
 }
 
 .confirm-marker {
   display: block;
-  font-family: ui-monospace, monospace;
-  color: var(--warn);
+  font-family: var(--gl-font-family-mono);
+  color: var(--gl-feedback-warning);
 }
 
 .confirm-placeholder {
-  font-family: ui-monospace, monospace;
-  color: var(--warn);
+  font-family: var(--gl-font-family-mono);
+  color: var(--gl-feedback-warning);
 }
 
 .mono,
 code.mono,
 pre.cmd-block {
-  font-family: ui-monospace, "Cascadia Mono", "Source Code Pro", monospace;
+  font-family: var(--gl-font-family-mono);
 }
-
-/* Step 0 ------------------------------------------------------------------ */
 
 .custody-list {
   margin: 0;
-  padding-left: 1.25rem;
+  padding-left: var(--gl-spacing-7);
   display: grid;
-  gap: 0.35rem;
+  gap: var(--gl-spacing-3);
 }
 
 .target-table,
 .flow-compare {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
+  font-size: var(--gl-font-size-base);
+  background: var(--gl-background-color-section);
 }
 
 .target-table caption,
 .flow-compare caption {
   text-align: left;
-  color: var(--muted);
-  padding: 0.25rem 0;
+  color: var(--gl-text-color-subtle);
+  padding: var(--gl-spacing-2) 0;
 }
 
 .target-table th,
 .target-table td,
 .flow-compare th,
 .flow-compare td {
-  border: 1px solid var(--line);
-  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--gl-border-color-default);
+  padding: var(--gl-spacing-4) var(--gl-spacing-5);
   text-align: left;
   vertical-align: top;
 }
 
 .flow-compare tbody th,
 .target-table tbody th {
-  color: var(--muted);
+  color: var(--gl-text-color-subtle);
   font-weight: 600;
+  background: var(--gl-background-color-subtle);
 }
 
 .fetch-points {
   margin: 0;
-  padding-left: 1.25rem;
-  font-family: ui-monospace, monospace;
+  padding-left: var(--gl-spacing-7);
+  font-family: var(--gl-font-family-mono);
 }
 
 .file-slots {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--gl-spacing-5);
 }
 
 .file-slot {
   display: grid;
-  gap: 0.3rem;
+  gap: var(--gl-spacing-2);
 }
 
-.file-slot input[type="file"] {
-  color: var(--ink);
+.file-slot input[type="file"],
+.installer-main input[type="file"],
+.installer-main input[type="text"],
+.installer-main input[type="password"],
+.route input[type="text"],
+.route input[type="password"],
+.route input[type="file"],
+.step-panel input[type="file"],
+.step-panel input[type="text"] {
+  color: var(--gl-text-color-default);
+  background: var(--gl-control-background);
+  border: 1px solid var(--gl-control-border);
+  border-radius: var(--gl-border-radius-base);
+  min-height: 32px;
+  padding: 6px var(--gl-spacing-4);
+  font-family: var(--gl-font-family);
+  font-size: var(--gl-font-size-base);
 }
-
-/* Chips inherit .chip styles from the shared token inventory; route-local
- * sizing only. */
 
 .chip {
-  display: inline-block;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  border: 1px solid var(--line-strong);
+  display: inline-flex;
+  align-items: center;
+  padding: var(--gl-spacing-2) var(--gl-spacing-5);
+  border-radius: var(--gl-border-radius-base);
+  font-size: var(--gl-font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 0;
 }
 
 .chip-verified {
-  border-color: var(--ok);
-  color: var(--ok);
+  /* Signal green reserved for verified / live state, not body text. */
+  color: var(--gl-feedback-success);
+  background: var(--gl-feedback-success-bg);
 }
 
 .chip-caution {
-  border-color: var(--warn);
-  color: var(--warn);
+  color: var(--gl-feedback-warning);
+  background: var(--gl-feedback-warning-bg);
 }
 
 .chip-tripwire {
-  border-color: var(--danger);
-  color: var(--danger);
+  color: var(--gl-feedback-danger);
+  background: var(--gl-feedback-danger-bg);
 }
 
 .chip-neutral {
-  color: var(--ink);
+  color: var(--gl-badge-neutral-text);
+  background: var(--gl-badge-neutral-bg);
 }
 
-/* Side-by-side ------------------------------------------------------------ */
-
 .sbs-row {
-  border: 1px solid var(--line);
-  border-radius: 0.5rem;
-  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--gl-border-color-default);
+  border-radius: var(--gl-border-radius-base);
+  padding: var(--gl-spacing-5) var(--gl-spacing-6);
   display: grid;
-  gap: 0.4rem;
+  gap: var(--gl-spacing-3);
+  background: var(--gl-background-color-section);
 }
 
 .sbs-label {
-  color: var(--muted);
+  color: var(--gl-text-color-subtle);
 }
 
 .sbs-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  gap: var(--gl-spacing-5);
 }
 
 .sbs-col-head {
   display: block;
-  font-size: 0.72rem;
+  font-size: var(--gl-font-size-sm);
   letter-spacing: 0.12em;
-  color: var(--muted);
+  color: var(--gl-text-color-subtle);
 }
 
 .sbs-value {
   overflow-wrap: anywhere;
 }
 
-/* Step 2 verdicts ---------------------------------------------------------- */
-
 .verdict-row {
   margin: 0;
 }
 
-.stop-banner {
+.stop-banner,
+.hard-stop,
+.sim-banner {
   margin: 0;
 }
 
 .stop-label {
   font-weight: 700;
-  letter-spacing: 0.14em;
-  color: var(--danger);
+  letter-spacing: 0.08em;
+  color: inherit;
 }
 
-.stop-reason {
+.stop-reason,
+.tripwire-text {
   margin: 0;
-  border-left: 4px solid var(--danger);
-  padding-left: 0.75rem;
+  color: var(--gl-feedback-danger);
 }
 
 .stop-detail {
   margin: 0;
-  color: var(--muted);
+  color: var(--gl-text-color-subtle);
 }
 
 .release-meta {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 0.25rem 1rem;
+  gap: var(--gl-spacing-2) var(--gl-spacing-6);
   margin: 0;
-  font-family: ui-monospace, monospace;
+  font-family: var(--gl-font-family-mono);
 }
 
 .release-meta dt {
-  color: var(--muted);
+  color: var(--gl-text-color-subtle);
 }
 
 .release-meta dd {
   margin: 0;
 }
 
-/* Step 3 ------------------------------------------------------------------ */
-
 .flow-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 0.9rem;
+  gap: var(--gl-spacing-6);
 }
 
 .flow-card {
-  border: 1px solid var(--line-strong);
-  border-radius: 0.6rem;
-  padding: 0.9rem 1rem;
+  border: 1px solid var(--gl-border-color-default);
+  border-radius: var(--gl-border-radius-base);
+  padding: var(--gl-spacing-6);
   display: grid;
-  gap: 0.5rem;
+  gap: var(--gl-spacing-4);
   align-content: start;
+  background: var(--gl-background-color-section);
 }
 
 .flow-card h3 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--gl-font-size-lg);
 }
 
 .flow-card p {
   margin: 0;
-  color: var(--muted);
+  color: var(--gl-text-color-subtle);
 }
 
 .fingerprint-row {
   margin: 0;
   display: grid;
-  gap: 0.25rem;
+  gap: var(--gl-spacing-2);
 }
 
-.fingerprint-label {
-  color: var(--muted);
-  font-size: 0.85rem;
+.fingerprint-label,
+.algo-label,
+.field-label {
+  color: var(--gl-text-color-subtle);
+  font-size: var(--gl-font-size-sm);
+  font-weight: 600;
 }
 
 .retype-row {
   display: grid;
-  gap: 0.3rem;
+  gap: var(--gl-spacing-2);
 }
 
 .retype-row input {
   max-width: 12ch;
-  padding: 0.35rem 0.5rem;
-  background: var(--bg);
-  color: var(--ink);
-  border: 1px solid var(--line-strong);
-  border-radius: 0.35rem;
 }
 
 .check-row {
   margin: 0;
 }
 
-/* Step 4 ------------------------------------------------------------------ */
-
 .algo-row {
   margin: 0;
 }
 
-.algo-label {
-  color: var(--muted);
-}
-
 .confirm-line {
   margin: 0;
-  color: var(--warn);
-  font-family: ui-monospace, monospace;
+  color: var(--gl-feedback-warning);
+  font-family: var(--gl-font-family-mono);
 }
 
 .cmd-block {
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 0.5rem;
-  padding: 0.75rem 0.9rem;
+  background: var(--gl-background-color-subtle);
+  border: 1px solid var(--gl-border-color-default);
+  border-radius: var(--gl-border-radius-base);
+  padding: var(--gl-spacing-5) var(--gl-spacing-6);
   overflow-x: auto;
   white-space: pre;
   margin: 0;
 }
 
-/* Buttons ------------------------------------------------------------------ */
+.gl-form-layout__actions,
+.installer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gl-spacing-4);
+  padding-top: var(--gl-spacing-5);
+  border-top: 1px solid var(--gl-border-color-default);
+}
 
 .btn-primary,
-.btn-secondary {
+.btn-secondary,
+.primary-action,
+.cta,
+.flash-start,
+.flow-pick {
   font: inherit;
-  border-radius: 0.45rem;
-  padding: 0.55rem 0.95rem;
+}
+
+.flow-pick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 6px var(--gl-spacing-5);
+  border: 1px dashed var(--gl-color-neutral-500);
+  border-radius: var(--gl-border-radius-base);
+  background: transparent;
+  color: var(--gl-text-color-default);
+  font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--line-strong);
-  color: var(--ink);
-  background: var(--bg);
 }
 
-.btn-primary {
-  border-color: var(--copper);
-  background: var(--copper);
-  color: var(--copper-ink);
-  font-weight: 700;
+.gl-button--default-secondary,
+.gl-button--default-dashed,
+.btn-secondary {
+  border-color: var(--gl-color-neutral-500);
 }
 
-.btn-primary:hover {
-  background: var(--copper-hover);
+.phase-loss,
+.phase-unlock,
+.recover-danger-zone,
+[data-zone="danger"] {
+  border-color: var(--gl-feedback-danger);
+  background: var(--gl-feedback-danger-bg);
 }
 
-.btn-primary:active {
-  background: var(--copper-active);
+.loss-statement,
+.wipe-warning,
+.ack-target {
+  color: var(--gl-feedback-danger);
+  font-weight: 600;
 }
 
-.btn-primary[disabled] {
-  cursor: not-allowed;
-  opacity: 0.55;
+.sim-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gl-spacing-4);
+  color: var(--gl-text-color-default);
 }
 
-.btn-secondary:hover {
-  border-color: var(--copper);
+.route-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gl-spacing-5);
+}
+
+.route-links a,
+.installer-foot a,
+.claim a,
+.threat-nav a {
+  color: var(--gl-text-color-link);
+}
+
+.console {
+  display: grid;
+  gap: var(--gl-spacing-4);
+}
+
+.console-viewport {
+  min-height: 7rem;
+  max-height: 16rem;
+  overflow: auto;
+  background: var(--gl-background-color-subtle);
+  border: 1px solid var(--gl-border-color-default);
+  border-radius: var(--gl-border-radius-base);
+  padding: var(--gl-spacing-4) var(--gl-spacing-5);
+}
+
+.console-line {
+  margin: 0 0 var(--gl-spacing-3);
+}
+
+.console-ok {
+  color: var(--gl-feedback-success);
+}
+
+.console-fail {
+  color: var(--gl-feedback-danger);
+}
+
+.console-cmd,
+.console-info,
+.console-device {
+  color: var(--gl-text-color-default);
+}
+
+.partition-progress {
+  display: grid;
+  gap: var(--gl-spacing-3);
+}
+
+.partition-progress-track {
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  background: var(--gl-background-color-strong);
+  border-radius: var(--gl-border-radius-full);
+}
+
+.partition-progress-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--gl-action-confirm-bg);
+  border-radius: var(--gl-border-radius-full);
+}
+
+.key-diagram {
+  width: 100%;
+  max-width: 620px;
+  height: auto;
+}
+
+.kd-node rect {
+  fill: var(--gl-background-color-section);
+  stroke: var(--gl-border-color-strong);
+}
+
+.kd-node text {
+  fill: var(--gl-text-color-default);
+  font-family: var(--gl-font-family);
+  font-size: 10px;
+}
+
+.kd-link {
+  stroke: var(--gl-border-color-strong);
+  fill: none;
+}
+
+.kd-link-dashed {
+  stroke-dasharray: 4 4;
+}
+
+.kd-marker {
+  fill: var(--gl-text-color-subtle);
+}
+
+.honesty-block,
+.keep-key-list,
+.compare-guide {
+  color: var(--gl-text-color-default);
+}
+
+.image-picks {
+  display: grid;
+  gap: var(--gl-spacing-4);
 }
 
 :where(button, a, input, [tabindex]):focus-visible {
-  outline: 2px solid var(--focus);
+  outline: 2px solid var(--gl-focus-ring);
   outline-offset: 2px;
+}
+
+@media (max-width: 800px) {
+  .installer,
+  .route,
+  body.route-update {
+    width: min(100% - 2 * var(--gl-spacing-6), 720px);
+  }
+
+  .sbs-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .installer-rail .gl-progress-steps,
+  .rail.gl-progress-steps {
+    min-width: 28rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

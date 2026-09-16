@@ -53,3 +53,29 @@ Prefer the project’s official GrapheneOS factory image / CLI installer when av
 ## Regenerate device trees
 
 After `adevtool generate-all -d tokay`, re-apply hooks in `device/tokay/REGEN_HOOKS.md`.
+
+## Desktop-flash CLI — Pixel 9 Pro XL (`DEVICE=komodo`)
+
+Desktop CLI (`DEVICE=komodo`). The web installer **does** advertise `komodo`
+(DEC-PORT-KOMODO-004: tokay + akita + komodo; `F-PORT-KOMODO-WEBINSTALL` APPROVED).
+Do not run `flash-from-remote.sh` against a phone until the operator says flash.
+
+| Item | Value |
+|------|--------|
+| Lunch | `komodo-trunk_staging-userdebug` |
+| Stamp | `releases/desktop-flash/komodo-<UTCSTAMP>/` |
+| Symlink | `releases/desktop-flash/komodo-latest` |
+| Script | `scripts/flash-from-remote.sh` (KEEP identical to `vendor/guardtalk/scripts/flash-from-remote.sh`) |
+| Firmware cleanup | Pixel 9 family: uart + **erase fips** + dpm (same as tokay/akita; not rango) |
+| Extra | `init.insmod.komodo.cfg` |
+
+```bash
+export REMOTE_HOST=oss-c1@192.168.2.220
+export REMOTE_BUILD_DIR=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/releases/desktop-flash/komodo-latest
+export REMOTE_KEY_DIR=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/releases/desktop-flash/komodo-latest
+# Or: DEVICE=komodo
+bash /path/to/scripts/flash-from-remote.sh
+```
+
+Leave tokay `releases/desktop-flash/latest` and `akita-latest` untouched.
+See `vendor/guardtalk/docs/KOMODO_PORT_FLASH.md`.

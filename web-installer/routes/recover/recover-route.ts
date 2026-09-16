@@ -21,6 +21,7 @@ import { fingerprintFromJwk } from "../../lib/keys/fingerprint.js";
 import { POSTURE_CONNECTIVITY, POSTURE_CUSTODY, renderPosturePill } from "../../lib/ui/posture.js";
 import { makeChip } from "../../lib/ui/chips.js";
 import { escapeHtml } from "../../lib/ui/escape.js";
+import { GL_BTN_CONFIRM, GL_BTN_DANGER, GL_BTN_LINK, glAlertHtml } from "../../lib/ui/pajamas.js";
 import { RELEASE_STATE_ALPHA } from "../verify-device/verify-route.js";
 
 export const INSTALL_HREF = "/install";
@@ -73,24 +74,28 @@ function ackGateHtml(acknowledged: boolean): string {
 
 function lossStatementHtml(): string {
   return [
-    `<section class="phase phase-loss" data-phase="read-the-loss">`,
+    `<section class="phase phase-loss recover-danger-zone gl-card" data-phase="read-the-loss" data-zone="danger">`,
     `<h2>Read this first</h2>`,
-    `<p class="loss-statement mono">The data on this phone is gone. Recovery cannot save it.</p>`,
-    `<p>Unlocking erases user data by design. There is no mode of this installer that keeps files ` +
-      `through recovery — any tool promising that is lying to you.</p>`,
+    glAlertHtml(
+      "danger",
+      "Danger zone",
+      `<p class="loss-statement mono">The data on this phone is gone. Recovery cannot save it.</p>` +
+        `<p>Unlocking erases user data by design. There is no mode of this installer that keeps files ` +
+        `through recovery — any tool promising that is lying to you.</p>`,
+    ),
     `</section>`,
   ].join("");
 }
 
 function unlockPhaseHtml(acknowledged: boolean): string {
   const gate = acknowledged
-    ? `<button type="button" class="cta danger" data-action="recover-unlock">Unlock (wipes all data)</button>`
+    ? `<button type="button" class="${GL_BTN_DANGER}" data-action="recover-unlock">Unlock (wipes all data)</button>`
     : [
         `<p>Complete the typed acknowledgement above first.</p>`,
-        `<button type="button" class="cta danger" data-action="recover-unlock" disabled>Unlock (wipes all data)</button>`,
+        `<button type="button" class="${GL_BTN_DANGER}" data-action="recover-unlock" disabled>Unlock (wipes all data)</button>`,
       ];
   return [
-    `<section class="phase phase-unlock" data-phase="unlock-wipe">`,
+    `<section class="phase phase-unlock recover-danger-zone gl-card" data-phase="unlock-wipe" data-zone="danger">`,
     `<h2>Unlock — this wipes everything</h2>`,
     `<p class="wipe-warning">${escapeHtml(WIPE_WARNING_TEXT)}</p>`,
     ...gate,
@@ -120,7 +125,7 @@ function reenrolPhaseHtml(): string {
     `<section class="phase" data-phase="re-enrol-pkmd">`,
     `<h2>Enrol your new key</h2>`,
     `<p class="wipe-warning">${REENROL_WIPE_WARNING}</p>`,
-    `<button type="button" class="cta" data-action="recover-flash-pkmd">Flash avb_pkmd.bin (avb_custom_key)</button>`,
+    `<button type="button" class="${GL_BTN_CONFIRM}" data-action="recover-flash-pkmd">Flash avb_pkmd.bin (avb_custom_key)</button>`,
     `<div class="result" data-container="flash-result"></div>`,
     `</section>`,
   ].join("");
@@ -142,7 +147,7 @@ function relockPhaseHtml(): string {
     `<section class="phase" data-phase="relock">`,
     `<h2>Relock</h2>`,
     `<p>${escapeHtml(RELOCK_WIPE_WARNING)}</p>`,
-    `<button type="button" class="cta" data-action="recover-relock">Lock the bootloader</button>`,
+    `<button type="button" class="${GL_BTN_DANGER}" data-action="recover-relock">Lock the bootloader</button>`,
     `<div class="result" data-container="relock-result"></div>`,
     `</section>`,
   ].join("");
@@ -189,7 +194,7 @@ export function renderRecoverPage(input: RecoverPageInput = {}): string {
   const sim = input.simMode === true;
   return [
     cspMetaTag(),
-    `<main class="route" data-route="recover">`,
+    `<main class="route gl-settings" data-route="recover">`,
     `<header class="route-header">`,
     `<h1>Recovery</h1>`,
     posturePill(),
@@ -207,7 +212,7 @@ export function renderRecoverPage(input: RecoverPageInput = {}): string {
     reinstallPointerHtml(),
     relockPhaseHtml(),
     `<footer class="route-footer">`,
-    `<nav class="route-links"><a href="/install">/install</a> <a href="/install/verify-device">/install/verify-device</a></nav>`,
+    `<nav class="route-links"><a class="${GL_BTN_LINK}" href="/install">/install</a> <a class="${GL_BTN_LINK}" href="/install/verify-device">/install/verify-device</a></nav>`,
     `</footer>`,
     `</main>`,
   ].join("");

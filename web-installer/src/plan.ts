@@ -81,7 +81,7 @@ function appendAvbSteps(channel: ChannelBundle, steps: PlanStep[]): void {
   });
 }
 
-/** tokay + akita share UART/FIPS/DPM cleanup (same as CLI). */
+/** tokay + akita + komodo share UART/FIPS/DPM cleanup (same as CLI). */
 function appendPixelHousekeeping(steps: PlanStep[]): void {
   steps.push({ kind: "command", phase: "avb_custom_key", command: "oem uart disable" });
   steps.push({ kind: "erase", phase: "avb_custom_key", partition: "fips" });

@@ -35,6 +35,7 @@ import { POSTURE_CONNECTIVITY, POSTURE_CUSTODY, renderPosturePill } from "../../
 import { makeChip } from "../../lib/ui/chips.js";
 import { escapeHtml } from "../../lib/ui/escape.js";
 import { renderSideBySideRow } from "../../lib/ui/sidebyside.js";
+import { GL_BTN_CONFIRM, GL_BTN_LINK } from "../../lib/ui/pajamas.js";
 import { compareHex, type SideBySide } from "../../lib/verify/side-by-side.js";
 
 export const RELEASE_STATE_ALPHA = "alpha";
@@ -196,13 +197,15 @@ export function flashBlockersOnVerifyDevice(): readonly string[] {
 
 export function renderHardStopBanner(): string {
   return [
-    `<div class="hard-stop" data-hard-stop="true" data-stop-id="BOOT_FINGERPRINT_MISMATCH" role="alert">`,
+    `<div class="gl-alert gl-alert--danger hard-stop" data-hard-stop="true" data-stop-id="BOOT_FINGERPRINT_MISMATCH" role="alert">`,
+    `<div class="gl-alert__body">`,
+    `<div class="gl-alert__title">STOPPED</div>`,
     makeChip("STOPPED", "tripwire", { ariaLive: "assertive" }),
     `<p class="stop-id mono">BOOT_FINGERPRINT_MISMATCH</p>`,
     `<p>${escapeHtml(STOP_REASONS.BOOT_FINGERPRINT_MISMATCH)}</p>`,
     `<p class="binding-sentence mono">${escapeHtml(BOOT_FINGERPRINT_MISMATCH_SENTENCE)}</p>`,
     `<p><a href="${RECOVERY_HREF}" data-link="recovery">Recovery path: ${RECOVERY_HREF}</a></p>`,
-    `</div>`,
+    `</div></div>`,
   ].join("");
 }
 
@@ -307,7 +310,7 @@ function comparePanel(): string {
     `</ol>`,
     `<label class="field-label" for="boot-fingerprint-input">Boot-screen fingerprint</label>`,
     `<input type="text" id="boot-fingerprint-input" data-role="boot-fingerprint-input" autocomplete="off" spellcheck="false">`,
-    `<button type="button" class="cta" data-action="compare-boot-screen">Compare fingerprint</button>`,
+    `<button type="button" class="${GL_BTN_CONFIRM} cta" data-action="compare-boot-screen">Compare fingerprint</button>`,
     `<div class="result" data-container="compare-result"></div>`,
     `</section>`,
   ].join("");
@@ -320,7 +323,7 @@ function readPanel(): string {
     `<p>Some bootloaders answer getvar requests with the hash of the enrolled AVB public key. ` +
       `Every known variable name is asked, each answer is printed verbatim in the console, and nothing is ` +
       `guessed: if the device does not publish it, this page says so and hands you to the comparison.</p>`,
-    `<button type="button" class="cta" data-action="read-enrolled-key">Ask the device</button>`,
+    `<button type="button" class="${GL_BTN_CONFIRM} cta" data-action="read-enrolled-key">Ask the device</button>`,
     `<div class="result" data-container="read-result"></div>`,
     `</section>`,
   ].join("");
@@ -331,7 +334,7 @@ export function renderVerifyDevicePage(input: VerifyPageInput = {}): string {
   const sim = input.simMode === true;
   return [
     cspMetaTag(),
-    `<main class="route" data-route="verify-device">`,
+    `<main class="route gl-onboarding" data-route="verify-device">`,
     `<header class="route-header">`,
     `<h1>Verify this device</h1>`,
     posturePill(),
@@ -346,7 +349,7 @@ export function renderVerifyDevicePage(input: VerifyPageInput = {}): string {
     comparePanel(),
     `<footer class="route-footer">`,
     `<p>This route never writes to the device. Flashing lives on /install only, behind its own gates.</p>`,
-    `<nav class="route-links"><a href="/install">/install</a> <a href="/install/recover">/install/recover</a></nav>`,
+    `<nav class="route-links"><a class="${GL_BTN_LINK}" href="/install">/install</a> <a class="${GL_BTN_LINK}" href="/install/recover">/install/recover</a></nav>`,
     `</footer>`,
     `</main>`,
   ].join("");

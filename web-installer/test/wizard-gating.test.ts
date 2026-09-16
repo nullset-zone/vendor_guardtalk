@@ -25,13 +25,14 @@ function gatedWizard(): InstallWizard {
   return session;
 }
 
-test("picker offers tokay and akita", () => {
+test("picker offers tokay, akita, and komodo", () => {
   assert.deepEqual(
     WIZARD_DEVICES.map((d) => d.id),
-    ["tokay", "akita"],
+    ["tokay", "akita", "komodo"],
   );
   assert.equal(JSON.stringify(WIZARD_DEVICES).includes("rango"), false);
   assert.equal(JSON.stringify(WIZARD_DEVICES).includes("shiba"), false);
+  assert.equal(JSON.stringify(WIZARD_DEVICES).includes("caiman"), false);
 });
 
 test("flash is gated until unlock", async () => {
@@ -105,11 +106,13 @@ test("rango cannot be selected", () => {
   const session = new InstallWizard();
   assert.throws(() => session.selectDevice("rango"), WizardGateError);
   assert.throws(() => session.selectDevice("shiba"), WizardGateError);
+  assert.throws(() => session.selectDevice("caiman"), WizardGateError);
 });
 
-test("akita can be selected", () => {
+test("akita and komodo can be selected", () => {
   const session = new InstallWizard();
   assert.doesNotThrow(() => session.selectDevice("akita"));
+  assert.doesNotThrow(() => session.selectDevice("komodo"));
 });
 
 test("wizard HTML is GuardTalkOS-branded and carries DEC labels", async () => {
@@ -125,6 +128,7 @@ test("wizard HTML is GuardTalkOS-branded and carries DEC labels", async () => {
   assert.match(html, /Reconnect after reboot-bootloader/);
   assert.match(html, /Pixel 9 \(tokay\)/);
   assert.match(html, /Pixel 8a \(akita\)/);
+  assert.match(html, /Pixel 9 Pro XL \(komodo\)/);
   assert.match(html, /channels\/tokay/);
   assert.match(html, /reboot-to-fastboot\.sh/);
   assert.match(html, /adb reboot bootloader/);
@@ -154,8 +158,8 @@ test("wizard HTML carries danger variant and alert regions (Pajamas F1/F4/F9)", 
 
 test("wizard styles carry strong border, danger tokens, busy and checkbox sizing (F3/F5/F6/F8)", async () => {
   const css = await readFile(join(HERE, "../wizard/styles.css"), "utf8");
-  assert.match(css, /--line-strong:\s*#6b7887/);
-  assert.match(css, /button\.danger\s*{[^}]*--danger-strong/);
+  assert.match(css, /--line-strong:\s*var\(--gl-border-color-strong\)/);
+  assert.match(css, /button\.danger\s*{[^}]*--gl-action-danger-bg/);
   assert.match(css, /button\.secondary\s*{[^}]*var\(--line-strong\)/);
   assert.match(css, /button\[aria-busy="true"\]/);
   assert.match(css, /button\.danger:hover:not\(:disabled\)/);

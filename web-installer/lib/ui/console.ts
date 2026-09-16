@@ -50,7 +50,7 @@ export function renderConsole(): ConsoleElement {
 
   const copyAllButton = document.createElement("button");
   copyAllButton.type = "button";
-  copyAllButton.className = "console-copy-all";
+  copyAllButton.className = "console-copy-all gl-button gl-button--default-secondary";
   copyAllButton.textContent = "Copy console output";
 
   root.append(viewport, mirror, copyAllButton);
@@ -160,7 +160,7 @@ export function consoleMarkup(lines: readonly (readonly [ConsoleLineKind, string
     `<section class="console" aria-label="Installer console">`,
     `<div class="console-viewport mono" role="log" tabindex="0"><div class="console-lines">${rows}</div></div>`,
     `<p class="console-mirror" aria-live="polite" data-mirror="last-line"></p>`,
-    `<button type="button" class="console-copy-all">Copy console output</button>`,
+    `<button type="button" class="console-copy-all gl-button gl-button--default-secondary">Copy console output</button>`,
     `</section>`,
   ].join("");
 }

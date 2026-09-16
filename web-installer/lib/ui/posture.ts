@@ -22,7 +22,7 @@ export function posturePillText(flags: PostureFlags): string {
 export function renderPosturePill(flags: PostureFlags): string {
   const text = posturePillText(flags);
   return [
-    `<span class="pill pill-posture"`,
+    `<span class="pill pill-posture gl-badge gl-badge--neutral"`,
     ` data-connectivity="${escapeHtml(flags.connectivity)}"`,
     ` data-custody="${escapeHtml(flags.custody)}"`,
     ` data-release-state="${escapeHtml(flags.releaseState)}">`,

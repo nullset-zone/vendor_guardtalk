@@ -39,3 +39,24 @@ debugging trust. Clear it with
 
 SHA-256 in flashcore is a portable implementation (`src/sha256-portable.ts`)
 so the wizard can verify artifacts in the browser without `node:crypto`.
+
+GuardTalk Pajamas design language (T-WEBINSTALL-PAJAMAS-VENDOR) is vendored at
+build time from the published design system:
+
+  https://design.guardtalk.io/pajamas/
+  https://design.guardtalk.io/pajamas/#/templates/
+  https://design.guardtalk.io/pajamas/assets/index-BFboFyqJ.css
+
+Fetched 2026-08-23. Compiled CSS SHA-256
+6628d695ba3eb77f4113ccc2b5d9db64b8b13039effe0662a609ce60f16d6a46
+(asset name index-BFboFyqJ.css; HTML ETag 9e73b6a2abb29681279da7528804f668-ssl).
+See design/pajamas/SOURCE.txt for the file list.
+
+Only compiled CSS + --gl-* tokens are shipped (tokens.css, templates.css,
+components.css). The published React SPA (index-D1E98FVb.js) is not vendored.
+Google Fonts links on the published HTML are not vendored; token stacks fall
+back to system-ui / ui-monospace (D-006: no runtime fetch of
+design.guardtalk.io or fonts.googleapis.com).
+
+`npm` packages `guardtalk-pajamas` and `@guardtalk/pajamas` were not published
+(registry 404 on 2026-08-23). No new runtime or browser dependency was added.

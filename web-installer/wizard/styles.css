@@ -1,26 +1,10 @@
+/* Wizard + shared chrome. Colors come only from vendored --gl-* tokens. */
 :root {
-  color-scheme: dark;
-  --bg: #12151a;
-  --bg-elev: #1b2129;
-  --bg-rail: #161b21;
-  --ink: #e8edf2;
-  --muted: #9aa6b2;
-  --line: #2c3640;
-  /* Control borders: 3.6:1 vs --bg-elev (WCAG 1.4.11 non-text >=3:1). */
-  --line-strong: #6b7887;
-  --copper: #d4a054;
-  --copper-ink: #1a1308;
-  --copper-hover: #c08d43;
-  --copper-active: #a87c39;
-  --ok: #8fd0a4;
-  --warn: #e6c36a;
-  --danger: #f0a0a0;
-  /* Filled danger variant (Pajamas danger semantics, own values). */
-  --danger-strong: #c2453a;
-  --danger-strong-hover: #a93b31;
-  --danger-ink: #fffaf8;
-  --focus: #f2d19a;
-  font-family: "Segoe UI", "Helvetica Neue", ui-sans-serif, system-ui, sans-serif;
+  /* L2: published --gl-border-color-strong is 1.27–1.37:1 vs surface.
+     Remap to --gl-color-neutral-500 (4.52:1 / 4.86:1). Alias kept so
+     wizard-gating still sees --line-strong → --gl-border-color-strong. */
+  --gl-border-color-strong: var(--gl-color-neutral-500);
+  --line-strong: var(--gl-border-color-strong);
 }
 
 * {
@@ -29,54 +13,60 @@
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--ink);
-  line-height: 1.5;
+  background: var(--gl-background-color-default);
+  color: var(--gl-text-color-default);
+  line-height: var(--gl-line-height-base);
+  font-family: var(--gl-font-family);
+  font-size: var(--gl-font-size-base);
 }
 
 .skip-link {
   position: absolute;
-  left: 0.75rem;
+  left: var(--gl-spacing-5);
   top: -3rem;
-  background: var(--copper);
-  color: var(--copper-ink);
-  padding: 0.4rem 0.7rem;
+  background: var(--gl-action-confirm-bg);
+  color: var(--gl-action-confirm-text);
+  padding: var(--gl-spacing-3) var(--gl-spacing-5);
   font-weight: 600;
+  border-radius: var(--gl-border-radius-base);
+  z-index: 20;
 }
 
 .skip-link:focus {
-  top: 0.75rem;
+  top: var(--gl-spacing-5);
 }
 
 .masthead,
 .banners,
 .layout,
 .foot {
-  width: min(1120px, calc(100% - 2rem));
+  width: min(1120px, calc(100% - 2 * var(--gl-spacing-8)));
   margin-inline: auto;
 }
 
 .masthead {
-  padding: 2rem 0 1rem;
+  padding: var(--gl-spacing-9) 0 var(--gl-spacing-6);
 }
 
 .eyebrow {
   margin: 0;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  font-size: 0.75rem;
-  color: var(--copper);
+  font-size: var(--gl-font-size-sm);
+  color: var(--gl-text-color-subtle);
 }
 
 h1,
 h2,
 h3 {
   line-height: 1.2;
+  color: var(--gl-text-color-default);
+  font-family: var(--gl-font-family-display);
 }
 
 h1 {
-  margin: 0.35rem 0;
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  margin: var(--gl-spacing-3) 0;
+  font-size: var(--gl-font-size-h1);
 }
 
 .lede,
@@ -84,55 +74,55 @@ h1 {
 .foot,
 .checklist,
 .banner {
-  color: var(--muted);
+  color: var(--gl-text-color-subtle);
 }
 
 .banners {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--gl-spacing-5);
 }
 
 .banner,
 .callout,
 .panel {
-  background: var(--bg-elev);
-  border: 1px solid var(--line);
-  border-radius: 0.6rem;
+  background: var(--gl-background-color-section);
+  border: 1px solid var(--gl-border-color-default);
+  border-radius: var(--gl-border-radius-base);
 }
 
 .banner,
 .callout {
   margin: 0;
-  padding: 0.9rem 1rem;
+  padding: var(--gl-spacing-6) var(--gl-spacing-6);
 }
 
 .banner-dev {
-  border-left: 4px solid var(--warn);
+  border-left: 4px solid var(--gl-feedback-warning);
 }
 
 .banner-parity {
-  border-left: 4px solid var(--copper);
+  border-left: 4px solid var(--gl-border-color-strong);
 }
 
 .banner-hold {
-  border-left: 4px solid var(--danger);
+  border-left: 4px solid var(--gl-feedback-danger);
 }
 
 .layout {
   display: grid;
   grid-template-columns: minmax(14rem, 18rem) 1fr;
-  gap: 1.25rem;
-  padding: 1.25rem 0 2rem;
+  gap: var(--gl-spacing-7);
+  padding: var(--gl-spacing-7) 0 var(--gl-spacing-9);
 }
 
 .steps {
-  background: var(--bg-rail);
-  border: 1px solid var(--line);
-  border-radius: 0.6rem;
-  padding: 1rem 1rem 1rem 2rem;
+  background: var(--gl-background-color-subtle);
+  border: 1px solid var(--gl-border-color-default);
+  border-radius: var(--gl-border-radius-base);
+  padding: var(--gl-spacing-6) var(--gl-spacing-6) var(--gl-spacing-6) var(--gl-spacing-8);
   height: fit-content;
   position: sticky;
-  top: 0.75rem;
+  top: var(--gl-spacing-5);
 }
 
 .steps ol {
@@ -141,26 +131,26 @@ h1 {
 }
 
 .steps li {
-  margin: 0.55rem 0;
+  margin: var(--gl-spacing-4) 0;
 }
 
 .workspace {
   display: grid;
-  gap: 1rem;
+  gap: var(--gl-spacing-6);
 }
 
 .panel {
-  padding: 1rem 1.1rem 1.15rem;
+  padding: var(--gl-spacing-6) var(--gl-spacing-6) var(--gl-spacing-7);
 }
 
 .checklist {
-  padding-left: 1.15rem;
+  padding-left: var(--gl-spacing-7);
 }
 
 .field,
 .check {
   display: block;
-  margin: 0.65rem 0 0.35rem;
+  margin: var(--gl-spacing-5) 0 var(--gl-spacing-3);
   font-weight: 600;
 }
 
@@ -171,9 +161,9 @@ h1 {
 .check input[type="checkbox"] {
   width: 1.5rem;
   height: 1.5rem;
-  margin: 0 0.45rem 0 0;
+  margin: 0 var(--gl-spacing-3) 0 0;
   vertical-align: text-bottom;
-  accent-color: var(--copper);
+  accent-color: var(--gl-action-confirm-bg);
 }
 
 select,
@@ -185,70 +175,70 @@ button {
 select,
 input[type="file"] {
   width: 100%;
-  color: var(--ink);
-  background: var(--bg);
-  border: 1px solid var(--line-strong);
-  border-radius: 0.4rem;
-  padding: 0.45rem 0.55rem;
+  color: var(--gl-text-color-default);
+  background: var(--gl-control-background);
+  border: 1px solid var(--gl-control-border);
+  border-radius: var(--gl-border-radius-base);
+  padding: var(--gl-spacing-3) var(--gl-spacing-4);
 }
 
 select:hover {
-  border-color: var(--muted);
+  border-color: var(--gl-text-color-subtle);
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
-  margin-top: 0.85rem;
+  gap: var(--gl-spacing-4);
+  margin-top: var(--gl-spacing-6);
 }
 
 button {
   appearance: none;
   border: 0;
-  border-radius: 0.4rem;
-  padding: 0.55rem 0.85rem;
-  background: var(--copper);
-  color: var(--copper-ink);
+  border-radius: var(--gl-border-radius-base);
+  padding: var(--gl-spacing-4) var(--gl-spacing-6);
+  background: var(--gl-action-confirm-bg);
+  color: var(--gl-action-confirm-text);
   font-weight: 650;
   cursor: pointer;
 }
 
 button:hover:not(:disabled) {
-  background: var(--copper-hover);
+  background: var(--gl-action-confirm-bg-hover);
 }
 
 button:active:not(:disabled) {
-  background: var(--copper-active);
+  background: var(--gl-action-confirm-bg-active);
 }
 
 button.secondary {
   background: transparent;
-  color: var(--ink);
+  color: var(--gl-text-color-default);
   border: 1px solid var(--line-strong);
 }
 
 button.secondary:hover:not(:disabled) {
-  border-color: var(--muted);
-  background: rgba(154, 166, 178, 0.12);
+  border-color: var(--gl-text-color-subtle);
+  background: var(--gl-background-color-strong);
 }
 
 button.secondary:active:not(:disabled) {
-  border-color: var(--muted);
-  background: rgba(154, 166, 178, 0.22);
+  border-color: var(--gl-text-color-subtle);
+  background: var(--gl-background-color-strong);
 }
 
 button.danger {
-  background: var(--danger-strong);
-  color: var(--danger-ink);
+  background: var(--gl-action-danger-bg);
+  color: var(--gl-action-danger-text);
 }
 
 button.danger:hover:not(:disabled) {
-  background: var(--danger-strong-hover);
+  background: var(--gl-action-danger-bg-hover);
 }
 
 button.danger:active:not(:disabled) {
-  background: #8f3229;
+  background: var(--gl-action-danger-bg-hover);
 }
 
 button[aria-busy="true"] {
@@ -264,18 +254,18 @@ button:focus-visible,
 select:focus-visible,
 input:focus-visible,
 .skip-link:focus-visible {
-  outline: 2px solid var(--focus);
+  outline: 2px solid var(--gl-focus-ring);
   outline-offset: 2px;
 }
 
 .plan {
-  margin: 0.4rem 0 0;
-  padding-left: 1.2rem;
+  margin: var(--gl-spacing-3) 0 0;
+  padding-left: var(--gl-spacing-7);
 }
 
 .status {
-  margin: 0 0 0.5rem;
-  color: var(--ink);
+  margin: 0 0 var(--gl-spacing-4);
+  color: var(--gl-text-color-default);
   font-weight: 600;
 }
 
@@ -283,63 +273,65 @@ input:focus-visible,
   min-height: 7rem;
   max-height: 16rem;
   overflow: auto;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 0.4rem;
-  padding: 0.55rem 0.7rem;
+  background: var(--gl-background-color-subtle);
+  border: 1px solid var(--gl-border-color-default);
+  border-radius: var(--gl-border-radius-base);
+  padding: var(--gl-spacing-4) var(--gl-spacing-5);
 }
 
 .cmd {
-  margin: 0.55rem 0 0.35rem;
-  padding: 0.55rem 0.7rem;
+  margin: var(--gl-spacing-4) 0 var(--gl-spacing-3);
+  padding: var(--gl-spacing-4) var(--gl-spacing-5);
   overflow-x: auto;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 0.4rem;
-  color: var(--ink);
-  font-size: 0.88rem;
+  background: var(--gl-background-color-subtle);
+  border: 1px solid var(--gl-border-color-default);
+  border-radius: var(--gl-border-radius-base);
+  color: var(--gl-text-color-default);
+  font-size: var(--gl-font-size-sm);
 }
 
 .log-line {
-  margin: 0 0 0.4rem;
+  margin: 0 0 var(--gl-spacing-3);
 }
 
 .log-ok {
-  color: var(--ok);
+  color: var(--gl-feedback-success);
 }
 
 .log-warn {
-  color: var(--warn);
+  color: var(--gl-feedback-warning);
 }
 
 .log-error {
-  color: var(--danger);
+  color: var(--gl-feedback-danger);
 }
 
 .callout.danger {
-  border-left: 4px solid var(--danger);
+  border-left: 4px solid var(--gl-feedback-danger);
 }
 
 .alert {
-  color: var(--danger);
+  color: var(--gl-feedback-danger);
 }
 
 .callout h3 {
-  margin: 0 0 0.35rem;
+  margin: 0 0 var(--gl-spacing-3);
 }
 
-dialog {
-  width: min(32rem, calc(100% - 2rem));
-  background: var(--bg-elev);
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: 0.6rem;
-  padding: 1.1rem;
+dialog,
+.modal-dialog {
+  width: min(32rem, calc(100% - 2 * var(--gl-spacing-8)));
+  background: var(--gl-background-color-default);
+  color: var(--gl-text-color-default);
+  border: 1px solid var(--gl-border-color-default);
+  border-radius: var(--gl-border-radius-base);
+  padding: var(--gl-spacing-7);
+  box-shadow: var(--gl-shadow-lg);
 }
 
 .foot {
-  padding: 0 0 2rem;
-  font-size: 0.92rem;
+  padding: 0 0 var(--gl-spacing-9);
+  font-size: var(--gl-font-size-sm);
 }
 
 @media (max-width: 800px) {

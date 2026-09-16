@@ -7,12 +7,13 @@
 # and selects the matching desktop-flash bundle on the build host:
 #   tokay (Pixel 9)           → releases/desktop-flash/latest
 #   akita (Pixel 8a)          → releases/desktop-flash/akita-latest
+#   komodo (Pixel 9 Pro XL)   → releases/desktop-flash/komodo-latest
 #   rango (Pixel 10 Pro Fold) → releases/desktop-flash/rango-latest
 #
 # If the phone is booted into Android (adb state=device) — or recovery —
 # the script reboots it into the bootloader (fastboot) automatically.
 #
-# Akita / rango: also downloads init.insmod.<device>.cfg and pushes it to
+# Akita / komodo / rango: also downloads init.insmod.<device>.cfg and pushes it to
 # /vendor_dlkm/etc/ after reboot (fixes boot-logo hang if vendor_dlkm
 # was built without that cfg).
 #
@@ -30,17 +31,17 @@
 #
 # GrapheneOS flash-all parity (script/generate-release.sh +
 # device/common/generate-factory-images-common.sh):
-#   ALL (tokay/akita/rango): dual-slot bootloader via --slot=other dance;
+#   ALL (tokay/akita/komodo/rango): dual-slot bootloader via --slot=other dance;
 #     oem uart disable; erase dpm_a + dpm_b.
 #   Official order after radio: erase avb_custom_key → flash avb_custom_key
 #     avb_pkmd.bin → oem uart disable → erase dpm_a/dpm_b → update OS images.
-#   tokay + akita ONLY: also erase fips (Pixel 6–9 family).
+#   tokay + akita + komodo: also erase fips (Pixel 6–9 family).
 #   rango (Pixel 10 family): NO fips erase (matches GrapheneOS rango flags).
 #   vbmeta is flashed ONCE, after the boot chain (official `update` writes it
 #   with the image set). No duplicate mid-sequence vbmeta passes.
 #
 # Overrides (optional):
-#   DEVICE=tokay|akita|rango
+#   DEVICE=tokay|akita|komodo|rango
 #   REMOTE_BUILD_DIR=...   REMOTE_KEY_DIR=...
 #   REMOTE_HOST=...        REMOTE_TREE=...
 #
@@ -49,7 +50,7 @@
 # Do not assume rango-latest for keys when flashing a REMOTE_BUILD_DIR override.
 #
 # Mac: re-sync this script from the build host after host-side edits (scp):
-#   scp openstatestack@192.168.1.4:/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/scripts/flash-from-remote.sh \
+#   scp oss-c1@192.168.2.220:/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/scripts/flash-from-remote.sh \
 #       ~/GuardTalk-flash/flash-from-remote.sh
 #   chmod +x ~/GuardTalk-flash/flash-from-remote.sh
 # =============================================================================
@@ -58,13 +59,13 @@ set -euo pipefail
 # -----------------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------------
-REMOTE_HOST="${REMOTE_HOST:-openstatestack@192.168.1.4}"
+REMOTE_HOST="${REMOTE_HOST:-oss-c1@192.168.2.220}"
 REMOTE_TREE="${REMOTE_TREE:-/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree}"
 
 # Empty = auto from plugged device (or DEVICE=). Explicit env wins.
 REMOTE_BUILD_DIR="${REMOTE_BUILD_DIR:-}"
 REMOTE_KEY_DIR="${REMOTE_KEY_DIR:-}"
-DEVICE="${DEVICE:-}"   # optional: tokay | akita | rango
+DEVICE="${DEVICE:-}"   # optional: tokay | akita | komodo | rango
 
 LOCAL_WORK_DIR="${LOCAL_WORK_DIR:-.}"
 
@@ -72,7 +73,7 @@ FASTBOOT="${FASTBOOT:-fastboot}"
 ADB="${ADB:-adb}"
 # Seconds to wait after adb reboot bootloader before giving up
 FASTBOOT_WAIT_SECS="${FASTBOOT_WAIT_SECS:-60}"
-# Seconds to wait for adb after final reboot (akita/rango insmod cfg push)
+# Seconds to wait for adb after final reboot (akita/komodo/rango insmod cfg push)
 ADB_WAIT_SECS="${ADB_WAIT_SECS:-180}"
 # Seconds to wait for fastbootd (is-userspace=yes) after reboot fastboot
 FASTBOOTD_WAIT_SECS="${FASTBOOTD_WAIT_SECS:-90}"
@@ -94,6 +95,7 @@ EXTRA_FILES=(super_empty.img avb_pkmd.bin)
 # to capture init's FATAL line via "fastboot oem dmesg".
 # Appended after device detect (see apply_device_extra_downloads)
 AKITA_EXTRA_FILES=(init.insmod.akita.cfg)
+KOMODO_EXTRA_FILES=(init.insmod.komodo.cfg)
 RANGO_EXTRA_FILES=(init.insmod.rango.cfg vendor_boot_diag.img)
 RANGO_RESCUE_IMGS=(boot.img init_boot.img vendor_boot.img vendor_kernel_boot.img dtbo.img vbmeta.img pvmfw.img)
 
@@ -148,6 +150,8 @@ normalize_device() {
     case "$raw" in
         # Pixel 9
         tokay) echo "tokay" ;;
+        # Pixel 9 Pro XL
+        komodo) echo "komodo" ;;
         # Pixel 8a
         akita) echo "akita" ;;
         # Pixel 10 Pro Fold — accept codename and model-name variants
@@ -156,6 +160,8 @@ normalize_device() {
         *)
             if [[ "$raw" == *"rango"* ]]; then
                 echo "rango"
+            elif [[ "$raw" == *"komodo"* ]]; then
+                echo "komodo"
             elif [[ "$raw" == *"tokay"* ]]; then
                 echo "tokay"
             elif [[ "$raw" == *"akita"* ]]; then
@@ -170,6 +176,7 @@ normalize_device() {
 device_pretty() {
     case "$1" in
         tokay) echo "Pixel 9 (tokay)" ;;
+        komodo) echo "Pixel 9 Pro XL (komodo)" ;;
         akita) echo "Pixel 8a (akita)" ;;
         rango) echo "Pixel 10 Pro Fold (rango)" ;;
         *) echo "$1" ;;
@@ -190,12 +197,16 @@ apply_remote_paths() {
             auto_build="${REMOTE_TREE}/releases/desktop-flash/akita-latest"
             auto_key="${REMOTE_TREE}/releases/desktop-flash/akita-latest"
             ;;
+        komodo)
+            auto_build="${REMOTE_TREE}/releases/desktop-flash/komodo-latest"
+            auto_key="${REMOTE_TREE}/releases/desktop-flash/komodo-latest"
+            ;;
         rango)
             auto_build="${REMOTE_TREE}/releases/desktop-flash/rango-latest"
             auto_key="${REMOTE_TREE}/releases/desktop-flash/rango-latest"
             ;;
         *)
-            die "Unsupported device codename '$codename' (supported: tokay, akita, rango)"
+            die "Unsupported device codename '$codename' (supported: tokay, akita, komodo, rango)"
             ;;
     esac
     if [[ -z "$REMOTE_BUILD_DIR" ]]; then
@@ -304,7 +315,7 @@ flash_bootloader_ab_both_slots() {
 
 # Device firmware cleanup matching GrapheneOS generate-release.sh flags.
 # rango/mustang/…: DISABLE_UART + DISABLE_DPM
-# tokay/akita/…:   DISABLE_UART + DISABLE_FIPS + DISABLE_DPM
+# tokay/akita/komodo/…: DISABLE_UART + DISABLE_FIPS + DISABLE_DPM
 apply_grapheneos_firmware_cleanup() {
     local codename="${FLASH_DEVICE:-}"
     case "$codename" in
@@ -318,7 +329,7 @@ apply_grapheneos_firmware_cleanup() {
                 || die "erase dpm_b failed (required — clears stale debugpolicy / err -7)"
             log "rango firmware cleanup ✓"
             ;;
-        tokay|akita)
+        tokay|akita|komodo)
             log "$codename: GrapheneOS cleanup (uart + erase fips + erase dpm_a/dpm_b)..."
             "$FASTBOOT" oem uart disable \
                 || die "oem uart disable failed (required for $codename GrapheneOS parity)"
@@ -345,6 +356,12 @@ apply_device_extra_downloads() {
             done
             log "akita extras: ${AKITA_EXTRA_FILES[*]}"
             ;;
+        komodo)
+            for f in "${KOMODO_EXTRA_FILES[@]}"; do
+                ALL_DOWNLOADS+=("$f")
+            done
+            log "komodo extras: ${KOMODO_EXTRA_FILES[*]}"
+            ;;
         rango)
             for f in "${RANGO_EXTRA_FILES[@]}"; do
                 ALL_DOWNLOADS+=("$f")
@@ -355,14 +372,15 @@ apply_device_extra_downloads() {
 }
 
 # Push init.insmod.<device>.cfg onto vendor_dlkm (userdebug remount).
-# Safe no-op unless FLASH_DEVICE is akita or rango. Required if an older
-# vendor_dlkm.img lacked the file (akita boot-logo hang; rango foldable
+# Safe no-op unless FLASH_DEVICE is akita, komodo, or rango. Required if an older
+# vendor_dlkm.img lacked the file (akita/komodo boot-logo hang; rango foldable
 # touch / Wi‑Fi / haptics second-stage modules).
 install_insmod_cfg_via_adb() {
     local codename="${FLASH_DEVICE:-}"
     local cfg_name=""
     case "$codename" in
         akita) cfg_name="init.insmod.akita.cfg" ;;
+        komodo) cfg_name="init.insmod.komodo.cfg" ;;
         rango) cfg_name="init.insmod.rango.cfg" ;;
         *) return 0 ;;
     esac
@@ -489,7 +507,7 @@ log "device: $DEVICES"
 # Resolve codename: DEVICE= override > adb detect > fastboot product
 if [[ -n "$DEVICE" ]]; then
     FLASH_DEVICE="$(normalize_device "$DEVICE")"
-    [[ -n "$FLASH_DEVICE" ]] || die "DEVICE='$DEVICE' not supported (use tokay, akita, or rango)"
+    [[ -n "$FLASH_DEVICE" ]] || die "DEVICE='$DEVICE' not supported (use tokay, akita, komodo, or rango)"
     log "DEVICE override: $FLASH_DEVICE ($(device_pretty "$FLASH_DEVICE"))"
 else
     if [[ -z "$DETECTED_RAW" ]]; then
@@ -501,7 +519,7 @@ else
     fi
     FLASH_DEVICE="$(normalize_device "$DETECTED_RAW")"
     if [[ -z "$FLASH_DEVICE" ]]; then
-        die "Could not map product '${DETECTED_RAW:-unknown}' to a flash bundle. Set DEVICE=tokay, DEVICE=akita, or DEVICE=rango explicitly."
+        die "Could not map product '${DETECTED_RAW:-unknown}' to a flash bundle. Set DEVICE=tokay, DEVICE=akita, DEVICE=komodo, or DEVICE=rango explicitly."
     fi
     log "Detected product='$DETECTED_RAW' → $(device_pretty "$FLASH_DEVICE")"
 fi
@@ -585,7 +603,7 @@ for f in "${ALL_DOWNLOADS[@]}"; do
         # mismatched companions vs freshly downloaded boot/vendor_boot
         # (G → fastboot). Skipping super.img left a prior stamp's metadata
         # while system*.img were refreshed (bisect mismatch).
-        system.img|system_ext.img|product.img|vendor.img|vendor_dlkm.img|system_dlkm.img|super.img|super_empty.img|vbmeta.img|boot.img|init_boot.img|vendor_boot.img|vendor_kernel_boot.img|dtbo.img|pvmfw.img|avb_pkmd.bin|init.insmod.akita.cfg|init.insmod.rango.cfg)
+        system.img|system_ext.img|product.img|vendor.img|vendor_dlkm.img|system_dlkm.img|super.img|super_empty.img|vbmeta.img|boot.img|init_boot.img|vendor_boot.img|vendor_kernel_boot.img|dtbo.img|pvmfw.img|avb_pkmd.bin|init.insmod.akita.cfg|init.insmod.komodo.cfg|init.insmod.rango.cfg)
             log "  force re-downloading $f (logical/boot/vbmeta/super/insmod — always fresh)..."
             rm -f "$LOCAL_WORK_DIR/$f"
             ;;
@@ -1116,7 +1134,7 @@ if [[ "$boot_outcome" != "adb" ]]; then
 fi
 
 case "${FLASH_DEVICE:-}" in
-    akita|rango)
+    akita|komodo|rango)
         step "8b/8  Install init.insmod.${FLASH_DEVICE}.cfg via adb"
         install_insmod_cfg_via_adb
         ;;

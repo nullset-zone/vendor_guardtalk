@@ -18,9 +18,10 @@
  */
 import { STOP_REASONS } from "../../lib/install-state/stops.js";
 import type { InstallAction, InstallState, StopRecord } from "../../lib/install-state/machine.js";
-import { renderRail } from "../../lib/ui/rail.js";
+import { railStepViews, renderRail } from "../../lib/ui/rail.js";
 import { makeChip } from "../../lib/ui/chips.js";
 import { escapeHtml } from "../../lib/ui/escape.js";
+import { GL_BTN_CONFIRM, GL_BTN_DEFAULT, glAlertHtml } from "../../lib/ui/pajamas.js";
 import { POSTURE_CONNECTIVITY, POSTURE_CUSTODY, renderPosturePill } from "../../lib/ui/posture.js";
 import { renderKeyDiagram } from "../../lib/ui/key-diagram.js";
 import { renderSideBySideRow } from "../../lib/ui/sidebyside.js";
@@ -68,10 +69,11 @@ export interface SupportedTarget {
   readonly status: "supported" | "experimental";
 }
 
-/** D-012 / Q-14: tokay+rango first-class; akita behind an explicit flag. */
+/** DEC-PORT-KOMODO-004: advertised production set is tokay + akita + komodo. Do not list rango as production. */
 export const SUPPORTED_TARGETS: readonly SupportedTarget[] = [
   { codename: "tokay", deviceName: "Pixel 9", status: "supported" },
-  { codename: "rango", deviceName: RANGO_NAME_PLACEHOLDER, status: "supported" },
+  { codename: "akita", deviceName: "Pixel 8a", status: "supported" },
+  { codename: "komodo", deviceName: "Pixel 9 Pro XL", status: "supported" },
 ];
 
 export const ALPHA_POSTURE_FLAGS = {
@@ -124,11 +126,18 @@ export interface InstallerChromeParts {
 
 /** Full route body: posture pill + rail + current step + lineage footer. */
 export function renderInstallerChrome(parts: InstallerChromeParts): string {
+  const canBack = railStepViews(parts.state).some((view) => view.reachableByBack);
+  const backBtn = canBack
+    ? `<button type="button" class="${GL_BTN_DEFAULT}" data-action="back">Back</button>`
+    : `<span></span>`;
   return [
-    `<div class="installer" data-route="install">`,
-    `<header class="installer-top">${renderPostureHeader()}</header>`,
+    `<div class="installer gl-onboarding" data-route="install">`,
+    `<header class="installer-top gl-onboarding__header">${renderPostureHeader()}</header>`,
     `<nav class="installer-rail" aria-label="Installer steps">${renderStepRail(parts.state)}</nav>`,
-    `<main class="installer-main" id="installer-main">${parts.stepHtml}</main>`,
+    `<main class="installer-main gl-card" id="installer-main">`,
+    `<div class="gl-card__body gl-form-layout">${parts.stepHtml}</div>`,
+    `<div class="gl-form-layout__actions installer-actions" data-align="between">${backBtn}</div>`,
+    `</main>`,
     `<footer class="installer-foot">${renderRouteFooter()}</footer>`,
     `</div>`,
   ].join("");
@@ -150,7 +159,7 @@ export const CUSTODY_SENTENCES: readonly string[] = [
 
 function targetTableHtml(): string {
   const akitaNote =
-    "akita (Pixel 8a) stays behind an explicit experimental flag pending confirmation — it is not offered by this installer today.";
+    "rango, caiman, shiba, and husky are not production advertised devices. rango stays hidden.";
   const rows = SUPPORTED_TARGETS.map((target) => {
     const chip =
       target.status === "supported"
@@ -236,7 +245,7 @@ export function renderStep0(): string {
     `<ol class="custody-list">${custodyList}</ol></section>`,
     renderKeyDiagram(),
     flowCompareTableHtml(),
-    `<button type="button" class="btn-primary" data-action="acknowledge-intro">${escapeHtml(ACK_CTA_LABEL)}</button>`,
+    `<button type="button" class="${GL_BTN_CONFIRM}" data-action="acknowledge-intro">${escapeHtml(ACK_CTA_LABEL)}</button>`,
   ].join("");
 }
 
@@ -265,7 +274,7 @@ export function renderStep1(picks: FilePicks): string {
       `</div>`,
     ].join("");
   const cta = [
-    `<button type="button" class="btn-primary" data-action="files-picked"`,
+    `<button type="button" class="${GL_BTN_CONFIRM}" data-action="files-picked"`,
     ready ? `` : `disabled aria-disabled="true"`,
     `>Continue to verification</button>`,
     ready ? `` : `<p class="note">All three files must be picked before continuing.</p>`,
@@ -430,8 +439,14 @@ export function renderStep2(view: VerifyViewModel): string {
     parts.push(`<p class="verdict-row">${view.chipHtml}</p>`);
   }
   if (view.stopReason !== undefined) {
-    parts.push(`<p class="stop-banner"><span class="stop-label">FLOW STOPPED</span></p>`);
-    parts.push(`<p class="stop-reason">${escapeHtml(view.stopReason)}</p>`);
+    parts.push(
+      glAlertHtml(
+        "danger",
+        "FLOW STOPPED",
+        `<p class="stop-reason">${escapeHtml(view.stopReason)}</p>`,
+        "stop-banner",
+      ),
+    );
   }
   if (view.detail !== undefined) {
     parts.push(`<p class="stop-detail mono">${escapeHtml(view.detail)}</p>`);
@@ -449,7 +464,7 @@ export function renderStep2(view: VerifyViewModel): string {
     );
   }
   if (view.status === "verified") {
-    parts.push(`<button type="button" class="btn-primary" data-action="release-verified">Continue to your key</button>`);
+    parts.push(`<button type="button" class="${GL_BTN_CONFIRM}" data-action="release-verified">Continue to your key</button>`);
   }
   return parts.join("");
 }
@@ -495,7 +510,7 @@ function flowCardHtml(card: KeyFlowCard): string {
     `<article class="flow-card" data-flow="${String(card.flow)}">`,
     `<h3>${escapeHtml(card.title)}</h3>`,
     `<p>${escapeHtml(card.description)}</p>`,
-    `<button type="button" class="btn-secondary" data-action="key-flow-chosen" data-flow="${String(card.flow)}">Choose this path</button>`,
+    `<button type="button" class="btn-secondary flow-pick" data-action="key-flow-chosen" data-flow="${String(card.flow)}">Choose this path</button>`,
     `</article>`,
   ].join("");
 }
@@ -519,7 +534,7 @@ export function renderStep3Collect(flow: 1 | 2 | 3): string {
       `<p class="lede">The private handle stays non-extractable. The only other copy is the encrypted file you save.</p>`,
       `<label for="generate-passphrase">Passphrase for the encrypted backup (at least 12 characters)</label>`,
       `<input id="generate-passphrase" data-role="generate-passphrase" type="password" minlength="12" autocomplete="new-password" />`,
-      `<button type="button" class="btn-primary" data-action="generate-key">Generate key</button>`,
+      `<button type="button" class="${GL_BTN_CONFIRM}" data-action="generate-key">Generate key</button>`,
     ].join("");
   }
   if (flow === 2) {
@@ -529,14 +544,14 @@ export function renderStep3Collect(flow: 1 | 2 | 3): string {
       `<input type="file" id="file-user-pem" data-role="user-pem" />`,
       `<label for="import-passphrase">Passphrase (required when the file is encrypted)</label>`,
       `<input id="import-passphrase" data-role="import-passphrase" type="password" autocomplete="current-password" />`,
-      `<button type="button" class="btn-primary" data-action="import-key">Import key</button>`,
+      `<button type="button" class="${GL_BTN_CONFIRM}" data-action="import-key">Import key</button>`,
     ].join("");
   }
   return [
     headline(3, "Use a key that signs elsewhere."),
     `<label for="file-public-pem">Public key PEM (SPKI)</label>`,
     `<input type="file" id="file-public-pem" data-role="public-pem" />`,
-    `<button type="button" class="btn-primary" data-action="import-public">Continue with this public key</button>`,
+    `<button type="button" class="${GL_BTN_CONFIRM}" data-action="import-public">Continue with this public key</button>`,
   ].join("");
 }
 
@@ -546,7 +561,7 @@ export function renderStep4Collect(): string {
     headline(4, "Pick the release vbmeta this tab will re-sign."),
     `<label for="file-vbmeta">vbmeta.img from the unpacked release</label>`,
     `<input type="file" id="file-vbmeta" data-role="vbmeta" />`,
-    `<button type="button" class="btn-primary" data-action="sign-vbmeta">Sign with your key</button>`,
+    `<button type="button" class="${GL_BTN_CONFIRM}" data-action="sign-vbmeta">Sign with your key</button>`,
   ].join("");
 }
 
@@ -574,7 +589,7 @@ export function renderStep3FlowDetail(input: FlowDetailInput): string {
     parts.push(
       `<section aria-labelledby="backup-heading"><h3 id="backup-heading">Encrypted backup file</h3>`,
       `<p class="note">Save the encrypted key file somewhere offline; losing it means losing the ability to re-enrol this key.</p>`,
-      `<a class="btn-secondary" data-role="key-download-link" download="guardtalk-user-key.enc">Save encrypted key file</a>`,
+      `<a class="${GL_BTN_DEFAULT}" data-role="key-download-link" download="guardtalk-user-key.enc">Save encrypted key file</a>`,
       `<p class="check-row"><label><input type="checkbox" data-role="download-saved" /> I saved the encrypted key file</label></p>`,
       `</section>`,
     );
@@ -587,7 +602,7 @@ export function renderStep3FlowDetail(input: FlowDetailInput): string {
     `<label for="retype-input">Type the last 8 characters to confirm you recorded it</label>`,
     `<input id="retype-input" data-role="retype" autocomplete="off" spellcheck="false" class="mono" maxlength="8" />`,
     `</div>`,
-    `<button type="button" class="btn-primary" data-action="fingerprint-recorded">Record this fingerprint</button>`,
+    `<button type="button" class="${GL_BTN_CONFIRM}" data-action="fingerprint-recorded">Record this fingerprint</button>`,
     `</section>`,
   );
   return parts.join("");
@@ -922,7 +937,14 @@ export function renderStep4(view: SignViewModel): string {
   }
   if (view.stopReason !== undefined) {
     parts.push(`<p class="verdict-row">${stopChip()}</p>`);
-    parts.push(`<p class="stop-reason">${escapeHtml(view.stopReason)}</p>`);
+    parts.push(
+      glAlertHtml(
+        "danger",
+        "FLOW STOPPED",
+        `<p class="stop-reason">${escapeHtml(view.stopReason)}</p>`,
+        "stop-banner",
+      ),
+    );
     if (view.chainPartitions !== undefined && view.chainPartitions.length > 0) {
       parts.push(
         `<p class="stop-detail">chained partitions detected: ${escapeHtml(view.chainPartitions.join(", "))}</p>`,
@@ -934,7 +956,7 @@ export function renderStep4(view: SignViewModel): string {
     parts.push(row.html);
   }
   if (view.status !== "stopped") {
-    parts.push(`<button type="button" class="btn-primary" data-action="vbmeta-signed">Continue to the device step</button>`);
+    parts.push(`<button type="button" class="${GL_BTN_CONFIRM}" data-action="vbmeta-signed">Continue to the device step</button>`);
   }
   return parts.join("");
 }

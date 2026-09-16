@@ -35,8 +35,45 @@ cp routes/recover/page.html "$SITE/install/recover/index.html"
 
 cp routes/threat-model/page.html "$SITE/threat-model/index.html"
 
-# Tokens from the wizard sheet + route rules (style-src 'self').
-cat wizard/styles.css routes/install/styles-route.css > "$SITE/install/styles-route.css"
+# Pajamas vendor tree is required at build time (DEC-WEBINSTALL-010).
+# Concatenate --gl-* tokens + reset + template/component CSS into the
+# same-origin stylesheet already linked by every route (style-src 'self').
+# reset.css is included so route HTML matches published Pajamas chrome
+# (D-006: no remote fonts — reset names system-ui / ui-monospace only).
+PAJAMAS="$ROOT/design/pajamas"
+VENDOR_TOKENS="$PAJAMAS/tokens.css"
+VENDOR_RESET="$PAJAMAS/reset.css"
+VENDOR_TEMPLATES="$PAJAMAS/templates.css"
+VENDOR_COMPONENTS="$PAJAMAS/components.css"
+if [[ ! -d "$PAJAMAS" ]]; then
+  echo "error: missing Pajamas vendor tree: $PAJAMAS" >&2
+  exit 1
+fi
+for _pajama_file in "$VENDOR_TOKENS" "$VENDOR_RESET" "$VENDOR_TEMPLATES" "$VENDOR_COMPONENTS"; do
+  if [[ ! -s "$_pajama_file" ]]; then
+    echo "error: missing or empty Pajamas vendor file: $_pajama_file" >&2
+    exit 1
+  fi
+done
+if ! grep -q -- '--gl-' "$VENDOR_TOKENS"; then
+  echo "error: $VENDOR_TOKENS has no --gl-* tokens" >&2
+  exit 1
+fi
+
+cat \
+  "$VENDOR_TOKENS" \
+  "$VENDOR_RESET" \
+  "$VENDOR_TEMPLATES" \
+  "$VENDOR_COMPONENTS" \
+  wizard/styles.css \
+  routes/install/styles-route.css \
+  > "$SITE/install/styles-route.css"
+
+if grep -E -n 'design\.guardtalk\.io|@import url\(http|fonts\.googleapis' \
+  "$SITE/install/styles-route.css"; then
+  echo "error: emitted styles-route.css contains a remote stylesheet/font reference" >&2
+  exit 1
+fi
 
 # Root index points at /install without a network fetch.
 cat > "$SITE/index.html" <<'EOF'

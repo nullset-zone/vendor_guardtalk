@@ -13,15 +13,16 @@ This directory is the product path for the GuardTalkOS WebUSB installer
 | `NOTICE` | Third-party licenses |
 
 The packer lives at `vendor/guardtalk/scripts/pack-webinstall-channel.sh`.
-It reads an existing `releases/desktop-flash/` tokay stamp and emits:
+It reads an existing `releases/desktop-flash/` tokay, akita, or komodo stamp and emits:
 
-- GOS-like pointer `{releaseId} {unixEpoch} tokay dev`
+- GOS-like pointer `{releaseId} {unixEpoch} {product} dev`
 - `SHA256SUMS` of published artifacts
 - public `avb_pkmd.bin` only
 - a flashcore-consumable file list (no factory zip this wave)
 
-**Advertised allowlist:** `tokay` (Pixel 9) and `akita` (Pixel 8a).
-`shiba` / `husky` / `rango` are not offered. **Channel label:** `dev/unlocked`
+**Advertised allowlist:** `tokay` (Pixel 9), `akita` (Pixel 8a), and
+`komodo` (Pixel 9 Pro XL). `shiba` / `husky` / `caiman` / `rango` are not
+offered. **Channel label:** `dev/unlocked`
 (`DEC-WEBINSTALL-007`). This is **not** GrapheneOS-equivalent locked
 verified boot.
 
@@ -33,7 +34,7 @@ The orchestrator loads `manifest.json` + `SHA256SUMS` + `files.txt`, builds a
 deterministic plan (`firmware` → `avb_custom_key` → `os`), verifies SHA-256
 before each artifact (fail closed), and drives a `FastbootTransport`:
 
-1. `connect` + `getvar product` must be `tokay`
+1. `connect` + `getvar product` must match the advertised channel product (`tokay`, `akita`, or `komodo`)
 2. `unlock` (`flashing unlock` if not already unlocked)
 3. flash firmware artifacts, then a reconnect hook
 4. erase + flash `avb_custom_key` from public `avb_pkmd.bin`
@@ -65,8 +66,8 @@ npm run wizard:build
 npm run wizard:serve
 ```
 
-Then open `http://127.0.0.1:4173/wizard/`. Pick Pixel 9 or Pixel 8a — the page
-loads `../channels/{tokay|akita}/` from this server (no file picker).
+Then open `http://127.0.0.1:4173/wizard/`. Pick Pixel 9, Pixel 8a, or Pixel 9 Pro XL — the page
+loads `../channels/{tokay|akita|komodo}/` from this server (no file picker).
 **Dry-run** walks flashcore without USB.
 
 If the Pixel is still in stock Android, use **Reboot to Fastboot** on the page.

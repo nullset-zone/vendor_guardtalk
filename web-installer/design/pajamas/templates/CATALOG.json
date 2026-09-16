@@ -1,0 +1,110 @@
+[
+  {
+    "slug": "dashboard",
+    "title": "Dashboard",
+    "category": "Overview",
+    "description": "A workspace overview: toolbar, metric cards, a themed area chart and a recent-activity list with status badges."
+  },
+  {
+    "slug": "analytics",
+    "title": "Analytics",
+    "category": "Overview",
+    "description": "A metrics page: KPI cards, themed area / bar / line charts and a small source breakdown table."
+  },
+  {
+    "slug": "sign-in",
+    "title": "Sign In",
+    "category": "Auth",
+    "description": "A centered auth card: email + password fields, a remember toggle, a primary submit, an SSO action and a footer link."
+  },
+  {
+    "slug": "sign-up",
+    "title": "Sign Up",
+    "category": "Auth",
+    "description": "A centered create-account card: name / email / password fields, a terms toggle, a primary submit and an SSO alt."
+  },
+  {
+    "slug": "forgot-password",
+    "title": "Forgot Password",
+    "category": "Auth",
+    "description": "A centered reset card: an email field, a send-reset primary, a confirmation note and a back-to-sign-in link."
+  },
+  {
+    "slug": "settings",
+    "title": "Settings",
+    "category": "Settings",
+    "description": "A section rail with a profile form, preference toggles and a danger zone for destructive account actions."
+  },
+  {
+    "slug": "profile",
+    "title": "Profile",
+    "category": "Settings",
+    "description": "A user profile: an avatar/initials header with bio, an editable details card and a recent-activity list."
+  },
+  {
+    "slug": "data-table",
+    "title": "Data Table",
+    "category": "Table",
+    "description": "A list page: a search + filter + action toolbar, a data table with status badges, and pagination."
+  },
+  {
+    "slug": "users",
+    "title": "Team",
+    "category": "Table",
+    "description": "A members list: a search + invite toolbar, a table of users with avatar / role / status badges, row actions and pagination."
+  },
+  {
+    "slug": "create-form",
+    "title": "Create",
+    "category": "Form",
+    "description": "A multi-section create form: text inputs, a select, toggles, a textarea and primary + secondary actions."
+  },
+  {
+    "slug": "checkout",
+    "title": "Checkout",
+    "category": "Form",
+    "description": "A two-column billing page: an order summary on one side, a payment + contact form on the other and a pay primary."
+  },
+  {
+    "slug": "onboarding",
+    "title": "Onboarding",
+    "category": "Form",
+    "description": "A multi-step wizard: a 1\u00b72\u00b73 step indicator, the current step\u2019s form fields and Back / Next actions."
+  },
+  {
+    "slug": "pricing",
+    "title": "Pricing",
+    "category": "Content",
+    "description": "Three pricing tiers (Free / Pro / Enterprise) with feature lists, a highlighted recommended tier, CTAs and a billing toggle."
+  },
+  {
+    "slug": "landing",
+    "title": "Landing",
+    "category": "Content",
+    "description": "A marketing page: a hero with primary / secondary CTAs, a feature grid of cards and a closing CTA band."
+  },
+  {
+    "slug": "empty-state",
+    "title": "Empty State",
+    "category": "Tools",
+    "description": "A zero-data state: an illustration placeholder, heading, description and a create action \u2014 plus a no-search-results variant."
+  },
+  {
+    "slug": "not-found",
+    "title": "404",
+    "category": "Tools",
+    "description": "A centered error page: a large 404, a friendly message and back-home + contact-support actions."
+  },
+  {
+    "slug": "chat",
+    "title": "Chat",
+    "category": "AI Chat",
+    "description": "An AI chat layout: a header with the assistant name, a scrollable alternating message list and a composer with a send button."
+  },
+  {
+    "slug": "gallery",
+    "title": "Gallery",
+    "category": "Gallery",
+    "description": "A media/asset grid: a search + view-toggle toolbar, a responsive grid of asset cards with tags and a selection state."
+  }
+]

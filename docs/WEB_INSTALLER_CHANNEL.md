@@ -5,8 +5,8 @@
 **Status:** Channel metadata wave. Not a flash engine. Not a wizard.
 
 This document describes the **factory-image + release-manifest channel** that a
-future web installer can fetch. It is packed from an existing tokay
-`releases/desktop-flash/` stamp. There is **no second image pipeline**.
+future web installer can fetch. It is packed from an existing tokay, akita, or
+komodo `releases/desktop-flash/` stamp. There is **no second image pipeline**.
 
 ## Label (DEC-WEBINSTALL-007)
 
@@ -14,7 +14,7 @@ This channel is **dev/unlocked**.
 
 | Claim | Allowed? |
 |-------|----------|
-| Tokay desktop-flash artifacts, hashed, public AVB key published | yes |
+| Tokay / akita / komodo desktop-flash artifacts, hashed, public AVB key published | yes |
 | Bootloader expected unlocked (same as current CLI) | yes |
 | GrapheneOS-equivalent **locked** verified boot | **no** |
 | Production / `stable` channel | **no** (no in-tree public signer this wave) |
@@ -24,22 +24,25 @@ locked GrapheneOS install.
 
 ## Advertised allowlist
 
-**tokay (Pixel 9) and akita (Pixel 8a).**
+**tokay (Pixel 9), akita (Pixel 8a), and komodo (Pixel 9 Pro XL).**
 
-The packer fails closed if the stamp product is not `tokay` or `akita`.
-Pixel 8 (`shiba`), Pixel 8 Pro (`husky`), and `rango` are rejected.
-Experimental or other desktop-flash products are rejected the same way.
+The packer fails closed if the stamp product is not `tokay`, `akita`, or
+`komodo`. Pixel 8 (`shiba`), Pixel 8 Pro (`husky`), `caiman`, and `rango` are
+rejected. Experimental or other desktop-flash products are rejected the same
+way. `rango-latest` stays hidden (`130756`).
+
+Komodo channel source stamp: `releases/desktop-flash/komodo-latest`.
 
 ## What the packer emits
 
 Script: `vendor/guardtalk/scripts/pack-webinstall-channel.sh`
 
 Default source: `releases/desktop-flash/latest` (must resolve to
-`tokay-YYYYMMDD-HHMMSS`).
+`tokay-YYYYMMDD-HHMMSS`). Komodo packs from `releases/desktop-flash/komodo-latest`.
 
 | File | Role |
 |------|------|
-| `tokay-dev` | GOS-like pointer: `{releaseId} {unixEpoch} tokay dev` |
+| `tokay-dev` / `akita-dev` / `komodo-dev` | GOS-like pointer: `{releaseId} {unixEpoch} {product} dev` |
 | `manifest.json` | Flashcore-oriented metadata (schema below) |
 | `SHA256SUMS` | SHA-256 of every published artifact |
 | `files.txt` | Name + phase + size (no zip) |
@@ -54,10 +57,13 @@ Do **not** git-add multi-gigabyte copies.
 Same shape as `https://releases.grapheneos.org/{product}-{channel}`:
 
 ```text
-{releaseId} {unixEpoch} tokay dev
+{releaseId} {unixEpoch} {product} dev
 ```
 
 Example (illustrative): `20260725-102506 1753439106 tokay dev`
+
+Komodo example: `{releaseId} {unixEpoch} komodo dev` packed from
+`releases/desktop-flash/komodo-latest`.
 
 `releaseId` is the stamp time token so it traces to the desktop-flash directory.
 
@@ -115,6 +121,9 @@ vendor/guardtalk/scripts/pack-webinstall-channel.sh \
 vendor/guardtalk/scripts/pack-webinstall-channel.sh \
   --verify /tmp/gt-webinstall-channel \
   --verify-stamp releases/desktop-flash/latest
+vendor/guardtalk/scripts/pack-webinstall-channel.sh \
+  --stamp releases/desktop-flash/komodo-latest \
+  --out /tmp/gt-webinstall-channel-komodo
 ```
 
 If `releases/desktop-flash/latest` is missing, treat live packing as **HOLD**.

@@ -47,7 +47,13 @@ function boot(): void {
     if (!(target instanceof HTMLElement)) {
       return;
     }
-    if (target.getAttribute("data-action") === "files-picked") {
+    const action = target.getAttribute("data-action");
+    if (action === "back") {
+      state = reduce(state, { type: "back" });
+      render();
+      return;
+    }
+    if (action === "files-picked") {
       state = reduce(state, { type: "files-picked" });
       render();
     }

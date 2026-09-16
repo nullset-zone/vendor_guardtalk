@@ -1,0 +1,9 @@
+/**
+ * GuardTalk Pajamas document reset (concatenated into dist/site by scripts/build-site.sh).
+ * Kept for F-WEBINSTALL-PAJAMAS-TEMPLATES. Existing wizard/route sheets remain the page chrome.
+ * Extracted from the published compiled stylesheet (see SOURCE.txt).
+ * Fetch date: 2026-08-23. Same-origin styles only; no remote imports or webfonts.
+ */
+*{box-sizing:border-box}
+body{margin:0;background:var(--gl-background-color-default);color:var(--gl-text-color-default);font-family:var(--gl-font-family);font-size:var(--gl-font-size-base);line-height:var(--gl-line-height-base);-webkit-font-smoothing:antialiased}
+:where(button,a,input,textarea,select,[role=tab],[role=menuitem],[role=switch]):focus-visible{outline:2px solid var(--gl-focus-ring);outline-offset:1px}

@@ -508,11 +508,13 @@ test("step 0 renders posture pill, targets table, honesty blocks, custody senten
   assert.match(html, /◢ offline · your key · alpha/);
   assert.deepEqual(
     SUPPORTED_TARGETS.map((t) => t.codename),
-    ["tokay", "rango"],
+    ["tokay", "akita", "komodo"],
   );
   assert.match(html, />tokay</);
-  assert.match(html, />rango</);
-  assert.match(html, /akita \(Pixel 8a\) stays behind an explicit experimental flag/);
+  assert.match(html, />akita</);
+  assert.match(html, />komodo</);
+  assert.doesNotMatch(html, />rango</);
+  assert.match(html, /rango, caiman, shiba, and husky are not production advertised devices/);
   assert.match(html, /Tor Browser cannot flash over USB/);
   assert.match(html, /CLI export/);
   assert.match(html, /wipes the phone twice/);

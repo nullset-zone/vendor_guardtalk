@@ -1,6 +1,6 @@
-/** Channel + plan types. Channel is tokay|akita / dev/unlocked (DEC-007/010). */
+/** Channel + plan types. Channel is tokay|akita|komodo / dev/unlocked (DEC-007/010, DEC-PORT-KOMODO-004). */
 
-export const ALLOWED_PRODUCTS = ["tokay", "akita"] as const;
+export const ALLOWED_PRODUCTS = ["tokay", "akita", "komodo"] as const;
 export type AllowedProduct = (typeof ALLOWED_PRODUCTS)[number];
 /** Default advertised product (Pixel 9). */
 export const ALLOWED_PRODUCT: AllowedProduct = "tokay";

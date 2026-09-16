@@ -5,7 +5,7 @@ import {
   type ChannelManifest,
 } from "./types.js";
 
-/** tokay (Pixel 9) and akita (Pixel 8a). Rango and shiba/husky stay rejected (DEC-001/010). */
+/** tokay (Pixel 9), akita (Pixel 8a), komodo (Pixel 9 Pro XL). Rango / shiba / husky / caiman stay rejected (DEC-001/010, DEC-PORT-KOMODO-004). */
 export function isAllowedProduct(product: string): product is AllowedProduct {
   return (ALLOWED_PRODUCTS as readonly string[]).includes(product.trim());
 }

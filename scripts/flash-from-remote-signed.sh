@@ -40,7 +40,7 @@
 #       [--yes]        # skip interactive confirms (DANGEROUS — locks without prompt)
 #
 #   Or via env vars (like the original):
-#   REMOTE_HOST=openstatestack@192.168.1.4 \
+#   REMOTE_HOST=oss-c1@192.168.2.220 \
 #   REMOTE_RELEASE_DIR=/mnt/.../releases/<BUILD>/signed \
 #   REMOTE_KEY_DIR=/home/openstatestack/guardtalk-keys/guardtalk \
 #   ./flash-from-remote-signed.sh
@@ -50,7 +50,7 @@ set -euo pipefail
 # -----------------------------------------------------------------------------
 # Defaults — overridable via env vars or CLI flags
 # -----------------------------------------------------------------------------
-REMOTE_HOST="${REMOTE_HOST:-openstatestack@192.168.1.4}"
+REMOTE_HOST="${REMOTE_HOST:-oss-c1@192.168.2.220}"
 REMOTE_RELEASE_DIR="${REMOTE_RELEASE_DIR:-}"
 REMOTE_KEY_DIR="${REMOTE_KEY_DIR:-/home/openstatestack/guardtalk-keys/guardtalk}"
 

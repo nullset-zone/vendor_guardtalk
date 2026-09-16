@@ -15,6 +15,7 @@ import { STOP_REASONS } from "../../lib/install-state/stops.js";
 import { consoleMarkup, type ConsoleLineKind } from "../../lib/ui/console.js";
 import { INSTALLER_CSP } from "../../lib/claims/csp.js";
 import { ProtectionLimit } from "../../lib/claims/components.js";
+import { GL_BTN_CONFIRM, glAlertHtml } from "../../lib/ui/pajamas.js";
 
 export const GATEWAY_URL = "https://guardtalk.io/system/gateway";
 export const DOCS_URL = "https://guardtalk.io/docs";
@@ -41,8 +42,8 @@ export const GATEWAY_LIMIT_SENTENCE =
 export const CUSTODY_LIMIT_SENTENCE =
   "Key custody protects the key on this computer; it cannot cover a signing machine already compromised or a key copied without your knowledge.";
 
-/** Devices this installer targets first-class (DECISION_LOG D-012). */
-export const TARGET_PRODUCTS: readonly string[] = ["tokay", "rango"];
+/** Advertised production devices (DEC-PORT-KOMODO-004). Rango is not production. */
+export const TARGET_PRODUCTS: readonly string[] = ["tokay", "akita", "komodo"];
 
 // --- sim mode (D-011) --------------------------------------------------------
 
@@ -67,10 +68,11 @@ export function simBannerHtml(sim: boolean): string {
     return "";
   }
   return [
-    `<div class="sim-banner" data-sim="true" role="status">`,
+    `<div class="gl-alert gl-alert--warning sim-banner" data-sim="true" role="status">`,
+    `<div class="gl-alert__body">`,
     simCautionChip(),
     `<p class="sim-banner-text mono">This session runs against a simulated device. No hardware is touched; results are reproducible and are not evidence of a real flash.</p>`,
-    `</div>`,
+    `</div></div>`,
   ].join("");
 }
 
@@ -183,7 +185,7 @@ export function connectStepHtml(view: ConnectStepViewInput): string {
     view.usbPresent
       ? `<p>Plug the phone in bootloader mode and choose it in the browser's USB picker. Nothing is written to the device in this step.</p>`
       : `<p class="mono">WebUSB unavailable — pairing controls disabled; use the command-line path above.</p>`,
-    `<button type="button" class="primary-action" data-action="pair-device"${view.usbPresent ? "" : " disabled"}>Pair device over USB</button>`,
+    `<button type="button" class="${GL_BTN_CONFIRM} primary-action" data-action="pair-device"${view.usbPresent ? "" : " disabled"}>Pair device over USB</button>`,
     `</div>`,
   );
 
@@ -195,7 +197,13 @@ export function connectStepHtml(view: ConnectStepViewInput): string {
     parts.push(`<span class="sbs-actual mono">device reports: ${escapeHtml(view.check.actual)}</span>`);
     if (mismatch) {
       parts.push(makeChip("PRODUCT MISMATCH", "tripwire", { ariaLive: "assertive" }));
-      parts.push(`<p class="stop-reason tripwire-text">${escapeHtml(STOP_REASONS.PRODUCT_MISMATCH)}</p>`);
+      parts.push(
+        glAlertHtml(
+          "danger",
+          "STOPPED",
+          `<p class="stop-reason tripwire-text">${escapeHtml(STOP_REASONS.PRODUCT_MISMATCH)}</p>`,
+        ),
+      );
     } else {
       parts.push(makeChip("PRODUCT MATCH", "verified"));
     }
@@ -360,7 +368,7 @@ export function verifyStepHtml(view: VerifyStepViewInput): string {
     `<form class="verify-form" data-form="boot-fingerprint">`,
     `<label for="boot-fingerprint-input">Type the fingerprint shown on the phone's boot screen</label>`,
     `<input class="mono" id="boot-fingerprint-input" name="boot-fingerprint" type="text" autocomplete="off" spellcheck="false" value="${escapeHtml(view.typed ?? "")}">`,
-    `<button type="submit" class="primary-action" data-action="compare-fingerprint">Compare</button>`,
+    `<button type="submit" class="${GL_BTN_CONFIRM} primary-action" data-action="compare-fingerprint">Compare</button>`,
     `</form>`,
   );
 
@@ -385,12 +393,13 @@ export function verifyStepHtml(view: VerifyStepViewInput): string {
 
   if (view.outcome === "mismatch") {
     parts.push(
-      `<div class="verify-result hard-stop-banner" role="alert" data-outcome="mismatch">`,
+      `<div class="gl-alert gl-alert--danger verify-result hard-stop-banner" role="alert" data-outcome="mismatch">`,
+      `<div class="gl-alert__body">`,
       makeChip("BOOT_FINGERPRINT_MISMATCH", "tripwire", { ariaLive: "assertive" }),
       `<p class="tripwire-text">${escapeHtml(BOOT_MISMATCH_SENTENCE)}</p>`,
       `<p class="stop-reason mono">${escapeHtml(STOP_REASONS.BOOT_FINGERPRINT_MISMATCH)}</p>`,
       `<p>If typing was not the problem, treat the installation as compromised and start recovery: <a href="${RECOVERY_URL}">/install/recover</a>.</p>`,
-      `</div>`,
+      `</div></div>`,
     );
   }
 
@@ -422,7 +431,7 @@ export function keepKeyStepHtml(sim = false): string {
   parts.push(`</div>`);
   parts.push(`<p class="closing-sentence">${escapeHtml(CLOSING_SENTENCE)}</p>`);
   parts.push(
-    `<form class="keep-key-ack-form" data-form="keep-key-ack"><button type="submit" class="primary-action" data-action="finish">I have stored my key and my passphrase</button></form>`,
+    `<form class="keep-key-ack-form" data-form="keep-key-ack"><button type="submit" class="${GL_BTN_CONFIRM} primary-action" data-action="finish">I have stored my key and my passphrase</button></form>`,
   );
   parts.push(`</section>`);
   return parts.join("");

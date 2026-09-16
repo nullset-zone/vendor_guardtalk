@@ -9,20 +9,27 @@
     <link rel="stylesheet" href="../install/styles-route.css" />
   </head>
   <body>
-    <main id="installer-main" class="installer">
-      <h1>What this installer does not cover</h1>
-      <p>Verified boot checks what your key signs. The items below stay outside that check. This page is static and makes no network request.</p>
-      <ul>
-        <li>Firmware beneath AVB (baseband, boot ROM) is not signed by your key.</li>
-        <li>A signing machine already compromised can produce a valid signature on the wrong image.</li>
-        <li>A key copied without your knowledge is still a valid key.</li>
-        <li>The Gateway is a network-defence boundary for messages, not an absolute one.</li>
-        <li>This installer cannot detect coercion or a stolen backup passphrase.</li>
-      </ul>
-      <nav>
-        <a href="../install/">Back to install</a>
-        <a href="../install/update/">Update</a>
-        <a href="../install/recover/">Recover</a>
+    <a class="skip-link" href="#installer-main">Skip to the threat model</a>
+    <main id="installer-main" class="route installer gl-onboarding">
+      <header class="gl-section__header">
+        <div class="gl-section__heading-group">
+          <h1 class="gl-section__heading">What this installer does not cover</h1>
+          <p class="gl-section__description">Verified boot checks what your key signs. The items below stay outside that check. This page is static and makes no network request.</p>
+        </div>
+      </header>
+      <section class="threat-card gl-card" aria-label="Limits of verified boot">
+        <ul class="gl-list">
+          <li class="gl-list__item gl-alert gl-alert--warning">Firmware beneath AVB (baseband, boot ROM) is not signed by your key.</li>
+          <li class="gl-list__item gl-alert gl-alert--warning">A signing machine already compromised can produce a valid signature on the wrong image.</li>
+          <li class="gl-list__item gl-alert gl-alert--warning">A key copied without your knowledge is still a valid key.</li>
+          <li class="gl-list__item gl-alert gl-alert--warning">The Gateway is a network-defence boundary for messages, not an absolute one.</li>
+          <li class="gl-list__item gl-alert gl-alert--warning">This installer cannot detect coercion or a stolen backup passphrase.</li>
+        </ul>
+      </section>
+      <nav class="threat-nav gl-form-layout__actions" data-align="start" aria-label="Related pages">
+        <a class="gl-button gl-button--default-link" href="../install/">Back to install</a>
+        <a class="gl-button gl-button--default-link" href="../install/update/">Update</a>
+        <a class="gl-button gl-button--default-link" href="../install/recover/">Recover</a>
       </nav>
     </main>
   </body>

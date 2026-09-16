@@ -6,9 +6,11 @@ import { hostedChannelBase } from "../wizard/hosted-channel.js";
 test("hosted channel URL is per advertised product", () => {
   assert.equal(hostedChannelBase("tokay"), "../channels/tokay/");
   assert.equal(hostedChannelBase("akita"), "../channels/akita/");
+  assert.equal(hostedChannelBase("komodo"), "../channels/komodo/");
 });
 
 test("hosted channel URL rejects rango and shiba", () => {
   assert.throws(() => hostedChannelBase("rango"), WizardGateError);
   assert.throws(() => hostedChannelBase("shiba"), WizardGateError);
+  assert.throws(() => hostedChannelBase("caiman"), WizardGateError);
 });

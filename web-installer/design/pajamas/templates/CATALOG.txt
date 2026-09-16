@@ -1,0 +1,23 @@
+GuardTalk Pajamas template catalog
+Source: https://design.guardtalk.io/pajamas/#/templates/
+Fetch date: 2026-08-23
+Count: 18 product-page templates (compiled CSS only; React page sources not vendored).
+
+dashboard	Dashboard	Overview	A workspace overview: toolbar, metric cards, a themed area chart and a recent-activity list with status badges.
+analytics	Analytics	Overview	A metrics page: KPI cards, themed area / bar / line charts and a small source breakdown table.
+sign-in	Sign In	Auth	A centered auth card: email + password fields, a remember toggle, a primary submit, an SSO action and a footer link.
+sign-up	Sign Up	Auth	A centered create-account card: name / email / password fields, a terms toggle, a primary submit and an SSO alt.
+forgot-password	Forgot Password	Auth	A centered reset card: an email field, a send-reset primary, a confirmation note and a back-to-sign-in link.
+settings	Settings	Settings	A section rail with a profile form, preference toggles and a danger zone for destructive account actions.
+profile	Profile	Settings	A user profile: an avatar/initials header with bio, an editable details card and a recent-activity list.
+data-table	Data Table	Table	A list page: a search + filter + action toolbar, a data table with status badges, and pagination.
+users	Team	Table	A members list: a search + invite toolbar, a table of users with avatar / role / status badges, row actions and pagination.
+create-form	Create	Form	A multi-section create form: text inputs, a select, toggles, a textarea and primary + secondary actions.
+checkout	Checkout	Form	A two-column billing page: an order summary on one side, a payment + contact form on the other and a pay primary.
+onboarding	Onboarding	Form	A multi-step wizard: a 1·2·3 step indicator, the current step’s form fields and Back / Next actions.
+pricing	Pricing	Content	Three pricing tiers (Free / Pro / Enterprise) with feature lists, a highlighted recommended tier, CTAs and a billing toggle.
+landing	Landing	Content	A marketing page: a hero with primary / secondary CTAs, a feature grid of cards and a closing CTA band.
+empty-state	Empty State	Tools	A zero-data state: an illustration placeholder, heading, description and a create action — plus a no-search-results variant.
+not-found	404	Tools	A centered error page: a large 404, a friendly message and back-home + contact-support actions.
+chat	Chat	AI Chat	An AI chat layout: a header with the assistant name, a scrollable alternating message list and a composer with a send button.
+gallery	Gallery	Gallery	A media/asset grid: a search + view-toggle toolbar, a responsive grid of asset cards with tags and a selection state.

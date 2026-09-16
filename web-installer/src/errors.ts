@@ -14,7 +14,7 @@ export class WrongProductError extends FlashcoreError {
   constructor(product: string) {
     super(
       "WRONG_PRODUCT",
-      `product '${product}' is not in the advertised allowlist (tokay, akita)`,
+      `product '${product}' is not in the advertised allowlist (tokay, akita, komodo)`,
     );
   }
 }

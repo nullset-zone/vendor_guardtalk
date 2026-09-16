@@ -29,19 +29,19 @@
     },
     "product": {
       "type": "string",
-      "enum": ["tokay", "akita"],
-      "description": "Advertised devices: Pixel 9 (tokay) and Pixel 8a (akita). Packer fails closed on rango/shiba/husky."
+      "enum": ["tokay", "akita", "komodo"],
+      "description": "Advertised devices: Pixel 9 (tokay), Pixel 8a (akita), Pixel 9 Pro XL (komodo). Packer fails closed on rango/shiba/husky/caiman."
     },
     "advertisedDevices": {
       "type": "array",
       "minItems": 1,
-      "maxItems": 2,
-      "items": { "enum": ["tokay", "akita"] },
-      "description": "Public allowlist. tokay and/or akita. Must include product."
+      "maxItems": 3,
+      "items": { "enum": ["tokay", "akita", "komodo"] },
+      "description": "Public allowlist. tokay, akita, and/or komodo. Must include product."
     },
     "reservedProducts": {
       "type": "array",
-      "items": { "type": "string", "not": { "enum": ["tokay", "akita", "rango"] } },
+      "items": { "type": "string", "not": { "enum": ["tokay", "akita", "komodo", "rango"] } },
       "description": "Must not list advertised devices or rango."
     },
     "channel": {

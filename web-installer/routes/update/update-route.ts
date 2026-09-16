@@ -31,8 +31,9 @@ import { makeChip } from "../../lib/ui/chips.js";
 import { consoleMarkup } from "../../lib/ui/console.js";
 import { escapeHtml } from "../../lib/ui/escape.js";
 import { POSTURE_CONNECTIVITY, POSTURE_CUSTODY, renderPosturePill } from "../../lib/ui/posture.js";
-import { renderRail } from "../../lib/ui/rail.js";
+import { railStepViews, renderRail } from "../../lib/ui/rail.js";
 import { renderSideBySideRow } from "../../lib/ui/sidebyside.js";
+import { GL_BTN_CONFIRM, GL_BTN_DEFAULT, GL_BTN_LINK, glAlertHtml } from "../../lib/ui/pajamas.js";
 import type { ConsoleLog } from "../../lib/types.js";
 
 /** Inline sentence shown where flow 1 would sit on /install — D-003. */
@@ -126,7 +127,11 @@ function stopParagraph(state: InstallState, step: number): string {
   if (reason === undefined) {
     return "";
   }
-  return `<p class="rail-stop-reason" data-role="stop-reason">${escapeHtml(reason)}</p>`;
+  return glAlertHtml(
+    "danger",
+    "STOPPED",
+    `<p class="rail-stop-reason" data-role="stop-reason">${escapeHtml(reason)}</p>`,
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -268,7 +273,7 @@ function step5Html(lockState?: "locked" | "unlocked"): string {
     `<h2>${escapeHtml(stepDefinition(5).title)}</h2>`,
     `<p>Pair the phone over USB. This step reads the product name and the lock state; `,
     `nothing is written to the device here.</p>`,
-    `<button type="button" data-device-action="pair">Pair device</button>`,
+    `<button type="button" class="${GL_BTN_CONFIRM}" data-device-action="pair">Pair device</button>`,
     pendingCompareRow("product-compare", "product", "this release&#39;s target", "getvar product"),
     `<p class="mono" data-role="lock-readout" data-var="unlocked">${escapeHtml(readout)}</p>`,
     `<p>${escapeHtml(lockStateCopy(lockState))}</p>`,
@@ -277,7 +282,7 @@ function step5Html(lockState?: "locked" | "unlocked"): string {
     ` I understand this update changes no lock state and wipes no data.`,
     `</label>`,
     `<p class="confirm-note mono">${escapeHtml(SIDELOAD_NOTE)}</p>`,
-    `<button type="button" data-step-action="device-match" disabled>` +
+    `<button type="button" class="${GL_BTN_CONFIRM}" data-step-action="device-match" disabled>` +
       `Continue once the product matches</button>`,
   ].join("");
 }
@@ -294,14 +299,14 @@ function flashGateHtml(model: UpdatePageModel): string {
   const gate = open
     ? [
         makeChip("READY — YOUR SIGNATURE ANCHORS BOOT", "verified"),
-        `<button type="button" class="flash-start" data-flash="start">Start flash</button>`,
+        `<button type="button" class="${GL_BTN_CONFIRM} flash-start" data-flash="start">Start flash</button>`,
       ]
     : [
         makeChip("FLASH BLOCKED", "tripwire"),
         `<ul class="flash-blockers">`,
         blockers.map((blocker) => `<li>${escapeHtml(blocker)}</li>`).join(""),
         `</ul>`,
-        `<button type="button" class="flash-start" data-flash="start" disabled>Start flash</button>`,
+        `<button type="button" class="${GL_BTN_CONFIRM} flash-start" data-flash="start" disabled>Start flash</button>`,
       ];
   return gate.join("");
 }
@@ -393,7 +398,7 @@ function simChipHtml(): string {
 
 function headerHtml(simMode: boolean): string {
   return [
-    `<header class="installer-head">`,
+    `<header class="installer-head gl-onboarding__header">`,
     renderPosturePill({
       connectivity: POSTURE_CONNECTIVITY,
       custody: POSTURE_CUSTODY,
@@ -409,18 +414,25 @@ function headerHtml(simMode: boolean): string {
 
 export function renderUpdateInner(model: UpdatePageModel): string {
   const step = model.state.currentStep;
+  const canBack = railStepViews(model.state).some((view) => view.reachableByBack);
+  const backBtn = canBack
+    ? `<button type="button" class="${GL_BTN_DEFAULT}" data-action="back">Back</button>`
+    : `<span></span>`;
   return [
+    `<div class="installer gl-onboarding" data-route="update">`,
     headerHtml(model.simMode),
-    `<main id="installer-main">`,
-    `<nav aria-label="Installer steps">${renderRail(model.state).html}</nav>`,
-    `<section class="step-panel" data-route="update" data-step="${String(step)}">`,
+    `<nav class="installer-rail" aria-label="Installer steps">${renderRail(model.state).html}</nav>`,
+    `<main id="installer-main" class="installer-main gl-card">`,
+    `<section class="step-panel gl-form-layout" data-route="update" data-step="${String(step)}">`,
     stepBodyHtml(model, step),
     `</section>`,
+    `<div class="gl-form-layout__actions installer-actions" data-align="between">${backBtn}</div>`,
     `</main>`,
     `<footer class="installer-foot">`,
-    `<a href="../recover/">Recovery path (lost key)</a>`,
-    `<a href="../../threat-model/">Threat model</a>`,
+    `<a class="${GL_BTN_LINK}" href="../recover/">Recovery path (lost key)</a>`,
+    `<a class="${GL_BTN_LINK}" href="../../threat-model/">Threat model</a>`,
     `</footer>`,
+    `</div>`,
   ].join("\n");
 }
 

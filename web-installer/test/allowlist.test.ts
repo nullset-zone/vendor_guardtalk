@@ -5,18 +5,20 @@ import { WrongProductError } from "../src/errors.js";
 import { loadChannelFromTexts } from "../src/channel.js";
 import { channelTextsFromBlobs, tokayBlobs } from "./helpers.js";
 
-test("tokay and akita are allowed", () => {
+test("tokay, akita, and komodo are allowed", () => {
   assert.doesNotThrow(() => assertAllowedProduct("tokay"));
   assert.doesNotThrow(() => assertAllowedProduct("akita"));
+  assert.doesNotThrow(() => assertAllowedProduct("komodo"));
 });
 
 test("rango is rejected", () => {
   assert.throws(() => assertAllowedProduct("rango"), WrongProductError);
 });
 
-test("shiba, husky, and empty product are rejected", () => {
+test("shiba, husky, caiman, and empty product are rejected", () => {
   assert.throws(() => assertAllowedProduct("shiba"), WrongProductError);
   assert.throws(() => assertAllowedProduct("husky"), WrongProductError);
+  assert.throws(() => assertAllowedProduct("caiman"), WrongProductError);
   assert.throws(() => assertAllowedProduct(""), WrongProductError);
 });
 

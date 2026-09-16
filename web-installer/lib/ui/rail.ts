@@ -133,14 +133,27 @@ export function railStepViews(state: InstallState): readonly RailStepView[] {
   });
 }
 
+function stepperStateClass(status: RailStepStatus): string {
+  if (status === "completed") {
+    return " is-complete";
+  }
+  if (status === "current" || status === "stopped") {
+    return " is-active";
+  }
+  return "";
+}
+
 function itemHtml(view: RailStepView, tabindex: number): string {
+  const marker = String(view.step);
   const parts = [
-    `<li class="rail-step" data-step="${String(view.step)}" data-status="${view.status}">`,
-    `<button type="button" class="rail-step-button mono" data-step="${String(view.step)}"`,
+    `<li class="rail-step gl-progress-steps__step${stepperStateClass(view.status)}" data-step="${marker}" data-status="${view.status}">`,
+    `<span class="gl-progress-steps__marker" aria-hidden="true">${escapeHtml(marker)}</span>`,
+    `<span class="gl-progress-steps__connector" aria-hidden="true"></span>`,
+    `<button type="button" class="rail-step-button mono gl-progress-steps__text" data-step="${marker}"`,
     ` tabindex="${String(tabindex)}"`,
     ` aria-current="${view.status === "current" || view.status === "stopped" ? "step" : "false"}"`,
     ` data-reachable="${view.reachableByBack ? "true" : "false"}">`,
-    `${escapeHtml(String(view.step))}. ${escapeHtml(view.title)} `,
+    `<span class="gl-progress-steps__label">${escapeHtml(marker)}. ${escapeHtml(view.title)}</span> `,
   ];
   switch (view.status) {
     case "completed":
@@ -185,7 +198,11 @@ export function renderRail(state: InstallState, hooks: RailHooks = {}): Rendered
     views.findIndex((view) => view.status === "current" || view.status === "stopped"),
   );
   const itemsHtml = views.map((view, index) => itemHtml(view, index === focusIndex ? 0 : -1)).join("");
-  const html = [`<ol class="rail mono-rail" aria-label="Installer steps">`, itemsHtml, `</ol>`].join("");
+  const html = [
+    `<ol class="rail mono-rail gl-progress-steps gl-progress-steps--horizontal" aria-label="Installer steps">`,
+    itemsHtml,
+    `</ol>`,
+  ].join("");
 
   const buttons: HTMLElement[] = [];
   const items: RailItem[] = [];

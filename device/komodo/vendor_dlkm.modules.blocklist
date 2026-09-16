@@ -1,0 +1,35 @@
+# GuardTalkOS — komodo (zumapro / caimito-kernels) vendor_dlkm modules blocklist.
+#
+# T-PORT-KOMODO-LAYER: REPLACES upstream
+# device/google/caimito-kernels/6.1/grapheneos/vendor_dlkm.modules.blocklist
+# via BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE in
+# vendor/guardtalk/device/komodo/BoardConfig-excised-late.mk.
+#
+# Baseline: caimito-kernels grapheneos channel (bcmdhd4390, syna_touch,
+# sec_touch, cs40l26_i2c, …) — identical to tokay / shared
+# vendor/guardtalk/feature-excised/vendor_dlkm.modules.blocklist.
+# Do NOT use the akita/zuma blocklist (bcmdhd4383 / goodix_brl_touch).
+#
+# Note on bcmdhd4390: WiFi two-phase load is upstream-intentional (blocklisted
+# in the bulk pass, then re-modprobe without -b in init.insmod.komodo.cfg).
+# GuardTalk preserves that verbatim. WiFi is NOT broken by this entry.
+#
+# GuardTalk addition (T-BT-FULL FR-3): nitrous — BCM4390 BT power/rfkill.
+
+blocklist aoc_unit_test_dev
+blocklist mali_kutf
+blocklist mali_kutf_clk_rate_trace_test_portal
+blocklist sscoredump_sample_test.ko
+blocklist sscoredump_test.ko
+
+blocklist bcmdhd4390
+blocklist cs40l26_i2c
+blocklist gs-panel-common-test.ko
+blocklist panel-gs-tk4c-test.ko
+blocklist pwm_exynos
+blocklist rt4539_bl
+blocklist sec_touch
+blocklist syna_touch
+
+# T-BT-FULL (FR-3): Bluetooth power/rfkill driver — BCM4390 BT on UART.
+blocklist nitrous
