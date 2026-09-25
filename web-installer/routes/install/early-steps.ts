@@ -46,6 +46,13 @@ import { resignVbmeta, verifyVbmeta, verifyVbmetaAgainstKey, type KeyMaterial as
 import { beBytesToBigInt } from "../../lib/avb/bytes.js";
 import { encodePkmd, pkmdFingerprint } from "../../lib/avb/pkmd.js";
 import { cliExportStepMap, type CliExportPlan } from "../../lib/cli-export/generator.js";
+import {
+  DEFAULT_OFFERED_PRODUCT,
+  KOMODO_STAMP_HONESTY,
+  WIZARD_DEVICES,
+  parseOfferedDevice,
+  statusChipWord,
+} from "../../lib/ui/offered-devices.js";
 
 // ---------------------------------------------------------------------------
 // Binding copy constants
@@ -58,7 +65,7 @@ export const ACK_CTA_LABEL = "I understand — begin →";
 export const ONION_PLACEHOLDER = "// confirm onion address (Q-05)";
 /** Q-04: release-key fingerprint ships as a mono placeholder. */
 export const RELEASE_FINGERPRINT_PLACEHOLDER = "// confirm release-key fingerprint (Q-04)";
-/** Q-06: rango marketing name is not grounded in any present source. */
+/** Q-06: grounded as Pixel 10 Pro Fold (DEC-WEBINSTALL-015). Kept for historical honesty docs. */
 export const RANGO_NAME_PLACEHOLDER = "// confirm device name (Q-06)";
 /** Q-07: chained-partition layout confirmation placeholder (verbatim). */
 export const PARTITION_LAYOUT_CONFIRM = "// confirm partition layout (Q-07)";
@@ -69,12 +76,12 @@ export interface SupportedTarget {
   readonly status: "supported" | "experimental";
 }
 
-/** DEC-PORT-KOMODO-004: advertised production set is tokay + akita + komodo. Do not list rango as production. */
-export const SUPPORTED_TARGETS: readonly SupportedTarget[] = [
-  { codename: "tokay", deviceName: "Pixel 9", status: "supported" },
-  { codename: "akita", deviceName: "Pixel 8a", status: "supported" },
-  { codename: "komodo", deviceName: "Pixel 9 Pro XL", status: "supported" },
-];
+/** Advertised set from wizard/devices.ts (DEC-WEBINSTALL-015). Rango is experimental / boot HOLD. */
+export const SUPPORTED_TARGETS: readonly SupportedTarget[] = WIZARD_DEVICES.map((device) => ({
+  codename: device.id,
+  deviceName: device.deviceName,
+  status: device.status,
+}));
 
 export const ALPHA_POSTURE_FLAGS = {
   connectivity: POSTURE_CONNECTIVITY,
@@ -157,16 +164,28 @@ export const CUSTODY_SENTENCES: readonly string[] = [
   "GuardTalk's release key proves who built the download; your key alone decides what boots.",
 ];
 
+function targetPickerHtml(selected: string): string {
+  const options = WIZARD_DEVICES.map((device) => {
+    const isSelected = device.id === selected ? " selected" : "";
+    return `<option value="${escapeHtml(device.id)}" data-status="${device.status}"${isSelected}>${escapeHtml(device.label)}</option>`;
+  }).join("");
+  return [
+    `<label class="field" for="target-product">Selected device</label>`,
+    `<select id="target-product" name="target-product" data-role="target-product">${options}</select>`,
+  ].join("");
+}
+
 function targetTableHtml(): string {
-  const akitaNote =
-    "rango, caiman, shiba, and husky are not production advertised devices. rango stays hidden.";
+  const advertisedNote =
+    "rango is advertised as experimental / boot HOLD — not production-boot-green. " +
+    KOMODO_STAMP_HONESTY +
+    " caiman, shiba, husky, tegu, and comet stay unstamped and are not offered.";
   const rows = SUPPORTED_TARGETS.map((target) => {
-    const chip =
-      target.status === "supported"
-        ? makeChip("SUPPORTED", "neutral")
-        : makeChip("EXPERIMENTAL", "caution");
+    const chipKind = target.status === "supported" ? "neutral" : "caution";
+    const chip = makeChip(statusChipWord(target.status), chipKind);
     return [
-      `<tr><th scope="row">${escapeHtml(target.codename)}</th>`,
+      `<tr data-codename="${escapeHtml(target.codename)}" data-status="${target.status}">`,
+      `<th scope="row">${escapeHtml(target.codename)}</th>`,
       `<td>${mono(target.deviceName)}</td>`,
       `<td>${chip}</td></tr>`,
     ].join("");
@@ -175,7 +194,7 @@ function targetTableHtml(): string {
     `<table class="target-table"><caption>This installer writes these devices only</caption>`,
     `<thead><tr><th scope="col">Codename</th><th scope="col">Device</th><th scope="col">Status</th></tr></thead>`,
     `<tbody>${rows}</tbody></table>`,
-    `<p class="note">${escapeHtml(akitaNote)}</p>`,
+    `<p class="note">${escapeHtml(advertisedNote)}</p>`,
   ].join("");
 }
 
@@ -210,7 +229,8 @@ function flowCompareTableHtml(): string {
   ].join("");
 }
 
-export function renderStep0(): string {
+export function renderStep0(selectedProduct: string = DEFAULT_OFFERED_PRODUCT): string {
+  const selected = parseOfferedDevice(selectedProduct) ?? DEFAULT_OFFERED_PRODUCT;
   const hardenings = [
     Hardening(
       "Every check runs offline in this tab — hashing, signature verification, and signing happen on this computer with no network.",
@@ -240,6 +260,7 @@ export function renderStep0(): string {
     `<div class="posture-row">${renderPostureHeader()}${makeChip("ALPHA — READ FIRST", "caution")}</div>`,
     hardenings,
     targetTableHtml(),
+    targetPickerHtml(selected),
     limits,
     `<section aria-labelledby="custody-heading"><h3 id="custody-heading">Key custody, in six sentences</h3>`,
     `<ol class="custody-list">${custodyList}</ol></section>`,

@@ -1,0 +1,176 @@
+=== Q-REMEDIATE-B4-CHECKIN independent rematch (item 20) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+USB_GO=not started
+PASS_HOLD=remains
+
+--- required files ---
+PASS: present: vendor/guardtalk/apps/GuardTalkCheckin/Android.bp
+PASS: present: vendor/guardtalk/apps/GuardTalkCheckin/AndroidManifest.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkCheckin/src/com/guardtalk/checkin/CheckinConstants.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkCheckin/src/com/guardtalk/checkin/CheckinEndpoint.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkCheckin/src/com/guardtalk/checkin/CheckinJobService.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkCheckin/src/com/guardtalk/checkin/CheckinTransport.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkCheckin/src/com/guardtalk/checkin/CheckinStatusActivity.kt
+PASS: present: vendor/guardtalk/checkin/guardtalk-checkin.mk
+PASS: present: vendor/guardtalk/checkin/payload.schema.json
+PASS: present: vendor/guardtalk/checkin/host/checkin_contract.py
+PASS: present: vendor/guardtalk/checkin/host/test_checkin_contract.py
+PASS: present: vendor/guardtalk/checkin/host/verify_host.sh
+PASS: present: vendor/guardtalk/docs/SEIZURE_CHECKIN.md
+PASS: present: vendor/guardtalk/radio-excised/product-config-late.mk
+
+--- INTERVAL_S 12h / schema 43200 (independent rg) ---
+PASS: Kotlin INTERVAL_S = 12 * 60 * 60
+PASS: Kotlin INTERVAL_MS derived from INTERVAL_S
+PASS: Python INTERVAL_S = 12 * 60 * 60
+PASS: schema interval_s const 43200
+PASS: JobScheduler periodic uses INTERVAL_MS
+
+--- re-run unittest (independent) ---
+test_accept_rfc1918 (test_checkin_contract.EndpointTests.test_accept_rfc1918) ... ok
+test_accept_v3_onion_http (test_checkin_contract.EndpointTests.test_accept_v3_onion_http) ... ok
+test_accept_v3_onion_https (test_checkin_contract.EndpointTests.test_accept_v3_onion_https) ... ok
+test_gateway_lan_direct (test_checkin_contract.EndpointTests.test_gateway_lan_direct) ... ok
+test_onion_requires_socks_no_clearnet_fallback (test_checkin_contract.EndpointTests.test_onion_requires_socks_no_clearnet_fallback) ... ok
+test_reject_onion_v2 (test_checkin_contract.EndpointTests.test_reject_onion_v2) ... ok
+test_reject_public_c2 (test_checkin_contract.EndpointTests.test_reject_public_c2) ... ok
+test_reject_userinfo_and_bad_scheme (test_checkin_contract.EndpointTests.test_reject_userinfo_and_bad_scheme) ... ok
+test_socks_rejects_public_host (test_checkin_contract.EndpointTests.test_socks_rejects_public_host) ... ok
+test_interval_is_twelve_hours (test_checkin_contract.IntervalTests.test_interval_is_twelve_hours) ... ok
+test_payload_rejects_non_opaque_id (test_checkin_contract.PayloadTests.test_payload_rejects_non_opaque_id) ... ok
+test_payload_shape_and_no_pii_keys (test_checkin_contract.PayloadTests.test_payload_shape_and_no_pii_keys) ... ok
+test_tor_admin_overdue_contract (test_checkin_contract.TorAdminTests.test_tor_admin_overdue_contract) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.002s
+
+OK
+PASS: python3 -m unittest discover checkin/host  (exit 0)
+
+--- re-run vendor/guardtalk/checkin/host/verify_host.sh ---
+=== T-REMEDIATE-B4-CHECKIN host verify (item 20) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+USB_GO=not started
+
+--- required files ---
+PASS: present: vendor/guardtalk/apps/GuardTalkCheckin/Android.bp
+PASS: present: vendor/guardtalk/apps/GuardTalkCheckin/AndroidManifest.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkCheckin/src/com/guardtalk/checkin/CheckinConstants.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkCheckin/src/com/guardtalk/checkin/CheckinEndpoint.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkCheckin/src/com/guardtalk/checkin/CheckinJobService.kt
+PASS: present: vendor/guardtalk/checkin/guardtalk-checkin.mk
+PASS: present: vendor/guardtalk/checkin/payload.schema.json
+PASS: present: vendor/guardtalk/checkin/host/checkin_contract.py
+PASS: present: vendor/guardtalk/docs/SEIZURE_CHECKIN.md
+PASS: present: vendor/guardtalk/radio-excised/product-config-late.mk
+
+--- 12 h interval ---
+PASS: Kotlin INTERVAL_S is 12 hours
+PASS: Python INTERVAL_S is 12 hours
+PASS: schema interval_s const 43200
+
+--- no public C2 / no secrets ---
+PASS: no public URL C2 in client/host sources
+PASS: no private key material
+PASS: no pem/pk8/key files under check-in paths
+PASS: fail-closed onion/SOCKS + no public DNS in CheckinEndpoint
+
+--- product wiring ---
+PASS: product-config-late.mk includes guardtalk-checkin.mk
+PASS: GuardTalkCheckin in PRODUCT_PACKAGES
+
+--- contract unittest ---
+test_accept_rfc1918 (test_checkin_contract.EndpointTests.test_accept_rfc1918) ... ok
+test_accept_v3_onion_http (test_checkin_contract.EndpointTests.test_accept_v3_onion_http) ... ok
+test_accept_v3_onion_https (test_checkin_contract.EndpointTests.test_accept_v3_onion_https) ... ok
+test_gateway_lan_direct (test_checkin_contract.EndpointTests.test_gateway_lan_direct) ... ok
+test_onion_requires_socks_no_clearnet_fallback (test_checkin_contract.EndpointTests.test_onion_requires_socks_no_clearnet_fallback) ... ok
+test_reject_onion_v2 (test_checkin_contract.EndpointTests.test_reject_onion_v2) ... ok
+test_reject_public_c2 (test_checkin_contract.EndpointTests.test_reject_public_c2) ... ok
+test_reject_userinfo_and_bad_scheme (test_checkin_contract.EndpointTests.test_reject_userinfo_and_bad_scheme) ... ok
+test_socks_rejects_public_host (test_checkin_contract.EndpointTests.test_socks_rejects_public_host) ... ok
+test_interval_is_twelve_hours (test_checkin_contract.IntervalTests.test_interval_is_twelve_hours) ... ok
+test_payload_rejects_non_opaque_id (test_checkin_contract.PayloadTests.test_payload_rejects_non_opaque_id) ... ok
+test_payload_shape_and_no_pii_keys (test_checkin_contract.PayloadTests.test_payload_shape_and_no_pii_keys) ... ok
+test_tor_admin_overdue_contract (test_checkin_contract.TorAdminTests.test_tor_admin_overdue_contract) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.002s
+
+OK
+PASS: unittest checkin_contract
+
+--- Tor admin HOLD honesty ---
+PASS: docs + contract record Tor admin HOLD / tor surface
+HOLD: Gateway/Tor admin not in this GrapheneOS-worktree — live visibility HOLD
+HOLD: adb empty — not device-fixed
+
+PASS=21 FAIL=0 HOLD=2
+PASS: verify_host.sh exit 0
+
+--- no public C2 (independent; schema URI is not C2) ---
+PASS: no public URL C2 in client src / mk / contract.py
+PASS: payload.schema.json $schema is json-schema.org meta URI (not C2)
+PASS: unittest names public hosts only as reject cases
+PASS: no baked v3 onion in app src / mk
+PASS: no baked SOCKS default in app src
+PASS: CheckinEndpoint fail-closed comments present
+PASS: CheckinEndpoint rejects public IP
+
+--- no pem/pk8/.env under checkin paths ---
+PASS: no private key PEM blocks
+PASS: no pem/pk8/key/.env under apps/GuardTalkCheckin + checkin
+
+--- product wiring ---
+PASS: product-config-late.mk includes guardtalk-checkin.mk
+PASS: GuardTalkCheckin in PRODUCT_PACKAGES (source mk)
+PASS: Android.bp privileged + system_ext_specific
+
+--- status UI does not display onion URL ---
+PASS: status UI shows class only, not onion URL
+
+--- Tor admin live visibility (HOLD expected; do not FAIL) ---
+HOLD: Gateway/Tor admin UI ABSENT in this tree — live visibility HOLD
+PASS: docs + contract record Tor admin HOLD / admin_surface=tor
+
+--- lunch komodo-trunk_staging-user (independent; GIT_CONFIG session-only) ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+13:49:28 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+13:49:35 Build sandboxing disabled due to nsjail error.
+13:49:41 Build sandboxing disabled due to nsjail error.
+13:49:46 Build sandboxing disabled due to nsjail error.
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (not userdebug)
+PASS: user PRODUCT_PACKAGES contains GuardTalkCheckin (PRESENT)
+
+--- adb / on-device JobScheduler (HOLD if empty) ---
+List of devices attached
+HOLD: adb devices empty — on-device JobScheduler HOLD (not device-fixed)
+
+PASS=39 FAIL=0 HOLD=2

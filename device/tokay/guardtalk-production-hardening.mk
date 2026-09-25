@@ -1,5 +1,9 @@
 # GuardTalkOS — production hardening props (T-SEC-P5-HARDEN).
 #
+# Pattern / fallback for devices without a per-device copy. komodo has its
+# own include: vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk
+# (T-REMEDIATE-B1-USERBUILD).
+#
 # LIVE: included from vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk
 # so PRODUCT_PROPERTY_OVERRIDES reach vendor/build.prop.
 #

@@ -1,0 +1,21 @@
+=== Q-REMEDIATE-B6-FLASH-SOP independent QA negative matrix ===
+PASS  C1a empty positional-arg function under set -u does not abort
+PASS  C1b real flash_vbmeta_img() with 0 extra args completes under set -euo pipefail
+PASS  C2 CAPTURE_LOGS unset -> flash complete (exit=0)
+PASS  C2 CAPTURE_LOGS unset -> no capture, no fallback
+PASS  C2 CAPTURE_LOGS unset -> no capture dir
+PASS  C3 CAPTURE_LOGS=0 output equals unset after normalizing the work-dir path (default path unchanged)
+PASS  C3 CAPTURE_LOGS=0 -> no capture dir, no fallback
+PASS  C4 capture recorded post-adb fallback to fastboot (exit=2)
+PASS  C4 dual transport captured (adb logcat + fastboot oem dmesg)
+PASS  C4 no FATAL
+PASS  C5 missing-adb capture completed without FATAL (exit=2)
+PASS  C5 fastboot-only capture written; no adb files (transport absent)
+PASS  C6 failing fastboot capture warned, no FATAL (exit=2)
+PASS  C6 capture warning emitted for failed step
+PASS  C7 adb unauthorized -> exit 0, no FATAL, no crash
+PASS  C8 device never enumerates -> exit 3, no FATAL
+PASS  C9 dead-adb capture completed without FATAL (exit=2)
+PASS  C9 adb snapshot skipped gracefully (transport dead)
+
+=== QA harness summary: PASS=18 FAIL=0 ===

@@ -19,11 +19,13 @@ Out of scope (later Phase-4 tasks): `privacy_tmpfs`, clipboard clear, Files hand
 |-------|--------|
 | **Package name (constant)** | `com.guardtalk.messenger` |
 | **Source of truth** | `android.guardtalk.GuardTalkPermissionDefaultsPolicy.MESSENGER_PACKAGE_NAME` |
-| **In-tree APK / PRODUCT_PACKAGES app module** | **ABSENT (GAP)** |
-| **Evidence searched** | `vendor/guardtalk/apps/` (Config, Validator, Face, Voice only); no `*Messenger*.apk` product prebuilt; branding icons only under `vendor/guardtalk/branding/.../guardtalk_messenger` |
+| **In-tree APK / PRODUCT_PACKAGES app module** | **PRESENT** — Soong `GuardTalkMessenger` (`vendor/guardtalk/apps/GuardTalkMessenger/`) |
+| **Install path** | Product-partition `/product/app` via `PRODUCT_PACKAGES += GuardTalkMessenger` (komodo user image). Not priv-app. |
 | **CarMessenger APK** | `packages/apps/Car/MessengerPrebuilt/` — **not** GuardTalk Messenger; ignored |
 
-**Do not invent a fake APK.** Plumbing is keyed by `com.guardtalk.messenger`. When the product Messenger APK is added (system/priv-app or product package), grants activate automatically if the APK requests the listed permissions.
+**T-REMEDIATE-B4-MESSENGER closed the P4 APK GAP.** The product module is a Jami JSON-RPC client; jamid runs on the GuardTalk Gateway (see `GATEWAY_MESSENGER_PROVISION.md`). Do not substitute Play Store / browser / GMS. Do not invent a second package name.
+
+When the APK requests the listed permissions, grants activate automatically via the XML + `DefaultPermissionGrantPolicy`.
 
 ## Product property
 
@@ -98,7 +100,7 @@ When `ro.guardtalk.permission_defaults=1`:
 2. Permission / Apps screens may show Messenger grants as granted-by-default when the APK is present; user can revoke.
 3. Do not surface a “grant all to third-party” product shortcut.
 4. Special Access rows remain Maintenance / GT Config gated where Phase-1 UI already requires it.
-5. When Messenger APK is still absent, UI should not claim grants are active on-device.
+5. Messenger APK is baked as `GuardTalkMessenger`; UI may show the launcher. Grants are still HOLD until a user image is flashed (PASS HOLD).
 
 ## Fail-closed / gap handling
 
@@ -155,4 +157,4 @@ get_build_var PRODUCT_PACKAGES | tr ' ' '\n' | grep default-permissions-com.guar
 | `vendor/guardtalk/permissions/default-permissions-com.guardtalk.messenger.xml` | **NEW** product XML |
 | `vendor/guardtalk/permissions/Android.bp` | **NEW** `prebuilt_etc` |
 | `vendor/guardtalk/device/tokay/guardtalk-tokay.mk` | Prop + PRODUCT_PACKAGES |
-| `vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md` | **NEW** this doc |
+| `vendor/guardtalk/apps/GuardTalkMessenger/` | **T-REMEDIATE-B4-MESSENGER** product APK (Jami JSON-RPC client) |

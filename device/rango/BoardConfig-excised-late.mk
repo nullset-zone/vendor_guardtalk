@@ -1,6 +1,14 @@
 # Late board pass — include at end of vendor/google_devices/rango/BoardConfig.mk
 # (runs AFTER vendor/adevtool/config/mk/google_devices/common/BoardConfig-common.mk
 # re-sets BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE, so this override sticks).
+
+# T-PORT-EXCISION-MATRIX: resolve the SoC/device excision variant from DATA
+# (vendor/guardtalk/feature-excised/excision-variants.mk) and fail loudly if
+# rango ever loses its variant entry. GT_VARIANT=laguna_rango (rango is laguna,
+# NOT zumapro — that REGEN_HOOKS debt once produced wrong blocklist advice).
+GUARDTALK_DEVICE := rango
+include vendor/guardtalk/feature-excised/excision-variant-select.mk
+
 AB_OTA_PARTITIONS := $(filter-out modem,$(AB_OTA_PARTITIONS))
 
 BOARD_KERNEL_CMDLINE += androidboot.radio.disabled=1
@@ -33,7 +41,11 @@ endif
 # syna_touch/focal_touch/fst2/ebu-google/…) + nitrous.ko.
 # Do NOT point rango at vendor/guardtalk/feature-excised/vendor_dlkm.modules.blocklist
 # (that file is caimito/zumapro / tokay-oriented).
-BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE := vendor/guardtalk/device/rango/vendor_dlkm.modules.blocklist
+# T-PORT-EXCISION-MATRIX: registry-resolved (variant laguna_rango canonical
+# file is this same per-device path). The call below proves token equality.
+BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE := $(GT_EXCISION_BLOCKLIST_FILE)
+
+$(call gt-excision-validate-device-blocklist)
 
 # T-RANGO-BOOT-DEEP note (not a compile flag — RELEASE_AVF_ENABLE_EARLY_VM is a
 # soong release config): apexd is built with EARLY_VM=true so kBootstrapApexes

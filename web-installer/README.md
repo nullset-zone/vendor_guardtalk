@@ -26,6 +26,18 @@ offered. **Channel label:** `dev/unlocked`
 (`DEC-WEBINSTALL-007`). This is **not** GrapheneOS-equivalent locked
 verified boot.
 
+**DEC-010:** The current advertised komodo desktop-flash stamp
+`komodo-20260915-063833` is `userdebug` / test-keys. It is **not** a
+signed user `FLASH_READY` image. `LIVE_FLASH_CLAIMED` remains `false`.
+
+**DEC-011 / DEC-018:** Debug sidecar flash is a **separate** channel
+(`komodo-debug-latest` → `komodo-debug-20260918-180338`). `DEBUG_FLASH_READY`
+is **true** for that sidecar stamp (Q-DEBUG-PACK APPROVED). `USB_GO` stays
+**false**. Signed-user `FLASH_READY` stays **false**. DEC-017 leftover SHA
+HOLD residual remains. Do not treat `komodo-20260915-063833` as that gate.
+Do not retarget `komodo-latest`. No new SKU. No USB GO. See
+`vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md`.
+
 See `vendor/guardtalk/docs/WEB_INSTALLER_CHANNEL.md`.
 
 ## Flashcore (this wave)

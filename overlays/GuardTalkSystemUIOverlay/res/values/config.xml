@@ -29,11 +29,22 @@
          LocalBluetoothAdapter.getInstance():74-83). Stripping it from the QS
          lists is defence-in-depth so it never appears in the QS editor or
          default slot and no restore-from-backup path can re-instate it (§11). -->
-    <!-- F-SEC-P3-QS-EDITOR: Mic / Camera / Battery Saver remain on default /
-         new_default panels (product baseline). Auto-reboot MUST NOT appear here
-         — catalog-only via quick_settings_tiles_stock. See QS_TILES_POLICY.md. -->
+    <!-- F-SEC-P3-QS-EDITOR + T-REMEDIATE-B3-SENSORS: Mic / Camera / Battery
+         Saver remain on default / new_default panels (komodo user product).
+         Specs are registered in PolicyModule (CameraToggleTile /
+         MicrophoneToggleTile TILE_SPEC + Compose ViewModels). Availability
+         still requires android config_supportsMicToggle /
+         config_supportsCamToggle (GuardTalkFrameworksBaseOverlay) — listing
+         here is not enough if those bools stay AOSP-false. Auto-reboot MUST
+         NOT appear here — catalog-only via quick_settings_tiles_stock.
+         See QS_TILES_POLICY.md. -->
+    <!-- F-REMEDIATE-B3-SENSORS: collapsed QS uses quick_qs_panel_max_tiles=4
+         (phone). Tail placement left mictoggle/cameratoggle off the visible
+         komodo panel. Lead this list so they appear and bind on first boot /
+         QS reset. T owns supportsSensorToggle bools; F does not weaken
+         lockdown QS policy (no lockdown tile). -->
     <string name="quick_settings_tiles_new_default" translatable="false">
-        internet,dnd,airplane,flashlight,rotation,alarm,screenrecord,battery,mictoggle,cameratoggle,location
+        mictoggle,cameratoggle,internet,dnd,airplane,flashlight,rotation,alarm,screenrecord,battery,location
     </string>
 
     <!-- T-BT-UI-SWEEP + T-SEC-P3-QS + F-SEC-P3-QS-EDITOR:
@@ -48,9 +59,11 @@
     </string>
 
     <!-- T-BT-QS-TILE / T-BT-UI-SWEEP: quick_settings_tiles_default with `bt`
-         removed. F-SEC-P3-QS-EDITOR: no `autoreboot` on first-boot / reset panel. -->
+         removed. F-SEC-P3-QS-EDITOR: no `autoreboot` on first-boot / reset panel.
+         F-REMEDIATE-B3-SENSORS: mictoggle/cameratoggle lead the panel (same
+         collapsed-QS visibility contract as new_default). -->
     <string name="quick_settings_tiles_default" translatable="false">
-        internet,flashlight,dnd,alarm,airplane,controls,wallet,rotation,battery,cast,screenrecord,mictoggle,cameratoggle,custom(com.android.permissioncontroller/.permission.service.v33.SafetyCenterQsTileService)
+        mictoggle,cameratoggle,internet,flashlight,dnd,alarm,airplane,controls,wallet,rotation,battery,cast,screenrecord,custom(com.android.permissioncontroller/.permission.service.v33.SafetyCenterQsTileService)
     </string>
 
     <!-- T-BT-UI-SWEEP (FR-F §9): status bar BT icon auto-hide documentation.

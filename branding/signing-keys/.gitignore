@@ -1,0 +1,14 @@
+# Operator-owned GuardTalkOS signing material. NEVER commit.
+# T-REMEDIATE-B1-AVB / Law 4. See RUNBOOK.md.
+*.pem
+*.pk8
+*.x509.pem
+avb.pem
+avb_pkmd.bin
+*.key
+*.p12
+*.jks
+*.keystore
+!README.md
+!RUNBOOK.md
+!.gitignore

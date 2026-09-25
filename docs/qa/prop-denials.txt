@@ -1,0 +1,159 @@
+# prop-denials.txt — falsifier contract for T-REMEDIATE-B6-PROP-REACHABILITY
+#
+# Task:   T-REMEDIATE-B6-PROP-REACHABILITY (Backend, Panel 2, P0)
+# DEC:    DEC-REMEDIATE-019
+# Source: PACKED stamp releases/desktop-flash/komodo-debug-20260919-080101
+#         (debugfs -R 'cat /build.prop' <stamp>/vendor.img)
+# QA pair: Q-REMEDIATE-B6-PROP-REACHABILITY
+#
+# PURPOSE
+#   This is the "35, not 3" falsifier the QA lane named. It is the complete
+#   list of ro.guardtalk.* product-policy properties that ship in the PACKED
+#   vendor/build.prop and are therefore refused at property load time.
+#
+# MECHANISM (verified, do not re-litigate)
+#   No property_contexts entry for ro.guardtalk.*  =>  GetPropertyInfo() returns
+#   nullptr  =>  CheckMacPerms() false  =>  CheckPermissions() returns
+#   PROP_ERROR_PERMISSION_DENIED with error "SELinux permission check failed".
+#   The denial happens BEFORE any SELinux check (no AVC is expected) and there
+#   is no catch-all default_prop fallback. LoadProperties() has no exemption
+#   path: it checks every key=value, logs one denial per property, and continues.
+#   => 35/35 denied; the 3 previously observed were a partial log capture.
+#
+# EXACT LOG LINE SHAPE (system/core/init/property_service.cpp:930)
+#   init: Do not have permissions to set '<KEY>' to '<VALUE>' in property file '/vendor/build.prop': SELinux permission check failed
+#
+# PRE-FIX EXPECTATION (stamp komodo-debug-20260919-080101)
+#   count of "Do not have permissions to set 'ro.guardtalk." == 35
+#
+# POST-FIX EXPECTATION (rebuilt image — HOLD, not claimed here)
+#   count of the same line == 0 for '/system/build.prop' AND '/vendor/build.prop'
+#   getprop <KEY> == <VALUE> for all 35 keys below
+#
+# CORRECTION (2026-09-21) — the above expectation was correct, but it was never
+# reached by the first "fix", because the fix was incomplete in a way this file
+# did not anticipate. Full analysis:
+#   .agent-comm/evidence/B6-PROP-DENIALS-STALE-VENDOR-IMG.md
+#
+#   The label (`system_restricted_prop(guardtalk_prop)`, property.te:925) and the
+#   `ro.guardtalk.` property_contexts entry (property_contexts:1920), plus the
+#   move of the flags to PRODUCT_SYSTEM_PROPERTIES, all landed 2026-09-19
+#   16:37-16:41 — i.e. the POLICY half of this file's diagnosis was fixed, and
+#   it was already present in stamp komodo-debug-20260920-175743.
+#
+#   What was NOT done: rebuilding vendor.img. Verified for the live lunch:
+#       PRODUCT_PROPERTY_OVERRIDES : ro.guardtalk entries = 0
+#       PRODUCT_SYSTEM_PROPERTIES  : ro.guardtalk entries = 35
+#   ...yet the generated vendor/build.prop still carried all 35, because it was
+#   generated 2026-09-18 10:31 — BEFORE the fix — and `m systemimage` never
+#   regenerates vendor.img. Every stamp from 080101 through 175743 shipped that
+#   pre-fix vendor prop file.
+#
+#   So the denials came from the STALE /vendor/build.prop, not from a missing
+#   label. vendor_init loads it and `vendor_init.te` (~line 266) forbids
+#   vendor_init from setting any `system_restricted_property_type` — which
+#   guardtalk_prop is. 35 denials, no AVC (refusal is a property_service policy
+#   decision, not an access-vector denial).
+#
+#   FIX + STATUS: `m vendorimage` (2026-09-21) regenerated vendor/build.prop to
+#   0 ro.guardtalk keys and rebuilt vendor.img; packed into
+#   komodo-debug-20260921-041838 with the 35 keys intact in system/build.prop.
+#   The "count == 0" expectation above is now expected to hold on device, but it
+#   remains UNVERIFIED until a flash confirms it.
+#
+# VERIFY (pre-fix, on the packed stamp's boot log)
+#   adb shell 'logcat -d -b all' | grep -c "Do not have permissions to set 'ro.guardtalk."
+#   adb shell 'dmesg' | grep -c "Do not have permissions to set 'ro.guardtalk."
+#
+# VERIFY (post-fix, rebuilt + flashed image)
+#   for k in $(grep -v '^#' vendor/guardtalk/docs/qa/prop-denials.txt | grep -v '^$' | grep '^ro\.guardtalk\.' | cut -d= -f1); do
+#     echo "$k=$(adb shell getprop $k | tr -d '\r')"; done
+#   # expect: value equal to the RHS of each KEY=VALUE line below; none empty
+#
+# ---------------------------------------------------------------------------
+# MACHINE-READABLE SET — the 35 flags (KEY=VALUE as found in the packed image)
+# ---------------------------------------------------------------------------
+ro.guardtalk.anti_bruteforce_wipe_threshold=10
+ro.guardtalk.auto_reboot_default_ms=28800000
+ro.guardtalk.auto_reboot_profiles=1
+ro.guardtalk.block_developer_options=1
+ro.guardtalk.block_unknown_sources=1
+ro.guardtalk.clipboard_clear=1
+ro.guardtalk.clipboard_clear_timeout_ms=60000
+ro.guardtalk.config_password_gate=1
+ro.guardtalk.files_policy=1
+ro.guardtalk.files_protect_critical=1
+ro.guardtalk.files_trash=1
+ro.guardtalk.keymint_required=1
+ro.guardtalk.lock_after_reboot=1
+ro.guardtalk.lockdown_fail_closed=1
+ro.guardtalk.max_lock_after_timeout_ms=300000
+ro.guardtalk.messenger=1
+ro.guardtalk.password_only_lock=1
+ro.guardtalk.permission_defaults=1
+ro.guardtalk.privacy_tmpfs=1
+ro.guardtalk.privacy_tmpfs_path=/mnt/guardtalk_privacy
+ro.guardtalk.production_hardening=1
+ro.guardtalk.radio.excised=1
+ro.guardtalk.restrict_accessibility_services=1
+ro.guardtalk.restrict_display_overlays=1
+ro.guardtalk.restrict_dynamic_code=1
+ro.guardtalk.secure_wipe_enabled=1
+ro.guardtalk.selinux_enforcing_required=1
+ro.guardtalk.sensor_privacy_when_locked=1
+ro.guardtalk.sysctl_hardening=1
+ro.guardtalk.telemetry_persist_disabled=1
+ro.guardtalk.usb_protection_fail_closed=1
+ro.guardtalk.verified_boot_required=1
+ro.guardtalk.wifi.fail_closed=1
+ro.guardtalk.wifi.gateway_only=1
+ro.guardtalk.wifi.ssid_allowlist_path=/vendor/etc/wifi/guardtalk_gateway_ssids
+# ---------------------------------------------------------------------------
+# END machine-readable set. The 3 names quoted in the original dispatch
+# narrative (partial capture) are: lock_after_reboot, auto_reboot_profiles,
+# secure_wipe_enabled. Total contract = 35.
+# ---------------------------------------------------------------------------
+#
+# EXPECTED DENIAL LITERALS (one per flag; pre-fix, file '/vendor/build.prop')
+# ---------------------------------------------------------------------------
+Do not have permissions to set 'ro.guardtalk.anti_bruteforce_wipe_threshold' to '10' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.auto_reboot_default_ms' to '28800000' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.auto_reboot_profiles' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.block_developer_options' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.block_unknown_sources' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.clipboard_clear' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.clipboard_clear_timeout_ms' to '60000' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.config_password_gate' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.files_policy' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.files_protect_critical' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.files_trash' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.keymint_required' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.lock_after_reboot' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.lockdown_fail_closed' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.max_lock_after_timeout_ms' to '300000' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.messenger' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.password_only_lock' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.permission_defaults' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.privacy_tmpfs' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.privacy_tmpfs_path' to '/mnt/guardtalk_privacy' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.production_hardening' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.radio.excised' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.restrict_accessibility_services' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.restrict_display_overlays' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.restrict_dynamic_code' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.secure_wipe_enabled' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.selinux_enforcing_required' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.sensor_privacy_when_locked' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.sysctl_hardening' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.telemetry_persist_disabled' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.usb_protection_fail_closed' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.verified_boot_required' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.wifi.fail_closed' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.wifi.gateway_only' to '1' in property file '/vendor/build.prop': SELinux permission check failed
+Do not have permissions to set 'ro.guardtalk.wifi.ssid_allowlist_path' to '/vendor/etc/wifi/guardtalk_gateway_ssids' in property file '/vendor/build.prop': SELinux permission check failed
+# ---------------------------------------------------------------------------
+# END contract — 35 literals above. HOLD: on-device observation requires a
+# rebuilt + flashed image; this card does not pack or flash. The literals are
+# derived from the init source format and the packed property values, and must
+# be re-observed on a rebuilt image (post-fix count must be 0).
+# ---------------------------------------------------------------------------

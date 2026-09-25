@@ -2,18 +2,31 @@
 
 | Field | Value |
 |-------|--------|
-| Task | `T-RANGO-BOOT-RCA` → inverted bisect (`T-RANGO-BOOT-GTSYSTEM`) |
-| Date | 2026-08-01 (RCA); **updated 2026-08-20** (061630 bflags + 0xfc; flag series CLOSED) |
-| Status | **REVIEW** (061630 `0xfc` ~18s AB `11111111`; build_flags-sole FALSIFIED; flag-dump series CLOSED; next `MODE=gtsystemonstockfacsuper`) |
+| Task | `T-RANGO-BOOT-RCA` → inverted series CLOSED → **`T-RANGO-BOOT-REMEDIATE`** |
+| Date | 2026-08-01 (RCA); **updated 2026-09-16** (remediate: no new stamp; next `145117`) |
+| Status | **REVIEW** (T-RANGO-BOOT-REMEDIATE STOP; USB HOLD; next USB = `145117` stockvendor) |
 | Device | Pixel 10 Pro Fold (`rango`), platform `laguna` |
 | Lunch | `rango-trunk_staging-userdebug` |
 | Flash path (binding) | `scripts/flash-from-remote.sh` / `vendor/guardtalk/scripts/flash-from-remote.sh` + `DEVICE=rango` → bisect via `REMOTE_BUILD_DIR` (latest still `130756`; never promote stockhwasan / stockselinux / stockapexset / stockvendor) |
 | Fix scope | build / device / bundle staging — **no new flash scripts** |
-| Fix status | See `RANGO_BOOT_FIX.md`; `rango-latest` → `130756`; bootstrap-set APEX content **falsified as sole cause** on `130329` (cross-bind with `044126`); next bisect `MODE=stockvendor` |
+| Fix status | See `RANGO_BOOT_FIX.md` + `RANGO_BOOT_REMEDIATE.md`; `rango-latest` → `130756`; next USB `MODE=stockvendor` `145117` (never flashed) |
 
 ---
 
-## 0. Active bind (2026-08-20) — `061630` / `MODE=gtsystemonstockbflags`
+## 0. Active bind (2026-09-16) — `T-RANGO-BOOT-REMEDIATE` STOP
+
+No new stamp. Named early-boot leftovers on `061630` MATCH stock (debugfs
+this session). Factory super still cannot hold GT `system.img`. Omit-super
+wipe-super is known `0x7f00`, not a `0xfc` probe. OUT rango is stageable
+(2026-08-20 images, sepolicy MATCH) but unjustified. **USB HOLD.**
+
+**Next USB (operator GO):** `REMOTE_BUILD_DIR=…/rango-20260803-145117`
+(`MODE=stockvendor`, never flashed, vendor sha256 `d8184b2b…` == stock).
+`rango-latest` stays `130756`. See `RANGO_BOOT_REMEDIATE.md`.
+
+Do not re-flash `061630`. Do not GOS-lock. Do not advertise rango.
+
+### 0.1 Prior bind (2026-08-20) — `061630` / `MODE=gtsystemonstockbflags`
 
 Operator flashed `rango-20260820-061630`. Flash SUCCESS (build+key
 `…/061630`, super 28/28). Boot FAIL. Harvest

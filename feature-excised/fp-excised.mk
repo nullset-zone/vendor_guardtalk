@@ -70,21 +70,39 @@ GUARDTALK_FP_PACKAGES := \
 # scoped to fingerprint-only tokens so it cannot accidentally hit face/biometrics
 # common. Virtual face (com.android.hardware.biometrics.face.virtual) and
 # biometrics.common are explicitly preserved by the keep list below.
+#
+# T-PORT-EXCISION-MATRIX (P0): the token set is NO LONGER hand-maintained here.
+# It is DERIVED from the shared variant registry
+# (vendor/guardtalk/feature-excised/excision-variants.mk) via
+# GT_EXCISION_FP_DROP_PATTERNS, so adding a new SoC/kernel-family variant
+# automatically extends the filter. The baseline below is the frozen copy of
+# what shipped before this card: it is used only when the registry was not
+# loaded (standalone include) and is always a lower bound — the guard errors if
+# the registry ever narrows it.
+GT_FP_DROP_PATTERNS_BASELINE := \
+    android.hardware.biometrics.fingerprint \
+    com.google.hardware.biometrics.fingerprint \
+    com.android.hardware.biometrics.fingerprint \
+    vendor.qti.hardware.fingerprint \
+    dump_fingerprint \
+    qfp-daemon \
+    android.hardware.fingerprint.prebuilt \
+    vendor.goodix.hardware.biometrics.fingerprint \
+    fingerprint-service.goodix \
+    libvendor.goodix.hardware.biometrics.fingerprint \
+    goodixfingerprint \
+    goodix_sfps \
+    goodixbinderservice
+
+GT_FP_DROP_PATTERNS := $(if $(GT_EXCISION_FP_DROP_PATTERNS),$(GT_EXCISION_FP_DROP_PATTERNS),$(GT_FP_DROP_PATTERNS_BASELINE))
+
+GT_FP_DROP_PATTERNS_MISSING := $(sort $(filter-out $(GT_FP_DROP_PATTERNS),$(GT_FP_DROP_PATTERNS_BASELINE)))
+ifneq ($(GT_FP_DROP_PATTERNS_MISSING),)
+$(error T-PORT-EXCISION-MATRIX: fingerprint drop-pattern set is missing baseline token(s) [$(GT_FP_DROP_PATTERNS_MISSING)] — refusing to narrow fingerprint excision.)
+endif
+
 define _gt-fp-package-drop
-$(or \
-  $(findstring android.hardware.biometrics.fingerprint,$(1)), \
-  $(findstring com.google.hardware.biometrics.fingerprint,$(1)), \
-  $(findstring com.android.hardware.biometrics.fingerprint,$(1)), \
-  $(findstring vendor.qti.hardware.fingerprint,$(1)), \
-  $(findstring dump_fingerprint,$(1)), \
-  $(findstring qfp-daemon,$(1)), \
-  $(findstring android.hardware.fingerprint.prebuilt,$(1)), \
-  $(findstring vendor.goodix.hardware.biometrics.fingerprint,$(1)), \
-  $(findstring fingerprint-service.goodix,$(1)), \
-  $(findstring libvendor.goodix.hardware.biometrics.fingerprint,$(1)), \
-  $(findstring goodixfingerprint,$(1)), \
-  $(findstring goodix_sfps,$(1)), \
-  $(findstring goodixbinderservice,$(1)))
+$(strip $(foreach _gt-fp-pattern,$(GT_FP_DROP_PATTERNS),$(findstring $(_gt-fp-pattern),$(1))))
 endef
 
 # Packages that must NEVER be dropped by this filter. Listed explicitly so the

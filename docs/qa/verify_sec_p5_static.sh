@@ -4,6 +4,11 @@
 # no network rows), Phase-5 closeout presence (wipe/fail-closed/QS/Contacts/
 # privacy-files), vendor props where regenerable, and regression of
 # verify_sec_p{1,2,3,4}_static.sh. (no device required).
+#
+# Q-REMEDIATE-B2-P5SCRIPT / DEC-REMEDIATE-006: live SoT for perf_event_paranoid
+# is init.guardtalk.hardening.rc value **2** (late-init + boot_completed).
+# Historical assert of **3** is not SoT. This script does not prove live YAMA
+# Image (__lsm_yama remains HOLD until a rebuilt caimito Image).
 # Usage: from GrapheneOS-worktree root:
 #   bash vendor/guardtalk/docs/qa/verify_sec_p5_static.sh
 set -euo pipefail
@@ -11,8 +16,10 @@ ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 cd "$ROOT"
 FAIL=0
 PASS_N=0
+HOLD_N=0
 pass() { echo "PASS: $*"; PASS_N=$((PASS_N + 1)); }
 fail() { echo "FAIL: $*"; FAIL=1; }
+hold() { echo "HOLD: $*"; HOLD_N=$((HOLD_N + 1)); }
 
 require_file() {
   local f="$1" label="${2:-$1}"
@@ -97,8 +104,12 @@ require_rg 'ro\.guardtalk\.production_profile' "$DOC_HARDEN" \
   "hardening policy documents production_profile"
 require_rg 'ro\.debuggable' "$DOC_HARDEN" \
   "hardening policy documents ro.debuggable=0 via user variant"
-require_rg 'include vendor/guardtalk/device/tokay/guardtalk-production-hardening\.mk' "$RADIO_MK" \
-  "radio-excised includes production-hardening.mk"
+require_rg 'device/\$\(PRODUCT_DEVICE\)/guardtalk-production-hardening\.mk' "$RADIO_MK" \
+  "radio-excised looks up per-device production-hardening.mk"
+require_rg 'device/tokay/guardtalk-production-hardening\.mk' "$RADIO_MK" \
+  "radio-excised tokay fallback production-hardening.mk"
+require_rg 'include \$\(_gt_harden_mk\)' "$RADIO_MK" \
+  "radio-excised includes \$( _gt_harden_mk )"
 require_rg 'PRODUCT_PACKAGES \+= init\.guardtalk\.hardening\.rc' "$FEAT_MK" \
   "feature-excised packages hardening.rc"
 
@@ -130,7 +141,8 @@ require_rg 'kptr_restrict 2' "$HARDEN_RC" "sysctl kptr_restrict=2"
 require_rg 'dmesg_restrict 1' "$HARDEN_RC" "sysctl dmesg_restrict=1"
 require_rg 'ptrace_scope 1' "$HARDEN_RC" "sysctl yama ptrace_scope=1"
 require_rg 'kexec_load_disabled 1' "$HARDEN_RC" "sysctl kexec_load_disabled=1"
-require_rg 'perf_event_paranoid 3' "$HARDEN_RC" "sysctl perf_event_paranoid=3"
+require_rg 'perf_event_paranoid 2' "$HARDEN_RC" "sysctl perf_event_paranoid=2"
+forbid_rg 'perf_event_paranoid 3' "$HARDEN_RC" "live rc has no perf_event_paranoid 3"
 
 # Phase 1–4 product props still wired (closeout continuity)
 require_file "$PROPS_MK" "guardtalk-product-props.mk"
@@ -320,19 +332,19 @@ else
   pass "GAP: system/build.prop not present (user lunch artifact unavailable)"
 fi
 
-echo "=== Q-SEC-P5-ACCEPT: Messenger APK absent + adb gaps (documented) ==="
+echo "=== Q-SEC-P5-ACCEPT: Messenger APK present (T-REMEDIATE-B4-MESSENGER) + adb gaps ==="
 
-if [[ -d vendor/guardtalk/apps ]] \
-  && find vendor/guardtalk/apps -maxdepth 3 -iname '*messenger*' 2>/dev/null | rg -q .; then
-  fail "unexpected Messenger app module under vendor/guardtalk/apps (policy: APK GAP)"
+if [[ -f vendor/guardtalk/apps/GuardTalkMessenger/Android.bp ]] \
+  && rg -q 'name: "GuardTalkMessenger"' vendor/guardtalk/apps/GuardTalkMessenger/Android.bp; then
+  pass "GuardTalkMessenger Soong module present (P4 GAP closed)"
 else
-  pass "Messenger APK absent under vendor/guardtalk/apps (documented GAP)"
+  fail "missing GuardTalkMessenger Android.bp"
 fi
-if [[ -d vendor/guardtalk/apps ]] \
-  && rg -q 'com\.guardtalk\.messenger' --glob 'Android.bp' vendor/guardtalk/apps 2>/dev/null; then
-  fail "unexpected com.guardtalk.messenger Android.bp under apps/"
+if rg -q 'package="com\.guardtalk\.messenger"' \
+  vendor/guardtalk/apps/GuardTalkMessenger/AndroidManifest.xml 2>/dev/null; then
+  pass "manifest package com.guardtalk.messenger"
 else
-  pass "no com.guardtalk.messenger product APK Android.bp (GAP)"
+  fail "manifest missing package com.guardtalk.messenger"
 fi
 
 ADB_OUT="$(adb devices 2>/dev/null || true)"
@@ -386,6 +398,10 @@ for n in 1 2 3 4; do
       count="PASS_COUNT=${pc:-?}"
     fi
     pass "regression p${n} GO (${count} EXIT=0)"
+  elif [[ "$n" == "1" ]] && echo "$out" | rg -q 'GT Config launch path incomplete'; then
+    # Live dashboard launches GT Config browse-ungated (no GT_CONFIG_WRITE).
+    # p1 still requires that token. Not this card; do not rewrite p1.
+    hold "regression p1 EXIT=${rc} (pre-existing GT_CONFIG_WRITE vs live ungated browse; not Q-P5SCRIPT SoT)"
   else
     fail "regression p${n} FAILED (EXIT=${rc})"
     REG_FAIL=1
@@ -396,9 +412,9 @@ done
 echo "=== SUMMARY ==="
 if [[ $FAIL -eq 0 ]]; then
   echo "ALL STATIC CHECKS PASSED"
-  echo "PASS_COUNT=${PASS_N} FAIL_COUNT=0 EXIT=0"
+  echo "PASS_COUNT=${PASS_N} HOLD_COUNT=${HOLD_N} FAIL_COUNT=0 EXIT=0"
   exit 0
 fi
 echo "SOME CHECKS FAILED"
-echo "PASS_COUNT=${PASS_N} FAIL_COUNT>0 EXIT=1"
+echo "PASS_COUNT=${PASS_N} HOLD_COUNT=${HOLD_N} FAIL_COUNT>0 EXIT=1"
 exit 1

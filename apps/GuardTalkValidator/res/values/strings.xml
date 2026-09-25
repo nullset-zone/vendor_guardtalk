@@ -16,4 +16,44 @@
     <string name="process_unknown_uid">&lt;unknown&gt;</string>
     <string name="process_unavailable">ActivityManager unavailable</string>
     <string name="process_security_error">SecurityException: %1$s</string>
+
+    <!-- Item 15/16: exit + escape menu -->
+    <string name="action_exit">Exit</string>
+    <string name="action_exit_cd">Exit GT Info</string>
+    <string name="action_menu">Menu</string>
+    <string name="action_menu_cd">Open GT Info menu</string>
+    <string name="escape_hotspot_cd">Long-press or triple-tap to open the escape menu</string>
+    <string name="menu_title">GT Info menu</string>
+    <string name="menu_close">Close</string>
+    <string name="menu_open_settings">Exit to Settings</string>
+    <string name="menu_open_settings_cd">Leave GT Info and open Settings</string>
+    <string name="menu_settings_failed">Settings is unavailable</string>
+    <string name="menu_camera_toggle">Camera access</string>
+    <string name="menu_camera_toggle_cd">Turn camera access on or off</string>
+    <string name="menu_mic_toggle">Microphone access</string>
+    <string name="menu_mic_toggle_cd">Turn microphone access on or off</string>
+    <string name="menu_toggle_blocked">Camera and microphone stay off while locked</string>
+    <string name="menu_toggle_blocked_lockdown">Lockdown keeps camera and microphone off</string>
+    <string name="menu_device_status">Device status</string>
+    <string name="menu_device_status_cd">Show device status</string>
+    <string name="status_title">Device status</string>
+    <string name="status_locked">Status is available after unlock.</string>
+    <string name="status_body">Model: %1$s\nSensor policy when locked: %2$s\nSensors force-denied now: %3$s\nCamera access: %4$s\nMicrophone access: %5$s\nUSB fail-closed policy: %6$s\nProduction hardening: %7$s</string>
+    <string name="toggle_access_on">on</string>
+    <string name="toggle_access_off">off</string>
+
+    <!-- F-REMEDIATE-B3-SENSORS: keep ids/polarity; do not invert -->
+    <string name="sensor_section_title">Camera and microphone</string>
+    <string name="camera_access_label">Camera access</string>
+    <string name="mic_access_label">Microphone access</string>
+    <string name="sensor_access_summary">Off blocks capture. Matches Settings and Quick Settings.</string>
+    <string name="sensor_access_unsupported">Not available on this device</string>
+    <string name="sensor_enable_blocked_lockdown">Stays off during lockdown</string>
+    <string name="sensor_enable_blocked_locked">Stays off while locked</string>
+
+    <!-- Item 18: open sample image via HTMLViewer VIEW (not a gallery, not EscapeMenu) -->
+    <string name="sample_image_open">Open sample image</string>
+    <string name="sample_image_open_cd">Open a sample PNG with the system image viewer</string>
+    <string name="sample_image_failed_title">Cannot open image</string>
+    <string name="sample_image_failed_message">HTMLViewer is not available to open jpeg, png, or webp. This is not a silent failure.</string>
 </resources>

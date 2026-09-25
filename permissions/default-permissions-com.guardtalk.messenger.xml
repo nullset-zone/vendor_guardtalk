@@ -6,12 +6,13 @@
   T-SEC-P4-PERMS — default runtime grants for GuardTalk Messenger.
 
   Package: com.guardtalk.messenger
-  GAP: Messenger APK is not yet in-tree. This file installs to
-  product/etc/default-permissions/ and takes effect when a matching
-  system (or cert-matching) package with that name is present and
-  requests these permissions. Companion code path in
+  T-REMEDIATE-B4-MESSENGER: product APK GuardTalkMessenger is in-tree
+  (vendor/guardtalk/apps/GuardTalkMessenger). This file installs to
+  product/etc/default-permissions/ and grants when the matching
+  FLAG_SYSTEM package requests these permissions. Companion code path in
   DefaultPermissionGrantPolicy also grants via grantIgnoringSystemPackage
-  when the package exists as a non-system install.
+  if a non-system install of the same name ever appears (should not on
+  production user: unknown-APK block).
 
   fixed=false — user-revocable; product grants at first boot / user create.
 -->

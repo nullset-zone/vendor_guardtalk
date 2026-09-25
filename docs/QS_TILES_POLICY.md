@@ -46,8 +46,17 @@ These remain Settings / power-menu / service surfaces only (Phase 2).
 - Auto-reboot is added **only** to `quick_settings_tiles_stock` so users can
   add it via the editor; it is not auto-placed on the panel.
 
-Overlay source of truth for tokay:
+Overlay source of truth for tokay / komodo:
 `vendor/guardtalk/overlays/GuardTalkSystemUIOverlay/res/values/config.xml`.
+
+**T-REMEDIATE-B3-SENSORS (item 17):** listing `mictoggle`/`cameratoggle` in
+that overlay is not enough. `SensorPrivacyService.supportsSensorToggle` reads
+`android:config_supportsMicToggle` / `config_supportsCamToggle` (AOSP
+default **false**). Pixel set them true in excised `PixelConfigOverlayCommon`.
+GuardTalk restores both in `GuardTalkFrameworksBaseOverlay`. Hardware toggle
+bools stay false. `cmd sensor_privacy enable|disable USER_ID camera|microphone`
+uses the same `setToggleSensorPrivacy` path (SHELL source) and is still gated
+by T-OS-CAMMIC-TOGGLE `allowToggleChange` (lockdown-when-locked fail-closed).
 
 ## Persistence
 

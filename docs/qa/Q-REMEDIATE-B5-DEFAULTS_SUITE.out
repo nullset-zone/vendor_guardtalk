@@ -1,0 +1,197 @@
+=== Q-REMEDIATE-B5-DEFAULTS independent rematch (item 24) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+USB_GO=not started
+MTP_UNLOCKED_CLAIM=forbidden (getChargingFunctions HOLD)
+
+--- required files ---
+PASS: present: vendor/guardtalk/device/komodo/guardtalk-defaults.mk
+PASS: present: vendor/guardtalk/device/komodo/init.guardtalk.defaults.rc
+PASS: present: vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk
+PASS: present: vendor/guardtalk/device/komodo/REGEN_HOOKS.md
+PASS: present: vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk
+PASS: present: vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay/Android.bp
+PASS: present: vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay/AndroidManifest.xml
+PASS: present: vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay/res/values/defaults.xml
+PASS: present: frameworks/base/services/usb/java/com/android/server/usb/UsbDeviceManager.java
+
+--- packet rg (dataroaming / mtp / bug_report / lock_screen) ---
+vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay/res/values/defaults.xml:5:      Settings.Secure.lock_screen_show_notifications=0 (AOSP default 1).
+vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay/res/values/defaults.xml:6:      DatabaseHelper.loadSecureSettings reads def_lock_screen_show_notifications.
+vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay/res/values/defaults.xml:8:    <integer name="def_lock_screen_show_notifications">0</integer>
+vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay/res/values/defaults.xml:12:      persist.sys.usb.config=none on the user product (not mtp). Does not
+vendor/guardtalk/device/komodo/guardtalk-defaults.mk:9:# AOSP full_base_telephony.mk uses ro.com.android.dataroaming?=true. A later
+vendor/guardtalk/device/komodo/guardtalk-defaults.mk:11:# persist.sys.usb.config=none on user so the persistent gadget is not mtp.
+vendor/guardtalk/device/komodo/guardtalk-defaults.mk:12:# Settings.Secure.lock_screen_show_notifications and UMS defaults land via
+vendor/guardtalk/device/komodo/guardtalk-defaults.mk:13:# GuardTalkSettingsProviderOverlay (def_lock_screen_show_notifications=0).
+vendor/guardtalk/device/komodo/guardtalk-defaults.mk:14:# Settings.Global.Wearable.bug_report is 0 on user via Build.TYPE; the
+vendor/guardtalk/device/komodo/guardtalk-defaults.mk:15:# persist.sys.bug_report=0 marker is the product-visible default.
+vendor/guardtalk/device/komodo/guardtalk-defaults.mk:26:    ro.com.android.dataroaming=false
+vendor/guardtalk/device/komodo/guardtalk-defaults.mk:31:    persist.sys.bug_report=0
+vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk:63:# T-REMEDIATE-B5-DEFAULTS (item 24): roaming false, MTP off, bug_report=0,
+vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk:64:# lock_screen_show_notifications=0. Overlay props only; su/SPL/AVB unchanged.
+vendor/guardtalk/device/komodo/init.guardtalk.defaults.rc:4:# upgrade from a userdebug image that stored mtp / adb in persist.sys.usb.config.
+vendor/guardtalk/device/komodo/init.guardtalk.defaults.rc:10:    setprop persist.sys.bug_report 0
+vendor/guardtalk/device/komodo/REGEN_HOOKS.md:96:ro.com.android.dataroaming=false
+vendor/guardtalk/device/komodo/REGEN_HOOKS.md:97:persist.sys.usb.config=none          # user only; not mtp
+vendor/guardtalk/device/komodo/REGEN_HOOKS.md:98:persist.sys.bug_report=0             # user only
+vendor/guardtalk/device/komodo/REGEN_HOOKS.md:101:Overlay: `def_lock_screen_show_notifications=0` (Settings.Secure
+vendor/guardtalk/device/komodo/REGEN_HOOKS.md:102:`lock_screen_show_notifications=0`). Do not rewrite USERBUILD su/SPL/AVB.
+
+--- static product wiring ---
+PASS: komodo harden includes guardtalk-defaults.mk
+PASS: defaults.mk adds GuardTalkSettingsProviderOverlay
+PASS: defaults.mk sets ro.com.android.dataroaming=false
+PASS: defaults.mk sets persist.sys.usb.config=none
+PASS: defaults.mk sets persist.sys.bug_report=0
+PASS: usb/bug_report overrides are user-gated
+PASS: defaults.mk copies init.guardtalk.defaults.rc
+PASS: radio-excised still sets persist.radio.disabled=1
+PASS: defaults.mk does not assign persist.radio.disabled
+PASS: komodo vendor does not assign dataroaming=true
+PASS: defaults.mk does not assign persist.security.usb_mode
+PASS: defaults.mk does not rewrite USERBUILD cert stem
+PASS: defaults.mk does not rewrite AVB
+PASS: defaults.mk does not add su
+PASS: overlay Soong name GuardTalkSettingsProviderOverlay
+PASS: overlay is product_specific
+PASS: overlay is platform-signed
+PASS: overlay targets SettingsProvider
+PASS: overlay is static
+PASS: overlay def_lock_screen_show_notifications=0
+PASS: overlay def_usb_mass_storage_enabled=false
+PASS: vendor init re-assert is user-only (ro.debuggable=0)
+PASS: vendor init re-asserts persist.sys.usb.config none
+PASS: vendor init re-asserts persist.sys.bug_report 0
+PASS: vendor init does not start RIL
+
+--- python structural rematch ---
+PASS: hardening.mk include of defaults.mk present
+PASS: dataroaming=false is a live assignment (not comment-only)
+PASS: defaults.mk does not assign dataroaming=true
+PASS: defaults.mk leaves persist.radio.disabled to radio-excised
+PASS: radio-excised still assigns persist.radio.disabled=1
+PASS: defaults.mk user gate present
+PASS: persist.sys.usb.config=none is inside the user block
+PASS: user block does not set persist.sys.usb.config=mtp
+PASS: persist.sys.bug_report=0 is inside the user block
+PASS: persist.sys.usb.config=none does not leak to all variants
+PASS: overlay integer def_lock_screen_show_notifications=0
+PASS: overlay does not default lock-screen notifications on
+PASS: overlay bool def_usb_mass_storage_enabled=false
+PASS: overlay does not enable UMS by default
+PASS: init.rc user-only re-assert of persist.sys.usb.config none
+PASS: init.rc is setprop-only (no service start)
+HOLD: AOSP getChargingFunctions() still returns FUNCTION_MTP when unlocked and ADB off (frameworks HOLD; not this card; do not claim MTP impossible)
+PY_COUNTS PASS_COUNT=16 FAIL_COUNT=0 HOLD_COUNT=1
+PASS: python structural rematch exit 0
+
+--- lunch komodo-trunk_staging-user (independent; do not skip) ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+13:53:32 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+13:53:39 Build sandboxing disabled due to nsjail error.
+13:53:45 Build sandboxing disabled due to nsjail error.
+13:53:51 Build sandboxing disabled due to nsjail error.
+13:53:57 Build sandboxing disabled due to nsjail error.
+13:54:03 Build sandboxing disabled due to nsjail error.
+13:54:11 Build sandboxing disabled due to nsjail error.
+PKGS_DUMP_BYTES=35244 COPY_DUMP_BYTES=638659
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_BUILD_TYPE=release
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (not userdebug)
+PASS: TARGET_BUILD_TYPE=release
+PASS: user lunch PRODUCT_PROPERTY_OVERRIDES ro.com.android.dataroaming=false
+PASS: user lunch does not set ro.com.android.dataroaming=true
+PASS: user lunch PRODUCT_PROPERTY_OVERRIDES persist.sys.usb.config=none
+PASS: user lunch does not set persist.sys.usb.config=mtp
+PASS: user lunch PRODUCT_PROPERTY_OVERRIDES persist.sys.bug_report=0
+PASS: user lunch persist.radio.disabled=1 kept (RIL still excised)
+PASS: user PRODUCT_PACKAGES: GuardTalkSettingsProviderOverlay PRESENT
+PASS: user PRODUCT_COPY_FILES includes init.guardtalk.defaults.rc
+PASS: user PRODUCT_PACKAGES: su and overlay_remounter still ABSENT
+
+--- lunch komodo-trunk_staging-userdebug (sidecar adversarial; not product) ---
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+13:54:24 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=userdebug
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+13:54:31 Build sandboxing disabled due to nsjail error.
+13:54:37 Build sandboxing disabled due to nsjail error.
+userdebug TARGET_BUILD_VARIANT=userdebug
+PASS: sidecar lunch is userdebug (not product truth)
+PASS: sidecar still has ro.com.android.dataroaming=false (all-variant default)
+PASS: sidecar does not set persist.sys.usb.config=none (keeps AOSP adb)
+PASS: sidecar does not set persist.sys.bug_report=0
+
+--- stale out/ (HOLD, never product FAIL) ---
+HOLD: stale out/ product build.prop still ro.com.android.dataroaming=true (m not run; not product FAIL)
+HOLD: stale out/ has no persist.sys.usb.config line (not a rebuilt user image)
+HOLD: m not run this QA stamp (not a built user image; never device-fixed)
+
+--- frameworks getChargingFunctions (out of this card; HOLD) ---
+HOLD: UsbDeviceManager.getChargingFunctions can still return MTP when unlocked with ADB off — frameworks HOLD; do not claim MTP impossible
+356:        FileDescriptor mtpFd = nativeOpenControl(UsbManager.USB_FUNCTION_MTP);
+360:        mControlFds.put(UsbManager.FUNCTION_MTP, mtpFd);
+1155:            boolean mtpEnabled = ((mCurrentFunctions & UsbManager.FUNCTION_MTP) != 0);
+1236:                return getChargingFunctions();
+1564:            return (functions & UsbManager.FUNCTION_MTP) != 0
+1620:                if (mCurrentFunctions == UsbManager.FUNCTION_MTP) {
+1782:        protected long getChargingFunctions() {
+1792:                return UsbManager.FUNCTION_MTP;
+2159:                functions = removeFunction(functions, UsbManager.USB_FUNCTION_MTP);
+2174:                functions = UsbManager.usbFunctionsToString(getChargingFunctions());
+2209:                        && (containsFunction(functions, UsbManager.USB_FUNCTION_MTP)
+2777:        } else if (functions == UsbManager.FUNCTION_MTP) {
+
+--- adb (device HOLD if empty) ---
+List of devices attached
+HOLD: adb devices empty / no komodo 54111FDAS000GN — device HOLD, never device-fixed
+
+RESULT: PASS (host)  bash_PASS=52 bash_HOLD=5 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+STALE_OUT=HOLD
+MTP_UNLOCKED=HOLD
+DEVICE=HOLD
+PASS_HOLD=remains

@@ -121,18 +121,18 @@ require_rg 'ro\.guardtalk\.permission_defaults=1' "$PROPS_MK" \
   "live prop permission_defaults=1 in product-props.mk"
 require_rg 'PRODUCT_PACKAGES \+= default-permissions-com\.guardtalk\.messenger' "$TOKAY_MK" \
   "tokay.mk PRODUCT_PACKAGES Messenger default-permissions"
-# Messenger APK absent is expected GAP (plumbing only)
-if [[ -d vendor/guardtalk/apps ]] \
-  && find vendor/guardtalk/apps -maxdepth 3 -iname '*messenger*' 2>/dev/null | rg -q .; then
-  fail "unexpected Messenger app module under vendor/guardtalk/apps (policy: APK GAP)"
+# T-REMEDIATE-B4-MESSENGER closed the P4 APK GAP (product bake, not sideload).
+if [[ -f vendor/guardtalk/apps/GuardTalkMessenger/Android.bp ]] \
+  && rg -q 'name: "GuardTalkMessenger"' vendor/guardtalk/apps/GuardTalkMessenger/Android.bp; then
+  pass "GuardTalkMessenger Soong module present (P4 GAP closed)"
 else
-  pass "Messenger APK absent under vendor/guardtalk/apps (documented GAP)"
+  fail "missing GuardTalkMessenger Android.bp"
 fi
-if [[ -d vendor/guardtalk/apps ]] \
-  && rg -q 'com\.guardtalk\.messenger' --glob 'Android.bp' vendor/guardtalk/apps 2>/dev/null; then
-  fail "unexpected com.guardtalk.messenger Android.bp under apps/"
+if rg -q 'package="com\.guardtalk\.messenger"' \
+  vendor/guardtalk/apps/GuardTalkMessenger/AndroidManifest.xml 2>/dev/null; then
+  pass "manifest package com.guardtalk.messenger"
 else
-  pass "no com.guardtalk.messenger product APK Android.bp (GAP)"
+  fail "manifest missing package com.guardtalk.messenger"
 fi
 
 echo "=== Q-SEC-P4-PRIVACY: privacy_tmpfs init + props ==="

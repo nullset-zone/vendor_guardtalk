@@ -1,0 +1,270 @@
+=== Q-REMEDIATE-B3-VIEWER independent rematch (item 18) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+Q-REMEDIATE-B3-OSUX-DEVICE=not started (BLOCKED; not folded here)
+USB_GO=not started
+T/F reports: not trusted
+
+--- required files ---
+PASS: present: packages/apps/HTMLViewer/AndroidManifest.xml
+PASS: present: packages/apps/HTMLViewer/src/com/android/htmlviewer/HTMLViewerActivity.java
+PASS: present: packages/apps/DocumentsUI/AndroidManifest.xml
+PASS: present: packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java
+PASS: present: packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/GuardTalkHtmlViewerLaunch.java
+PASS: present: packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/MediaPreviewActivity.java
+PASS: present: packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/GuardTalkMediaPreview.java
+PASS: present: packages/apps/DocumentsUI/tests/unit/com/android/documentsui/files/ActionHandlerTest.java
+PASS: present: packages/apps/DocumentsUI/tests/unit/com/android/documentsui/guardtalk/GuardTalkHtmlViewerLaunchTest.java
+PASS: present: packages/apps/DocumentsUI/src/com/android/documentsui/files/NoApplicationFragment.kt
+PASS: present: vendor/guardtalk/feature-excised/apps-excised.mk
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/AndroidManifest.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/ValidatorActivity.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/HtmlViewerLaunch.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SampleImageProvider.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/EscapeMenu.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/res/layout/escape_menu.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/res/layout/activity_validator.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/res/values/strings.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/res/raw/sample_image.png
+PASS: vendor/guardtalk/apps/ImageViewer ABSENT (no priv-app gallery)
+
+--- packet rg (HTMLViewer VIEW jpeg/png/webp) ---
+40:            <!-- T-OS-FILES-MEDIA: narrow in-tree image VIEW handler (no LAUNCHER).
+47:                <data android:mimeType="image/jpeg"/>
+48:                <data android:mimeType="image/png"/>
+49:                <data android:mimeType="image/webp"/>
+
+--- packet rg (DocumentsUI MediaPreview / viewDocument / HTMLViewer) ---
+packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/GuardTalkHtmlViewerLaunch.java:30: * Files launch of komodo user jpeg/png/webp VIEW (HTMLViewer). Not a gallery.
+packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/GuardTalkHtmlViewerLaunch.java:32: * <p>Explicit component only. MediaPreview remains the in-app fallback.
+packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/GuardTalkHtmlViewerLaunch.java:38:            "com.android.htmlviewer.HTMLViewerActivity";
+packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/GuardTalkHtmlViewerLaunch.java:41:    private static final String MIME_JPEG = "image/jpeg";
+packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/GuardTalkHtmlViewerLaunch.java:47:    /** HTMLViewer still-image VIEW types only (not {@code image/*} / gif). */
+packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/GuardTalkHtmlViewerLaunch.java:54:    /** Explicit ACTION_VIEW for HTMLViewer. Not {@code */*} and not a launcher. */
+packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/GuardTalkHtmlViewerLaunch.java:56:        Intent intent = new Intent(Intent.ACTION_VIEW);
+packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/GuardTalkHtmlViewerLaunch.java:65:     * Starts HTMLViewer VIEW when the document is jpeg/png/webp and the handler
+packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/GuardTalkHtmlViewerLaunch.java:68:     * @return true if HTMLViewer was started
+packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/GuardTalkHtmlViewerLaunch.java:83:            Log.w(TAG, "HTMLViewer VIEW failed for " + doc.derivedUri, e);
+packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/MediaPreviewActivity.java:45:public final class MediaPreviewActivity extends AppCompatActivity {
+packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/MediaPreviewActivity.java:62:        if (uri == null || !GuardTalkMediaPreview.isSupportedMime(mime)) {
+packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/MediaPreviewActivity.java:104:                return MediaPreviewDecoder.decode(getContentResolver(), uri);
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:71:import com.android.documentsui.guardtalk.GuardTalkMediaPreview;
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:424:        // For APKs, even if the type is preview, we send an ACTION_VIEW intent to allow
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:428:            viewDocument(doc);
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:434:                if (viewDocument(doc)) {
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:440:                if (previewDocument(doc, fromPicker)) {
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:451:                if (viewDocument(doc)) {
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:457:                if (previewDocument(doc, fromPicker)) {
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:476:            if (GuardTalkMediaPreview.start(mActivity, doc)) {
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:479:            showOpenFailed(doc);
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:483:    private boolean viewDocument(DocumentInfo doc) {
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:504:        // F-REMEDIATE-B3-VIEWER: jpeg/png/webp → HTMLViewer VIEW first, then
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:505:        // in-app MediaPreview, then a visible dialog. Never silent.
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:519:        if (GuardTalkMediaPreview.start(mActivity, doc)) {
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:522:        showOpenFailed(doc);
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:526:    private void showOpenFailed(DocumentInfo doc) {
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:527:        mDialogs.showNoApplicationFoundDialog(mActivity.getSupportFragmentManager(), doc);
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:530:    private boolean previewDocument(DocumentInfo doc, boolean fromPicker) {
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:591:        if (Intent.ACTION_VIEW.equals(mActivity.getIntent().getAction())
+packages/apps/DocumentsUI/src/com/android/documentsui/AbstractActionHandler.java:607:        Intent intent = new Intent(Intent.ACTION_VIEW);
+packages/apps/DocumentsUI/AndroidManifest.xml:142:            android:name=".guardtalk.MediaPreviewActivity"
+
+--- packet rg (Validator HtmlViewerLaunch / sample / EscapeMenu) ---
+vendor/guardtalk/apps/GuardTalkValidator/res/values/strings.xml:54:    <!-- Item 18: open sample image via HTMLViewer VIEW (not a gallery, not EscapeMenu) -->
+vendor/guardtalk/apps/GuardTalkValidator/res/values/strings.xml:55:    <string name="sample_image_open">Open sample image</string>
+vendor/guardtalk/apps/GuardTalkValidator/res/values/strings.xml:56:    <string name="sample_image_open_cd">Open a sample PNG with the system image viewer</string>
+vendor/guardtalk/apps/GuardTalkValidator/res/values/strings.xml:57:    <string name="sample_image_failed_title">Cannot open image</string>
+vendor/guardtalk/apps/GuardTalkValidator/res/values/strings.xml:58:    <string name="sample_image_failed_message">HTMLViewer is not available to open jpeg, png, or webp. This is not a silent failure.</string>
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/EscapeMenu.kt:4:import android.app.AlertDialog
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/EscapeMenu.kt:17:object EscapeMenu {
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/EscapeMenu.kt:26:        AlertDialog.Builder(activity)
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/EscapeMenu.kt:47:        AlertDialog.Builder(activity)
+vendor/guardtalk/apps/GuardTalkValidator/res/layout/activity_validator.xml:45:        android:id="@+id/btn_open_sample_image"
+vendor/guardtalk/apps/GuardTalkValidator/res/layout/activity_validator.xml:51:        android:text="@string/sample_image_open"
+vendor/guardtalk/apps/GuardTalkValidator/res/layout/activity_validator.xml:52:        android:contentDescription="@string/sample_image_open_cd" />
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SampleImageProvider.kt:12: * Grant-only sample PNG for HTMLViewer ACTION_VIEW. Not exported; not a gallery.
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SampleImageProvider.kt:14:class SampleImageProvider : ContentProvider() {
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SampleImageProvider.kt:25:        val file = File(ctx.cacheDir, "sample_image.png")
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SampleImageProvider.kt:28:                ctx.resources.openRawResource(R.raw.sample_image).use { input ->
+vendor/guardtalk/apps/GuardTalkValidator/AndroidManifest.xml:45:            <data android:mimeType="image/jpeg" />
+vendor/guardtalk/apps/GuardTalkValidator/AndroidManifest.xml:94:            android:name=".SampleImageProvider"
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/ValidatorActivity.kt:62:        val openSampleImage = findViewById<Button>(R.id.btn_open_sample_image)
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/ValidatorActivity.kt:81:        // Item 18: main-path sample PNG VIEW. Not on EscapeMenu.
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/ValidatorActivity.kt:82:        openSampleImage.setOnClickListener { HtmlViewerLaunch.openSampleOrExplain(this) }
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/HtmlViewerLaunch.kt:4:import android.app.AlertDialog
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/HtmlViewerLaunch.kt:12: * Do not add this to [EscapeMenu] (F-REMEDIATE-B3-VALIDATOR owns that surface).
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/HtmlViewerLaunch.kt:14:object HtmlViewerLaunch {
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/HtmlViewerLaunch.kt:18:    private const val TAG = "HtmlViewerLaunch"
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/HtmlViewerLaunch.kt:21:        return mime == "image/jpeg" || mime == "image/png" || mime == "image/webp"
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/HtmlViewerLaunch.kt:25:        val intent = Intent(Intent.ACTION_VIEW)
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/HtmlViewerLaunch.kt:56:            SampleImageProvider.SAMPLE_URI,
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/HtmlViewerLaunch.kt:57:            SampleImageProvider.MIME_PNG,
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/HtmlViewerLaunch.kt:62:        AlertDialog.Builder(activity)
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/HtmlViewerLaunch.kt:63:            .setTitle(R.string.sample_image_failed_title)
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/HtmlViewerLaunch.kt:64:            .setMessage(R.string.sample_image_failed_message)
+
+--- packet rg (Gallery2 / HTMLViewer KEEP / ImageViewer) ---
+50:#   HTMLViewer               -> KEPT (T-OS-FILES-MEDIA). Was media_system.mk:32.
+58:# delisted from GUARDTALK_APPS_PACKAGES and reclassified KEEP. It is NOT a
+73:GUARDTALK_APPS_PACKAGES := \
+110:GUARDTALK_APPS_PACKAGES += \
+125:#   Gallery2                     -> product/app/Gallery2/Gallery2.apk
+143:GUARDTALK_APPS_PACKAGES += \
+147:    Gallery2 \
+174:# patch. See GUARDTALK_APPS_PACKAGES += GmsCompat* below.
+217:# Contacts + ContactsProvider — see GUARDTALK_APPS_KEEP below):
+222:GUARDTALK_APPS_PACKAGES += \
+257:GUARDTALK_APPS_PACKAGES += \
+341:# GUARDTALK_APPS_KEEP — packages that must NEVER be dropped by this filter, even
+347:# GUARDTALK_APPS_PACKAGES. User-facing suppression is via
+352:# T-OS-FILES-MEDIA: in-tree media VIEW handlers. HTMLViewer (images) is already
+355:# is added explicitly after the filter-out. Gallery2 stays excised (not the
+359:# lunch proves HTMLViewer + UniversalMediaPlayer in PRODUCT_PACKAGES (jpeg/png/
+360:# webp VIEW via HTMLViewer; mp4/webm via UMP). ImageViewer priv-app not required.
+361:# Gallery2 stays in GUARDTALK_APPS_PACKAGES. GmsCompat/AppCompatConfig filter-out
+363:GUARDTALK_APPS_KEEP := \
+366:    HTMLViewer \
+379:GUARDTALK_APPS_PACKAGES += \
+409:# delisted from GUARDTALK_APPS_PACKAGES and added to GUARDTALK_WEBVIEW_KEEP.
+436:GUARDTALK_APPS_PACKAGES += \
+502:# $(GUARDTALK_OVERLAY_KEEP),$(GUARDTALK_APPS_PACKAGES))) will re-add any
+503:# icon overlay that a careless append to GUARDTALK_APPS_PACKAGES drops.
+691:GUARDTALK_APPS_PACKAGES += \
+698:# PrintSpooler + Gallery2 APKs. Discovered by Q-PKG-REPORT-VERIFY (2026-07-01):
+700:# Wave P1 line ~110, Gallery2 at Wave B line ~146), but their bundled JNI
+707:# Gallery2/Android.bp:37-41 -> libjni_eglfence / libjni_filtershow_filters /
+714:# creates app/Gallery2/lib/arm64/libjni_eglfence.so -> /product/lib64/libjni_eglfence.so).
+723:#   /product/app/Gallery2/lib/arm64/libjni_eglfence.so                   (33 KB)
+724:#   /product/app/Gallery2/lib/arm64/libjni_filtershow_filters.so         (43 KB)
+725:#   /product/app/Gallery2/lib/arm64/libjni_jpegstream.so                 (35 KB)
+730:GUARDTALK_APPS_PACKAGES += \
+766:# incorrectly) listed in GUARDTALK_APPS_PACKAGES; delisted and mirrored here
+779:PRODUCT_PACKAGES := $(filter-out $(GUARDTALK_APPS_PACKAGES),$(PRODUCT_PACKAGES))
+783:PRODUCT_PACKAGES_DEBUG := $(filter-out $(GUARDTALK_APPS_PACKAGES),$(PRODUCT_PACKAGES_DEBUG))
+787:PRODUCT_PACKAGES += $(filter $(GUARDTALK_WEBVIEW_KEEP),$(GUARDTALK_APPS_PACKAGES))
+790:# ContactsProvider, HTMLViewer, UniversalMediaPlayer) somehow landed in the
+792:# were not also listed in GUARDTALK_APPS_PACKAGES.)
+793:PRODUCT_PACKAGES += $(filter $(GUARDTALK_APPS_KEEP),$(GUARDTALK_APPS_PACKAGES))
+797:# handler (mp4/webm). Manifest has no LAUNCHER (VIEW-only). Gallery2 remains
+798:# excised. HTMLViewer stays via media_system.mk + KEEP (not a second +=).
+803:# operation; guards against a future careless append to GUARDTALK_APPS_PACKAGES.)
+804:PRODUCT_PACKAGES += $(filter $(GUARDTALK_OVERLAY_KEEP),$(GUARDTALK_APPS_PACKAGES))
+813:PRODUCT_PACKAGES += $(filter $(GUARDTALK_CAMERA_HAL_KEEP),$(GUARDTALK_APPS_PACKAGES))
+
+--- python structural rematch ---
+PASS: HTMLViewerActivity exported=true (VIEW handler, not a gallery)
+PASS: HTMLViewer VIEW filters include image/jpeg + image/png + image/webp
+PASS: HTMLViewer image VIEW schemes include content + file
+PASS: HTMLViewer has no LAUNCHER
+PASS: HTMLViewer VIEW does not include image/*
+PASS: HTMLViewer VIEW does not include */*
+PASS: HTMLViewer JavaScript disabled
+PASS: HTMLViewer network loads blocked
+PASS: MediaPreviewActivity exported=false
+PASS: MediaPreviewActivity has no VIEW intent-filter (in-app only)
+PASS: MediaPreviewActivity has no intent-filters
+PASS: viewDocument calls GuardTalkHtmlViewerLaunch.start
+PASS: viewDocument generic VIEW resolveActivity present
+PASS: viewDocument in-app MediaPreview fallback present
+PASS: viewDocument calls showOpenFailed (visible dialog)
+PASS: viewDocument order: HTMLViewer VIEW → generic VIEW → MediaPreview → dialog
+PASS: viewDocument shows dialog if MediaPreview does not start
+PASS: showOpenFailed uses showNoApplicationFoundDialog (visible, not toast-only)
+PASS: viewDocument does not silently succeed after MediaPreview miss
+PASS: GuardTalkHtmlViewerLaunch still-image MIME jpeg/png/webp
+PASS: GuardTalkHtmlViewerLaunch live code does not use image/* or */* (javadoc negatives ignored)
+PASS: GuardTalkHtmlViewerLaunch explicit HTMLViewer component
+PASS: GuardTalkHtmlViewerLaunch ACTION_VIEW + setClassName
+PASS: GuardTalkHtmlViewerLaunch grants read URI permission
+PASS: Validator HtmlViewerLaunch still-image MIME jpeg/png/webp
+PASS: Validator HtmlViewerLaunch does not use image/* or */*
+PASS: Validator HtmlViewerLaunch explicit HTMLViewer component
+PASS: Validator HtmlViewerLaunch ACTION_VIEW + setClassName
+PASS: Validator HtmlViewerLaunch openSampleOrExplain uses AlertDialog on fail
+PASS: Validator sample path uses SampleImageProvider PNG URI
+PASS: Validator fail dialog has a positive button (visible, not silent)
+PASS: ValidatorActivity main-path sample PNG via HtmlViewerLaunch
+PASS: ValidatorActivity sample open is not on EscapeMenu
+PASS: activity_validator.xml has main-path btn_open_sample_image
+PASS: sample image button has contentDescription
+PASS: Validator fail copy present (not silent)
+PASS: EscapeMenu.kt has no sample-image item
+PASS: escape_menu.xml has no sample-image item
+PASS: EscapeMenu still Settings / cam-mic / status (F-VALIDATOR not fought)
+PASS: SampleImageProvider exported=false
+PASS: SampleImageProvider grantUriPermissions=true (grant-only)
+PASS: SampleImageProvider authority matches SAMPLE_URI
+PASS: Validator queries HTMLViewer package
+PASS: Validator queries VIEW image/jpeg
+PASS: Validator queries VIEW image/png
+PASS: Validator queries VIEW image/webp
+PASS: Validator queries do not use image/*
+PASS: SampleImageProvider grant-only read of sample PNG
+PASS: SampleImageProvider insert/delete are no-ops (not a gallery store)
+PASS: sample_image.png is a PNG (magic 89 50 4E 47)
+PASS: sample_image.png size=69 bytes
+PASS: HTMLViewer in GUARDTALK_APPS_KEEP
+PASS: Gallery2 still in GUARDTALK_APPS_PACKAGES drop list
+PASS: Gallery2 not in KEEP
+PASS: ImageViewer not in KEEP or drop (not shipped)
+PASS: apps-excised.mk does not PRODUCT_PACKAGES += ImageViewer
+PASS: apps-excised.mk does not re-add Gallery2
+PASS: GmsCompat still in drop list (B2 not regressed)
+PASS: ActionHandlerTest covers jpeg/png in-app MediaPreview fallback
+PASS: GuardTalkHtmlViewerLaunchTest covers jpeg/png/webp MIME
+PASS: GuardTalkHtmlViewerLaunchTest rejects gif / image/*
+PASS: no gallery/ImageViewer dir under vendor/guardtalk/apps (have ['GuardTalkFace', 'GuardTalkCheckin', 'GuardTalkValidator', 'GuardTalkConfig', 'GuardTalkVoice', 'GuardTalkMessenger'])
+PY_COUNTS pass=62 fail=0 hold=0
+PASS: python structural rematch exit 0
+
+--- lunch komodo-trunk_staging-user (independent; do not skip) ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+14:02:12 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+14:02:19 Build sandboxing disabled due to nsjail error.
+14:02:24 Build sandboxing disabled due to nsjail error.
+14:02:30 Build sandboxing disabled due to nsjail error.
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (not userdebug)
+--- filtered PRODUCT_PACKAGES (user lunch) ---
+PASS: filtered PRODUCT_PACKAGES: HTMLViewer PRESENT
+PASS: filtered PRODUCT_PACKAGES: Gallery2 ABSENT
+PASS: filtered PRODUCT_PACKAGES: ImageViewer ABSENT
+PASS: filtered PRODUCT_PACKAGES: DocumentsUI PRESENT (Files path)
+PASS: filtered PRODUCT_PACKAGES: UniversalMediaPlayer PRESENT (supporting video VIEW)
+PASS: HTMLViewer token count=1 (no duplicate PRODUCT_PACKAGES +=)
+
+--- adb (query-activities HOLD if empty; not device-fixed) ---
+List of devices attached
+HOLD: adb devices empty — query-activities HOLD; not device-fixed
+HOLD: Q-REMEDIATE-B3-OSUX-DEVICE stays BLOCKED (not folded; needs flashed user image)
+HOLD: m HTMLViewer / DocumentsUI / GuardTalkValidator not run this QA stamp
+HOLD: PASS HOLD remains; live not claimed; never APPROVED
+
+RESULT: PASS (host)  bash_PASS=31 bash_HOLD=4 bash_FAIL=0 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+QUERY_ACTIVITIES=HOLD
+Q-REMEDIATE-B3-OSUX-DEVICE=BLOCKED (not folded)

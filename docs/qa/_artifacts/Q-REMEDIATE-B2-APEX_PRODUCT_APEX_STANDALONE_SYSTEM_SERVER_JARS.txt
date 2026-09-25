@@ -1,0 +1,1 @@
+com.android.bt:service-bluetooth com.android.os.statsd:service-statsd com.android.scheduling:service-scheduling com.android.tethering:service-connectivity com.android.uwb:service-uwb com.android.wifi:service-wifi com.android.profiling:service-profiling com.android.uwb:service-ranging com.android.uprobestats:service-uprobestats

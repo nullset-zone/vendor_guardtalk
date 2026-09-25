@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GT Check-in</string>
+    <string name="header_title">12-hour seizure check-in</string>
+    <string name="interval_label">Interval: 12 hours</string>
+    <string name="endpoint_none">Endpoint: none (HOLD — not provisioned)</string>
+    <string name="endpoint_onion">Endpoint class: onion (Tor)</string>
+    <string name="endpoint_lan">Endpoint class: gateway LAN</string>
+    <string name="endpoint_rejected">Endpoint class: rejected (not sent)</string>
+    <string name="last_status">Last status: %1$s</string>
+    <string name="last_time">Last attempt: %1$s</string>
+    <string name="never">never</string>
+    <string name="run_now">Run check-in now</string>
+    <string name="hold_note">Tor admin visibility HOLDs until Gateway exists. No public C2.</string>
+</resources>

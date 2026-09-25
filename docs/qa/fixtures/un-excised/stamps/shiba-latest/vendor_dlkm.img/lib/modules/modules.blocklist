@@ -1,0 +1,25 @@
+# GuardTalkOS — zuma_shusky (zuma / shusky) vendor_dlkm modules blocklist.
+#
+# T-PORT-EXCISION-MATRIX (P0): canonical blocklist for excision variant 'zuma_shusky'.
+# Derivation (mechanical, no invented entries):
+#   upstream device/google/shusky-kernels/6.1/grapheneos/vendor_dlkm.modules.blocklist
+#   + GuardTalk BT-excision addition 'blocklist nitrous' (T-BT-FULL FR-3, nitrous
+#     BCM BT power/rfkill driver, present in vendor_dlkm.modules.load).
+# Every upstream 'blocklist' line is preserved verbatim and in order.
+# Devices mapped to this variant: see excision-variants.mk GT_DEVICE_VARIANT_*.
+# In-force exemplars: vendor/guardtalk/device/{akita,komodo,rango}/vendor_dlkm.modules.blocklist.
+#
+# Wi-Fi two-phase load (upstream: blocklist in the bulk pass, then re-modprobe
+# without -b in init.insmod.shiba.cfg) is preserved verbatim. WiFi is NOT broken.
+blocklist aoc_unit_test_dev
+blocklist mali_kutf
+blocklist mali_kutf_clk_rate_trace_test_portal
+blocklist sscoredump_sample_test.ko
+blocklist sscoredump_test.ko
+blocklist bcmdhd4398
+blocklist cs40l26_i2c
+blocklist ftm5
+blocklist goodix_brl_touch
+blocklist rt6160_regulator
+blocklist sec_touch
+# T-BT-FULL (FR-3): Bluetooth power/rfkill driver — BCM BT on UART.

@@ -1,0 +1,190 @@
+=== Q-REMEDIATE-B2-APEX independent rematch (item 13 residual) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+PASS_HOLD_LIFTED=false
+Q-ONDEVICE=not started
+EXCISE_SUITE_OVERWRITE=false
+USB_GO=not started
+m=not run
+T/F/Architect lunch dumps: not trusted
+
+--- required files ---
+PASS: present: vendor/guardtalk/feature-excised/devicelock-apex-excised.mk
+PASS: present: vendor/guardtalk/feature-excised/guardtalk-feature-excised.mk
+PASS: present: vendor/guardtalk/feature-excised/apps-excised.mk
+PASS: present: vendor/guardtalk/feature-excised/apex-bcp-excised.mk
+PASS: present: frameworks/base/core/java/android/app/SystemServiceRegistry.java
+PASS: present: build/make/target/product/default_art_config.mk
+PASS: present: vendor/guardtalk/docs/qa/verify_remediate_b2_excise_host.sh
+PASS: EXCISE suite left in place (this file is a sibling)
+
+--- packet rg (APEX drop / KEEP / BCP) ---
+3:# Filter-out the DeviceLock mainline APEX from GuardTalkOS PRODUCT_PACKAGES.
+7:# `com.android.devicelock`.
+14:# PRODUCT_APEX_BOOT_JARS / PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS without
+21:    com.android.devicelock \
+22:    com.android.devicelock-debug
+24:PRODUCT_PACKAGES := $(filter-out $(GUARDTALK_DEVICELOCK_APEX_DROP),$(PRODUCT_PACKAGES))
+25:PRODUCT_PACKAGES_DEBUG := $(filter-out $(GUARDTALK_DEVICELOCK_APEX_DROP),$(PRODUCT_PACKAGES_DEBUG))
+
+37:include vendor/guardtalk/feature-excised/apps-excised.mk
+106:  #                                    filtered in apps-excised.mk P0)
+114:  #                                    devicelock-apex-excised.mk (T-REMEDIATE-B2-APEX);
+137:# AFTER apps-excised.mk (so its PRODUCT_PACKAGES filter-out has already
+145:# excision file in this directory (apps-excised.mk, nfc-excised.mk, etc.).
+151:include vendor/guardtalk/feature-excised/devicelock-apex-excised.mk
+
+50:#   HTMLViewer               -> KEPT (T-OS-FILES-MEDIA). Was media_system.mk:32.
+125:#   Gallery2                     -> product/app/Gallery2/Gallery2.apk
+147:    Gallery2 \
+171:# NOTE: GmsCompat cluster was originally part of Wave C, restored after a
+174:# patch. See GUARDTALK_APPS_PACKAGES += GmsCompat* below.
+195:# GmsCompat cluster (GrapheneOS Google-compatibility shim). T-REMEDIATE-B2-EXCISE
+197:#   GmsCompat      -> handheld_system.mk:56
+198:#   GmsCompatConfig -> late-*.mk install: system/app/GmsCompatConfig/
+199:#   GmsCompatLib   -> late-*.mk install: system/app/GmsCompatLib/
+217:# Contacts + ContactsProvider — see GUARDTALK_APPS_KEEP below):
+239:# GmsCompat / GmsCompatConfig / GmsCompatLib / AppCompatConfig from the
+240:# image (not “disabled but present”). DeviceLockController is the
+244:#   Builder.apply(GmsCompatApp.PKG_NAME)
+248:# skipped for GmsCompatApp.PKG_NAME in GosPackageStatePermission.java
+252:# com.android.devicelock APEX is NOT filtered in this stanza. Dedicated
+256:    GmsCompat \
+257:    GmsCompatConfig \
+258:    GmsCompatLib \
+260:    DeviceLockController \
+261:    DeviceLockControllerDebug
+263:# SUPERSEDED (Wave C 2026-06-30 REGRESSION FIX): GmsCompat cluster was
+339:# GUARDTALK_APPS_KEEP — packages that must NEVER be dropped by this filter, even
+350:# T-OS-FILES-MEDIA: in-tree media VIEW handlers. HTMLViewer (images) is already
+352:# UniversalMediaPlayer (video) is NOT a default PRODUCT_PACKAGES entry; it
+353:# is added explicitly after the filter-out. Gallery2 stays excised (not the
+357:# lunch proves HTMLViewer + UniversalMediaPlayer in PRODUCT_PACKAGES (jpeg/png/
+358:# webp VIEW via HTMLViewer; mp4/webm via UMP). ImageViewer priv-app not required.
+359:# Gallery2 stays in GUARDTALK_APPS_PACKAGES. GmsCompat/AppCompatConfig filter-out
+361:GUARDTALK_APPS_KEEP := \
+364:    HTMLViewer \
+365:    UniversalMediaPlayer
+696:# PrintSpooler + Gallery2 APKs. Discovered by Q-PKG-REPORT-VERIFY (2026-07-01):
+698:# Wave P1 line ~110, Gallery2 at Wave B line ~146), but their bundled JNI
+705:# Gallery2/Android.bp:37-41 -> libjni_eglfence / libjni_filtershow_filters /
+712:# creates app/Gallery2/lib/arm64/libjni_eglfence.so -> /product/lib64/libjni_eglfence.so).
+721:#   /product/app/Gallery2/lib/arm64/libjni_eglfence.so                   (33 KB)
+722:#   /product/app/Gallery2/lib/arm64/libjni_filtershow_filters.so         (43 KB)
+723:#   /product/app/Gallery2/lib/arm64/libjni_jpegstream.so                 (35 KB)
+788:# ContactsProvider, HTMLViewer, UniversalMediaPlayer) somehow landed in the
+791:PRODUCT_PACKAGES += $(filter $(GUARDTALK_APPS_KEEP),$(GUARDTALK_APPS_PACKAGES))
+793:# T-OS-FILES-MEDIA / T-REMEDIATE-B3-VIEWER: UniversalMediaPlayer is not sourced
+795:# handler (mp4/webm). Manifest has no LAUNCHER (VIEW-only). Gallery2 remains
+796:# excised. HTMLViewer stays via media_system.mk + KEEP (not a second +=).
+797:PRODUCT_PACKAGES += UniversalMediaPlayer
+
+--- static product wiring ---
+PASS: feature-excised includes apps-excised.mk
+PASS: feature-excised includes dedicated APEX mk (not GmsCompat stanza)
+PASS: APEX drop list contains com.android.devicelock
+PASS: APEX drop list contains com.android.devicelock-debug
+PASS: apps-excised KEEP list contains HTMLViewer
+PASS: apps-excised KEEP / add UniversalMediaPlayer
+PASS: apps-excised drop list still contains Gallery2
+PASS: apps-excised drop list still contains DeviceLockController
+PASS: apps-excised drop list still contains GmsCompat
+PASS: SystemServiceRegistry still hard-imports DeviceLockFrameworkInitializer
+PASS: default_art_config still lists framework-devicelock BCP
+PASS: default_art_config still lists service-devicelock SSR
+PASS: devicelock-apex-excised.mk active code does not touch PRODUCT_APEX_BOOT_JARS
+PASS: devicelock-apex-excised.mk active code does not touch SSR jar lists
+
+--- python structural rematch ---
+PASS: com.android.devicelock is in GUARDTALK_DEVICELOCK_APEX_DROP
+PASS: com.android.devicelock-debug is in GUARDTALK_DEVICELOCK_APEX_DROP
+PASS: APEX mk filter-out PRODUCT_PACKAGES via GUARDTALK_DEVICELOCK_APEX_DROP
+PASS: APEX mk active code does not strip BCP/SSR jar lists
+PASS: include order: apps-excised KEEP then dedicated APEX filter
+PASS: GUARDTALK_APPS_KEEP still has HTMLViewer and UniversalMediaPlayer
+PASS: Gallery2 still in GUARDTALK_APPS_PACKAGES drop list
+PASS: Gallery2 is not in GUARDTALK_APPS_KEEP
+PASS: GmsCompat still in GmsCompat/controller drop stanza
+PASS: DeviceLockController still in GmsCompat/controller drop stanza
+PASS: DeviceLockControllerDebug still in GmsCompat/controller drop stanza
+PASS: APEX token not in GUARDTALK_APPS_PACKAGES (dedicated mk)
+PASS: apex-bcp-excised.mk has no active DeviceLock BCP strip
+HOLD: SSR still hard-imports DeviceLockFrameworkInitializer (BCP required)
+HOLD: SSR still calls DeviceLockFrameworkInitializer.registerServiceWrappers()
+PY_COUNTS PASS_COUNT=13 FAIL_COUNT=0 HOLD_COUNT=2
+PASS: python structural rematch exit 0
+
+--- lunch komodo-trunk_staging-user (independent; do not skip) ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+15:23:28 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+15:23:34 Build sandboxing disabled due to nsjail error.
+15:23:40 Build sandboxing disabled due to nsjail error.
+15:23:46 Build sandboxing disabled due to nsjail error.
+15:23:54 Build sandboxing disabled due to nsjail error.
+15:24:00 Build sandboxing disabled due to nsjail error.
+15:24:06 Build sandboxing disabled due to nsjail error.
+DUMP_PKGS_BYTES=35221 DUMP_PKGS_WORDS=1392
+DUMP_BCP_WORDS=32 DUMP_SSR_WORDS=10
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (not userdebug)
+
+--- user PRODUCT_PACKAGES (APEX token + KEEP + no un-excise) ---
+PASS: user PRODUCT_PACKAGES: com.android.devicelock ABSENT
+PASS: user PRODUCT_PACKAGES: com.android.devicelock-debug ABSENT
+PASS: user PRODUCT_PACKAGES: DeviceLockController ABSENT
+PASS: user PRODUCT_PACKAGES: DeviceLockControllerDebug ABSENT
+PASS: user PRODUCT_PACKAGES: Gallery2 ABSENT
+PASS: user PRODUCT_PACKAGES: GmsCompat ABSENT
+PASS: user PRODUCT_PACKAGES: HTMLViewer PRESENT (KEEP)
+PASS: user PRODUCT_PACKAGES: UniversalMediaPlayer PRESENT (KEEP)
+PASS: PRODUCT_PACKAGES_DEBUG: com.android.devicelock* ABSENT
+
+--- BCP / SSR DeviceLock jars (PRESENT = HOLD, not FAIL) ---
+HOLD: PRODUCT_APEX_BOOT_JARS: com.android.devicelock:framework-devicelock PRESENT (intentional Zygote; not FAIL)
+HOLD: PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS: com.android.devicelock:service-devicelock PRESENT (intentional Zygote; not FAIL)
+
+--- stale out/ APEX is NOT product truth (m not run) ---
+HOLD: stale out/target/product/komodo DeviceLock APEX still present; not treated as product truth:
+drwxrwxr-x+ 5 oss-c1 oss-c1    4096 Sep 15 04:58 out/target/product/komodo/apex/com.android.devicelock
+-rw-rw-r--+ 1 oss-c1 oss-c1 3723264 Sep 15 05:14 out/target/product/komodo/system/apex/com.android.devicelock.apex
+HOLD: m not run this QA stamp (not a built user image; never device-fixed)
+HOLD: on-device / Zygote DeviceLock-absent not claimed (do not invent PASS)
+HOLD: PASS HOLD remains (not lifted)
+
+--- adb / device HOLD ---
+List of devices attached
+HOLD: adb devices empty / no komodo 54111FDAS000GN — device HOLD, never device-fixed
+
+RESULT: PASS (host)  bash_PASS=35 bash_HOLD=7 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+BCP_SSR=HOLD_IF_PRESENT
+STALE_OUT_APEX=HOLD
+DEVICE=HOLD
+ZYGOTE=not claimed
+PASS_HOLD=remains
+Q-ONDEVICE=not started
+EXCISE_SUITE=not overwritten

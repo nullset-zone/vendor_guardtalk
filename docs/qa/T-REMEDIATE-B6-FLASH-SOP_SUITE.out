@@ -1,0 +1,22 @@
+# T-REMEDIATE-B6-FLASH-SOP — host harness raw output
+# generated: 2026-09-19T16:08:05Z
+
+=== T-REMEDIATE-B6-FLASH-SOP host harness ===
+PASS  empty positional-arg function under set -u (bash 3.2 regression guard)
+PASS  flash_vbmeta_img branches on $# -gt 0 (no empty extra[@] expansion)
+PASS  no ${extra[@]} expansion in code (comment mention only)
+PASS  default run reaches 'flash complete' (exit=0)
+PASS  default run did NOT invoke capture / record fallback
+PASS  default run created no capture dir
+PASS  capture run recorded the post-adb fallback to fastboot (exit=2)
+PASS  capture evidence dir created: flash-capture-komodo-20260919-160828
+PASS  fastboot transport captured (oem dmesg)
+PASS  adb transport captured (logcat -d)
+PASS  capture covers bcd/getvar/logcat-errors/pstore/getprop
+PASS  CAPTURE_LOGS defaults to 0 (opt-in)
+PASS  capture documented as best-effort / never fatal
+PASS  capture helpers present
+PASS  capture with a dead adb completed (exit=3)
+PASS  capture with a dead adb completed without FATAL (exit=3)
+
+=== harness summary: PASS=16 FAIL=0 ===

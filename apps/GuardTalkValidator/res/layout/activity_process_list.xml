@@ -4,15 +4,15 @@
 
     A minimal, dependency-free screen: a header row (PID | UID | Name | State),
     a scrollable ListView of [process_row] entries, and a Refresh button.
-    Uses only platform widgets — follows the system dark theme (FR-1) with no
-    extra theme work. No exported component is associated with this layout; it
-    is inflated only by ValidatorActivity which is the sole launcher entry point.
+    Chrome (Exit + Menu) is required on every screen so back/home/escape can leave.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:fitsSystemWindows="true">
+
+    <include layout="@layout/validator_chrome" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -22,12 +22,13 @@
         android:padding="16dp">
 
         <TextView
-            android:id="@+id/process_title"
+            android:id="@+id/escape_hotspot"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/process_view_title"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:contentDescription="@string/escape_hotspot_cd" />
 
         <TextView
             android:id="@+id/process_summary"

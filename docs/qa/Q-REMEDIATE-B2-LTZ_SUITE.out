@@ -1,0 +1,160 @@
+=== Q-REMEDIATE-B2-LTZ independent rematch (item 8 residual) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+Q-ONDEVICE=not started
+USB_GO=not started
+LMS_SUITE_OVERWRITE=forbidden
+EXCISE_SUITE_OVERWRITE=forbidden
+PASS_HOLD=remains
+
+--- required files ---
+PASS: present: frameworks/base/services/java/com/android/server/SystemServer.java
+PASS: present: frameworks/base/core/res/res/values/config.xml
+PASS: present: vendor/guardtalk/feature-excised/handheld_core_hardware.prebuilt.xml
+PASS: present: vendor/guardtalk/feature-excised/apps-excised.mk
+PASS: present: vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk
+PASS: present: vendor/guardtalk/docs/qa/verify_remediate_b2_lms_host.sh
+PASS: present: vendor/guardtalk/docs/qa/verify_remediate_b2_excise_host.sh
+LMS_SUITE_SHA256=65055734bd4e097e9806563baec204324a4e5731a8efa0f7a58f99cef8c33a46
+EXCISE_SUITE_SHA256=1c2bc3c630828634c31129aba57694329eb89c892cd8e740dcfb246b4e6b7f7a
+
+--- packet rg (SystemServer CountryDetector / LTZ / LMS / GNSS / BT) ---
+1783:                    (PackageManager.FEATURE_BLUETOOTH)) {
+1879:        CountryDetectorService countryDetector = null;
+2384:            // Vendor loc-excised.mk already drops FEATURE_LOCATION on komodo;
+2387:                    PackageManager.FEATURE_LOCATION)) {
+2391:                mSystemServiceManager.startService(LocationManagerService.Lifecycle.class);
+2397:                    PackageManager.FEATURE_LOCATION)) {
+2400:                t.traceBegin("StartCountryDetectorService");
+2402:                    countryDetector = new CountryDetectorService(context);
+2428:                    PackageManager.FEATURE_LOCATION)) {
+2433:                    mSystemServiceManager.startService(LocationTimeZoneManagerService.Lifecycle.class);
+2440:            if (context.getResources().getBoolean(R.bool.config_enableGnssTimeUpdateService)) {
+2443:                    mSystemServiceManager.startService(GnssTimeUpdateService.Lifecycle.class);
+3308:                                    PackageManager.FEATURE_BLUETOOTH_LE))) {
+3363:        final CountryDetectorService countryDetectorF = countryDetector;
+3559:                reportWtf("Notifying CountryDetectorService running", e);
+
+--- packet rg (AOSP GNSS default) ---
+2059:    <bool name="config_enableGnssTimeUpdateService">false</bool>
+
+--- packet rg (KEEP HTMLViewer / UMP) ---
+50:#   HTMLViewer               -> KEPT (T-OS-FILES-MEDIA). Was media_system.mk:32.
+350:# T-OS-FILES-MEDIA: in-tree media VIEW handlers. HTMLViewer (images) is already
+352:# UniversalMediaPlayer (video) is NOT a default PRODUCT_PACKAGES entry; it
+357:# lunch proves HTMLViewer + UniversalMediaPlayer in PRODUCT_PACKAGES (jpeg/png/
+358:# webp VIEW via HTMLViewer; mp4/webm via UMP). ImageViewer priv-app not required.
+364:    HTMLViewer \
+365:    UniversalMediaPlayer
+788:# ContactsProvider, HTMLViewer, UniversalMediaPlayer) somehow landed in the
+793:# T-OS-FILES-MEDIA / T-REMEDIATE-B3-VIEWER: UniversalMediaPlayer is not sourced
+796:# excised. HTMLViewer stays via media_system.mk + KEEP (not a second +=).
+797:PRODUCT_PACKAGES += UniversalMediaPlayer
+
+--- packet rg (persist.radio.disabled) ---
+21:    persist.radio.disabled=1
+
+--- static product wiring (KEEP; RIL not re-enabled) ---
+PASS: apps-excised KEEP list contains HTMLViewer
+PASS: apps-excised KEEP / add UniversalMediaPlayer
+PASS: radio-excised still sets persist.radio.disabled=1
+PASS: radio-excised does not set persist.radio.disabled=0
+PASS: AOSP config_enableGnssTimeUpdateService default is false
+PASS: vendor/guardtalk xml/mk/java does not override config_enableGnssTimeUpdateService
+
+--- python structural rematch (FEATURE_LOCATION else-gates) ---
+PASS: BT FEATURE_BLUETOOTH: startServiceFromJar(BLUETOOTH_SERVICE_CLASS only inside hasSystemFeature(FEATURE_BLUETOOTH) else (start line(s) 1787; else opens line 1785)
+PASS: LMS FEATURE_LOCATION (must remain): startService(LocationManagerService.Lifecycle.class) only inside hasSystemFeature(FEATURE_LOCATION) else (start line(s) 2391; else opens line 2389)
+PASS: LMS FEATURE_LOCATION gate L2383–2393 still present (Lifecycle start + else); not rewritten with LTZ/CD/GNSS
+PASS: CountryDetector FEATURE_LOCATION construct: new CountryDetectorService only inside hasSystemFeature(FEATURE_LOCATION) else (start line(s) 2402; else opens line 2399)
+PASS: CountryDetector FEATURE_LOCATION addService: ServiceManager.addService(Context.COUNTRY_DETECTOR only inside hasSystemFeature(FEATURE_LOCATION) else (start line(s) 2403; else opens line 2399)
+PASS: CountryDetector construct window: 12-line window above L2402 contains FEATURE_LOCATION, hasSystemFeature and else
+PASS: LTZ FEATURE_LOCATION: startService(LocationTimeZoneManagerService.Lifecycle.class) only inside hasSystemFeature(FEATURE_LOCATION) else (start line(s) 2433; else opens line 2430)
+PASS: LTZ startService window: 12-line window above L2433 contains FEATURE_LOCATION, hasSystemFeature and else
+PASS: exactly one LMS Lifecycle start site (L2391)
+PASS: exactly one CountryDetector construct site (L2402)
+PASS: exactly one LTZ Lifecycle start site (L2433)
+PASS: exactly one GNSS Lifecycle start site (L2443)
+PASS: GNSS start is not inside a FEATURE_LOCATION else (not invented)
+PASS: GNSS start L2443 still behind config_enableGnssTimeUpdateService
+PASS: AOSP config.xml config_enableGnssTimeUpdateService is false
+PASS: no vendor/guardtalk xml/mk/java GNSS overlay of config_enableGnssTimeUpdateService
+PASS: MakeCountryDetectionServiceReady still null-checks countryDetectorF
+PASS: HTMLViewer is in GUARDTALK_APPS_KEEP
+PASS: UniversalMediaPlayer is in GUARDTALK_APPS_KEEP
+PASS: HTMLViewer is not in GUARDTALK_APPS_PACKAGES drop list
+PASS: guardtalk-radio-excised.mk still sets persist.radio.disabled=1
+PASS: persist.radio.disabled=0 absent from radio-excised
+PASS: handheld_core_hardware.prebuilt.xml has no live <feature name="android.hardware.location*" tags
+PY_COUNTS PASS_COUNT=23 FAIL_COUNT=0 HOLD_COUNT=0
+PASS: python structural rematch exit 0
+
+--- lunch komodo-trunk_staging-user (independent; do not skip) ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+15:54:33 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+15:54:39 Build sandboxing disabled due to nsjail error.
+15:54:45 Build sandboxing disabled due to nsjail error.
+15:54:51 Build sandboxing disabled due to nsjail error.
+15:54:59 Build sandboxing disabled due to nsjail error.
+DUMP_PKGS_BYTES=35221 DUMP_PKGS_WORDS=1392
+DUMP_PROPS_BYTES=1731
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (not userdebug)
+
+--- user PRODUCT_PACKAGES (HTMLViewer/UMP KEEP; radios not restored) ---
+PASS: user PRODUCT_PACKAGES: HTMLViewer PRESENT (KEEP)
+PASS: user PRODUCT_PACKAGES: UniversalMediaPlayer PRESENT (KEEP)
+PASS: user PRODUCT_PACKAGES: Bluetooth ABSENT
+
+--- user PRODUCT_PROPERTY_OVERRIDES (do not re-enable radios) ---
+PASS: PRODUCT_PROPERTY_OVERRIDES contains persist.radio.disabled=1
+PASS: PRODUCT_PROPERTY_OVERRIDES does not set persist.radio.disabled=0
+
+--- runtime LTZ/CountryDetector-absent / m / adb HOLD (do not invent PASS) ---
+HOLD: runtime LTZ-absent not proven (no system_server log / service list; m not run)
+HOLD: runtime CountryDetector-absent not proven (no service list; m not run)
+HOLD: m not run this QA stamp (not a built user image; never device-fixed)
+HOLD: PASS HOLD remains — this card does not lift it
+
+--- adb / device HOLD ---
+List of devices attached
+HOLD: adb devices empty / no komodo 54111FDAS000GN — device HOLD, never device-fixed
+
+--- LMS / EXCISE suites not overwritten ---
+PASS: LMS suite SHA256 unchanged (65055734bd4e097e9806563baec204324a4e5731a8efa0f7a58f99cef8c33a46)
+PASS: EXCISE suite SHA256 unchanged (1c2bc3c630828634c31129aba57694329eb89c892cd8e740dcfb246b4e6b7f7a)
+
+RESULT: PASS (host)  bash_PASS=24 bash_FAIL=0 bash_HOLD=5 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+LTZ_RUNTIME_ABSENT=HOLD
+COUNTRYDETECTOR_RUNTIME_ABSENT=HOLD
+M=HOLD
+DEVICE=HOLD
+PASS_HOLD=remains
+Q-ONDEVICE=not started
+LMS_SUITE_UNTOUCHED=true
+EXCISE_SUITE_UNTOUCHED=true

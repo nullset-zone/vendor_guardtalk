@@ -1,0 +1,10 @@
+# GuardTalkOS komodo user defaults (T-REMEDIATE-B5-DEFAULTS, item 24).
+#
+# Vendor init. post-fs-data so /data persist is mounted. Re-asserts after an
+# upgrade from a userdebug image that stored mtp / adb in persist.sys.usb.config.
+# ro.debuggable=0 only — userdebug sidecar keeps AOSP persist.sys.usb.config=adb.
+# Does not start RIL. Does not edit init.guardtalk.hardening.rc / telemetry.rc.
+
+on post-fs-data && property:ro.debuggable=0
+    setprop persist.sys.usb.config none
+    setprop persist.sys.bug_report 0

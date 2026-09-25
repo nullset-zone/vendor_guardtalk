@@ -1,0 +1,112 @@
+=== Q-REMEDIATE-B5-BOOTZIP independent rematch (item 22 residual) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+USB_GO=not started
+M_BUILD=not started
+ZIP_REWRITE=not started (QA must not rewrite product zip/PNG)
+
+--- required files ---
+PASS: present: vendor/guardtalk/branding/bootanimation/logo_1008x2244.png
+PASS: present: vendor/guardtalk/branding/bootanimation/bootanimation.zip
+PASS: present: vendor/guardtalk/branding/GuardTalkOS_Brand_Assets/01_boot_animation/bootanimation.zip
+PASS: present: vendor/guardtalk/branding/GuardTalkOS_Brand_Assets/01_boot_animation/logo_1008x2244.png
+PASS: present: vendor/guardtalk/branding/GuardTalkOS_Brand_Assets/01_boot_animation/desc.txt
+PASS: present: vendor/guardtalk/branding/bootanimation/bootanimation-dark.zip
+PASS: present: vendor/guardtalk/branding/guardtalk-theme.mk
+PASS: present: vendor/guardtalk/device/emu64a/guardtalk-emu-layer.mk
+PASS: present: vendor/guardtalk/docs/qa/verify_brand_sweep_static.sh
+PASS: present: vendor/guardtalk/docs/qa/verify_remediate_b5_branding_host.sh
+
+--- branding QA script must remain (this card must not overwrite it) ---
+PASS: verify_remediate_b5_branding_host.sh still HOLDs 1080 zip (not overwritten)
+
+--- file(1) source PNG (libmagic; not a Frontend dump) ---
+file: PNG image data, 1008 x 2244, 8-bit/color RGB, non-interlaced
+PASS: file(1) reports 1008 x 2244
+
+--- unzip -v product (Method Stored) ---
+Archive:  vendor/guardtalk/branding/bootanimation/bootanimation.zip
+ Length   Method    Size  Cmpr    Date    Time   CRC-32   Name
+--------  ------  ------- ---- ---------- ----- --------  ----
+      37  Stored       37   0% 2026-09-16 15:09 5c45312b  desc.txt
+   76346  Stored    76346   0% 2026-09-16 15:09 0e55c35f  part0/000.png
+   76346  Stored    76346   0% 2026-09-16 15:09 0e55c35f  part1/000.png
+--------          -------  ---                            -------
+  152729           152729   0%                            3 files
+PASS: unzip -v product: no Deflated members
+
+--- PRODUCT_COPY wiring (source only; do not m) ---
+PASS: guardtalk-theme.mk PRODUCT_COPY product zip (komodo path)
+PASS: guardtalk-theme.mk dark-zip filter present (dark zip not PRODUCT_COPY)
+PASS: emu64a PRODUCT_COPY brand-kit bootanimation.zip
+
+--- python zipfile STORED + IHDR + byte-identity (stdlib; no PIL) ---
+LOGO_MD5 65ab3a358806ad87c2e1ed8fe6b9f958 len=76346
+LOGO_IHDR w=1008 h=2244 bit=8 color=2
+PASS: logo IHDR exactly 1008×2244
+PASS: brand-kit logo PNG bytes match product logo
+product_ZIP_MD5 c9e027553e2d09bd401f63c8bc1a4070 len=153047
+product_NAMES ['desc.txt', 'part0/000.png', 'part1/000.png'] count=3
+PASS: product all 3 members STORED
+product_DESC_FIRST '1008 2244 24'
+PASS: product desc.txt first line '1008 2244 24'
+PASS: product zip has part0/000.png and part1/000.png only
+product_IHDR part0/000.png w=1008 h=2244 bit=8 color=2
+product_IHDR part1/000.png w=1008 h=2244 bit=8 color=2
+PASS: product 2 PNG IHDR 1008×2244
+PASS: product part0/000.png bytes identical to logo_1008x2244.png
+PASS: product part1/000.png bytes identical to logo_1008x2244.png
+kit_ZIP_MD5 c9e027553e2d09bd401f63c8bc1a4070 len=153047
+kit_NAMES ['desc.txt', 'part0/000.png', 'part1/000.png'] count=3
+PASS: kit all 3 members STORED
+kit_DESC_FIRST '1008 2244 24'
+PASS: kit desc.txt first line '1008 2244 24'
+PASS: kit zip has part0/000.png and part1/000.png only
+kit_IHDR part0/000.png w=1008 h=2244 bit=8 color=2
+kit_IHDR part1/000.png w=1008 h=2244 bit=8 color=2
+PASS: kit 2 PNG IHDR 1008×2244
+PASS: kit part0/000.png bytes identical to logo_1008x2244.png
+PASS: kit part1/000.png bytes identical to logo_1008x2244.png
+PASS: product zip bytes identical to brand-kit copy
+PASS: brand-kit desc.txt file first line '1008 2244 24'
+dark_ZIP_MD5 7ba676c5704c6e6ab962fb34cc6590ef len=3172137
+dark_NAMES ['desc.txt', 'part0/000.png', 'part0/001.png', 'part0/002.png', 'part0/003.png', 'part0/004.png', 'part0/005.png', 'part0/006.png'] count=67
+PASS: dark all 67 members STORED
+dark_DESC_FIRST '1080 2400 24'
+PASS: dark desc.txt first line '1080 2400 24'
+dark_PNG_COUNT 66
+dark_IHDR part0/000.png w=1080 h=2400 bit=8 color=2
+PASS: dark 66 PNG IHDR 1080×2400
+PASS: dark frames are not the 1008 logo (1080 dark zip OK)
+PASS: dark zip md5 still 7ba676c5704c6e6ab962fb34cc6590ef (untouched)
+SWEEP_EXPECTED_MD5 7ba676c5704c6e6ab962fb34cc6590ef
+PRODUCT_ZIP_MD5 c9e027553e2d09bd401f63c8bc1a4070
+HOLD: brand-sweep EXPECTED_MD5 still pins old 1080 zip / dark zip 7ba676c5704c6e6ab962fb34cc6590ef; not a product FAIL
+PY_COUNTS PASS_COUNT=21 FAIL_COUNT=0 HOLD_COUNT=1
+PASS: python zip rematch exit 0
+
+--- brand-sweep script: stale pin must HOLD not FAIL product ---
+32:EXPECTED_MD5="7ba676c5704c6e6ab962fb34cc6590ef"
+95:    hold "bootanimation.zip md5=$got (EXPECTED_MD5=$EXPECTED_MD5 still pins old 1080 zip / dark zip; Q-REMEDIATE-B5-BOOTZIP rematch owns 1008×2244 — not product FAIL)"
+PASS: verify_brand_sweep_static.sh HOLDs stale bootanimation.md5 (does not FAIL product)
+
+--- secrets (pem/pk8/.env under branding) ---
+PASS: no pem/pk8/.env under branding
+
+--- stale out/ product media (no m this card) ---
+out/komodo md5=7ba676c5704c6e6ab962fb34cc6590ef source=c9e027553e2d09bd401f63c8bc1a4070
+HOLD: out/komodo product/media/bootanimation.zip md5=7ba676c5704c6e6ab962fb34cc6590ef != source c9e027553e2d09bd401f63c8bc1a4070 (stale out; not product FAIL)
+out/tokay md5=7ba676c5704c6e6ab962fb34cc6590ef source=c9e027553e2d09bd401f63c8bc1a4070
+HOLD: out/tokay product/media/bootanimation.zip md5=7ba676c5704c6e6ab962fb34cc6590ef != source c9e027553e2d09bd401f63c8bc1a4070 (stale out; not product FAIL)
+out/akita md5=7ba676c5704c6e6ab962fb34cc6590ef source=c9e027553e2d09bd401f63c8bc1a4070
+HOLD: out/akita product/media/bootanimation.zip md5=7ba676c5704c6e6ab962fb34cc6590ef != source c9e027553e2d09bd401f63c8bc1a4070 (stale out; not product FAIL)
+
+--- adb (device HOLD if empty) ---
+List of devices attached
+HOLD: adb devices -l empty / no komodo 54111FDAS000GN — on-device boot HOLD, never device-fixed
+
+RESULT: PASS (host)  bash_PASS=19 bash_HOLD=4 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+DEVICE=HOLD
+PASS_HOLD=remains
+M_BUILD=not started

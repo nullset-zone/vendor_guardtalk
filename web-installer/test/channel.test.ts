@@ -77,10 +77,37 @@ test("komodo channel loads when advertisedDevices includes komodo", () => {
   assert.equal(bundle.manifest.product, "komodo");
 });
 
-test("rango product in pointer-shaped channel is rejected", () => {
+test("rango channel loads when advertisedDevices includes rango", () => {
+  const texts = channelTextsFromBlobs(tokayBlobs());
+  const manifest = JSON.parse(texts.manifestJson) as Record<string, unknown>;
+  manifest.product = "rango";
+  manifest.advertisedDevices = ["rango"];
+  manifest.sourceStamp = "rango-20260802-130756";
+  const bundle = loadChannelFromTexts({
+    ...texts,
+    manifestJson: JSON.stringify(manifest),
+  });
+  assert.equal(bundle.manifest.product, "rango");
+});
+
+test("shiba product in pointer-shaped channel is rejected", () => {
   const texts = channelTextsFromBlobs(tokayBlobs());
   const manifest = JSON.parse(texts.manifestJson) as { product: string };
-  manifest.product = "rango";
+  manifest.product = "shiba";
+  assert.throws(
+    () =>
+      loadChannelFromTexts({
+        ...texts,
+        manifestJson: JSON.stringify(manifest),
+      }),
+    WrongProductError,
+  );
+});
+
+test("caiman product in pointer-shaped channel is rejected", () => {
+  const texts = channelTextsFromBlobs(tokayBlobs());
+  const manifest = JSON.parse(texts.manifestJson) as { product: string };
+  manifest.product = "caiman";
   assert.throws(
     () =>
       loadChannelFromTexts({

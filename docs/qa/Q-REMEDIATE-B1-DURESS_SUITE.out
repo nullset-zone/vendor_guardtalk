@@ -1,0 +1,112 @@
+=== Q-REMEDIATE-B1-DURESS independent rematch (item 6) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+ITEM7=HOLD (USB default-on blocked on AVB)
+
+PASS: present: frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java
+PASS: present: frameworks/base/services/core/java/com/android/server/locksettings/DuressPasswordHelper.java
+PASS: present: frameworks/base/services/core/java/com/android/server/policy/keyguard/UsbPortSecurityHooks.java
+PASS: present: frameworks/base/services/core/java/com/android/server/locksettings/SecureWipeEngine.java
+PASS: present: frameworks/base/services/core/java/com/android/server/locksettings/DuressWipe.java
+PASS: present: frameworks/base/services/tests/servicestests/src/com/android/server/locksettings/ProgrammaticDuressBinderTests.java
+PASS: present: frameworks/base/core/java/com/android/internal/widget/ILockSettings.aidl
+
+--- packet rg (Binder + helper) ---
+frameworks/base/services/core/java/com/android/server/locksettings/DuressPasswordHelper.java:38:     * Invoked from {@link LockSettingsService#doVerifyCredential} {@code finally} and from
+frameworks/base/services/core/java/com/android/server/locksettings/DuressPasswordHelper.java:43:    protected void onVerifyCredentialResult(@Nullable VerifyCredentialResponse res, @Nullable LockscreenCredential credential) {
+frameworks/base/services/core/java/com/android/server/locksettings/DuressPasswordHelper.java:80:            VerifyCredentialResponse response = lockSettingsService.checkCredential(ownerCredential,
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:1699:            doVerifyCredential(
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2016:                doVerifyCredential(
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2143:                    // doVerifyCredential. Still run the duress helper (item 6).
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2144:                    duressPasswordHelper.onVerifyCredentialResult(response, savedCredential);
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2488:    public VerifyCredentialResponse checkCredential(LockscreenCredential credential,
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2493:            return doVerifyCredential(credential, lockDomain, userId, progressCallback, 0 /* flags */);
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2501:    public VerifyCredentialResponse verifyCredential(LockscreenCredential credential, int userId,
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2503:        return verifyCredential(credential, Primary, userId, flags);
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2508:    public VerifyCredentialResponse verifyCredential(LockscreenCredential credential,
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2513:                    "verifyCredential requires SET_AND_VERIFY_LOCKSCREEN_CREDENTIALS or "
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2518:            return doVerifyCredential(credential, lockDomain, userId, null /* progressCallback */,
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2563:     * through this method. {@link DuressPasswordHelper#onVerifyCredentialResult} runs in
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2566:     * {@link #checkCredential}, {@link #verifyCredential}, or
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2576:    private VerifyCredentialResponse doVerifyCredential(LockscreenCredential credential,
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2581:            res = doVerifyCredentialInner(credential, lockDomain, userId, progressCallback, flags);
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2584:            duressPasswordHelper.onVerifyCredentialResult(res, credential);
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2588:    private VerifyCredentialResponse doVerifyCredentialInner(LockscreenCredential credential,
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2775:        final VerifyCredentialResponse parentResponse = doVerifyCredential(
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2788:            return doVerifyCredential(profilePassword, Primary, userId, /* progressCallback= */ null, flags);
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:3677:                // doVerifyCredential. Still run the duress helper (item 6).
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:3678:                duressPasswordHelper.onVerifyCredentialResult(
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:3890:            return doVerifyCredential(cred, Primary, userId, null /* progressCallback */,
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:4389:                        checkCredential(ownerCredential, Primary, userId, null);
+
+--- packet rg (USB duress flag) ---
+550:            "vendor.guardtalk.usb_duress_wipe.enabled";
+556:     *   1. {@code vendor.guardtalk.usb_duress_wipe.enabled} == 1 (feature flag, opt-in)
+577:        if (!isUsbDuressWipeEnabled()) {
+624:    private static boolean isUsbDuressWipeEnabled() {
+
+PASS: LSS calls onVerifyCredentialResult
+PASS: helper defines onVerifyCredentialResult
+PASS: LSS defines/calls doVerifyCredential
+PASS: LSS Binder checkCredential
+PASS: LSS Binder verifyCredential
+PASS: helper wipe reason is DURESS
+PASS: USB flag prop name present
+PASS: USB enable gate present
+PASS: checkCredential body calls doVerifyCredential; no direct unlockLskfBasedProtector
+PASS: checkCredential does not short-circuit helper (uses doVerifyCredential funnel)
+PASS: verifyCredential Binder body calls doVerifyCredential; no direct unlockLskfBasedProtector
+PASS: 3-arg verifyCredential delegates to Primary 4-arg Binder
+PASS: doVerifyCredential finally calls duressPasswordHelper.onVerifyCredentialResult(res, credential)
+PASS: doVerifyCredential delegates inner LSKF verify
+PASS: verifyTiedProfileChallenge Binder calls doVerifyTiedProfileChallenge
+PASS: doVerifyTiedProfileChallenge calls doVerifyCredential 2 times (parent + profile)
+PASS: setLockCredentialInternal miss path calls helper with (response, savedCredential)
+PASS: helper hook is inside setLockCredentialInternal sp==null miss branch
+PASS: Binder setLockCredential calls setLockCredentialInternal
+PASS: Binder getHashFactor miss path calls helper
+PASS: getHashFactor helper runs only when factor == null (miss)
+PASS: verifyGatekeeperPasswordHandle does not invoke helper (handle, not LSKF)
+PASS: onVerifyCredentialResult lockscreen wipe is SecureWipeEngine.Reason.DURESS
+PASS: onVerifyCredentialResult does not use ANTI_BRUTEFORCE/USER_REQUESTED
+PASS: helper no-ops on match; wipe only after isDuressCredential
+PASS: SecureWipeEngine.Reason still lists DURESS
+PASS: USER_REQUESTED and ANTI_BRUTEFORCE remain distinct reasons (not collapsed into DURESS)
+PASS: anti-bruteforce path still Reason.ANTI_BRUTEFORCE (not rewritten to DURESS)
+PASS: requestSecureWipe still Reason.USER_REQUESTED (not rewritten to DURESS)
+PASS: DuressWipe.run still Reason.DURESS
+PASS: isUsbDuressWipeEnabled defaults SystemProperties.get(..., "0")
+PASS: USB duress default not flipped to 1
+PASS: maybeTriggerUsbDuressWipe returns early unless flag enabled
+PASS: USB wipe still requires verifiedbootstate=green
+PASS: no vendor/guardtalk product mk/prop sets usb_duress_wipe.enabled (item 7 still HOLD)
+PASS: ILockSettings.aidl still declares checkCredential
+PASS: ILockSettings.aidl still declares verifyCredential
+PASS: ILockSettings.aidl still declares verifyTiedProfileChallenge
+PASS: ILockSettings.aidl still declares setLockCredential
+PASS: ILockSettings.aidl still declares getHashFactor
+PASS: ILockSettings.aidl still declares verifyGatekeeperPasswordHandle
+PASS: atest method present: checkCredential_wrongGuess_invokesDuressHelper
+PASS: atest method present: checkCredential_correctGuess_stillInvokesDuressHelper
+PASS: atest method present: verifyCredential_wrongGuess_invokesDuressHelper
+PASS: atest method present: verifyTiedProfileChallenge_wrongParent_invokesDuressHelper
+PASS: atest method present: verifyGatekeeperPasswordHandle_doesNotInvokeDuressHelper
+PASS: atest method present: setLockCredential_wrongSaved_invokesDuressHelper
+PASS: atest method present: getHashFactor_wrongCredential_invokesDuressHelper
+PASS: ProgrammaticDuressBinderTests documents wipe engine not exercised (Reason.DURESS stays)
+PASS: tryUnlockWithCachedUnifiedChallenge uses doVerifyCredential funnel
+PASS: unlockChildProfile uses doVerifyCredential funnel
+PASS: token enroll does not hook helper (token is not Binder LSKF guess)
+PASS: requestSecureWipe verifies via checkCredential then USER_REQUESTED (not DURESS rewrite)
+
+PY_COUNTS PASS_COUNT=45 FAIL_COUNT=0 HOLD_COUNT=0
+
+--- adb devices ---
+List of devices attached
+HOLD: adb devices empty — device/wipe HOLD; never device-fixed
+HOLD: atest FrameworksServicesTests:ProgrammaticDuressBinderTests not run this host (no lunch/atest)
+HOLD: item 7 USB duress default-on HOLD until T-REMEDIATE-B1-AVB APPROVED
+HOLD: destructive lockscreen/USB wipe e2e HOLD (no operator + test unit this stamp)
+
+RESULT: PASS (static)  bash_PASS=15 bash_HOLD=4 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+ITEM7=HOLD (USB default still 0)

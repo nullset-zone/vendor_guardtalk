@@ -1,0 +1,156 @@
+=== Q-REMEDIATE-B2-LMS independent rematch (item 8 residual) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+Q-ONDEVICE=not started
+USB_GO=not started
+EXCISE_SUITE_OVERWRITE=forbidden (historical LMS-start HOLD card)
+PASS_HOLD=remains
+
+--- required files ---
+PASS: present: frameworks/base/services/java/com/android/server/SystemServer.java
+PASS: present: vendor/guardtalk/feature-excised/handheld_core_hardware.prebuilt.xml
+PASS: present: vendor/guardtalk/feature-excised/loc-excised.mk
+PASS: present: vendor/guardtalk/feature-excised/apps-excised.mk
+PASS: present: vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk
+PASS: present: vendor/guardtalk/docs/qa/verify_remediate_b2_excise_host.sh
+
+--- packet rg (SystemServer LMS / BT FEATURE gates) ---
+1783:                    (PackageManager.FEATURE_BLUETOOTH)) {
+1786:                t.traceBegin("StartBluetoothService");
+2384:            // Vendor loc-excised.mk already drops FEATURE_LOCATION on komodo;
+2387:                    PackageManager.FEATURE_LOCATION)) {
+2390:                t.traceBegin("StartLocationManagerService");
+2391:                mSystemServiceManager.startService(LocationManagerService.Lifecycle.class);
+3296:                                    PackageManager.FEATURE_BLUETOOTH_LE))) {
+
+--- packet rg (handheld live vs comment location features) ---
+21:       2. The android.hardware.location + android.hardware.location.network
+26:          android.hardware.location.gps.prebuilt.xml from PRODUCT_PACKAGES).
+89:    <!-- devices with GPS must include android.hardware.location.gps.xml -->
+
+--- packet rg (loc-excised FusedLocation / gnssd) ---
+10:# the Lassen modem-bridge daemon + test binary + constants (gnssd, gnss_test,
+38:#   - T-REMEDIATE-B2-EXCISE item 8: FusedLocation is REMOVED (service absent,
+65:# FusedLocation is now an exact-name drop (T-REMEDIATE-B2-EXCISE item 8).
+69:# LocationManagerService.Lifecycle. This file makes GNSS HAL + FusedLocation
+74:# FusedLocation, and radio leftover daemons (bipchmgr / wfc-pkt-router).
+91:    gnssd \
+96:    FusedLocation \
+102:# GNSS-only tokens + exact NetworkLocation / FusedLocation names + radio
+113:  $(findstring gnssd,$(1)), \
+117:  $(findstring FusedLocation,$(1)), \
+131:#     the gnssd daemon, slsi_gnss_service -> android.hardware.gnss-service,
+161:# T-REMEDIATE-B2-EXCISE item 8: drop FusedLocation from the system_server
+167:PRODUCT_SYSTEM_SERVER_APPS := $(filter-out FusedLocation,$(PRODUCT_SYSTEM_SERVER_APPS))
+220:#   - init.gnss.rc (tokay.mk:1710): defines `service gnssd /vendor/bin/hw/gnssd`
+223:#     copy-files filter above), init never loads the gnssd or
+
+--- packet rg (KEEP HTMLViewer / UMP) ---
+50:#   HTMLViewer               -> KEPT (T-OS-FILES-MEDIA). Was media_system.mk:32.
+350:# T-OS-FILES-MEDIA: in-tree media VIEW handlers. HTMLViewer (images) is already
+352:# UniversalMediaPlayer (video) is NOT a default PRODUCT_PACKAGES entry; it
+357:# lunch proves HTMLViewer + UniversalMediaPlayer in PRODUCT_PACKAGES (jpeg/png/
+358:# webp VIEW via HTMLViewer; mp4/webm via UMP). ImageViewer priv-app not required.
+364:    HTMLViewer \
+365:    UniversalMediaPlayer
+788:# ContactsProvider, HTMLViewer, UniversalMediaPlayer) somehow landed in the
+793:# T-OS-FILES-MEDIA / T-REMEDIATE-B3-VIEWER: UniversalMediaPlayer is not sourced
+796:# excised. HTMLViewer stays via media_system.mk + KEEP (not a second +=).
+797:PRODUCT_PACKAGES += UniversalMediaPlayer
+
+--- packet rg (persist.radio.disabled) ---
+21:    persist.radio.disabled=1
+
+--- static product wiring (loc-excised still drops; KEEP; RIL) ---
+PASS: loc-excised drop list contains FusedLocation
+PASS: loc-excised drop list contains gnssd
+PASS: loc-excised filter-out FusedLocation from PRODUCT_SYSTEM_SERVER_APPS
+PASS: apps-excised KEEP list contains HTMLViewer
+PASS: apps-excised KEEP / add UniversalMediaPlayer
+PASS: radio-excised still sets persist.radio.disabled=1
+PASS: radio-excised does not set persist.radio.disabled=0
+
+--- python structural rematch (FEATURE_LOCATION else-gate) ---
+PASS: BT FEATURE_BLUETOOTH: startServiceFromJar(BLUETOOTH_SERVICE_CLASS only inside hasSystemFeature(FEATURE_BLUETOOTH) else (start line(s) 1787; else opens line 1785)
+PASS: LMS FEATURE_LOCATION: startService(LocationManagerService.Lifecycle.class) only inside hasSystemFeature(FEATURE_LOCATION) else (start line(s) 2391; else opens line 2389)
+PASS: 12-line window above startService L2391 contains hasSystemFeature(FEATURE_LOCATION) and else
+PASS: handheld_core_hardware.prebuilt.xml has no live <feature name="android.hardware.location*" tags
+PASS: handheld still mentions android.hardware.location in comments (comment-only OK)
+PASS: FusedLocation is in GUARDTALK_LOC_PACKAGES drop list
+PASS: gnssd is in GUARDTALK_LOC_PACKAGES drop list
+PASS: loc-excised still writes back PRODUCT_SYSTEM_SERVER_APPS without FusedLocation
+PASS: HTMLViewer is in GUARDTALK_APPS_KEEP
+PASS: UniversalMediaPlayer is in GUARDTALK_APPS_KEEP
+PASS: HTMLViewer is not in GUARDTALK_APPS_PACKAGES drop list
+PASS: guardtalk-radio-excised.mk still sets persist.radio.disabled=1
+PASS: persist.radio.disabled=0 absent from radio-excised
+PY_COUNTS PASS_COUNT=13 FAIL_COUNT=0 HOLD_COUNT=0
+PASS: python structural rematch exit 0
+
+--- lunch komodo-trunk_staging-user (independent; do not skip) ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+15:23:10 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+15:23:17 Build sandboxing disabled due to nsjail error.
+15:23:22 Build sandboxing disabled due to nsjail error.
+15:23:28 Build sandboxing disabled due to nsjail error.
+15:23:37 Build sandboxing disabled due to nsjail error.
+15:23:43 Build sandboxing disabled due to nsjail error.
+DUMP_PKGS_BYTES=35221 DUMP_PKGS_WORDS=1392
+DUMP_SSA_WORDS=5 DUMP_PROPS_BYTES=1731
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (not userdebug)
+
+--- user PRODUCT_PACKAGES (FusedLocation/gnssd ABSENT; HTMLViewer/UMP PRESENT) ---
+PASS: user PRODUCT_PACKAGES: FusedLocation ABSENT
+PASS: user PRODUCT_PACKAGES: gnssd ABSENT
+PASS: user PRODUCT_PACKAGES: HTMLViewer PRESENT (KEEP)
+PASS: user PRODUCT_PACKAGES: UniversalMediaPlayer PRESENT (KEEP)
+
+--- user PRODUCT_SYSTEM_SERVER_APPS ---
+PASS: PRODUCT_SYSTEM_SERVER_APPS: FusedLocation ABSENT
+
+--- user PRODUCT_PROPERTY_OVERRIDES (do not re-enable radios) ---
+PASS: PRODUCT_PROPERTY_OVERRIDES contains persist.radio.disabled=1
+PASS: PRODUCT_PROPERTY_OVERRIDES does not set persist.radio.disabled=0
+
+--- runtime LMS-absent / m / adb HOLD (do not invent PASS) ---
+HOLD: runtime LMS-absent not proven (no system_server log / service list; m not run)
+HOLD: m not run this QA stamp (not a built user image; never device-fixed)
+HOLD: PASS HOLD remains — this card does not lift it
+
+--- adb / device HOLD ---
+List of devices attached
+HOLD: adb devices empty / no komodo 54111FDAS000GN — device HOLD, never device-fixed
+
+RESULT: PASS (host)  bash_PASS=24 bash_FAIL=0 bash_HOLD=4 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+LMS_RUNTIME_ABSENT=HOLD
+M=HOLD
+DEVICE=HOLD
+PASS_HOLD=remains
+Q-ONDEVICE=not started
+EXCISE_SUITE_UNTOUCHED=true

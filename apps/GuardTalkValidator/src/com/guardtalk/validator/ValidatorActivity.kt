@@ -8,6 +8,7 @@ import android.graphics.Color
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -52,10 +53,13 @@ class ValidatorActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_validator)
 
-        val header = findViewById<TextView>(R.id.header_title)
+        ValidatorChrome.attach(this, /* leaveAppOnBack= */ true)
+
+        val header = findViewById<TextView>(R.id.escape_hotspot)
         val summary = findViewById<TextView>(R.id.summary_text)
         val list = findViewById<ListView>(R.id.checks_list)
         val openProcesses = findViewById<Button>(R.id.btn_open_processes)
+        val openSampleImage = findViewById<Button>(R.id.btn_open_sample_image)
 
         header.text = getString(R.string.header_title)
 
@@ -74,6 +78,33 @@ class ValidatorActivity : Activity() {
                 android.content.Intent(this, ProcessListActivity::class.java)
             )
         }
+        // Item 18: main-path sample PNG VIEW. Not on EscapeMenu.
+        openSampleImage.setOnClickListener { HtmlViewerLaunch.openSampleOrExplain(this) }
+        SensorToggleViews.bind(this, findViewById(android.R.id.content))
+    }
+
+    override fun onResume() {
+        super.onResume()
+        SensorToggleViews.refresh(this, findViewById(android.R.id.content))
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        ValidatorChrome.onScreenBack(this, /* leaveAppOnBack= */ true)
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (ValidatorChrome.handleKey(this, keyCode, event)) {
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        if (ValidatorChrome.handleKey(this, keyCode, event)) {
+            return true
+        }
+        return super.onKeyUp(keyCode, event)
     }
 
     /** Run all 7 checks against the live framework and return the row data. */

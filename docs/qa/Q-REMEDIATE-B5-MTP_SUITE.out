@@ -1,0 +1,177 @@
+=== Q-REMEDIATE-B5-MTP independent rematch (item 24 residual) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+USB_GO=not started
+M_BUILD=not started
+FLASH=not started
+ONDEVICE_CHARGING_ONLY=HOLD (never invent PASS)
+PASS_HOLD=remains
+
+--- required files ---
+PASS: present: frameworks/base/services/usb/java/com/android/server/usb/UsbDeviceManager.java
+PASS: present: frameworks/base/services/core/java/com/android/server/policy/keyguard/UsbPortSecurityHooks.java
+PASS: present: vendor/guardtalk/docs/qa/verify_remediate_b5_defaults_host.sh
+
+--- defaults suite must remain (this card must not overwrite it) ---
+PASS: verify_remediate_b5_defaults_host.sh still present (not overwritten)
+
+--- packet rg (UsbDeviceManager getChargingFunctions / mustDenyUsbData) ---
+356:        FileDescriptor mtpFd = nativeOpenControl(UsbManager.USB_FUNCTION_MTP);
+360:        mControlFds.put(UsbManager.FUNCTION_MTP, mtpFd);
+569:        long functions = UsbManager.FUNCTION_NONE;
+574:        if (functions != UsbManager.FUNCTION_NONE) {
+874:                setSystemProperty(USB_PERSISTENT_CONFIG_PROPERTY, UsbManager.USB_FUNCTION_ADB);
+885:            if (mustDenyUsbData()) {
+893:        protected boolean mustDenyUsbData() {
+894:            return com.android.server.policy.keyguard.UsbPortSecurityHooks
+895:                    .mustDenyUsbDataFunctions(mContext);
+963:            setEnabledFunctions(UsbManager.FUNCTION_NONE, false, operationId);
+1155:            boolean mtpEnabled = ((mCurrentFunctions & UsbManager.FUNCTION_MTP) != 0);
+1233:            functions = com.android.server.policy.keyguard.UsbPortSecurityHooks
+1235:            if (functions == UsbManager.FUNCTION_NONE) {
+1238:            if (isAdbEnabled() && !mustDenyUsbData()) {
+1239:                return functions | UsbManager.FUNCTION_ADB;
+1268:                                    && mScreenUnlockedFunctions != UsbManager.FUNCTION_NONE) {
+1271:                                setEnabledFunctions(UsbManager.FUNCTION_NONE, false, operationId);
+1399:                    if (!mScreenLocked && mScreenUnlockedFunctions != UsbManager.FUNCTION_NONE) {
+1403:                        setEnabledFunctions(UsbManager.FUNCTION_NONE, false, operationId);
+1417:                            setEnabledFunctions(UsbManager.FUNCTION_NONE, false, operationId);
+1420:                        if (mScreenUnlockedFunctions != UsbManager.FUNCTION_NONE
+1421:                                && mCurrentFunctions == UsbManager.FUNCTION_NONE) {
+1431:                        setEnabledFunctions(UsbManager.FUNCTION_NONE, true, operationId);
+1473:                        mScreenUnlockedFunctions = UsbManager.FUNCTION_NONE;
+1479:                        setEnabledFunctions(UsbManager.FUNCTION_NONE, false, operationId);
+1546:                        && mScreenUnlockedFunctions != UsbManager.FUNCTION_NONE) {
+1549:                    setEnabledFunctions(UsbManager.FUNCTION_NONE, false, operationId);
+1564:            return (functions & UsbManager.FUNCTION_MTP) != 0
+1620:                if (mCurrentFunctions == UsbManager.FUNCTION_MTP) {
+1782:        protected long getChargingFunctions() {
+1784:            if (mustDenyUsbData()) {
+1785:                return UsbManager.FUNCTION_NONE;
+1790:                return UsbManager.FUNCTION_ADB;
+1792:                return UsbManager.FUNCTION_NONE;
+1947:                        UsbManager.USB_FUNCTION_NONE);
+1950:                            UsbManager.USB_FUNCTION_NONE);
+1952:                            getSystemProperty(USB_STATE_PROPERTY, UsbManager.USB_FUNCTION_NONE));
+1955:                            UsbManager.USB_FUNCTION_NONE);
+1957:                            UsbManager.USB_FUNCTION_NONE).equals(
+1958:                            getSystemProperty(USB_STATE_PROPERTY, UsbManager.USB_FUNCTION_NONE));
+1960:                mCurrentFunctions = UsbManager.FUNCTION_NONE;
+2033:                                    UsbManager.USB_FUNCTION_ADB);
+2043:                    String newFunction = addFunction(UsbManager.USB_FUNCTION_NONE,
+2044:                            UsbManager.USB_FUNCTION_ADB);
+2047:                    setSystemProperty(getPersistProp(false), UsbManager.USB_FUNCTION_NONE);
+2121:            if (trySetEnabledFunctions(UsbManager.FUNCTION_NONE, false)) {
+2130:            if (trySetEnabledFunctions(UsbManager.FUNCTION_NONE, false)) {
+2152:            if (isAdbEnabled() && !mustDenyUsbData()) {
+2153:                functions = addFunction(functions, UsbManager.USB_FUNCTION_ADB);
+2155:                functions = removeFunction(functions, UsbManager.USB_FUNCTION_ADB);
+2158:            if (mustDenyUsbData()) {
+2159:                functions = removeFunction(functions, UsbManager.USB_FUNCTION_MTP);
+2161:                functions = removeFunction(functions, UsbManager.USB_FUNCTION_ADB);
+2168:            if (usbFunctions != UsbManager.FUNCTION_NONE) {
+2173:                    .equals(UsbManager.USB_FUNCTION_NONE)) {
+2196:                setUsbConfig(UsbManager.USB_FUNCTION_NONE);
+2198:                if (!waitForState(UsbManager.USB_FUNCTION_NONE)) {
+2209:                        && (containsFunction(functions, UsbManager.USB_FUNCTION_MTP)
+2241:            if (UsbManager.USB_FUNCTION_NONE.equals(functions)) {
+2261:                return UsbManager.USB_FUNCTION_NONE;
+2362:                    mCurrentFunctions = UsbManager.FUNCTION_NONE;
+2408:                    setEnabledFunctions(UsbManager.FUNCTION_NONE, false, operationId);
+2427:                        mCurrentFunctions = ((Long) msg.obj) & ~UsbManager.FUNCTION_ADB;
+2602:                boolean chargingFunctions = functions == UsbManager.FUNCTION_NONE;
+2770:        functions = com.android.server.policy.keyguard.UsbPortSecurityHooks
+2775:        if (functions == UsbManager.FUNCTION_NONE) {
+2777:        } else if (functions == UsbManager.FUNCTION_MTP) {
+
+--- packet rg (UsbPortSecurityHooks.mustDenyUsbDataFunctions) ---
+113:    public static boolean mustDenyUsbDataFunctions(Context ctx) {
+117:        if (ctx == null) {
+126:            return GuardTalkUsbProtectionPolicy.mustDenyUsbData(deviceLocked, userUnlocked);
+129:            Slog.e(TAG, "mustDenyUsbDataFunctions: failing closed", t);
+140:        if (!mustDenyUsbDataFunctions(ctx)) {
+232:        if (mustDenyUsbDataFunctions(context)) {
+296:                            && !mustDenyUsbDataFunctions(context)) {
+301:                    if (!mustDenyUsbDataFunctions(context)) {
+360:            } else if (mustDenyUsbDataFunctions(ctx)) {
+391:                                && !mustDenyUsbDataFunctions(ctx)) {
+427:        if (PortSecurityState.PORTS_ENABLED.equals(state) && mustDenyUsbDataFunctions(context)) {
+
+--- static Java (rg; not a Backend dump) ---
+PASS: getChargingFunctions() present
+PASS: mustDenyUsbData() present
+PASS: UsbDeviceManager still names UsbPortSecurityHooks
+PASS: UsbDeviceManager still names mustDenyUsbDataFunctions
+PASS: UsbPortSecurityHooks.mustDenyUsbDataFunctions still present
+PASS: mustDenyUsbDataFunctions still null-ctx fail-closed
+PASS: mustDenyUsbDataFunctions still catch fail-closed
+
+--- python structural rematch (brace-matched extract; not a dump) ---
+GETCHARGINGFUNCTIONS_SPAN L1782-1794 COUNT=1
+PASS: exactly one getChargingFunctions() definition
+GETCHARGINGFUNCTIONS_BODY
+protected long getChargingFunctions() {
+            // GuardTalk fail-closed: true charging-only — never promote ADB/MTP while denied.
+            if (mustDenyUsbData()) {
+                return UsbManager.FUNCTION_NONE;
+            }
+            // if ADB is enabled, reset functions to ADB
+            // else true charging-only (do not promote MTP).
+            if (isAdbEnabled()) {
+                return UsbManager.FUNCTION_ADB;
+            } else {
+                return UsbManager.FUNCTION_NONE;
+            }
+        }
+GETCHARGINGFUNCTIONS_RETURNS ['UsbManager.FUNCTION_NONE', 'UsbManager.FUNCTION_ADB', 'UsbManager.FUNCTION_NONE']
+PASS: getChargingFunctions() has no return FUNCTION_MTP
+PASS: FUNCTION_MTP absent from getChargingFunctions() body (comments stripped)
+PASS: getChargingFunctions() calls mustDenyUsbData()
+PASS: getChargingFunctions() calls isAdbEnabled()
+PASS: mustDenyUsbData() is evaluated before isAdbEnabled()
+PASS: mustDenyUsbData() → return UsbManager.FUNCTION_NONE
+PASS: isAdbEnabled() → return UsbManager.FUNCTION_ADB
+PASS: else → return UsbManager.FUNCTION_NONE (not MTP)
+PASS: all getChargingFunctions() returns are FUNCTION_NONE or FUNCTION_ADB
+PASS: getChargingFunctions() has exactly three return statements
+MUSTDENYUSBDATA_SPAN L893-896 COUNT=1
+MUSTDENYUSBDATA_BODY
+protected boolean mustDenyUsbData() {
+            return com.android.server.policy.keyguard.UsbPortSecurityHooks
+                    .mustDenyUsbDataFunctions(mContext);
+        }
+MUSTDENYUSBDATA_COMPACT protected boolean mustDenyUsbData() { return com.android.server.policy.keyguard.UsbPortSecurityHooks .mustDenyUsbDataFunctions(mContext); }
+PASS: exactly one mustDenyUsbData() definition
+PASS: mustDenyUsbData() still calls UsbPortSecurityHooks.mustDenyUsbDataFunctions(mContext)
+PASS: mustDenyUsbData() does not return constant false
+HOOKS_SPAN L113-132 COUNT=1
+PASS: exactly one mustDenyUsbDataFunctions definition
+PASS: hooks null-ctx still fail-closed (return true)
+PASS: hooks catch still fail-closed (return true)
+PASS: hooks still delegate to GuardTalkUsbProtectionPolicy.mustDenyUsbData
+APPLYADBFUNCTION_SPAN L2145-2164 COUNT=1
+PASS: applyAdbFunction still strips USB_FUNCTION_MTP when mustDenyUsbData()
+PASS: applyAdbFunction still strips PTP and ADB when denied
+ISUSBTRANSFERALLOWED_SPAN L883-890 COUNT=1
+PASS: isUsbTransferAllowed still fail-closed on mustDenyUsbData()
+PY_COUNTS PASS_COUNT=21 FAIL_COUNT=0 HOLD_COUNT=0
+PASS: python structural rematch exit 0
+
+--- adversarial: getChargingFunctions must not return MTP ---
+PASS: second-view extract: FUNCTION_MTP absent from getChargingFunctions()
+
+--- stale out/ (HOLD, never product FAIL; m not run) ---
+HOLD: stale out/ product build.prop present — not a rebuilt user image (m not run by QA)
+HOLD: m not run this QA stamp (gadget image not rebuilt; never device-fixed)
+
+--- adb (gadget HOLD if empty; never invent charging-only PASS) ---
+List of devices attached
+HOLD: adb devices -l empty / no komodo 54111FDAS000GN — gadget HOLD, never on-device charging-only PASS
+
+RESULT: PASS (host)  bash_PASS=13 bash_HOLD=3 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+GADGET=HOLD
+ONDEVICE_CHARGING_ONLY=HOLD
+PASS_HOLD=remains
+M_BUILD=not started
+USB_GO=not started

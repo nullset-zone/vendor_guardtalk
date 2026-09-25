@@ -1,4 +1,6 @@
-/** Typed fail-closed errors for the tokay flash orchestrator. */
+/** Typed fail-closed errors for the advertised-product flash orchestrator. */
+
+import { ALLOWED_PRODUCTS } from "./types.js";
 
 export class FlashcoreError extends Error {
   readonly code: string;
@@ -14,7 +16,7 @@ export class WrongProductError extends FlashcoreError {
   constructor(product: string) {
     super(
       "WRONG_PRODUCT",
-      `product '${product}' is not in the advertised allowlist (tokay, akita, komodo)`,
+      `product '${product}' is not in the advertised allowlist (${ALLOWED_PRODUCTS.join(", ")})`,
     );
   }
 }

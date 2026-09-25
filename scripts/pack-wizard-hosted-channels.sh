@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Pack tokay + akita + komodo desktop-flash stamps into web-installer/channels/{product}/
-# for the hosted wizard. Images are symlinked (no multi-GiB copies).
-# Komodo source stamp: releases/desktop-flash/komodo-latest.
+# Pack tokay + akita + komodo + rango desktop-flash stamps into
+# web-installer/channels/{product}/ for the hosted wizard.
+# Images are symlinked (no multi-GiB copies).
+# Rango source stamp: releases/desktop-flash/rango-latest (experimental / boot HOLD).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -21,4 +22,5 @@ pack_one() {
 pack_one tokay "${REPO_ROOT}/releases/desktop-flash/latest"
 pack_one akita "${REPO_ROOT}/releases/desktop-flash/akita-latest"
 pack_one komodo "${REPO_ROOT}/releases/desktop-flash/komodo-latest"
+pack_one rango "${REPO_ROOT}/releases/desktop-flash/rango-latest"
 echo "HOSTED_CHANNELS_OK  ${OUT_ROOT}"

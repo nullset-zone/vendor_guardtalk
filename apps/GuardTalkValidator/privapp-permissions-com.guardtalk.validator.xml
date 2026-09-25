@@ -24,6 +24,10 @@
     ACCESS_NETWORK_STATE is a normal permission (granted at install time, no
     privapp entry needed) and is therefore not listed here.
 
+    * MANAGE_SENSOR_PRIVACY / OBSERVE_SENSOR_PRIVACY (internal) —
+      F-REMEDIATE-B3-SENSORS in-app camera/mic switches. Persist and observe
+      SensorPrivacy the same way Settings/QS do. Does not grant capture.
+
     No other permissions are requested. No root, no su, no shell exec, no
     exported service/receiver, no world-readable IPC.
 -->
@@ -31,5 +35,7 @@
     <privapp-permissions package="com.guardtalk.validator">
         <permission name="android.permission.QUERY_ALL_PACKAGES"/>
         <permission name="android.permission.REAL_GET_TASKS"/>
+        <permission name="android.permission.MANAGE_SENSOR_PRIVACY"/>
+        <permission name="android.permission.OBSERVE_SENSOR_PRIVACY"/>
     </privapp-permissions>
 </permissions>

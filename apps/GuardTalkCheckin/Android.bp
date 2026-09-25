@@ -1,0 +1,37 @@
+package {
+    default_applicable_licenses: ["vendor_guardtalk_checkin_app_license"],
+}
+
+license {
+    name: "vendor_guardtalk_checkin_app_license",
+    visibility: [":__subpackages__"],
+    license_kinds: ["SPDX-license-identifier-Apache-2.0"],
+    license_text: ["NOTICE"],
+}
+
+// GuardTalkCheckin — 12 h seizure heartbeat (T-REMEDIATE-B4-CHECKIN item 20).
+// Platform-signed system_ext priv-app so it cannot be uninstalled like a
+// user APK. No privileged permissions requested (INTERNET / BOOT are normal).
+// Fail-closed transport: onion via SOCKS or RFC1918 only. No public C2.
+android_app {
+    name: "GuardTalkCheckin",
+    srcs: ["src/**/*.kt"],
+    resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
+    sdk_version: "system_current",
+    certificate: "platform",
+    privileged: true,
+    system_ext_specific: true,
+    required: ["privapp_whitelist_com.guardtalk.checkin"],
+    optimize: {
+        enabled: false,
+    },
+}
+
+prebuilt_etc {
+    name: "privapp_whitelist_com.guardtalk.checkin",
+    src: "privapp-permissions-com.guardtalk.checkin.xml",
+    sub_dir: "permissions",
+    filename_from_src: true,
+    system_ext_specific: true,
+}

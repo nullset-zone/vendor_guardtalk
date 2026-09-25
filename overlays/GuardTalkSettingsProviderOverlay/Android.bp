@@ -1,0 +1,10 @@
+// T-REMEDIATE-B5-DEFAULTS (item 24): SettingsProvider first-boot defaults.
+// SettingsProvider is a platform-signed /system privileged app. Product
+// overlay may target /system. Non-overlayable defaults.xml resources require
+// the same certificate as the target (Android 12+).
+runtime_resource_overlay {
+    name: "GuardTalkSettingsProviderOverlay",
+    sdk_version: "current",
+    product_specific: true,
+    certificate: "platform",
+}

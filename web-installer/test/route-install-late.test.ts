@@ -189,6 +189,14 @@ test("usb detect: present navigator.usb keeps pairing enabled", () => {
   assert.doesNotMatch(html, /data-action="pair-device" disabled/u);
 });
 
+test("advertised TARGET_PRODUCTS include rango; selected channel must match getvar", () => {
+  assert.deepEqual([...TARGET_PRODUCTS], ["tokay", "akita", "komodo", "rango"]);
+  assert.equal(checkProduct("rango", "rango").match, true);
+  assert.equal(checkProduct("rango", "tokay").match, false);
+  assert.equal(checkProduct("tokay", "rango").match, false);
+  assert.equal(checkProduct("akita", "akita").match, true);
+});
+
 test("product gate: mismatch stops BEFORE any write — zero flash commands in transcript", async () => {
   const device = new SimulatedDevice({
     initiallyUnlocked: true,

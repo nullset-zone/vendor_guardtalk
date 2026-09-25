@@ -6,11 +6,17 @@ import { onPageHide, zeroise } from "../../lib/keys/zeroise.js";
 import { initialInstallState, reduce, type InstallState } from "../../lib/install-state/machine.js";
 import { armoredPemToJwk, type RsaPublicJwk } from "../../lib/verify/detached-sig.js";
 import { SimulatedDevice } from "../../lib/fastboot/simulated-device.js";
+import { FastbootClient, type Transport } from "../../lib/fastboot/client.js";
 import { browserUsbPicker, webUsbTransport } from "../../lib/fastboot/usb.js";
-import type { Transport } from "../../lib/fastboot/client.js";
 import { collectingLog } from "../../lib/types.js";
 import { escapeHtml } from "../../lib/ui/escape.js";
 import type { KeyMaterial } from "../../lib/avb/signer.js";
+import {
+  DEFAULT_OFFERED_PRODUCT,
+  deviceFromSearch,
+  parseOfferedDevice,
+  type OfferedProduct,
+} from "../../lib/ui/offered-devices.js";
 import {
   filesReady,
   renderInstallerChrome,
@@ -62,6 +68,7 @@ interface Session {
   lockState?: "locked" | "unlocked" | "unknown" | undefined;
   transport?: (Transport & { close?: () => Promise<void> }) | undefined;
   notice?: string | undefined;
+  selectedProduct: OfferedProduct;
   images: Record<string, Uint8Array>;
 }
 
@@ -69,6 +76,7 @@ const session: Session = {
   state: initialInstallState("install"),
   picks: { package: false, sums: false, sig: false },
   packageName: "release.zip",
+  selectedProduct: DEFAULT_OFFERED_PRODUCT,
   images: {},
 };
 
@@ -115,7 +123,7 @@ function stepHtml(): string {
   const step = session.state.currentStep;
   const notice = session.notice ? `<p class="note" role="status">${escapeHtml(session.notice)}</p>` : "";
   if (step === 0) {
-    return notice + renderStep0();
+    return notice + renderStep0(session.selectedProduct);
   }
   if (step === 1) {
     return notice + renderStep1(session.picks);
@@ -154,9 +162,9 @@ function stepHtml(): string {
         ...(session.deviceProduct !== undefined
           ? {
               check: {
-                expected: "tokay",
+                expected: session.selectedProduct,
                 actual: session.deviceProduct,
-                match: session.deviceProduct === "tokay",
+                match: session.deviceProduct === session.selectedProduct,
               },
             }
           : {}),
@@ -256,7 +264,7 @@ async function onAction(action: string, target: HTMLElement): Promise<void> {
       sumsText: session.sumsText,
       sigBytes: session.sigBytes,
       releaseKeyJwk: session.releaseKeyJwk,
-      manifest: { buildId: "local", targetProduct: "tokay", version: "local" },
+      manifest: { buildId: "local", targetProduct: session.selectedProduct, version: "local" },
     });
     if (outcome.kind === "stop") {
       dispatch({ type: "stop", step: 2, condition: outcome.condition });
@@ -381,7 +389,16 @@ async function onAction(action: string, target: HTMLElement): Promise<void> {
     dispatch({ type: "oem-unlock-acked" });
     return;
   }
-  if (action === "device-matched" && session.deviceProduct) {
+  if (action === "device-matched") {
+    if (!session.deviceProduct) {
+      session.notice = "Pair a device before continuing.";
+      render();
+      return;
+    }
+    if (session.deviceProduct !== session.selectedProduct) {
+      dispatch({ type: "stop", step: 5, condition: "product-mismatch" });
+      return;
+    }
     dispatch({ type: "device-matched", product: session.deviceProduct });
     return;
   }
@@ -402,28 +419,48 @@ async function pairDevice(): Promise<void> {
   if (sim()) {
     session.transport = new SimulatedDevice({
       initiallyUnlocked: true,
-      vars: { product: "tokay", unlocked: "yes", "max-download-size": "268435456" },
+      vars: {
+        product: session.selectedProduct,
+        unlocked: "yes",
+        "max-download-size": "268435456",
+      },
     });
-    session.deviceProduct = "tokay";
     session.lockState = "unlocked";
     session.notice = "Simulated device paired. Nothing touches hardware.";
+  } else {
+    const picker = browserUsbPicker();
+    if (picker === null) {
+      session.notice = "WebUSB is not available. Use the CLI export path.";
+      render();
+      return;
+    }
+    session.transport = await webUsbTransport(picker);
+    session.notice = "USB device claimed. Product was read; nothing was written.";
+  }
+  if (session.transport === undefined) {
+    session.notice = "No transport after pairing.";
     render();
     return;
   }
-  const picker = browserUsbPicker();
-  if (picker === null) {
-    session.notice = "WebUSB is not available. Use the CLI export path.";
-    render();
-    return;
+  try {
+    const client = new FastbootClient(session.transport, collectingLog());
+    session.deviceProduct = await client.getvar("product");
+  } catch (err: unknown) {
+    session.deviceProduct = undefined;
+    session.notice =
+      err instanceof Error ? err.message : "USB device claimed. Product could not be read.";
   }
-  session.transport = await webUsbTransport(picker);
-  session.notice = "USB device claimed. Product and lock state will be read next.";
   render();
 }
 
 async function flashNow(): Promise<void> {
   if (!session.transport || !session.pkmd || !session.signedVbmeta) {
     session.notice = "Pair the device and finish signing before flashing.";
+    render();
+    return;
+  }
+  if (session.deviceProduct !== session.selectedProduct) {
+    session.notice = "Device product does not match the selected channel. Flash stopped before any write.";
     render();
     return;
   }
@@ -446,7 +483,10 @@ async function flashNow(): Promise<void> {
     gate: {
       state: session.state,
       release: { hashesMatch: true, signatureValid: true },
-      device: { product: session.deviceProduct ?? "tokay", releaseTargetProduct: "tokay" },
+      device: {
+        product: session.deviceProduct,
+        releaseTargetProduct: session.selectedProduct,
+      },
       vbmeta: { signedWithUserKey: true },
     },
   });
@@ -470,10 +510,23 @@ function onClick(event: Event): void {
 
 function onChange(event: Event): void {
   const target = event.target;
-  if (!(target instanceof HTMLInputElement)) {
+  if (!(target instanceof HTMLInputElement) && !(target instanceof HTMLSelectElement)) {
     return;
   }
   const role = target.getAttribute("data-role");
+  if (role === "target-product" && target instanceof HTMLSelectElement) {
+    const parsed = parseOfferedDevice(target.value);
+    if (parsed !== undefined) {
+      session.selectedProduct = parsed;
+      session.deviceProduct = undefined;
+      session.lockState = undefined;
+      render();
+    }
+    return;
+  }
+  if (!(target instanceof HTMLInputElement)) {
+    return;
+  }
   if (role === "package" || role === "sums" || role === "sig") {
     void (async () => {
       if (role === "package") {
@@ -513,6 +566,7 @@ function onChange(event: Event): void {
 }
 
 function boot(): void {
+  session.selectedProduct = deviceFromSearch(window.location.search);
   onPageHide(cleanup);
   root().addEventListener("click", onClick);
   root().addEventListener("change", onChange);

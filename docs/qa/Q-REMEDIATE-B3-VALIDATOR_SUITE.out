@@ -1,0 +1,157 @@
+=== Q-REMEDIATE-B3-VALIDATOR independent rematch (items 15, 16) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+F/Architect reports: not trusted
+USB_GO=not started
+
+--- required files ---
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/AndroidManifest.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/ValidatorChrome.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/EscapeMenu.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/DeviceStatusReporter.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleHelper.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleViews.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/ValidatorActivity.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/ProcessListActivity.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/res/layout/validator_chrome.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/res/layout/activity_validator.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/res/layout/activity_process_list.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/res/layout/escape_menu.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/res/layout/sensor_privacy_toggles.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/res/values/strings.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/Android.bp
+PASS: present: vendor/guardtalk/radio-excised/product-config-late.mk
+PASS: present: vendor/guardtalk/feature-excised/userbuild-excised.mk
+PASS: present: frameworks/base/services/core/java/com/android/server/sensorprivacy/SensorPrivacyService.java
+PASS: present: frameworks/base/core/java/android/content/pm/PackageManager.java
+PASS: present: frameworks/base/core/java/android/guardtalk/GuardTalkSecurityStatus.java
+PASS: present: packages/apps/Settings/res/xml/guardtalk_security_dashboard.xml
+PASS: present: packages/apps/Settings/src/com/android/settings/security/guardtalk/GuardTalkGtInfoPreferenceController.java
+
+--- packet rg (enable / exit / escape / duress) ---
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/DeviceStatusReporter.kt:8: * Minimal device-status text for the escape menu. Never includes Duress.
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/EscapeMenu.kt:35:            val intent = Intent(Settings.ACTION_SETTINGS)
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleViews.kt:84:        val accessOn = SensorToggleHelper.isAccessOn(context, sensor)
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleViews.kt:88:        toggle.isChecked = accessOn
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleViews.kt:94:            blocked && !accessOn -> {
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/ValidatorChrome.kt:27:        activity.finishAndRemoveTask()
+vendor/guardtalk/apps/GuardTalkValidator/AndroidManifest.xml:57:    <!-- android:enabled="true" is explicit. dumpsys package "enabled=0" is
+vendor/guardtalk/apps/GuardTalkValidator/AndroidManifest.xml:66:        android:enabled="true"
+vendor/guardtalk/apps/GuardTalkValidator/AndroidManifest.xml:72:            android:enabled="true"
+vendor/guardtalk/apps/GuardTalkValidator/AndroidManifest.xml:87:            android:enabled="true"
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleHelper.kt:16: * `accessOn == !isSensorPrivacyEnabled`. Privacy-ON (access off) is always
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleHelper.kt:32:            !spm.isSensorPrivacyEnabled(sensor)
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleHelper.kt:44:    fun setAccessOn(context: Context, sensor: Int, accessOn: Boolean): Boolean {
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleHelper.kt:45:        if (accessOn && isEnableBlocked(context)) {
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleHelper.kt:50:            spm.setSensorPrivacy(SensorPrivacyManager.Sources.OTHER, sensor, !accessOn)
+
+vendor/guardtalk/apps/GuardTalkValidator/Android.bp:13:    name: "GuardTalkValidator",
+vendor/guardtalk/radio-excised/product-config-late.mk:57:  # T-GTINFO-WIRE: ship GuardTalkValidator (the "GT Info" app) in the image.
+vendor/guardtalk/radio-excised/product-config-late.mk:60:  # dependency in the Android.bp, so adding GuardTalkValidator to
+vendor/guardtalk/radio-excised/product-config-late.mk:64:  PRODUCT_PACKAGES += GuardTalkValidator
+vendor/guardtalk/radio-excised/product-config-late.mk:65:  PRODUCT_SOONG_NAMESPACES += vendor/guardtalk/apps/GuardTalkValidator
+vendor/guardtalk/radio-excised/product-config-late.mk:68:  # in the image. Same packaging contract as GuardTalkValidator above:
+
+--- python structural rematch ---
+PASS: application live android:enabled=true (not comment-only)
+PASS: application is not android:enabled=false
+PASS: .ValidatorActivity live android:enabled=true (not comment-only)
+PASS: .ValidatorActivity is not android:enabled=false
+PASS: .ProcessListActivity live android:enabled=true (not comment-only)
+PASS: .ProcessListActivity is not android:enabled=false
+PASS: enableOnBackInvokedCallback present (distinct from android:enabled)
+PASS: PackageManager.COMPONENT_ENABLED_STATE_DEFAULT=0 (dumpsys enabled=0 is DEFAULT, not DISABLED)
+PASS: ENABLED=1 DISABLED=2; enabled=0 is not pm-disabled
+PASS: product-config-late.mk live PRODUCT_PACKAGES += GuardTalkValidator
+PASS: Android.bp module name GuardTalkValidator
+PASS: userbuild-excised DROP does not include GuardTalkValidator
+PASS: no in-tree pm disable / setApplicationEnabledSetting of com.guardtalk.validator
+PASS: no overlay targetPackage=com.guardtalk.validator (no disable overlay)
+PASS: Settings guardtalk_gt_info enabled=true via GuardTalkGtInfoPreferenceController (not Stub)
+PASS: dashboard XML does not wire GuardTalkSecurityStubPreferenceController
+PASS: GtInfo controller deep-links com.guardtalk.validator
+PASS: validator_chrome.xml has btn_exit and btn_menu
+PASS: activity_validator.xml includes validator_chrome
+PASS: activity_process_list.xml includes validator_chrome
+PASS: exactly two Activity classes (ValidatorActivity, ProcessListActivity)
+PASS: ValidatorActivity attaches chrome; back leaves the task
+PASS: ProcessListActivity attaches chrome; back finishes to parent
+PASS: ValidatorChrome.exitApp calls finishAndRemoveTask
+PASS: btn_exit click wires exitApp (finishAndRemoveTask)
+PASS: btn_menu click opens EscapeMenu
+PASS: escape keys KEYCODE_ESCAPE and KEYCODE_MENU open the menu
+PASS: long-press BACK opens EscapeMenu
+PASS: title hotspot: long-press + triple-tap escape
+PASS: chrome does not consume KEYCODE_HOME (system Home leaves the task)
+PASS: ValidatorActivity forwards keys and onBackPressed to chrome
+PASS: ProcessListActivity forwards keys and onBackPressed to chrome
+PASS: ValidatorChrome registers OnBackInvokedCallback
+PASS: EscapeMenu Settings intent then exitApp
+PASS: EscapeMenu binds SensorToggleViews (cam/mic via helper)
+PASS: EscapeMenu device status uses DeviceStatusReporter
+PASS: escape_menu.xml has Settings, sensor include, device status
+PASS: isAccessOn = !isSensorPrivacyEnabled (Settings polarity)
+PASS: isAccessOn is not inverted to raw privacy
+PASS: setAccessOn persists privacy = !accessOn
+PASS: setAccessOn fail-closes access ON while mustDeny
+PASS: SensorToggleViews isChecked = accessOn (not inverted)
+PASS: SensorToggleViews does not invert accessOn
+PASS: SensorToggleHelper 4-arg mustDenySensors (do not invert; F-SENSORS contract)
+PASS: strings.xml live copy has no Duress
+PASS: DeviceStatusReporter live code has no Duress token
+PASS: status_body covers model / sensor policy / cam / mic / USB / hardening
+PASS: DeviceStatusReporter fail-closes when locked
+PASS: GuardTalkSecurityStatus documents no Duress field
+PASS: GuardTalkSecurityStatus.Snapshot has no Duress field
+PASS: SensorPrivacyService.java present (not deleted by this card)
+PASS: Validator sources do not import/call SensorPrivacyService (helper uses SensorPrivacyManager)
+HOLD: git metadata absent in this worktree — cannot git-diff SensorPrivacyService; structural no-import still applies
+PY_COUNTS pass=52 fail=0 hold=1
+PASS: python structural rematch exit 0
+
+--- lunch komodo-trunk_staging-user (independent; do not skip) ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+13:52:18 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+13:52:24 Build sandboxing disabled due to nsjail error.
+13:52:30 Build sandboxing disabled due to nsjail error.
+13:52:36 Build sandboxing disabled due to nsjail error.
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (not userdebug)
+--- filtered PRODUCT_PACKAGES (user lunch) ---
+PASS: filtered PRODUCT_PACKAGES: GuardTalkValidator PRESENT
+GuardTalkValidator
+
+--- adb (device enable/nav HOLD if empty; not device-fixed) ---
+List of devices attached
+HOLD: adb devices empty — device enable/nav HOLD; not device-fixed
+HOLD: dumpsys enabled=0 is COMPONENT_ENABLED_STATE_DEFAULT; not claimed on-device enabled=true
+HOLD: m GuardTalkValidator not run this QA stamp
+HOLD: PASS HOLD remains; live not claimed; never APPROVED
+
+RESULT: PASS (host)  bash_PASS=27 bash_HOLD=4 bash_FAIL=0 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+DEVICE_ENABLE_NAV=HOLD

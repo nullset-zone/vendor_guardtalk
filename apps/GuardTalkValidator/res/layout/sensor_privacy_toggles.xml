@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Camera / microphone access switches.
+
+    Polarity: switch ON = access ON = SensorPrivacy OFF (Settings/QS).
+    F-REMEDIATE-B3-SENSORS owns polarity via SensorToggleHelper.
+    Keep these view ids if relocating the include.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/sensor_privacy_section"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <TextView
+        android:id="@+id/sensor_privacy_heading"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/sensor_section_title"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:focusable="true" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="8dp">
+
+        <TextView
+            android:id="@+id/camera_access_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/camera_access_label"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:labelFor="@id/switch_camera_access" />
+
+        <Switch
+            android:id="@+id/switch_camera_access"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/camera_access_label" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/camera_access_summary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="8dp"
+        android:text="@string/sensor_access_summary"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textColor="?android:attr/textColorSecondary" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/microphone_access_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/mic_access_label"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:labelFor="@id/switch_microphone_access" />
+
+        <Switch
+            android:id="@+id/switch_microphone_access"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/mic_access_label" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/microphone_access_summary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/sensor_access_summary"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textColor="?android:attr/textColorSecondary" />
+</LinearLayout>

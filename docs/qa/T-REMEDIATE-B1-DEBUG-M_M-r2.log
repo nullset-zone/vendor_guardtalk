@@ -1,0 +1,1031 @@
+START=2026-09-18T10:25:57Z
+PWD=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+COMBO=komodo-trunk_staging-userdebug
+DEC=DEC-REMEDIATE-013
+NPROC=96
+USB_GO=false
+FLASH_READY=false
+DEBUG_FLASH_READY=false
+LOG=/tmp/t-remediate-b1-debug-m-20260918T102530Z.log
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+ENVSETUP_EXIT=0
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+10:25:58 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=userdebug
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+LUNCH_EXIT=0
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=userdebug
+TARGET_BUILD_TYPE=release
+BUILD_KEYS=test-keys
+SSR_JARS=com.android.bt:service-bluetooth com.android.os.statsd:service-statsd com.android.scheduling:service-scheduling com.android.tethering:service-connectivity com.android.uwb:service-uwb com.android.wifi:service-wifi com.android.profiling:service-profiling com.android.uwb:service-ranging com.android.uprobestats:service-uprobestats 
+BCP_JARS=com.android.adservices:framework-adservices com.android.adservices:framework-sdksandbox com.android.appsearch:framework-appsearch com.android.bt:framework-bluetooth com.android.configinfrastructure:framework-configinfrastructure com.android.conscrypt:conscrypt com.android.crashrecovery:framework-crashrecovery com.android.devicelock:framework-devicelock com.android.healthfitness:framework-healthfitness com.android.ipsec:android.net.ipsec.ike com.android.media:updatable-media com.android.mediaprovider:framework-mediaprovider com.android.mediaprovider:framework-pdf com.android.mediaprovider:framework-pdf-v com.android.mediaprovider:framework-photopicker com.android.nfcservices:framework-nfc com.android.ondevicepersonalization:framework-ondevicepersonalization com.android.os.statsd:framework-statsd com.android.permission:framework-permission com.android.permission:framework-permission-s com.android.profiling:framework-profiling com.android.scheduling:framework-scheduling com.android.sdkext:framework-sdkextensions com.android.telephonycore:framework-telephony com.android.tethering:framework-connectivity com.android.tethering:framework-connectivity-b com.android.tethering:framework-connectivity-t com.android.tethering:framework-tethering com.android.uwb:framework-ranging com.android.uwb:framework-uwb com.android.virt:framework-virtualization com.android.wifi:framework-wifi 
+BCP_FRAMEWORK_DEVICELOCK=present (required)
+M_START=2026-09-18T10:26:21Z
+#### invoking m -j96 ####
+10:26:22 Build sandboxing disabled due to nsjail error.
+Running product configuration...
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=userdebug
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+[100% 1/1] bootstrap blueprint
+Running globs...
+[100% 2/2] analyzing Android.bp files and generating ninja file at out/soong/build.komodo.ninja
+out/soong/make_vars-komodo.mk was modified, regenerating...
+vendor/guardtalk/radio-excised/product-config-late.mk was modified, regenerating...
+[100% 3/3] initializing Make module parser
+[ 20% 4/20] including out/soong/installs-komodo.mk
+[ 25% 5/20] including out/soong/Android-komodo.mk
+[ 30% 6/20] including build/make/target/board/android-info.mk
+[ 35% 7/20] including bootable/deprecated-ota/updater/Android.mk
+[ 40% 8/20] including device/amlogic/yukawa/Android.mk
+[ 45% 9/20] including device/linaro/dragonboard/Android.mk
+[ 50% 10/20] including device/linaro/hikey/Android.mk
+[ 55% 11/20] including hardware/broadcom/libbt/Android.mk
+[ 60% 12/20] including hardware/broadcom/wlan/bcmdhd/Android.mk
+[ 65% 13/20] including hardware/invensense/Android.mk
+[ 70% 14/20] including hardware/qcom/wlan/Android.mk
+[ 75% 15/20] including hardware/synaptics/wlan/synadhd/Android.mk
+[ 80% 16/20] including vendor/google_devices/akita/Android.mk
+[ 85% 17/20] including vendor/google_devices/komodo/Android.mk
+[ 90% 18/20] including vendor/google_devices/rango/Android.mk
+[ 95% 19/20] including vendor/google_devices/tokay/Android.mk
+[100% 20/20] including out/soong/late-komodo.mk
+[100% 21/21] finishing Make module rules
+[100% 22/22] finishing Make module rules: Adding module dependencies
+[100% 23/23] finishing Make packaging rules
+[ 54% 24/44] including build/make/core/tasks/art-host-tests.mk
+[ 56% 25/44] including build/make/core/tasks/art.mk
+[ 59% 26/44] including build/make/core/tasks/berberis_test.mk
+[ 61% 27/44] including build/make/core/tasks/build_custom_images.mk
+[ 63% 28/44] including build/make/core/tasks/dex_preopt_check.mk
+[ 65% 29/44] including build/make/core/tasks/find-shareduid-violation.mk
+[ 68% 30/44] including build/make/core/tasks/fontchain_lint.mk
+[ 70% 31/44] including build/make/core/tasks/host_init_verifier.mk
+[ 72% 32/44] including build/make/core/tasks/meta-lic.mk
+[ 75% 33/44] including build/make/core/tasks/module-info.mk
+[ 77% 34/44] including build/make/core/tasks/oem_image.mk
+[ 79% 35/44] including build/make/core/tasks/platform_availability_check.mk
+[ 81% 36/44] including build/make/core/tasks/sdk-addon.mk
+[ 84% 37/44] including build/make/core/tasks/sdv.mk
+[ 86% 38/44] including build/make/core/tasks/vendor_module_check.mk
+[ 88% 39/44] including build/make/core/tasks/with-license.mk
+[ 90% 40/44] including device/amlogic/yukawa/build/tasks/dtimages.mk
+[ 93% 41/44] including device/generic/goldfish/build/tasks/combine_initramfs.mk
+[ 95% 42/44] including device/linaro/dragonboard/build/tasks/kernel.mk
+[ 97% 43/44] including device/linaro/hikey/build/tasks/dtimage.mk
+[100% 44/44] finishing Make packaging rules
+[100% 45/45] finishing Make packaging rules: Adding phony targets
+[100% 46/46] finishing Make packaging rules: Checking licensing and SBOM
+[100% 47/47] writing make module actions
+out/soong/installs-komodo.mk:340509: warning: overriding commands for target `out/target/product/komodo/vendor/etc/vintf/manifest/android.hardware.wifi.hostapd.xml'
+out/soong/installs-komodo.mk:73281: warning: ignoring old commands for target `out/target/product/komodo/vendor/etc/vintf/manifest/android.hardware.wifi.hostapd.xml'
+out/soong/installs-komodo.mk:340513: warning: overriding commands for target `out/target/product/komodo/vendor/etc/vintf/manifest/android.hardware.wifi.supplicant.xml'
+out/soong/installs-komodo.mk:73613: warning: ignoring old commands for target `out/target/product/komodo/vendor/etc/vintf/manifest/android.hardware.wifi.supplicant.xml'
+build/make/core/Makefile:148: warning: overriding commands for target `out/target/product/komodo/vendor/lib64/libaconfig_storage_read_api_cc.so'
+out/soong/installs-komodo.mk:138983: warning: ignoring old commands for target `out/target/product/komodo/vendor/lib64/libaconfig_storage_read_api_cc.so'
+build/make/core/Makefile:148: warning: overriding commands for target `out/target/product/komodo/vendor/lib64/libc++.so'
+out/soong/installs-komodo.mk:215736: warning: ignoring old commands for target `out/target/product/komodo/vendor/lib64/libc++.so'
+build/make/core/Makefile:148: warning: overriding commands for target `out/target/product/komodo/vendor/etc/permissions/handheld_core_hardware.prebuilt.xml'
+out/soong/installs-komodo.mk:130103: warning: ignoring old commands for target `out/target/product/komodo/vendor/etc/permissions/handheld_core_hardware.prebuilt.xml'
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/apex/com.android.devicelock/etc/aconfig_flags.pb
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/apex/com.android.devicelock/etc/classpaths/bootclasspath.pb
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/apex/com.android.devicelock/etc/classpaths/systemserverclasspath.pb
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/apex/com.android.devicelock/etc/classpaths
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/apex/com.android.devicelock/etc/flag.info
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/apex/com.android.devicelock/etc/flag.map
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/apex/com.android.devicelock/etc/flag.val
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/apex/com.android.devicelock/etc/package.map
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/apex/com.android.devicelock/etc/permissions/com.android.devicelockcontroller.xml
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/apex/com.android.devicelock/etc/permissions
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/apex/com.android.devicelock/etc/sdkinfo.pb
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/apex/com.android.devicelock/etc
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/apex/com.android.devicelock/javalib/framework-devicelock.jar
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/apex/com.android.devicelock/javalib/service-devicelock.jar
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/apex/com.android.devicelock/javalib
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/apex/com.android.devicelock/priv-app/DeviceLockController@BP4A.260205.002/DeviceLockController.apk
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/apex/com.android.devicelock/priv-app/DeviceLockController@BP4A.260205.002
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/apex/com.android.devicelock/priv-app
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/apex/com.android.devicelock
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/apex/com.android.devicelock.apex
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/app/GmsCompat/GmsCompat.apk
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/app/GmsCompat/oat/arm64/GmsCompat.odex
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/app/GmsCompat/oat/arm64/GmsCompat.vdex
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/system/app/GmsCompat/oat/arm64
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/system/app/GmsCompat/oat
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/system/app/GmsCompat
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/app/GmsCompatConfig/GmsCompatConfig.apk
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/system/app/GmsCompatConfig
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/app/GmsCompatLib/GmsCompatLib.apk
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/app/GmsCompatLib/oat/arm64/GmsCompatLib.odex
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/app/GmsCompatLib/oat/arm64/GmsCompatLib.vdex
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/system/app/GmsCompatLib/oat/arm64
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/system/app/GmsCompatLib/oat
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/system/app/GmsCompatLib
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/etc/default-permissions/app.grapheneos.gmscompat.xml
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/system/etc/default-permissions
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/etc/sysconfig/app.grapheneos.gmscompat.xml
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/framework/oat/arm64/apex@com.android.devicelock@javalib@service-devicelock.jar@classes.odex
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/framework/oat/arm64/apex@com.android.devicelock@javalib@service-devicelock.jar@classes.odex.fsv_meta
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/framework/oat/arm64/apex@com.android.devicelock@javalib@service-devicelock.jar@classes.vdex
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/framework/oat/arm64/apex@com.android.devicelock@javalib@service-devicelock.jar@classes.vdex.fsv_meta
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/priv-app/FusedLocation/FusedLocation.apk
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/priv-app/FusedLocation/oat/arm64/FusedLocation.odex
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/system/priv-app/FusedLocation/oat/arm64/FusedLocation.vdex
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/system/priv-app/FusedLocation/oat/arm64
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/system/priv-app/FusedLocation/oat
+10:31:47 Removed empty directory (may no longer be installed?):  out/target/product/komodo/system/priv-app/FusedLocation
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/vendor/bin/bipchmgr
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/vendor/bin/wfc-pkt-router
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/vendor/etc/init/bipchmgr.rc
+10:31:47 Removed file that is no longer installed:  out/target/product/komodo/vendor/etc/init/pktrouter.rc
+out/soong/kati_packaging-komodo/dist.mk was modified, regenerating...
+[ 96% 48/50] initializing packaging system
+[ 98% 49/50] including distdir.mk
+[100% 50/50] writing packaging rules
+Starting ninja...
+[  1% 51/3726 35m18s remaining] //packages/apps/DocumentsUI:DocumentsUI-lib aapt2 compile packages/apps/DocumentsUI/res 6
+[  1% 52/3726 35m18s remaining] //packages/apps/DocumentsUI:DocumentsUI-lib aapt2 compile packages/apps/DocumentsUI/res 7
+[  1% 53/3726 35m18s remaining] //packages/apps/DocumentsUI:DocumentsUI-lib aapt2 compile packages/apps/DocumentsUI/res 4
+[  1% 54/3726 35m18s remaining] //packages/apps/DocumentsUI:DocumentsUI fix manifest
+[  1% 55/3726 35m18s remaining] //packages/apps/HTMLViewer:HTMLViewer fix manifest
+[  1% 56/3726 35m18s remaining] //packages/apps/HTMLViewer:HTMLViewer aapt2 compile packages/apps/HTMLViewer/res
+[  1% 57/3726 35m18s remaining] //vendor/guardtalk/apps/GuardTalkValidator:GuardTalkValidator fix manifest
+[  1% 58/3726 35m18s remaining] build out/soong/compliance-metadata/komodo/make_modules.csv
+[  1% 59/3726 35m18s remaining] //vendor/guardtalk/apps/GuardTalkValidator:GuardTalkValidator raw classpath.rsp
+[  1% 60/3726 35m18s remaining] raw product_packages.txt
+[  1% 61/3726 35m18s remaining] out/host/linux-x86/bin/release-config-internal --quiet `cat out/soong/release-config/args-komodo.txt` --out_dir out/soong/.intermediates/build/soong/aconfig/build_flags/my_release_config/android_common --container
+[  1% 62/3714 35m18s remaining] Building out/target/product/komodo/vendor/build.prop
+[  1% 63/3714 35m18s remaining] Copy: out/target/product/komodo/vendor/etc/wifi/wpa_supplicant_overlay.conf
+[  1% 64/3714 35m18s remaining] Copy init script: out/target/product/komodo/vendor/etc/init/init.guardtalk.defaults.rc
+[  1% 65/3714 35m18s remaining] Copy init script: out/target/product/komodo/vendor/etc/init/init.guardtalk.telemetry.rc
+[  1% 66/3714 35m18s remaining] Copy init script: out/target/product/komodo/vendor/etc/init/init.guardtalk.wifi-gateway.rc
+[  1% 67/3714 35m18s remaining] Copy: out/target/product/komodo/vendor/etc/wifi/guardtalk_gateway_ssids
+[  1% 68/3714 35m18s remaining] //packages/apps/HTMLViewer:HTMLViewer merge aconfig files
+[  1% 69/3714 35m18s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer merge aconfig files
+[  1% 70/3714 35m18s remaining] cp out/soong/.intermediates/vendor/guardtalk/init/init.guardtalk.hardening.rc/android_arm64_armv9-a_cortex-a76/init.guardtalk.hardening.rc
+[  1% 71/3714 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-common/1.3.0-alpha01:androidx.media2_media2-common aapt2 compile zip
+[  1% 72/3714 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-session/1.3.0-alpha01:androidx.media2_media2-session aapt2 compile zip
+[  1% 73/3714 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-exoplayer/1.3.0-alpha01:androidx.media2_media2-exoplayer aapt2 compile zip
+[  1% 74/3714 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-common/1.3.0-alpha01:androidx.media2_media2-common unzip AAR
+[  2% 75/3714 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-player/1.3.0-alpha01:androidx.media2_media2-player aapt2 compile zip
+[  2% 76/3714 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-exoplayer/1.3.0-alpha01:androidx.media2_media2-exoplayer unzip AAR
+[  2% 77/3714 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-session/1.3.0-alpha01:androidx.media2_media2-session unzip AAR
+[  2% 78/3714 35m18s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer fix manifest
+[  2% 79/3714 35m18s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer aapt2 compile packages/apps/UniversalMediaPlayer/res
+[  2% 80/3714 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-player/1.3.0-alpha01:androidx.media2_media2-player unzip AAR
+[  2% 81/3714 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-widget/1.3.0-alpha01:androidx.media2_media2-widget unzip AAR
+[  2% 82/3714 35m18s remaining] //frameworks/base/packages/overlays/NavigationBarModeGesturalOverlay:NavigationBarModeGesturalOverlay aapt2 compile frameworks/base/packages/overlays/NavigationBarModeGesturalOverlay/res
+[  2% 83/3714 35m18s remaining] //frameworks/base/packages/overlays/NavigationBarModeGesturalOverlay:NavigationBarModeGesturalOverlay fix manifest
+[  2% 84/3714 35m18s remaining] //frameworks/base/packages/overlays/NavigationBarMode3ButtonOverlay:NavigationBarMode3ButtonOverlay fix manifest
+[  2% 85/3714 35m18s remaining] //frameworks/base/packages/overlays/NavigationBarMode3ButtonOverlay:NavigationBarMode3ButtonOverlay aapt2 compile frameworks/base/packages/overlays/NavigationBarMode3ButtonOverlay/res
+[  2% 86/3714 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkFrameworksBaseOverlay:GuardTalkFrameworksBaseOverlay aapt2 compile vendor/guardtalk/overlays/GuardTalkFrameworksBaseOverlay/res
+[  2% 87/3714 35m18s remaining] Copy: out/target/product/komodo/product/media/bootanimation.zip
+[  2% 88/3714 35m18s remaining] cp out/soong/.intermediates/vendor/guardtalk/permissions/default-permissions-com.guardtalk.messenger/android_arm64_armv9-a_cortex-a76/default-permissions-com.guardtalk.messenger.xml
+[  2% 89/3714 35m18s remaining] //vendor/guardtalk/apps/GuardTalkMessenger:GuardTalkMessenger aapt2 compile vendor/guardtalk/apps/GuardTalkMessenger/res
+[  2% 90/3714 35m18s remaining] //vendor/guardtalk/apps/GuardTalkMessenger:GuardTalkMessenger fix manifest
+[  2% 91/3714 35m18s remaining] //vendor/guardtalk/apps/GuardTalkMessenger:GuardTalkMessenger raw classpath.rsp
+[  2% 92/3714 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay:GuardTalkSettingsProviderOverlay aapt2 compile vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay/res
+[  2% 93/3714 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay:GuardTalkSettingsProviderOverlay fix manifest
+[  2% 94/3714 35m18s remaining] //vendor/guardtalk/apps/GuardTalkValidator:GuardTalkValidator raw repackaging.txt
+[  2% 95/3714 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkSettingsOverlay:GuardTalkSettingsOverlay aapt2 compile vendor/guardtalk/overlays/GuardTalkSettingsOverlay/res
+[  2% 96/3714 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkSetupWizardOverlay:GuardTalkSetupWizardOverlay aapt2 compile vendor/guardtalk/overlays/GuardTalkSetupWizardOverlay/res
+[  2% 97/3714 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkSystemUIOverlay:GuardTalkSystemUIOverlay aapt2 compile vendor/guardtalk/overlays/GuardTalkSystemUIOverlay/res
+[  2% 98/3714 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkLauncherOverlay:GuardTalkLauncherOverlay fix manifest
+[  2% 99/3714 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkLauncherOverlay:GuardTalkLauncherOverlay aapt2 compile vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res
+[  2% 100/3714 35m18s remaining] cp out/soong/.intermediates/vendor/guardtalk/apps/GuardTalkValidator/privapp_whitelist_com.guardtalk.validator/android_arm64_armv9-a_cortex-a76/privapp-permissions-com.guardtalk.validator.xml
+[  2% 101/3714 35m18s remaining] //vendor/guardtalk/apps/GuardTalkCheckin:GuardTalkCheckin aapt2 compile vendor/guardtalk/apps/GuardTalkCheckin/res
+[  2% 102/3714 35m18s remaining] //vendor/guardtalk/apps/GuardTalkCheckin:GuardTalkCheckin fix manifest
+[  2% 103/3714 35m18s remaining] //vendor/guardtalk/apps/GuardTalkCheckin:GuardTalkCheckin raw classpath.rsp
+[  2% 104/3714 35m18s remaining] cp out/soong/.intermediates/vendor/guardtalk/apps/GuardTalkCheckin/privapp_whitelist_com.guardtalk.checkin/android_arm64_armv9-a_cortex-a76/privapp-permissions-com.guardtalk.checkin.xml
+[  2% 105/3714 35m18s remaining] Writing out/target/product/komodo/obj/PACKAGING/system_ext_intermediates/file_list.txt
+[  2% 106/3714 35m18s remaining] raw module-info-komodo.json
+[  2% 107/3714 35m18s remaining] //build/soong:product_config building product_config.json
+Duplicate key 'BoardPlatform' with identical values found.
+Duplicate key 'ProductModel' with identical values found.
+[  2% 108/3714 35m18s remaining] build out/soong/compliance-metadata/komodo/make_metadata.csv
+[  2% 109/3714 35m18s remaining] raw modules.csv
+[  2% 110/3714 35m18s remaining] out/host/linux-x86/bin/release-config-internal --quiet `cat out/soong/release-config/args-komodo.txt` --out_dir out/soong/.intermediates/build/soong/aconfig/build_flags/all_release_configs --pb --textproto --json --inheritance
+[  2% 111/3711 35m18s remaining] //packages/apps/HTMLViewer:HTMLViewer overlay resource file list
+[  3% 112/3711 35m18s remaining] //external/talkback:talkback dexpreopt product_packages
+[  3% 113/3711 35m18s remaining] //packages/apps/DocumentsUI:DocumentsUI dexpreopt product_packages
+[  3% 114/3711 35m18s remaining] //packages/modules/IntentResolver:IntentResolver dexpreopt product_packages
+[  3% 115/3711 35m18s remaining] //packages/apps/KeyChain:KeyChain dexpreopt product_packages
+[  3% 116/3711 35m18s remaining] //packages/apps/EyeDropper:EyeDropper dexpreopt product_packages
+[  3% 117/3711 35m18s remaining] //frameworks/base/packages/SystemUI:SystemUI dexpreopt product_packages
+[  3% 118/3711 35m18s remaining] //packages/apps/ContactsPicker:ContactsPicker dexpreopt product_packages
+[  3% 119/3711 35m18s remaining] //frameworks/base/packages/PackageInstaller:PackageInstaller dexpreopt product_packages
+[  3% 120/3711 35m18s remaining] //packages/apps/Settings:Settings dexpreopt product_packages
+[  3% 121/3711 35m18s remaining] //packages/apps/HTMLViewer:HTMLViewer dexpreopt product_packages
+[  3% 122/3711 35m18s remaining] //packages/modules/NetworkStack:NetworkStack dexpreopt product_packages
+[  3% 123/3711 35m18s remaining] //packages/providers/ContactsProvider:ContactsProvider dexpreopt product_packages
+[  3% 124/3711 35m18s remaining] //packages/apps/Contacts:Contacts dexpreopt product_packages
+[  3% 125/3711 35m18s remaining] //frameworks/base/test-runner:android.test.runner.impl dexpreopt product_packages
+[  3% 126/3711 35m18s remaining] //frameworks/base/cmds/uiautomator/cmds/uiautomator:uiautomator dexpreopt product_packages
+[  3% 127/3711 35m18s remaining] //external/Camera:Camera dexpreopt product_packages
+[  3% 128/3711 35m18s remaining] //packages/providers/MediaProvider/legacy:MediaProviderLegacy dexpreopt product_packages
+[  3% 129/3711 35m18s remaining] //frameworks/base/packages/SettingsProvider:SettingsProvider dexpreopt product_packages
+[  3% 130/3711 35m18s remaining] //frameworks/base/packages/VirtualDeviceManager:VirtualDeviceManager dexpreopt product_packages
+[  3% 131/3711 35m18s remaining] //frameworks/base/packages/Shell:Shell dexpreopt product_packages
+[  3% 132/3711 35m18s remaining] //packages/providers/DownloadProvider:DownloadProvider dexpreopt product_packages
+[  3% 133/3711 35m18s remaining] //packages/modules/CaptivePortalLogin:CaptivePortalLogin dexpreopt product_packages
+[  3% 134/3711 35m18s remaining] //packages/apps/CertInstaller:CertInstaller dexpreopt product_packages
+[  3% 135/3711 35m18s remaining] //packages/providers/ContactsKeysProvider:E2eeContactKeysProvider dexpreopt product_packages
+[  3% 136/3711 35m18s remaining] //external/SpeechServices:SpeechServices dexpreopt product_packages
+[  3% 137/3711 35m18s remaining] //frameworks/base/packages/ExtShared:ExtShared dexpreopt product_packages
+[  3% 138/3711 35m18s remaining] //packages/services/CrossDeviceSync:CrossDeviceSync dexpreopt product_packages
+[  3% 139/3711 35m18s remaining] //frameworks/base/packages/services/PacProcessor:PacProcessor dexpreopt product_packages
+[  3% 140/3711 35m18s remaining] //frameworks/base/packages/ExternalStorageProvider:ExternalStorageProvider dexpreopt product_packages
+[  3% 141/3711 35m18s remaining] //external/PdfViewer:PdfViewerGOS dexpreopt product_packages
+[  3% 142/3711 35m18s remaining] //frameworks/base/packages/services/Proxy:ProxyHandler dexpreopt product_packages
+[  3% 143/3711 35m18s remaining] //frameworks/base/packages/VpnDialogs:VpnDialogs dexpreopt product_packages
+[  3% 144/3711 35m18s remaining] //packages/providers/DownloadProvider/ui:DownloadProviderUi dexpreopt product_packages
+[  3% 145/3711 35m18s remaining] //packages/apps/SettingsIntelligence:SettingsIntelligence dexpreopt product_packages
+[  3% 146/3711 35m18s remaining] //external/angle:ANGLE dexpreopt product_packages
+[  3% 147/3711 35m18s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer dexpreopt product_packages
+[  3% 148/3711 35m18s remaining] //packages/inputmethods/LatinIME/java:LatinIME dexpreopt product_packages
+[  4% 149/3711 35m18s remaining] //packages/apps/Launcher3:Launcher3QuickStep dexpreopt product_packages
+[  4% 150/3711 35m18s remaining] Install: out/target/product/komodo/system/etc/init/init.guardtalk.hardening.rc
+[  4% 151/3711 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-common/1.3.0-alpha01:androidx.media2_media2-common overlay resource file list
+[  4% 152/3711 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-session/1.3.0-alpha01:androidx.media2_media2-session overlay resource file list
+[  4% 153/3711 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-exoplayer/1.3.0-alpha01:androidx.media2_media2-exoplayer overlay resource file list
+[  4% 154/3711 35m18s remaining] //vendor/guardtalk/apps/GuardTalkMessenger:GuardTalkMessenger dexpreopt product_packages
+[  4% 155/3711 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-player/1.3.0-alpha01:androidx.media2_media2-player overlay resource file list
+[  4% 156/3711 35m18s remaining] //vendor/guardtalk/apps/GuardTalkConfig:GuardTalkConfig dexpreopt product_packages
+[  4% 157/3711 35m18s remaining] //packages/apps/Multiuser:Multiuser dexpreopt product_packages
+[  4% 158/3711 35m18s remaining] //vendor/guardtalk/apps/GuardTalkValidator:GuardTalkValidator dexpreopt product_packages
+[  4% 159/3711 35m18s remaining] //packages/apps/SetupWizard2:SetupWizard2 dexpreopt product_packages
+[  4% 160/3711 35m18s remaining] //vendor/google_devices/komodo/proprietary:PixelDisplayService dexpreopt product_packages
+[  4% 161/3711 35m18s remaining] //frameworks/base/packages/overlays/NavigationBarModeGesturalOverlay:NavigationBarModeGesturalOverlay resource file list
+[  4% 162/3711 35m18s remaining] //frameworks/base/packages/overlays/NavigationBarMode3ButtonOverlay:NavigationBarMode3ButtonOverlay resource file list
+[  4% 163/3711 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkFrameworksBaseOverlay:GuardTalkFrameworksBaseOverlay resource file list
+[  4% 164/3711 35m18s remaining] Install: out/target/product/komodo/product/etc/default-permissions/default-permissions-com.guardtalk.messenger.xml
+[  4% 165/3711 35m18s remaining] //vendor/guardtalk/apps/GuardTalkMessenger:GuardTalkMessenger resource file list
+[  4% 166/3711 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay:GuardTalkSettingsProviderOverlay resource file list
+[  4% 167/3711 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkSettingsOverlay:GuardTalkSettingsOverlay resource file list
+[  4% 168/3711 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkSetupWizardOverlay:GuardTalkSetupWizardOverlay resource file list
+[  4% 169/3711 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkSystemUIOverlay:GuardTalkSystemUIOverlay resource file list
+[  4% 170/3711 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkLauncherOverlay:GuardTalkLauncherOverlay resource file list
+[  4% 171/3711 35m18s remaining] //vendor/guardtalk/apps/GuardTalkCheckin:GuardTalkCheckin resource file list
+[  4% 172/3711 35m18s remaining] //vendor/guardtalk/apps/GuardTalkValidator:GuardTalkValidator verify <uses-library>
+[  4% 173/3711 35m18s remaining] Install: out/target/product/komodo/system_ext/etc/permissions/privapp-permissions-com.guardtalk.validator.xml
+[  4% 174/3711 35m18s remaining] Install: out/target/product/komodo/system_ext/etc/permissions/privapp-permissions-com.guardtalk.checkin.xml
+[  4% 175/3711 35m18s remaining] cp if changed out/soong/.intermediates/build/soong/aconfig/build_flags/all_release_configs/inheritance_graph.dot
+[  4% 176/3711 35m18s remaining] //frameworks/base/packages/SystemUI/accessibility/accessibilitymenu:AccessibilityMenu dexpreopt product_packages
+[  4% 177/3711 35m18s remaining] //vendor/google_devices/komodo/proprietary:PersistentBackgroundCameraServices dexpreopt product_packages
+[  4% 178/3711 35m18s remaining] //vendor/guardtalk/apps/GuardTalkCheckin:GuardTalkCheckin dexpreopt product_packages
+[  4% 179/3711 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkFrameworksBaseOverlay:GuardTalkFrameworksBaseOverlay aapt2 link
+[  4% 180/3711 35m18s remaining] //frameworks/base/packages/overlays/NavigationBarMode3ButtonOverlay:NavigationBarMode3ButtonOverlay aapt2 link
+[  4% 181/3711 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkLauncherOverlay:GuardTalkLauncherOverlay aapt2 link
+[  4% 182/3711 35m18s remaining] //frameworks/base/packages/overlays/NavigationBarModeGesturalOverlay:NavigationBarModeGesturalOverlay aapt2 link
+[  4% 183/3711 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay:GuardTalkSettingsProviderOverlay aapt2 link
+[  4% 184/3711 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkSystemUIOverlay:GuardTalkSystemUIOverlay aapt2 link
+[  4% 185/3711 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkSetupWizardOverlay:GuardTalkSetupWizardOverlay aapt2 link
+[  5% 186/3711 35m18s remaining] //vendor/guardtalk/apps/GuardTalkCheckin:GuardTalkCheckin aapt2 link
+[  5% 187/3711 35m18s remaining] //vendor/guardtalk/apps/GuardTalkMessenger:GuardTalkMessenger aapt2 link
+[  5% 188/3711 35m18s remaining] //vendor/guardtalk/overlays/GuardTalkSettingsOverlay:GuardTalkSettingsOverlay aapt2 link
+[  5% 189/3711 35m18s remaining] //vendor/guardtalk/apps/GuardTalkMessenger:GuardTalkMessenger verify <uses-library>
+[  5% 190/3711 35m18s remaining] //vendor/guardtalk/apps/GuardTalkCheckin:GuardTalkCheckin verify <uses-library>
+[  5% 191/3711 35m18s remaining] //vendor/guardtalk/apps/GuardTalkValidator:GuardTalkValidator aapt2 compile vendor/guardtalk/apps/GuardTalkValidator/res
+[  5% 192/3711 35m18s remaining] //vendor/guardtalk/apps/GuardTalkValidator:GuardTalkValidator resource file list
+[  5% 193/3711 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-exoplayer/1.3.0-alpha01:androidx.media2_media2-exoplayer aapt2 link
+[  5% 194/3711 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-widget/1.3.0-alpha01:androidx.media2_media2-widget aapt2 compile zip
+[  5% 195/3711 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-widget/1.3.0-alpha01:androidx.media2_media2-widget overlay resource file list
+[  5% 196/3711 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-common/1.3.0-alpha01:androidx.media2_media2-common aapt2 link
+[  5% 197/3711 35m18s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-common/1.3.0-alpha01:androidx.media2_media2-common merge assets from dependencies
+[  5% 198/3711 35m18s remaining] //vendor/guardtalk/apps/GuardTalkValidator:GuardTalkValidator aapt2 link
+[  5% 199/3711 35m17s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-player/1.3.0-alpha01:androidx.media2_media2-player aapt2 link
+[  5% 200/3711 35m17s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-player/1.3.0-alpha01:androidx.media2_media2-player merge assets from dependencies
+[  5% 201/3711 35m17s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-session/1.3.0-alpha01:androidx.media2_media2-session aapt2 link
+[  5% 202/3711 35m17s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-session/1.3.0-alpha01:androidx.media2_media2-session merge assets from dependencies
+[  5% 203/3711 35m17s remaining] //packages/apps/HTMLViewer:HTMLViewer merge manifest
+[  5% 204/3711 35m17s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer merge manifest
+[  5% 205/3711 35m17s remaining] //packages/apps/HTMLViewer:HTMLViewer aapt2 link
+[  5% 206/3711 35m17s remaining] //packages/apps/DocumentsUI:DocumentsUI merge manifest
+[  5% 207/3711 35m17s remaining] //packages/apps/HTMLViewer:HTMLViewer merge assets from dependencies
+[  5% 208/3711 35m17s remaining] //packages/apps/DocumentsUI:DocumentsUI-lib aapt2 compile packages/apps/DocumentsUI/res 5
+[  5% 209/3711 35m17s remaining] //packages/apps/HTMLViewer:HTMLViewer verify <uses-library>
+[  5% 210/3711 35m17s remaining] //packages/apps/DocumentsUI:DocumentsUI-lib overlay resource file list
+[  5% 211/3711 35m17s remaining] //frameworks/base/packages/overlays/NavigationBarModeGesturalOverlay:NavigationBarModeGesturalOverlay signapk
+[  5% 212/3711 35m17s remaining] //frameworks/base/packages/overlays/NavigationBarMode3ButtonOverlay:NavigationBarMode3ButtonOverlay signapk
+[  5% 213/3711 35m17s remaining] Install: out/target/product/komodo/product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk
+[  5% 214/3711 35m17s remaining] Install: out/target/product/komodo/product/overlay/NavigationBarMode3Button/NavigationBarMode3ButtonOverlay.apk
+[  5% 215/3711 35m17s remaining] //vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay:GuardTalkSettingsProviderOverlay signapk
+[  5% 216/3711 35m17s remaining] Install: out/target/product/komodo/product/overlay/GuardTalkSettingsProviderOverlay.apk
+[  5% 217/3711 35m17s remaining] //vendor/guardtalk/overlays/GuardTalkLauncherOverlay:GuardTalkLauncherOverlay signapk
+[  5% 218/3711 35m17s remaining] Install: out/target/product/komodo/system_ext/overlay/GuardTalkLauncherOverlay.apk
+[  5% 219/3711 35m17s remaining] //vendor/guardtalk/overlays/GuardTalkFrameworksBaseOverlay:GuardTalkFrameworksBaseOverlay signapk
+[  5% 220/3711 35m17s remaining] //vendor/guardtalk/overlays/GuardTalkSetupWizardOverlay:GuardTalkSetupWizardOverlay signapk
+[  5% 221/3711 35m17s remaining] Install: out/target/product/komodo/product/overlay/GuardTalkFrameworksBaseOverlay.apk
+[  5% 222/3711 35m17s remaining] Install: out/target/product/komodo/system_ext/overlay/GuardTalkSetupWizardOverlay.apk
+[  6% 223/3711 35m17s remaining] //vendor/guardtalk/overlays/GuardTalkSettingsOverlay:GuardTalkSettingsOverlay signapk
+[  6% 224/3711 35m17s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer verify <uses-library>
+[  6% 225/3711 35m17s remaining] Install: out/target/product/komodo/system_ext/overlay/GuardTalkSettingsOverlay.apk
+[  6% 226/3711 35m17s remaining] //vendor/guardtalk/overlays/GuardTalkSystemUIOverlay:GuardTalkSystemUIOverlay signapk
+[  6% 227/3711 35m17s remaining] Writing out/target/product/komodo/obj/PACKAGING/product_intermediates/file_list.txt
+[  6% 228/3711 35m17s remaining] Install: out/target/product/komodo/system_ext/overlay/GuardTalkSystemUIOverlay.apk
+[  6% 229/3711 35m17s remaining] //vendor/guardtalk/apps/GuardTalkCheckin:GuardTalkCheckin ResourceProcessorBusyBox
+[  6% 230/3711 35m17s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-widget/1.3.0-alpha01:androidx.media2_media2-widget aapt2 link
+[  6% 231/3711 35m17s remaining] //packages/apps/DocumentsUI:DocumentsUI verify <uses-library>
+[  6% 232/3711 35m17s remaining] //prebuilts/sdk/current/androidx/m2repository/androidx/media2/media2-widget/1.3.0-alpha01:androidx.media2_media2-widget merge assets from dependencies
+[  6% 233/3711 35m17s remaining] //vendor/guardtalk/apps/GuardTalkMessenger:GuardTalkMessenger ResourceProcessorBusyBox
+[  6% 234/3711 35m17s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer overlay resource file list
+[  6% 235/3711 35m17s remaining] //vendor/guardtalk/apps/GuardTalkValidator:GuardTalkValidator ResourceProcessorBusyBox
+[  6% 236/3711 35m17s remaining] //packages/apps/HTMLViewer:HTMLViewer ResourceProcessorBusyBox
+[  6% 237/3711 35m16s remaining] build out/target/product/komodo/obj/FLAGS/system/aconfig_flags.pb
+[  6% 238/3711 35m16s remaining] Copy: out/target/product/komodo/system/etc/aconfig_flags.pb
+[  6% 239/3711 35m16s remaining] build out/target/product/komodo/obj/FLAGS/system/package.map
+[  6% 240/3711 35m16s remaining] build out/target/product/komodo/obj/FLAGS/system/flag.val
+[  6% 241/3711 35m16s remaining] build out/target/product/komodo/obj/FLAGS/system/flag.info
+[  6% 242/3711 35m16s remaining] build out/target/product/komodo/obj/FLAGS/system/flag.map
+[  6% 243/3711 35m16s remaining] Copy: out/target/product/komodo/system/etc/aconfig/package.map
+[  6% 244/3711 35m16s remaining] Copy: out/target/product/komodo/system/etc/aconfig/flag.val
+[  6% 245/3711 35m16s remaining] Copy: out/target/product/komodo/system/etc/aconfig/flag.info
+[  6% 246/3711 35m16s remaining] Copy: out/target/product/komodo/system/etc/aconfig/flag.map
+[  6% 247/3711 35m16s remaining] //packages/apps/DocumentsUI:DocumentsUI-lib aapt2 link
+warn: removing resource com.android.documentsui:plurals/compress_error_notification_title without required default value.
+warn: removing resource com.android.documentsui:plurals/copy_error_notification_title without required default value.
+warn: removing resource com.android.documentsui:plurals/delete_error_notification_title without required default value.
+warn: removing resource com.android.documentsui:plurals/move_error_notification_title without required default value.
+[  6% 248/3711 35m16s remaining] //packages/apps/DocumentsUI:DocumentsUI overlay resource file list
+[  6% 249/3711 35m16s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer aapt2 link
+[  6% 250/3711 35m15s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer merge assets from dependencies
+[  6% 251/3711 35m15s remaining] //packages/apps/DocumentsUI:DocumentsUI-lib ResourceProcessorBusyBox
+[  6% 252/3711 35m15s remaining] //packages/apps/HTMLViewer:HTMLViewer javac
+[  6% 253/3710 35m14s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer ResourceProcessorBusyBox
+[  6% 254/3710 35m14s remaining] Writing out/target/product/komodo/obj/PACKAGING/system_intermediates/file_list.txt
+[  6% 255/3710 35m14s remaining] //packages/apps/DocumentsUI:DocumentsUI aapt2 link
+[  6% 256/3710 35m14s remaining] //packages/apps/DocumentsUI:DocumentsUI merge assets from dependencies
+[  6% 257/3710 35m13s remaining] rm -rf out/soong/compliance-metadata/komodo/compliance-metadata.db && cat out/soong/compliance-metadata/komodo/compliance-metadata.db.rsp | tr ' ' '\n' | while read -r file || [ -n "$file" ]; do out/host/linux-x86/bin/sqlite3_noicu out/soong/compliance-metadata/komodo/compliance-metadata.db ".import --csv ${file} $(basename ${file} .csv)"; done
+[  6% 258/3710 35m12s remaining] //packages/apps/DocumentsUI:DocumentsUI ResourceProcessorBusyBox
+[  6% 259/3710 35m12s remaining] Generating out/target/product/komodo/module-info.json
+[  7% 260/3710 35m12s remaining] //packages/apps/DocumentsUI:DocumentsUI convert to proto
+[  7% 261/3710 35m11s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer javac
+[  7% 262/3710 35m10s remaining] Writing out/target/product/komodo/obj/PACKAGING/vendor_intermediates/file_list.txt
+[  7% 263/3710 35m10s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer for resources
+[  7% 264/3710 35m6s remaining] rm -rf out/soong/.intermediates/build/soong/compliance/notice_xml_system_dlkm/android_arm64_armv9-a_cortex-a76/NOTICE.xml.gz && out/host/linux-x86/bin/gen_notice_xml --output_file out/soong/.intermediates/build/soong/compliance/notice_xml_system_dlkm/android_arm64_armv9-a_cortex-a76/NOTICE.xml.gz --metadata out/soong/compliance-metadata/komodo/compliance-metadata.db --partition system_dlkm --product_out out/target/product/komodo --soong_out out/soong
+[  7% 265/3710 35m6s remaining] Install: out/target/product/komodo/system_dlkm/etc/NOTICE.xml.gz
+[  7% 266/3710 35m6s remaining] rm -rf out/soong/.intermediates/build/soong/compliance/notice_xml_vendor_dlkm/android_arm64_armv9-a_cortex-a76/NOTICE.xml.gz && out/host/linux-x86/bin/gen_notice_xml --output_file out/soong/.intermediates/build/soong/compliance/notice_xml_vendor_dlkm/android_arm64_armv9-a_cortex-a76/NOTICE.xml.gz --metadata out/soong/compliance-metadata/komodo/compliance-metadata.db --partition vendor_dlkm --product_out out/target/product/komodo --soong_out out/soong
+[  7% 267/3710 35m6s remaining] Install: out/target/product/komodo/vendor_dlkm/etc/NOTICE.xml.gz
+[  7% 268/3710 35m6s remaining] //vendor/guardtalk/apps/GuardTalkCheckin:GuardTalkCheckin kotlinc
+[  7% 269/3710 35m6s remaining] //vendor/guardtalk/apps/GuardTalkCheckin:GuardTalkCheckin for javac
+[  7% 270/3710 35m6s remaining] //packages/apps/HTMLViewer:HTMLViewer r8
+[  7% 271/3710 35m6s remaining] //packages/apps/HTMLViewer:HTMLViewer align
+[  7% 272/3710 35m6s remaining] //packages/apps/HTMLViewer:HTMLViewer for dex resources
+[  7% 273/3710 35m6s remaining] //packages/apps/HTMLViewer:HTMLViewer align
+[  7% 274/3710 35m6s remaining] out/host/linux-x86/bin/merge_zips out/soong/.intermediates/packages/apps/HTMLViewer/HTMLViewer/android_common/HTMLViewer-unsigned.apk out/soong/.intermediates/packages/apps/HTMLViewer/HTMLViewer/android_common/dex-withres-aligned/HTMLViewer.jar out/soong/.intermediates/packages/apps/HTMLViewer/HTMLViewer/android_common/package-res.apk
+[  7% 275/3710 35m6s remaining] rm -rf out/soong/.intermediates/build/soong/compliance/notice_xml_product/android_arm64_armv9-a_cortex-a76/NOTICE.xml.gz && out/host/linux-x86/bin/gen_notice_xml --output_file out/soong/.intermediates/build/soong/compliance/notice_xml_product/android_arm64_armv9-a_cortex-a76/NOTICE.xml.gz --metadata out/soong/compliance-metadata/komodo/compliance-metadata.db --partition product --product_out out/target/product/komodo --soong_out out/soong
+[  7% 276/3710 35m6s remaining] Install: out/target/product/komodo/product/etc/NOTICE.xml.gz
+[  7% 277/3710 35m6s remaining] //vendor/guardtalk/apps/GuardTalkMessenger:GuardTalkMessenger kotlinc
+vendor/guardtalk/apps/GuardTalkMessenger/src/com/guardtalk/messenger/GatewayEndpoint.kt:27:18: warning: 'val dhcpInfo: DhcpInfo!' is deprecated. Deprecated in Java.
+            wifi.dhcpInfo?.gateway ?: 0
+                 ^^^^^^^^
+vendor/guardtalk/apps/GuardTalkMessenger/src/com/guardtalk/messenger/MessengerActivity.kt:105:23: warning: 'val dhcpInfo: DhcpInfo!' is deprecated. Deprecated in Java.
+                wifi?.dhcpInfo
+                      ^^^^^^^^
+[  7% 278/3710 35m6s remaining] //vendor/guardtalk/apps/GuardTalkMessenger:GuardTalkMessenger for javac
+[  7% 279/3710 35m5s remaining] //packages/apps/HTMLViewer:HTMLViewer signapk
+[  7% 280/3710 35m5s remaining] Install: out/target/product/komodo/system/app/HTMLViewer/HTMLViewer.apk
+[  7% 281/3710 35m5s remaining] rm -rf out/soong/.intermediates/build/soong/compliance/notice_xml_system/android_arm64_armv9-a_cortex-a76/NOTICE.xml.gz && out/host/linux-x86/bin/gen_notice_xml --output_file out/soong/.intermediates/build/soong/compliance/notice_xml_system/android_arm64_armv9-a_cortex-a76/NOTICE.xml.gz --metadata out/soong/compliance-metadata/komodo/compliance-metadata.db --partition system --product_out out/target/product/komodo --soong_out out/soong
+[  7% 282/3710 35m5s remaining] Install: out/target/product/komodo/system/etc/NOTICE.xml.gz
+[  7% 283/3710 35m5s remaining] rm -rf out/soong/.intermediates/build/soong/compliance/notice_xml_system_ext/android_arm64_armv9-a_cortex-a76/NOTICE.xml.gz && out/host/linux-x86/bin/gen_notice_xml --output_file out/soong/.intermediates/build/soong/compliance/notice_xml_system_ext/android_arm64_armv9-a_cortex-a76/NOTICE.xml.gz --metadata out/soong/compliance-metadata/komodo/compliance-metadata.db --partition system_ext --product_out out/target/product/komodo --soong_out out/soong
+[  7% 284/3710 35m4s remaining] Install: out/target/product/komodo/system_ext/etc/NOTICE.xml.gz
+[  7% 285/3710 35m4s remaining] rm -rf out/soong/.intermediates/build/soong/compliance/notice_xml_vendor/android_arm64_armv9-a_cortex-a76/NOTICE.xml.gz && out/host/linux-x86/bin/gen_notice_xml --output_file out/soong/.intermediates/build/soong/compliance/notice_xml_vendor/android_arm64_armv9-a_cortex-a76/NOTICE.xml.gz --metadata out/soong/compliance-metadata/komodo/compliance-metadata.db --partition vendor --product_out out/target/product/komodo --soong_out out/soong
+[  7% 286/3710 35m4s remaining] Install: out/target/product/komodo/vendor/etc/NOTICE.xml.gz
+[  7% 287/3710 35m3s remaining] //frameworks/base:framework-minus-apex-headers turbine
+[  7% 288/3710 35m1s remaining] //frameworks/base:framework-minus-apex-headers for turbine
+[  7% 289/3710 35m0s remaining] //vendor/guardtalk/apps/GuardTalkCheckin:GuardTalkCheckin d8
+[  7% 290/3710 35m0s remaining] //vendor/guardtalk/apps/GuardTalkCheckin:GuardTalkCheckin align
+[  7% 291/3710 35m0s remaining] out/host/linux-x86/bin/merge_zips out/soong/.intermediates/vendor/guardtalk/apps/GuardTalkCheckin/GuardTalkCheckin/android_common/GuardTalkCheckin-unsigned.apk out/soong/.intermediates/vendor/guardtalk/apps/GuardTalkCheckin/GuardTalkCheckin/android_common/aligned/GuardTalkCheckin.jar out/soong/.intermediates/vendor/guardtalk/apps/GuardTalkCheckin/GuardTalkCheckin/android_common/package-res.apk
+[  7% 292/3710 35m0s remaining] //vendor/guardtalk/apps/GuardTalkMessenger:GuardTalkMessenger d8
+[  7% 293/3710 35m0s remaining] //vendor/guardtalk/apps/GuardTalkMessenger:GuardTalkMessenger align
+[  7% 294/3710 35m0s remaining] out/host/linux-x86/bin/merge_zips out/soong/.intermediates/vendor/guardtalk/apps/GuardTalkMessenger/GuardTalkMessenger/android_common/GuardTalkMessenger-unsigned.apk out/soong/.intermediates/vendor/guardtalk/apps/GuardTalkMessenger/GuardTalkMessenger/android_common/aligned/GuardTalkMessenger.jar out/soong/.intermediates/vendor/guardtalk/apps/GuardTalkMessenger/GuardTalkMessenger/android_common/package-res.apk
+[  7% 295/3710 34m59s remaining] //vendor/guardtalk/apps/GuardTalkCheckin:GuardTalkCheckin signapk
+[  7% 296/3710 34m59s remaining] Install: out/target/product/komodo/system_ext/priv-app/GuardTalkCheckin/GuardTalkCheckin.apk
+[  8% 297/3710 34m59s remaining] //vendor/guardtalk/apps/GuardTalkMessenger:GuardTalkMessenger signapk
+[  8% 298/3710 34m59s remaining] Install: out/target/product/komodo/product/app/GuardTalkMessenger/GuardTalkMessenger.apk
+[  8% 299/3710 34m58s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer d8
+[  8% 300/3710 34m58s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer align
+[  8% 301/3710 34m58s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer for dex resources
+[  8% 302/3710 34m58s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer align
+[  8% 303/3710 34m58s remaining] out/host/linux-x86/bin/merge_zips out/soong/.intermediates/packages/apps/UniversalMediaPlayer/UniversalMediaPlayer/android_common/UniversalMediaPlayer-unsigned.apk out/soong/.intermediates/packages/apps/UniversalMediaPlayer/UniversalMediaPlayer/android_common/dex-withres-aligned/UniversalMediaPlayer.jar out/soong/.intermediates/packages/apps/UniversalMediaPlayer/UniversalMediaPlayer/android_common/package-res.apk
+[  8% 304/3710 34m57s remaining] //packages/apps/UniversalMediaPlayer:UniversalMediaPlayer signapk
+[  8% 305/3710 34m57s remaining] Install: out/target/product/komodo/system/app/UniversalMediaPlayer/UniversalMediaPlayer.apk
+[  8% 306/3710 34m55s remaining] //frameworks/base:framework-minus-apex-headers jarjar
+[  8% 307/3710 34m54s remaining] //packages/apps/DocumentsUI:DocumentsUI-lib kapt stubs
+[  8% 308/3710 34m54s remaining] //packages/apps/DocumentsUI:DocumentsUI-lib turbine apt
+FAILED: out/soong/.intermediates/packages/apps/DocumentsUI/DocumentsUI-lib/android_common/kapt/kapt-sources.jar out/soong/.intermediates/packages/apps/DocumentsUI/DocumentsUI-lib/android_common/kapt/kapt-res.jar
+prebuilts/jdk/jdk21/linux-x86/bin/java -XX:OnError="cat hs_err_pid%p.log" -XX:CICompilerCount=6 -XX:+UseDynamicNumberOfGCThreads -jar out/host/linux-x86/framework/turbine.jar --gensrc_output out/soong/.intermediates/packages/apps/DocumentsUI/DocumentsUI-lib/android_common/kapt/kapt-sources.jar.tmp --resource_output out/soong/.intermediates/packages/apps/DocumentsUI/DocumentsUI-lib/android_common/kapt/kapt-res.jar.tmp --sources @out/soong/.intermediates/packages/apps/DocumentsUI/DocumentsUI-lib/android_common/kapt/kapt-sources.jar.rsp --javacopts -Xmaxerrs 9999999 -encoding UTF-8 -sourcepath "" -g -XDskipDuplicateBridges=true -XDstringConcat=inline -XDturbine.noMethodParameters -Xlint:-dep-ann -source 21 -target 21 -- --source_jars out/soong/.intermediates/packages/apps/DocumentsUI/DocumentsUI-lib/android_common/kapt/stubs.jar --system out/soong/.intermediates/build/soong/java/core-libraries/core-public-stubs-system-modules/android_common/system --classpath @out/soong/.intermediates/packages/apps/DocumentsUI/DocumentsUI-lib/android_common/turbine-apt/classpath.rsp --processorpath out/soong/.intermediates/prebuilts/maven_repo/bumptech/glide-annotation-and-compiler-prebuilt-host/linux_glibc_common/local-combined/glide-annotation-and-compiler-prebuilt-host.jar --processors com.bumptech.glide.annotation.compiler.GlideAnnotationProcessor && (for o in out/soong/.intermediates/packages/apps/DocumentsUI/DocumentsUI-lib/android_common/kapt/kapt-sources.jar out/soong/.intermediates/packages/apps/DocumentsUI/DocumentsUI-lib/android_common/kapt/kapt-res.jar; do if cmp -s ${o}.tmp ${o} ; then rm ${o}.tmp ; else mv ${o}.tmp ${o} ; fi; done )
+packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/GuardTalkHtmlViewerLaunch.java:54: error: unexpected token: *
+    /** Explicit ACTION_VIEW for HTMLViewer. Not {@code */*} and not a launcher. */
+                                                          ^
+[  8% 309/3710 34m54s remaining] //packages/modules/Virtualization/libs/framework-virtualization:framework-virtualization.impl turbine apt
+[  8% 310/3710 34m54s remaining] //packages/modules/NeuralNetworks/framework:framework-ondeviceintelligence-platform.impl turbine apt
+[  8% 311/3710 34m53s remaining] //frameworks/base/location:framework-location.impl turbine apt
+[  8% 312/3710 34m48s remaining] //packages/modules/Virtualization/libs/framework-virtualization:framework-virtualization.impl javac [apex10000_p]
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:433: warning: [EffectivelyPrivate] This declaration has public or protected modifiers, but is effectively private.
+        public final File apk;
+                          ^
+    (see https://errorprone.info/bugpattern/EffectivelyPrivate)
+  Did you mean 'final File apk;'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:434: warning: [EffectivelyPrivate] This declaration has public or protected modifiers, but is effectively private.
+        public final File idsig;
+                          ^
+    (see https://errorprone.info/bugpattern/EffectivelyPrivate)
+  Did you mean 'final File idsig;'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:855: warning: [StatementSwitchToExpressionSwitch] This statement switch can be converted to a new-style arrow switch
+        switch (getStatus()) {
+        ^
+    (see https://errorprone.info/bugpattern/StatementSwitchToExpressionSwitch)
+  Did you mean 'switch (getStatus()) {'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:928: warning: [StatementSwitchToExpressionSwitch] This statement switch can be converted to a new-style arrow switch
+        switch (getStatus()) {
+        ^
+    (see https://errorprone.info/bugpattern/StatementSwitchToExpressionSwitch)
+  Did you mean 'return switch (getStatus()) {' or 'switch (getStatus()) {'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:1097: warning: [StatementSwitchToExpressionSwitch] This statement switch can be converted to a new-style arrow switch
+        switch (event.getAction()) {
+        ^
+    (see https://errorprone.info/bugpattern/StatementSwitchToExpressionSwitch)
+  Did you mean 'switch (event.getAction()) {'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:1203: warning: [StatementSwitchToExpressionSwitch] This statement switch can be converted to a new-style arrow switch
+        switch (event.getActionMasked()) {
+        ^
+    (see https://errorprone.info/bugpattern/StatementSwitchToExpressionSwitch)
+  Did you mean 'switch (event.getActionMasked()) {'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:1337: warning: [StatementSwitchToExpressionSwitch] This statement switch can be converted to a new-style arrow switch
+        switch (event.getActionMasked()) {
+        ^
+    (see https://errorprone.info/bugpattern/StatementSwitchToExpressionSwitch)
+  Did you mean 'switch (event.getActionMasked()) {'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:1491: warning: [AndroidFrameworkEfficientStrings] Simple format strings can be replaced with TextUtils.formatSimple() for a 6x performance improvement
+            Log.e(TAG, String.format("Invalid percent value: %d", percent));
+                                     ^
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:1591: warning: [AndroidFrameworkRequiresPermission] Method run() annotated {allOf=[android.permission.MANAGE_VIRTUAL_MACHINE]} but too wide; only invokes methods requiring [none]
+    public void run() throws VirtualMachineException {
+                ^
+    If calling an AIDL interface, it can be annotated by adding:
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(...)")
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:1657: warning: [StatementSwitchToExpressionSwitch] This statement switch can be converted to a new-style arrow switch
+                                    switch (event.first) {
+                                    ^
+    (see https://errorprone.info/bugpattern/StatementSwitchToExpressionSwitch)
+  Did you mean 'switch (event.first) {'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:1809: warning: [EffectivelyPrivate] This declaration has public or protected modifiers, but is effectively private.
+        public void apply(FileDescriptor mfd, FileDescriptor sfd, byte[] name);
+                    ^
+    (see https://errorprone.info/bugpattern/EffectivelyPrivate)
+  Did you mean 'void apply(FileDescriptor mfd, FileDescriptor sfd, byte[] name);'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:2154: warning: [EffectivelyPrivate] This declaration has public or protected modifiers, but is effectively private.
+        public NativeProviderWrapper(VsockConnectionProvider provider) {
+               ^
+    (see https://errorprone.info/bugpattern/EffectivelyPrivate)
+  Did you mean 'NativeProviderWrapper(VsockConnectionProvider provider) {'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:2209: warning: [InvalidBlockTag] Tag name `args` is unknown. If this is a commonly-used custom tag, please click 'not useful' and file a bug.
+     * @args
+       ^
+    (see https://errorprone.info/bugpattern/InvalidBlockTag)
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:2299: warning: [AndroidFrameworkRequiresPermission] Method enableTestAttestation() annotated {allOf=[android.permission.USE_CUSTOM_VIRTUAL_MACHINE]} but too wide; only invokes methods requiring [none]
+    public void enableTestAttestation() throws VirtualMachineException {
+                ^
+    If calling an AIDL interface, it can be annotated by adding:
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(...)")
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:2599: warning: [EffectivelyPrivate] This declaration has public or protected modifiers, but is effectively private.
+        public CallbackTranslator(
+               ^
+    (see https://errorprone.info/bugpattern/EffectivelyPrivate)
+  Did you mean 'CallbackTranslator('?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:2651: warning: [StatementSwitchToExpressionSwitch] This statement switch can be converted to a new-style arrow switch
+            switch (reason) {
+            ^
+    (see https://errorprone.info/bugpattern/StatementSwitchToExpressionSwitch)
+  Did you mean 'return switch (reason) {' or 'switch (reason) {'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachine.java:2665: warning: [StatementSwitchToExpressionSwitch] This statement switch can be converted to a new-style arrow switch
+            switch (reason) {
+            ^
+    (see https://errorprone.info/bugpattern/StatementSwitchToExpressionSwitch)
+  Did you mean 'return switch (reason) {' or 'switch (reason) {'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineConfig.java:430: warning: [AndroidFrameworkRequiresPermission] Method fromPersistableBundle() annotated [none] but too narrow; invokes method requiring {allOf=[android.permission.USE_CUSTOM_VIRTUAL_MACHINE]}
+        builder.setOs(b.getString(KEY_OS));
+                     ^
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineConfig.java:754: warning: [AndroidFrameworkEfficientStrings] Simple format strings can be replaced with TextUtils.formatSimple() for a 6x performance improvement
+                String.format("%d %d %d %d %d /", guest_uid, guest_gid, host_uid, host_uid, mask);
+                              ^
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineConfig.java:755: warning: [AndroidFrameworkEfficientStrings] Simple format strings can be replaced with TextUtils.formatSimple() for a 6x performance improvement
+        String cfgArg = String.format("ugid_map='%s'", ugidMapValue);
+                                      ^
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineConfig.java:896: warning: [StatementSwitchToExpressionSwitch] This statement switch can be converted to a new-style arrow switch
+        switch (this.mCpuTopology) {
+        ^
+    (see https://errorprone.info/bugpattern/StatementSwitchToExpressionSwitch)
+  Did you mean 'switch (this.mCpuTopology) {'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineConfig.java:958: warning: [StatementSwitchToExpressionSwitch] This statement switch can be converted to a new-style arrow switch
+        switch (mDebugLevel) {
+        ^
+    (see https://errorprone.info/bugpattern/StatementSwitchToExpressionSwitch)
+  Did you mean 'vsConfig.debugLevel = switch (mDebugLevel) {' or 'switch (mDebugLevel) {'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineConfig.java:968: warning: [StatementSwitchToExpressionSwitch] This statement switch can be converted to a new-style arrow switch
+        switch (mCpuTopology) {
+        ^
+    (see https://errorprone.info/bugpattern/StatementSwitchToExpressionSwitch)
+  Did you mean 'switch (mCpuTopology) {'?
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineConfig.java:1235: warning: [AndroidFrameworkRequiresPermission] Method setPayloadConfigPath() annotated {allOf=[android.permission.USE_CUSTOM_VIRTUAL_MACHINE]} but too wide; only invokes methods requiring [none]
+        public Builder setPayloadConfigPath(@NonNull String payloadConfigPath) {
+                       ^
+    If calling an AIDL interface, it can be annotated by adding:
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(...)")
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineConfig.java:1248: warning: [AndroidFrameworkRequiresPermission] Method setCustomImageConfig() annotated {allOf=[android.permission.USE_CUSTOM_VIRTUAL_MACHINE]} but too wide; only invokes methods requiring [none]
+        public Builder setCustomImageConfig(
+                       ^
+    If calling an AIDL interface, it can be annotated by adding:
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(...)")
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineConfig.java:1477: warning: [AndroidFrameworkRequiresPermission] Method setVendorDiskImage() annotated {allOf=[android.permission.USE_CUSTOM_VIRTUAL_MACHINE]} but too wide; only invokes methods requiring [none]
+        public Builder setVendorDiskImage(@NonNull File vendorDiskImage) {
+                       ^
+    If calling an AIDL interface, it can be annotated by adding:
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(...)")
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineConfig.java:1493: warning: [AndroidFrameworkRequiresPermission] Method setOs() annotated {allOf=[android.permission.USE_CUSTOM_VIRTUAL_MACHINE]} but too wide; only invokes methods requiring [none]
+        public Builder setOs(@NonNull @OsName String os) {
+                       ^
+    If calling an AIDL interface, it can be annotated by adding:
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(...)")
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineDescriptor.java:59: warning: [AndroidFrameworkEfficientParcelable] Recommended to use 'writeTypedObject()' to improve efficiency; saves overhead of Parcelable class name
+        out.writeParcelable(mConfigFd, flags);
+                           ^
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineDescriptor.java:60: warning: [AndroidFrameworkEfficientParcelable] Recommended to use 'writeTypedObject()' to improve efficiency; saves overhead of Parcelable class name
+        out.writeParcelable(mInstanceIdFd, flags);
+                           ^
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineDescriptor.java:61: warning: [AndroidFrameworkEfficientParcelable] Recommended to use 'writeTypedObject()' to improve efficiency; saves overhead of Parcelable class name
+        out.writeParcelable(mInstanceImgFd, flags);
+                           ^
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineDescriptor.java:62: warning: [AndroidFrameworkEfficientParcelable] Recommended to use 'writeTypedObject()' to improve efficiency; saves overhead of Parcelable class name
+        out.writeParcelable(mEncryptedStoreFd, flags);
+                           ^
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineManager.java:225: warning: [AndroidFrameworkRequiresPermission] Method create() annotated {allOf=[android.permission.MANAGE_VIRTUAL_MACHINE]} but too wide; only invokes methods requiring [none]
+    public VirtualMachine create(@NonNull String name, @NonNull VirtualMachineConfig config)
+                          ^
+    If calling an AIDL interface, it can be annotated by adding:
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(...)")
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineManager.java:424: warning: [AndroidFrameworkRequiresPermission] Method isFeatureEnabled() annotated {allOf=[android.permission.MANAGE_VIRTUAL_MACHINE]} but too wide; only invokes methods requiring [none]
+    public boolean isFeatureEnabled(@Features String featureName) throws VirtualMachineException {
+                   ^
+    If calling an AIDL interface, it can be annotated by adding:
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(...)")
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineManager.java:443: warning: [AndroidFrameworkRequiresPermission] Method isRemoteAttestationSupported() annotated {allOf=[android.permission.MANAGE_VIRTUAL_MACHINE]} but too wide; only invokes methods requiring [none]
+    public boolean isRemoteAttestationSupported() throws VirtualMachineException {
+                   ^
+    If calling an AIDL interface, it can be annotated by adding:
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(...)")
+packages/modules/Virtualization/libs/framework-virtualization/src/android/system/virtualmachine/VirtualMachineManager.java:463: warning: [AndroidFrameworkRequiresPermission] Method isUpdatableVmSupported() annotated {allOf=[android.permission.MANAGE_VIRTUAL_MACHINE]} but too wide; only invokes methods requiring [none]
+    public boolean isUpdatableVmSupported() throws VirtualMachineException {
+                   ^
+    If calling an AIDL interface, it can be annotated by adding:
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(...)")
+35 warnings
+[  8% 313/3706 34m48s remaining] //frameworks/base:framework-minus-apex jarjar
+[  8% 314/3706 33m50s remaining] //frameworks/base/services:services-non-updatable-stubs metalava merged
+frameworks/base/services/core/java/com/android/server/pm/PackageManagerLocal.java:260: info: New API must be flagged with @FlaggedApi: method com.android.server.pm.PackageManagerLocal.onBgDexoptProgressUpdate(long,int,int,int) [UnflaggedApi]
+frameworks/base/services/core/java/com/android/server/pm/PackageManagerLocal.java:262: info: New API must be flagged with @FlaggedApi: method com.android.server.pm.PackageManagerLocal.onBgDexoptCompleted(Object,long) [UnflaggedApi]
+frameworks/base/services/core/java/com/android/server/pm/PackageManagerLocal.java:268: info: New API must be flagged with @FlaggedApi: method com.android.server.pm.PackageManagerLocal.maybeOverrideCompilerFilter(String,com.android.server.pm.pkg.AndroidPackage,Object) [UnflaggedApi]
+frameworks/base/services/core/java/com/android/server/pm/pkg/SELinuxUtil.java:30: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+metalava wrote updated baseline to /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/soong/.temp/sbox/4d32f0a4da78543e026a54d529d71424dee1a40e/./out/api_lint_baseline.txt
+[  8% 315/3705 32m17s remaining] //frameworks/base/api:test-api-stubs-docs-non-updatable metalava merged
+frameworks/base/core/java/android/app/ActivityManager.java:4294: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/app/AppOpsManager.java:1949: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/companion/datatransfer/continuity/TaskContinuityManager.java:162: warning: Method 'registerRemoteTaskListener' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/companion/datatransfer/continuity/TaskContinuityManager.java:187: warning: Method 'unregisterRemoteTaskListener' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/companion/datatransfer/continuity/TaskContinuityManager.java:209: warning: Method 'requestHandoff' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/content/BroadcastReceiver.java:684: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/content/Intent.java:1973: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/content/pm/PackageInstaller.java:3224: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/hardware/camera2/impl/ExtensionKey.java:24: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/hardware/camera2/impl/PublicKey.java:26: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/hardware/camera2/params/StreamConfigurationMap.java:1363: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/widget/TextView.java:13790: warning: Method taking UserHandle should be named `doFooAsUser` or `queryFooForUser`, was `setEnforceImePolicyUser` (ErrorWhenNew) [UserHandleName]
+frameworks/base/core/java/com/android/internal/util/DataClass.java:74: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/libs/modules-utils/java/android/annotation/Hide.java:32: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+out/srcjars/android/app/admin/MultiUserDeviceProvisioningParamsTransport.java:18: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+out/srcjars/android/app/admin/PolicyValueTransport.java:14: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+out/srcjars/android/companion/datatransfer/continuity/IUniversalClipboardManager.java:12: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+metalava wrote updated baseline to /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/soong/.temp/sbox/256b1fb53f335374d973369fc30e65ea1884a4b2/./out/api_lint_baseline.txt
+[  8% 316/3704 32m13s remaining] //frameworks/base/api:module-lib-api-stubs-docs-non-updatable metalava merged
+frameworks/base/core/java/android/accounts/AccountManager.java:581: warning: Method 'getPassword' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:611: warning: Method 'getUserData' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:802: warning: Method 'getAccountsByType' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1010: warning: Method 'addAccountExplicitly' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1223: warning: Method 'renameAccount' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1294: warning: Method 'removeAccount' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1416: warning: Method 'removeAccountExplicitly' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1441: warning: Method 'invalidateAuthToken' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1473: warning: Method 'peekAuthToken' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1503: warning: Method 'setPassword' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1531: warning: Method 'clearPassword' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1558: warning: Method 'setUserData' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1587: warning: Method 'setAuthToken' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1621: warning: Method 'blockingGetAuthToken' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1696: warning: Method 'getAuthToken' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1865: warning: Method 'getAuthToken' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1937: warning: Method 'addAccount' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:2109: warning: Method 'confirmCredentials' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:2188: warning: Method 'updateCredentials' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:2244: warning: Method 'editProperties' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:2810: warning: Method 'getAuthTokenByFeatures' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/app/ActivityManager.java:4294: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/app/AppOpsManager.java:1949: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/app/compat/gms/GmsModuleHooks.java:43: info: New API must be flagged with @FlaggedApi: class android.app.compat.gms.GmsModuleHooks [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsModuleHooks.java:51: info: New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsModuleHooks.enableBluetoothAdapter() [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsModuleHooks.java:75: info: New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsModuleHooks.makeBluetoothAdapterDiscoverable() [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsModuleHooks.java:82: info: New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsModuleHooks.interceptSynchronousResultReceiverException(RuntimeException) [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsModuleHooks.java:108: info: New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsModuleHooks.deviceConfigGetProperty(String,String) [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsModuleHooks.java:112: info: New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsModuleHooks.deviceConfigSetProperty(String,String,String) [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsModuleHooks.java:116: info: New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsModuleHooks.deviceConfigSetProperties(android.provider.DeviceConfig.Properties) [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsModuleHooks.java:123: info: New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsModuleHooks.enableNfc() [UnflaggedApi]
+frameworks/base/core/java/android/companion/datatransfer/continuity/TaskContinuityManager.java:162: warning: Method 'registerRemoteTaskListener' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/companion/datatransfer/continuity/TaskContinuityManager.java:187: warning: Method 'unregisterRemoteTaskListener' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/companion/datatransfer/continuity/TaskContinuityManager.java:209: warning: Method 'requestHandoff' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/content/BroadcastReceiver.java:684: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/content/Intent.java:1973: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/content/pm/PackageInstaller.java:3224: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/ext/ConnectivityUtil.java:13: info: New API must be flagged with @FlaggedApi: class android.ext.ConnectivityUtil [UnflaggedApi]
+frameworks/base/core/java/android/ext/ConnectivityUtil.java:19: info: New API must be flagged with @FlaggedApi: method android.ext.ConnectivityUtil.isSystem(android.content.Context,int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/ConnectivityUtil.java:41: info: New API must be flagged with @FlaggedApi: method android.ext.ConnectivityUtil.isRegularAppWithLockdownVpnEnabled(android.content.Context,int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/ConnChecksSetting.java:8: info: New API must be flagged with @FlaggedApi: class android.ext.settings.ConnChecksSetting [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/ConnChecksSetting.java:10: info: New API must be flagged with @FlaggedApi: field android.ext.settings.ConnChecksSetting.VAL_GRAPHENEOS [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/ConnChecksSetting.java:11: info: New API must be flagged with @FlaggedApi: field android.ext.settings.ConnChecksSetting.VAL_STANDARD [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/ConnChecksSetting.java:12: info: New API must be flagged with @FlaggedApi: field android.ext.settings.ConnChecksSetting.VAL_DISABLED [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/ConnChecksSetting.java:13: info: New API must be flagged with @FlaggedApi: field android.ext.settings.ConnChecksSetting.VAL_DEFAULT [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/ConnChecksSetting.java:26: info: New API must be flagged with @FlaggedApi: method android.ext.settings.ConnChecksSetting.get() [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/ConnChecksSetting.java:30: info: New API must be flagged with @FlaggedApi: method android.ext.settings.ConnChecksSetting.put(int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/RemoteKeyProvisioningSettings.java:13: info: New API must be flagged with @FlaggedApi: class android.ext.settings.RemoteKeyProvisioningSettings [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/RemoteKeyProvisioningSettings.java:15: info: New API must be flagged with @FlaggedApi: field android.ext.settings.RemoteKeyProvisioningSettings.GRAPHENEOS_PROXY [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/RemoteKeyProvisioningSettings.java:16: info: New API must be flagged with @FlaggedApi: field android.ext.settings.RemoteKeyProvisioningSettings.STANDARD_SERVER [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/RemoteKeyProvisioningSettings.java:28: info: New API must be flagged with @FlaggedApi: method android.ext.settings.RemoteKeyProvisioningSettings.getServerUrlOverride(android.content.Context) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/WidevineProvisioningSettings.java:13: info: New API must be flagged with @FlaggedApi: class android.ext.settings.WidevineProvisioningSettings [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/WidevineProvisioningSettings.java:29: info: New API must be flagged with @FlaggedApi: method android.ext.settings.WidevineProvisioningSettings.getServerHostnameOverride(android.content.Context) [UnflaggedApi]
+frameworks/base/core/java/android/hardware/camera2/impl/ExtensionKey.java:24: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/hardware/camera2/impl/PublicKey.java:26: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/hardware/camera2/params/StreamConfigurationMap.java:1363: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/os/UserHandle.java:290: info: New API must be flagged with @FlaggedApi: method android.os.UserHandle.getUserId(int) [UnflaggedApi]
+frameworks/base/core/java/android/os/UserHandle.java:383: info: New API must be flagged with @FlaggedApi: method android.os.UserHandle.getUid(int,int) [UnflaggedApi]
+frameworks/base/core/java/com/android/internal/util/DataClass.java:74: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/telephony/java/android/telephony/TelephonyManager.java:4327: warning: Method 'getUiccCardsInfo' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/libs/modules-utils/java/android/annotation/Hide.java:32: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+out/srcjars/android/app/admin/MultiUserDeviceProvisioningParamsTransport.java:18: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+out/srcjars/android/app/admin/PolicyValueTransport.java:14: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+out/srcjars/android/companion/datatransfer/continuity/IUniversalClipboardManager.java:12: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+metalava wrote updated baseline to /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/soong/.temp/sbox/d9eb579b195ee23adb2deb9184b35849644d16d0/./out/api_lint_baseline.txt
+[  8% 317/3703 32m6s remaining] //frameworks/base/api:system-api-stubs-docs-non-updatable metalava merged
+frameworks/base/core/java/android/accounts/AccountManager.java:581: warning: Method 'getPassword' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:611: warning: Method 'getUserData' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:802: warning: Method 'getAccountsByType' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1010: warning: Method 'addAccountExplicitly' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1223: warning: Method 'renameAccount' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1294: warning: Method 'removeAccount' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1416: warning: Method 'removeAccountExplicitly' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1441: warning: Method 'invalidateAuthToken' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1473: warning: Method 'peekAuthToken' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1503: warning: Method 'setPassword' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1531: warning: Method 'clearPassword' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1558: warning: Method 'setUserData' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1587: warning: Method 'setAuthToken' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1621: warning: Method 'blockingGetAuthToken' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1696: warning: Method 'getAuthToken' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1865: warning: Method 'getAuthToken' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:1937: warning: Method 'addAccount' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:2109: warning: Method 'confirmCredentials' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:2188: warning: Method 'updateCredentials' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:2244: warning: Method 'editProperties' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/accounts/AccountManager.java:2810: warning: Method 'getAuthTokenByFeatures' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/app/ActivityManager.java:4294: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/app/AppOpsManager.java:1949: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/app/AppOpsManager.java:10261: info: New API must be flagged with @FlaggedApi: method android.app.AppOpsManager.checkHistoricalRegistryConfig(String[]) [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:36: info: New API must be flagged with @FlaggedApi: class android.app.StorageScope [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:40: info: New API must be flagged with @FlaggedApi: field android.app.StorageScope.path [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:41: info: New API must be flagged with @FlaggedApi: field android.app.StorageScope.flags [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:43: info: New API must be flagged with @FlaggedApi: field android.app.StorageScope.FLAG_ALLOW_WRITES [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:44: info: New API must be flagged with @FlaggedApi: field android.app.StorageScope.FLAG_IS_DIR [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:46: info: New API must be flagged with @FlaggedApi: constructor android.app.StorageScope(String,int) [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:52: info: New API must be flagged with @FlaggedApi: method android.app.StorageScope.createConfigActivityIntent(String) [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:60: info: New API must be flagged with @FlaggedApi: method android.app.StorageScope.maxArrayLength() [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:67: info: New API must be flagged with @FlaggedApi: method android.app.StorageScope.isWritable() [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:71: info: New API must be flagged with @FlaggedApi: method android.app.StorageScope.isDirectory() [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:75: info: New API must be flagged with @FlaggedApi: method android.app.StorageScope.isFile() [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:82: info: New API must be flagged with @FlaggedApi: method android.app.StorageScope.serializeArray(android.app.StorageScope[]) [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:110: info: New API must be flagged with @FlaggedApi: method android.app.StorageScope.deserializeArray(android.content.pm.GosPackageState) [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:155: info: New API must be flagged with @FlaggedApi: field android.app.StorageScope.MEDIA_PROVIDER_METHOD_INVALIDATE_MEDIA_PROVIDER_CACHE [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:156: info: New API must be flagged with @FlaggedApi: field android.app.StorageScope.MEDIA_PROVIDER_METHOD_MEDIA_ID_TO_FILE_PATH [UnflaggedApi]
+frameworks/base/core/java/android/app/StorageScope.java:158: info: New API must be flagged with @FlaggedApi: field android.app.StorageScope.EXTERNAL_STORAGE_PROVIDER_METHOD_CONVERT_DOC_ID_TO_PATH [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/AndroidAutoPackageFlag.java:7: info: New API must be flagged with @FlaggedApi: class android.app.compat.gms.AndroidAutoPackageFlag [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/AndroidAutoPackageFlag.java:8: info: New API must be flagged with @FlaggedApi: field android.app.compat.gms.AndroidAutoPackageFlag.GRANT_PERMS_FOR_WIRED_ANDROID_AUTO [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/AndroidAutoPackageFlag.java:9: info: New API must be flagged with @FlaggedApi: field android.app.compat.gms.AndroidAutoPackageFlag.GRANT_PERMS_FOR_WIRELESS_ANDROID_AUTO [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/AndroidAutoPackageFlag.java:10: info: New API must be flagged with @FlaggedApi: field android.app.compat.gms.AndroidAutoPackageFlag.GRANT_AUDIO_ROUTING_PERM [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/AndroidAutoPackageFlag.java:11: info: New API must be flagged with @FlaggedApi: field android.app.compat.gms.AndroidAutoPackageFlag.GRANT_PERMS_FOR_ANDROID_AUTO_PHONE_CALLS [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsCompat.java:46: info: New API must be flagged with @FlaggedApi: class android.app.compat.gms.GmsCompat [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsCompat.java:59: info: New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.isEnabled() [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsCompat.java:83: info: New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.isAndroidAuto() [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsCompat.java:146: info: New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.isEnabledFor(android.content.pm.ApplicationInfo) [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsCompat.java:217: info: New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.isEnabledFor(String,int) [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsCompat.java:297: info: New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.hasPermission(String) [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsCompat.java:346: info: New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.catchOrRethrow(SecurityException) [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsUtils.java:11: info: New API must be flagged with @FlaggedApi: class android.app.compat.gms.GmsUtils [UnflaggedApi]
+frameworks/base/core/java/android/app/compat/gms/GmsUtils.java:13: info: New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsUtils.createAppPlayStoreIntent(String) [UnflaggedApi]
+frameworks/base/core/java/android/app/smartspace/SmartspaceTarget.java:190: info: New API must be flagged with @FlaggedApi: field android.app.smartspace.SmartspaceTarget.FEATURE_DATE_ALARM_ZEN_MEDIA [UnflaggedApi]
+frameworks/base/core/java/android/companion/datatransfer/continuity/TaskContinuityManager.java:162: warning: Method 'registerRemoteTaskListener' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/companion/datatransfer/continuity/TaskContinuityManager.java:187: warning: Method 'unregisterRemoteTaskListener' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/companion/datatransfer/continuity/TaskContinuityManager.java:209: warning: Method 'requestHandoff' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/base/core/java/android/content/BroadcastReceiver.java:684: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/content/Context.java:8020: info: New API must be flagged with @FlaggedApi: method android.content.Context.getUser() [UnflaggedApi]
+frameworks/base/core/java/android/content/Intent.java:1973: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/content/pm/AppPermissionUtils.java:29: info: New API must be flagged with @FlaggedApi: class android.content.pm.AppPermissionUtils [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/AppPermissionUtils.java:76: info: New API must be flagged with @FlaggedApi: method android.content.pm.AppPermissionUtils.shouldSkipPermissionRequestDialog(android.content.pm.GosPackageState,String) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/AppPermissionUtils.java:86: info: New API must be flagged with @FlaggedApi: method android.content.pm.AppPermissionUtils.shouldSpoofPermissionRequestResult(android.content.pm.GosPackageState,String) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/ApplicationInfo.java:3078: info: New API must be flagged with @FlaggedApi: method android.content.pm.ApplicationInfo.ext() [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:32: info: New API must be flagged with @FlaggedApi: class android.content.pm.GosPackageState [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:37: info: New API must be flagged with @FlaggedApi: field android.content.pm.GosPackageState.storageScopes [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:39: info: New API must be flagged with @FlaggedApi: field android.content.pm.GosPackageState.contactScopes [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:82: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.writeToParcel(android.os.Parcel,int) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:101: info: New API must be flagged with @FlaggedApi: field android.content.pm.GosPackageState.CREATOR [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:149: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.describeContents() [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:153: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.hasFlag(int) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:157: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.hasPackageFlag(int) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:161: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.hasDerivedFlag(int) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:165: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.hasDerivedFlags(int) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:170: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.isNone() [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:175: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.getForSelf(android.content.Context) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:181: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.get(String,android.os.UserHandle) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:186: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.get(String,int) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:209: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.createEditor(String,android.os.UserHandle) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:214: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.createEditor(String,int) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:220: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.edit(String,android.os.UserHandle) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:225: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.edit(String,int) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:232: info: New API must be flagged with @FlaggedApi: class android.content.pm.GosPackageState.Editor [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:252: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.Editor.setFlagState(int,boolean) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:262: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.Editor.addFlag(int) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:268: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.Editor.clearFlag(int) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:274: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.Editor.addPackageFlag(int) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:280: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.Editor.clearPackageFlag(int) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:286: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.Editor.setPackageFlagState(int,boolean) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:296: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.Editor.setStorageScopes(byte[]) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:302: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.Editor.setContactScopes(byte[]) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:308: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.Editor.killUidAfterApply() [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:313: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.Editor.setKillUidAfterApply(boolean) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:323: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.Editor.setNotifyUidAfterApply(boolean) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageState.java:334: info: New API must be flagged with @FlaggedApi: method android.content.pm.GosPackageState.Editor.apply() [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageStateFlag.java:11: info: New API must be flagged with @FlaggedApi: class android.content.pm.GosPackageStateFlag [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageStateFlag.java:12: info: New API must be flagged with @FlaggedApi: field android.content.pm.GosPackageStateFlag.STORAGE_SCOPES_ENABLED [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/GosPackageStateFlag.java:15: info: New API must be flagged with @FlaggedApi: field android.content.pm.GosPackageStateFlag.CONTACT_SCOPES_ENABLED [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/PackageInstaller.java:3224: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/content/pm/PackageManager.java:12170: info: New API must be flagged with @FlaggedApi: method android.content.pm.PackageManager.sendBootCompletedBroadcastToPackage(String,boolean,int) [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/SpecialRuntimePermAppUtils.java:23: info: New API must be flagged with @FlaggedApi: class android.content.pm.SpecialRuntimePermAppUtils [UnflaggedApi]
+frameworks/base/core/java/android/content/pm/SpecialRuntimePermAppUtils.java:32: info: New API must be flagged with @FlaggedApi: method android.content.pm.SpecialRuntimePermAppUtils.isInternetCompatEnabled() [UnflaggedApi]
+frameworks/base/core/java/android/ext/AppInfoExt.java:11: info: New API must be flagged with @FlaggedApi: class android.ext.AppInfoExt [UnflaggedApi]
+frameworks/base/core/java/android/ext/AppInfoExt.java:22: info: New API must be flagged with @FlaggedApi: constructor android.ext.AppInfoExt(int,int,long) [UnflaggedApi]
+frameworks/base/core/java/android/ext/AppInfoExt.java:31: info: New API must be flagged with @FlaggedApi: method android.ext.AppInfoExt.getPackageId() [UnflaggedApi]
+frameworks/base/core/java/android/ext/AppInfoExt.java:35: info: New API must be flagged with @FlaggedApi: method android.ext.AppInfoExt.getInitialPackageId() [UnflaggedApi]
+frameworks/base/core/java/android/ext/AppInfoExt.java:39: info: New API must be flagged with @FlaggedApi: method android.ext.AppInfoExt.hasFlag(int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/AppInfoExt.java:43: info: New API must be flagged with @FlaggedApi: method android.ext.AppInfoExt.hasCompatConfig() [UnflaggedApi]
+frameworks/base/core/java/android/ext/AppInfoExt.java:47: info: New API must be flagged with @FlaggedApi: method android.ext.AppInfoExt.hasCompatChange(int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/AppInfoExt.java:53: info: New API must be flagged with @FlaggedApi: method android.ext.AppInfoExt.describeContents() [UnflaggedApi]
+frameworks/base/core/java/android/ext/AppInfoExt.java:58: info: New API must be flagged with @FlaggedApi: method android.ext.AppInfoExt.writeToParcel(android.os.Parcel,int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/AppInfoExt.java:71: info: New API must be flagged with @FlaggedApi: field android.ext.AppInfoExt.CREATOR [UnflaggedApi]
+frameworks/base/core/java/android/ext/AppInfoExtFlag.java:11: info: New API must be flagged with @FlaggedApi: class android.ext.AppInfoExtFlag [UnflaggedApi]
+frameworks/base/core/java/android/ext/AppInfoExtFlag.java:12: info: New API must be flagged with @FlaggedApi: field android.ext.AppInfoExtFlag.HAS_GMSCORE_CLIENT_LIBRARY [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:11: info: New API must be flagged with @FlaggedApi: class android.ext.DerivedPackageFlag [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:13: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.DFLAGS_SET [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:14: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.EXPECTS_ALL_FILES_ACCESS [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:15: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.EXPECTS_ACCESS_TO_MEDIA_FILES_ONLY [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:16: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.EXPECTS_STORAGE_WRITE_ACCESS [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:17: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.HAS_READ_EXTERNAL_STORAGE_DECLARATION [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:18: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.HAS_WRITE_EXTERNAL_STORAGE_DECLARATION [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:19: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.HAS_MANAGE_EXTERNAL_STORAGE_DECLARATION [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:20: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.HAS_MANAGE_MEDIA_DECLARATION [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:21: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.HAS_ACCESS_MEDIA_LOCATION_DECLARATION [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:22: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.HAS_READ_MEDIA_AUDIO_DECLARATION [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:23: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.HAS_READ_MEDIA_IMAGES_DECLARATION [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:24: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.HAS_READ_MEDIA_VIDEO_DECLARATION [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:25: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.HAS_READ_MEDIA_VISUAL_USER_SELECTED_DECLARATION [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:26: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.EXPECTS_LEGACY_EXTERNAL_STORAGE [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:27: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.HAS_READ_CONTACTS_DECLARATION [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:28: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.HAS_WRITE_CONTACTS_DECLARATION [UnflaggedApi]
+frameworks/base/core/java/android/ext/DerivedPackageFlag.java:29: info: New API must be flagged with @FlaggedApi: field android.ext.DerivedPackageFlag.HAS_GET_ACCOUNTS_DECLARATION [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackage.java:11: info: New API must be flagged with @FlaggedApi: class android.ext.KnownSystemPackage [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackage.java:12: info: New API must be flagged with @FlaggedApi: field android.ext.KnownSystemPackage.SETTINGS [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackage.java:13: info: New API must be flagged with @FlaggedApi: field android.ext.KnownSystemPackage.SHELL [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackage.java:14: info: New API must be flagged with @FlaggedApi: field android.ext.KnownSystemPackage.SYSTEM_UI [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackage.java:15: info: New API must be flagged with @FlaggedApi: field android.ext.KnownSystemPackage.SETUP_WIZARD [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackages.java:12: info: New API must be flagged with @FlaggedApi: class android.ext.KnownSystemPackages [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackages.java:16: info: New API must be flagged with @FlaggedApi: method android.ext.KnownSystemPackages.get(android.content.Context) [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackages.java:24: info: New API must be flagged with @FlaggedApi: field android.ext.KnownSystemPackages.contactsProvider [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackages.java:25: info: New API must be flagged with @FlaggedApi: field android.ext.KnownSystemPackages.launcher [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackages.java:26: info: New API must be flagged with @FlaggedApi: field android.ext.KnownSystemPackages.mediaProvider [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackages.java:27: info: New API must be flagged with @FlaggedApi: field android.ext.KnownSystemPackages.permissionController [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackages.java:28: info: New API must be flagged with @FlaggedApi: field android.ext.KnownSystemPackages.settings [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackages.java:29: info: New API must be flagged with @FlaggedApi: field android.ext.KnownSystemPackages.setupWizard [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackages.java:30: info: New API must be flagged with @FlaggedApi: field android.ext.KnownSystemPackages.shell [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackages.java:31: info: New API must be flagged with @FlaggedApi: field android.ext.KnownSystemPackages.systemUi [UnflaggedApi]
+frameworks/base/core/java/android/ext/KnownSystemPackages.java:46: info: New API must be flagged with @FlaggedApi: method android.ext.KnownSystemPackages.getById(int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:12: info: New API must be flagged with @FlaggedApi: class android.ext.PackageId [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:13: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.UNKNOWN [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:15: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.GSF_NAME [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:18: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.GMS_CORE_NAME [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:19: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.GMS_CORE [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:21: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.PLAY_STORE_NAME [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:22: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.PLAY_STORE [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:24: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.G_SEARCH_APP_NAME [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:25: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.G_SEARCH_APP [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:27: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.EUICC_SUPPORT_PIXEL_NAME [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:28: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.EUICC_SUPPORT_PIXEL [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:30: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.G_EUICC_LPA_NAME [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:31: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.G_EUICC_LPA [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:33: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.G_CARRIER_SETTINGS_NAME [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:34: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.G_CARRIER_SETTINGS [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:36: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.G_CAMERA_NAME [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:37: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.G_CAMERA [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:39: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.PIXEL_CAMERA_SERVICES_NAME [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:40: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.PIXEL_CAMERA_SERVICES [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:42: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.ANDROID_AUTO_NAME [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:43: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.ANDROID_AUTO [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:46: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.TYCHO_NAME [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:47: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.TYCHO [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:52: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.PIXEL_HEALTH_NAME [UnflaggedApi]
+frameworks/base/core/java/android/ext/PackageId.java:53: info: New API must be flagged with @FlaggedApi: field android.ext.PackageId.PIXEL_HEALTH [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:12: info: New API must be flagged with @FlaggedApi: class android.ext.cscopes.ContactScope [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:13: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScope.TYPE_GROUP [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:14: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScope.TYPE_CONTACT [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:15: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScope.TYPE_NUMBER [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:16: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScope.TYPE_EMAIL [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:17: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScope.TYPE_COUNT [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:19: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScope.type [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:20: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScope.id [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:23: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScope.title [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:25: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScope.summary [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:27: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScope.detailsUri [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:29: info: New API must be flagged with @FlaggedApi: constructor android.ext.cscopes.ContactScope(int,long,String,String,android.net.Uri) [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:46: info: New API must be flagged with @FlaggedApi: method android.ext.cscopes.ContactScope.writeToParcel(android.os.Parcel,int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:55: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScope.CREATOR [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScope.java:68: info: New API must be flagged with @FlaggedApi: method android.ext.cscopes.ContactScope.describeContents() [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesApi.java:11: info: New API must be flagged with @FlaggedApi: class android.ext.cscopes.ContactScopesApi [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesApi.java:13: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScopesApi.ACTION_NOTIFY_CONTENT_OBSERVERS [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesApi.java:16: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScopesApi.SCOPED_CONTACTS_PROVIDER_AUTHORITY [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesApi.java:19: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScopesApi.METHOD_GET_IDS_FROM_URIS [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesApi.java:20: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScopesApi.METHOD_GET_VIEW_MODEL [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesApi.java:21: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScopesApi.METHOD_GET_GROUPS [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesApi.java:24: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScopesApi.KEY_URIS [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesApi.java:25: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScopesApi.KEY_IDS [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesApi.java:26: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScopesApi.KEY_RESULT [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesApi.java:29: info: New API must be flagged with @FlaggedApi: method android.ext.cscopes.ContactScopesApi.createConfigActivityIntent(String) [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesStorage.java:20: info: New API must be flagged with @FlaggedApi: class android.ext.cscopes.ContactScopesStorage [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesStorage.java:26: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactScopesStorage.MAX_COUNT_PER_PACKAGE [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesStorage.java:37: info: New API must be flagged with @FlaggedApi: method android.ext.cscopes.ContactScopesStorage.getIds(int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesStorage.java:41: info: New API must be flagged with @FlaggedApi: method android.ext.cscopes.ContactScopesStorage.add(int,long) [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesStorage.java:55: info: New API must be flagged with @FlaggedApi: method android.ext.cscopes.ContactScopesStorage.remove(int,long) [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesStorage.java:65: info: New API must be flagged with @FlaggedApi: method android.ext.cscopes.ContactScopesStorage.getCount() [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesStorage.java:76: info: New API must be flagged with @FlaggedApi: method android.ext.cscopes.ContactScopesStorage.serialize() [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesStorage.java:112: info: New API must be flagged with @FlaggedApi: method android.ext.cscopes.ContactScopesStorage.isEmpty(android.content.pm.GosPackageState) [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactScopesStorage.java:117: info: New API must be flagged with @FlaggedApi: method android.ext.cscopes.ContactScopesStorage.deserialize(android.content.pm.GosPackageState) [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactsGroup.java:11: info: New API must be flagged with @FlaggedApi: class android.ext.cscopes.ContactsGroup [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactsGroup.java:12: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactsGroup.id [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactsGroup.java:14: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactsGroup.title [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactsGroup.java:16: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactsGroup.summary [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactsGroup.java:18: info: New API must be flagged with @FlaggedApi: constructor android.ext.cscopes.ContactsGroup(long,String,String) [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactsGroup.java:31: info: New API must be flagged with @FlaggedApi: method android.ext.cscopes.ContactsGroup.writeToParcel(android.os.Parcel,int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactsGroup.java:38: info: New API must be flagged with @FlaggedApi: method android.ext.cscopes.ContactsGroup.describeContents() [UnflaggedApi]
+frameworks/base/core/java/android/ext/cscopes/ContactsGroup.java:43: info: New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactsGroup.CREATOR [UnflaggedApi]
+frameworks/base/core/java/android/ext/dcl/DynCodeLoading.java:31: info: New API must be flagged with @FlaggedApi: class android.ext.dcl.DynCodeLoading [UnflaggedApi]
+frameworks/base/core/java/android/ext/dcl/DynCodeLoading.java:114: info: New API must be flagged with @FlaggedApi: method android.ext.dcl.DynCodeLoading.checkInMemoryDexFileOpen(int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/dcl/DynCodeLoading.java:122: info: New API must be flagged with @FlaggedApi: method android.ext.dcl.DynCodeLoading.checkDexFileOpen(int,String) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/BoolSetting.java:16: info: New API must be flagged with @FlaggedApi: class android.ext.settings.BoolSetting [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/BoolSetting.java:20: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.BoolSetting(android.ext.settings.Setting.Scope,String,boolean) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/BoolSetting.java:25: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.BoolSetting(android.ext.settings.Setting.Scope,String,java.util.function.Function<android.content.Context,java.lang.Boolean>) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/BoolSetting.java:30: info: Method can be invoked with an indexing operator from Kotlin: `get` (this is usually desirable; just make sure it makes sense for this type of object) [KotlinOperator]
+frameworks/base/core/java/android/ext/settings/BoolSetting.java:30: info: New API must be flagged with @FlaggedApi: method android.ext.settings.BoolSetting.get(android.content.Context) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/BoolSetting.java:35: info: Method can be invoked with an indexing operator from Kotlin: `get` (this is usually desirable; just make sure it makes sense for this type of object) [KotlinOperator]
+frameworks/base/core/java/android/ext/settings/BoolSetting.java:35: info: New API must be flagged with @FlaggedApi: method android.ext.settings.BoolSetting.get(android.content.Context,int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/BoolSetting.java:64: info: New API must be flagged with @FlaggedApi: method android.ext.settings.BoolSetting.put(android.content.Context,boolean) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/BoolSysProperty.java:13: info: New API must be flagged with @FlaggedApi: class android.ext.settings.BoolSysProperty [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/BoolSysProperty.java:15: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.BoolSysProperty(String,boolean) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/BoolSysProperty.java:19: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.BoolSysProperty(String,java.util.function.Function<android.content.Context,java.lang.Boolean>) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/BoolSysProperty.java:23: info: New API must be flagged with @FlaggedApi: method android.ext.settings.BoolSysProperty.get() [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/BoolSysProperty.java:28: info: New API must be flagged with @FlaggedApi: method android.ext.settings.BoolSysProperty.put(boolean) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSetting.java:17: info: New API must be flagged with @FlaggedApi: class android.ext.settings.IntSetting [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSetting.java:28: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSetting(android.ext.settings.Setting.Scope,String,int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSetting.java:33: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSetting(android.ext.settings.Setting.Scope,String,int,int...) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSetting.java:38: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSetting(android.ext.settings.Setting.Scope,String,java.util.function.ToIntFunction<android.content.Context>) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSetting.java:43: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSetting(android.ext.settings.Setting.Scope,String,java.util.function.ToIntFunction<android.content.Context>,int...) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSetting.java:49: info: New API must be flagged with @FlaggedApi: method android.ext.settings.IntSetting.validateValue(int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSetting.java:62: info: Method can be invoked with an indexing operator from Kotlin: `get` (this is usually desirable; just make sure it makes sense for this type of object) [KotlinOperator]
+frameworks/base/core/java/android/ext/settings/IntSetting.java:62: info: New API must be flagged with @FlaggedApi: method android.ext.settings.IntSetting.get(android.content.Context) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSetting.java:67: info: Method can be invoked with an indexing operator from Kotlin: `get` (this is usually desirable; just make sure it makes sense for this type of object) [KotlinOperator]
+frameworks/base/core/java/android/ext/settings/IntSetting.java:67: info: New API must be flagged with @FlaggedApi: method android.ext.settings.IntSetting.get(android.content.Context,int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSetting.java:89: info: New API must be flagged with @FlaggedApi: method android.ext.settings.IntSetting.put(android.content.Context,int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSysProperty.java:12: info: New API must be flagged with @FlaggedApi: class android.ext.settings.IntSysProperty [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSysProperty.java:14: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSysProperty(String,int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSysProperty.java:18: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSysProperty(String,int,int...) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSysProperty.java:22: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSysProperty(String,java.util.function.ToIntFunction<android.content.Context>) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSysProperty.java:26: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSysProperty(String,java.util.function.ToIntFunction<android.content.Context>,int...) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSysProperty.java:30: info: New API must be flagged with @FlaggedApi: method android.ext.settings.IntSysProperty.get() [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/IntSysProperty.java:35: info: New API must be flagged with @FlaggedApi: method android.ext.settings.IntSysProperty.put(int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/Setting.java:24: info: New API must be flagged with @FlaggedApi: class android.ext.settings.Setting [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/Setting.java:27: info: New API must be flagged with @FlaggedApi: class android.ext.settings.Setting.Scope [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/Setting.java:28: info: New API must be flagged with @FlaggedApi: enum constant android.ext.settings.Setting.Scope.SYSTEM_PROPERTY [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/Setting.java:29: info: New API must be flagged with @FlaggedApi: enum constant android.ext.settings.Setting.Scope.GLOBAL [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/Setting.java:30: info: New API must be flagged with @FlaggedApi: enum constant android.ext.settings.Setting.Scope.PER_USER [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/Setting.java:43: info: New API must be flagged with @FlaggedApi: method android.ext.settings.Setting.getKey() [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/Setting.java:48: info: New API must be flagged with @FlaggedApi: method android.ext.settings.Setting.getScope() [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/Setting.java:109: info: New API must be flagged with @FlaggedApi: method android.ext.settings.Setting.canObserveState() [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/Setting.java:115: info: New API must be flagged with @FlaggedApi: method android.ext.settings.Setting.registerObserver(android.content.Context,android.os.Handler,java.util.function.Consumer<SelfType>) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/Setting.java:120: info: New API must be flagged with @FlaggedApi: method android.ext.settings.Setting.registerObserver(android.content.Context,int,android.os.Handler,java.util.function.Consumer<SelfType>) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/Setting.java:169: info: New API must be flagged with @FlaggedApi: method android.ext.settings.Setting.unregisterObserver(android.content.Context,Object) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/StringSetting.java:16: info: New API must be flagged with @FlaggedApi: class android.ext.settings.StringSetting [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/StringSetting.java:20: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.StringSetting(android.ext.settings.Setting.Scope,String,String) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/StringSetting.java:25: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.StringSetting(android.ext.settings.Setting.Scope,String,java.util.function.Function<android.content.Context,java.lang.String>) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/StringSetting.java:30: info: New API must be flagged with @FlaggedApi: method android.ext.settings.StringSetting.validateValue(String) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/StringSetting.java:35: info: Method can be invoked with an indexing operator from Kotlin: `get` (this is usually desirable; just make sure it makes sense for this type of object) [KotlinOperator]
+frameworks/base/core/java/android/ext/settings/StringSetting.java:35: info: New API must be flagged with @FlaggedApi: method android.ext.settings.StringSetting.get(android.content.Context) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/StringSetting.java:41: info: Method can be invoked with an indexing operator from Kotlin: `get` (this is usually desirable; just make sure it makes sense for this type of object) [KotlinOperator]
+frameworks/base/core/java/android/ext/settings/StringSetting.java:41: info: New API must be flagged with @FlaggedApi: method android.ext.settings.StringSetting.get(android.content.Context,int) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/StringSetting.java:49: info: New API must be flagged with @FlaggedApi: method android.ext.settings.StringSetting.put(android.content.Context,String) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/StringSysProperty.java:12: info: New API must be flagged with @FlaggedApi: class android.ext.settings.StringSysProperty [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/StringSysProperty.java:14: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.StringSysProperty(String,String) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/StringSysProperty.java:18: info: New API must be flagged with @FlaggedApi: constructor android.ext.settings.StringSysProperty(String,java.util.function.Function<android.content.Context,java.lang.String>) [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/StringSysProperty.java:23: info: New API must be flagged with @FlaggedApi: method android.ext.settings.StringSysProperty.get() [UnflaggedApi]
+frameworks/base/core/java/android/ext/settings/StringSysProperty.java:28: info: New API must be flagged with @FlaggedApi: method android.ext.settings.StringSysProperty.put(String) [UnflaggedApi]
+frameworks/base/core/java/android/hardware/camera2/impl/ExtensionKey.java:24: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/hardware/camera2/impl/PublicKey.java:26: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/hardware/camera2/params/StreamConfigurationMap.java:1363: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/os/BaseBundle.java:2012: info: New API must be flagged with @FlaggedApi: method android.os.BaseBundle.getNumber(String) [UnflaggedApi]
+frameworks/base/core/java/android/os/BaseBundle.java:2024: info: New API must be flagged with @FlaggedApi: method android.os.BaseBundle.getBoolean2(String) [UnflaggedApi]
+frameworks/base/core/java/android/os/Process.java:1753: info: New API must be flagged with @FlaggedApi: method android.os.Process.isMemoryTaggingSupported() [UnflaggedApi]
+frameworks/base/core/java/com/android/internal/util/DataClass.java:74: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/media/java/android/media/audiopolicy/AudioMix.java:582: warning: android.media.audiopolicy.AudioMix does not declare a `isInjectSilenceOnStarvation()` method matching method android.media.audiopolicy.AudioMix.Builder.setInjectSilenceOnStarvation(boolean) (ErrorWhenNew) [MissingGetterMatchingBuilder]
+frameworks/base/telephony/java/android/telephony/TelephonyManager.java:4327: warning: Method 'getUiccCardsInfo' documentation duplicates auto-generated documentation by @RequiresPermission. If the permissions are only required under certain circumstances use conditional=true to suppress the auto-documentation (ErrorWhenNew) [RequiresPermission]
+frameworks/libs/modules-utils/java/android/annotation/Hide.java:32: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+out/srcjars/android/Manifest.java:923: info: New API must be flagged with @FlaggedApi: field android.Manifest.permission.WIFI_PRIVILEGED_ANDROID_AUTO [UnflaggedApi]
+out/srcjars/android/Manifest.java:1263: info: New API must be flagged with @FlaggedApi: field android.Manifest.permission.BLUETOOTH_PRIVILEGED_ANDROID_AUTO [UnflaggedApi]
+out/srcjars/android/app/admin/MultiUserDeviceProvisioningParamsTransport.java:18: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+out/srcjars/android/app/admin/PolicyValueTransport.java:14: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+out/srcjars/android/companion/datatransfer/continuity/IUniversalClipboardManager.java:12: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+metalava wrote updated baseline to /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/soong/.temp/sbox/1073a982314abb75e649a17771da5e1ec82dbc89/./out/api_lint_baseline.txt
+[  8% 318/3702 32m5s remaining] //frameworks/base/api:api-stubs-docs-non-updatable metalava merged
+frameworks/base/core/java/android/app/ActivityManager.java:4294: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/app/AppOpsManager.java:1949: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/content/BroadcastReceiver.java:684: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/content/Intent.java:1973: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/content/pm/PackageInstaller.java:3224: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/hardware/camera2/impl/ExtensionKey.java:24: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/hardware/camera2/impl/PublicKey.java:26: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/android/hardware/camera2/params/StreamConfigurationMap.java:1363: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/base/core/java/com/android/internal/util/DataClass.java:74: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+frameworks/libs/modules-utils/java/android/annotation/Hide.java:32: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+out/srcjars/android/Manifest.java:649: info: New API must be flagged with @FlaggedApi: field android.Manifest.permission.OTHER_SENSORS [UnflaggedApi]
+out/srcjars/android/Manifest.java:7778: info: New API must be flagged with @FlaggedApi: field android.Manifest.permission_group.OTHER_SENSORS [UnflaggedApi]
+out/srcjars/android/Manifest.java:7782: info: New API must be flagged with @FlaggedApi: field android.Manifest.permission_group.NETWORK [UnflaggedApi]
+out/srcjars/android/app/admin/MultiUserDeviceProvisioningParamsTransport.java:18: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+out/srcjars/android/app/admin/PolicyValueTransport.java:14: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+out/srcjars/android/companion/datatransfer/continuity/IUniversalClipboardManager.java:12: warning: Invalid @hide syntax, must be a block tag (ErrorWhenNew) [InvalidJavadoc]
+metalava wrote updated baseline to /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/soong/.temp/sbox/dcabbf69fbe8e32ae16e786d21b129ef1759ab95/./out/api_lint_baseline.txt
+ninja: build stopped: subcommand failed.
+10:35:08 ninja failed with: exit status 1
+
+#### failed to build some targets (08:47 (mm:ss)) ####
+
+BUILD_EXIT=1
+M_END=2026-09-18T10:35:08Z
+BUILD_PROP=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/target/product/komodo/system/build.prop
+ro.build.type=userdebug
+ro.build.tags=test-keys
+-rw-rwxr--+ 1 oss-c1 oss-c1 5379 2026-09-15 04:58:54.454305294 +0000 /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/target/product/komodo/system/build.prop
+USB_GO=false
+FLASH_READY=false
+DEBUG_FLASH_READY=false
+WRAPPER_END=2026-09-18T10:35:08Z

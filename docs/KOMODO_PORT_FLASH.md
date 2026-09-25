@@ -30,8 +30,25 @@ Create `releases/desktop-flash/komodo-<UTCSTAMP>/` and symlink
 `releases/desktop-flash/komodo-latest` → that directory.
 
 Do **not** use `vendor/guardtalk/scripts/stage-rango-release.sh`.
-Do **not** create `keys/komodo/`. Public `avb_pkmd.bin` only (copy
-`keys/tokay/avb_pkmd.bin`, same as akita). No `.pem` / `.pk8`.
+Do **not** create `keys/komodo/`. Copy the **public** AVB blob only
+(`keys/tokay/avb_pkmd.bin`, same as akita). **No `.pem` / `.pk8` is copied into
+the stamp** — verified: `find releases/desktop-flash -name '*.pem' -o -name
+'*.pk8'` = **0**, and the shipped `avb_pkmd.bin` is byte-identical
+(`md5 67f509c1…`) to `keys/tokay/avb_pkmd.bin`.
+
+> **Key-scope correction (`T-REMEDIATE-B6-STAMP-HONESTY`, DEC-REMEDIATE-019).**
+> The earlier bare "No `.pem` / `.pk8`" read as a claim about the whole
+> worktree. It is not a worktree-wide statement: `keys/tokay/` **does** contain
+> an unencrypted PKCS#8 `avb.pem` plus a full `.pk8` set. Read-only provenance
+> evidence: the eight package keys are **byte-identical** to the public AOSP
+> test keys at `build/make/target/product/security/*.pk8` (cert subjects
+> `O=Android, CN=Android`, 2008→2035), and `keys/tokay/avb_pkmd.bin`
+> (`7728e30f…`) is the public AOSP test AVB key blob
+> (`external/avb/test/data/testkey_rsa4096.pem`) — i.e. **public upstream AOSP
+> test material**, not operator release keys. The standalone `keys/tokay/avb.pem`
+> private key is a **different** key (derived public blob `962b174e…` matches no
+> shipped bundle and no in-tree test key), so its origin is **UNRESOLVED** and
+> should be settled by the operator. No private key content is reproduced here.
 
 `init.insmod.komodo.cfg` comes from the real
 `device/google/caimito-kernels/6.1/grapheneos/` tree (GNU `find` does not

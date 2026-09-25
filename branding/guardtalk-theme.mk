@@ -13,7 +13,7 @@
 # vendor/adevtool/config/device/common/file-exclusion.yml.
 
 # --- Boot animation -------------------------------------------------------
-# GuardTalk bootanimation asset (AOSP format, 1080x2400). Only the light/normal
+# GuardTalk bootanimation asset (AOSP format, 1008x2244). Only the light/normal
 # bootanimation.zip is wired (T-BOOTANIM-DEDUPE): BootAnimation.cpp falls back
 # to bootanimation.zip when bootanimation-dark.zip is absent.
 guardtalk_bootanim_dir := vendor/guardtalk/branding/bootanimation

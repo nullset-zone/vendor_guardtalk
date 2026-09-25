@@ -1,0 +1,26 @@
+START=2026-09-18T11:27:04Z
+PWD=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+COMBO=komodo-trunk_staging-userdebug
+DEC=DEC-REMEDIATE-014
+NPROC=96
+USB_GO=false
+FLASH_READY=false
+DEBUG_FLASH_READY=false
+LOG=/tmp/t-remediate-b1-debug-m-20260918T112650Z.log
+ENVSETUP_EXIT=0
+LUNCH_EXIT=0
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=userdebug
+TARGET_BUILD_TYPE=release
+BUILD_KEYS=test-keys
+M_START=2026-09-18T11:27:16Z
+BUILD_EXIT=0
+M_END=2026-09-18T11:49:47Z
+BUILD_PROP=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/target/product/komodo/system/build.prop
+ro.build.type=userdebug
+ro.build.tags=test-keys
+-rw-rwxr--+ 1 oss-c1 oss-c1 5379 2026-09-18 11:28:52.317616251 +0000 /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/target/product/komodo/system/build.prop
+USB_GO=false
+FLASH_READY=false
+DEBUG_FLASH_READY=false
+WRAPPER_END=2026-09-18T11:49:47Z

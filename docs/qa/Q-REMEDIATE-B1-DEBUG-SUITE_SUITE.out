@@ -1,0 +1,96 @@
+=== Q-REMEDIATE-B1-DEBUG-SUITE independent rematch (DEBUG_FLASH_READY preconditions) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+LIVE_FLASH_CLAIMED=unverified (computed below)
+Q-ONDEVICE=not started
+USB_GO=not started
+M_BUILD=not started
+FLASH=not started
+FLASH_READY=false (not invented; computed at end)
+DEBUG_FLASH_READY=false (not invented; computed at end)
+Q-REMEDIATE-B1-DEBUG-M=BLOCKED (this suite does not lift image PASS)
+PASS_HOLD=remains
+
+--- hygiene: this suite must not start m / USB / ondevice ---
+PASS: suite source does not invoke m, lunch, fastboot, or adb flash
+PASS: m not started this QA stamp
+PASS: USB GO / flash / lock not started
+PASS: Q-ONDEVICE / *_ondevice.sh not started
+PASS: pem contents not read
+
+--- DEC-011 / sidecar / port-flash document lunch komodo-trunk_staging-userdebug ---
+PASS: .memory-bank/decisions.md binds DEC-REMEDIATE-011 and documents lunch komodo-trunk_staging-userdebug
+PASS: TASK_QUEUE.md documents DEC-REMEDIATE-011 and lunch komodo-trunk_staging-userdebug
+PASS: vendor/guardtalk/docs/ENGINEERING_SIDECAR_USERDEBUG.md documents lunch komodo-trunk_staging-userdebug
+PASS: vendor/guardtalk/docs/KOMODO_PORT_FLASH.md documents lunch komodo-trunk_staging-userdebug
+
+--- honesty: FLASH_READY=false; DEBUG_FLASH_READY=false; LIVE_FLASH_CLAIMED=false ---
+PASS: vendor/guardtalk/web-installer/src/types.ts exports LIVE_FLASH_CLAIMED = false
+PASS: vendor/guardtalk/web-installer/src/types.ts does not assign LIVE_FLASH_CLAIMED=true
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table documents DEBUG_FLASH_READY false
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table documents FLASH_READY false
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table documents LIVE_FLASH_CLAIMED false
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table does not claim DEBUG_FLASH_READY true
+
+--- T-B1-M still HOLD (pem ABSENT = HOLD for signed-user, not FAIL here) ---
+PASS: T-REMEDIATE-B1-M status is HOLD CONFIRMED
+HOLD: avb.pem ABSENT at in-tree stem vendor/guardtalk/branding/signing-keys/avb.pem (T-B1-M HOLD; not FAIL for debug suite)
+HOLD: avb.pem ABSENT at secure stem /mnt/secure/keys/guardtalk/avb.pem (T-B1-M HOLD; not FAIL for debug suite)
+HOLD: /mnt/secure missing (signed-user HOLD; not FAIL for debug suite)
+PRED_PEM pem=false (HOLD for FLASH_READY; not FAIL here)
+
+--- git / tree: no committed key material (do not cat) ---
+PASS: git ls-files: no pem/pk8/avb.pem under vendor/guardtalk
+
+--- komodo-debug-latest ABSENT → HOLD (expected until pack) ---
+HOLD: releases/desktop-flash/komodo-debug-latest ABSENT (expected until T-REMEDIATE-B1-DEBUG-PACK)
+HOLD: no komodo-debug-<UTCSTAMP> directory (expected until pack)
+
+--- komodo-latest still → komodo-20260915-063833 (not retargeted) ---
+readlink releases/desktop-flash/komodo-latest => komodo-20260915-063833
+PASS: releases/desktop-flash/komodo-latest -> komodo-20260915-063833 (relative symlink; not retargeted)
+
+--- out/ record ro.build.type (userdebug allowed; do not FAIL test-keys/su) ---
+READ out/target/product/komodo/system/build.prop ro.build.type=userdebug ro.build.tags=test-keys
+-rw-rwxr--+ 1 oss-c1 oss-c1 5379 Sep 15 04:58 out/target/product/komodo/system/build.prop
+PASS: system ro.build.type=userdebug recorded (sidecar allowed; not FAIL)
+HOLD: out dated 2026-09-15 — stale vs DEC-011; new userdebug m not proven
+HOLD: system ro.build.tags=test-keys (allowed on sidecar; not FAIL)
+READ out/target/product/komodo/product/etc/build.prop ro.build.type=userdebug
+PASS: product ro.build.type=userdebug recorded (sidecar allowed)
+READ out/target/product/komodo/vendor/build.prop ro.vendor.build.type=userdebug
+PASS: vendor ro.vendor.build.type=userdebug recorded (sidecar allowed)
+
+--- xbin su / overlay_remounter (allowed on sidecar; invert of user FAIL) ---
+-rwxr-xr-x+ 1 oss-c1 oss-c1 51464 Sep 15 04:58 out/target/product/komodo/system/xbin/su
+HOLD: xbin su PRESENT out/target/product/komodo/system/xbin/su (allowed on debug sidecar; not FAIL)
+-rwxr-xr-x+ 1 oss-c1 oss-c1 613776 Sep 15 04:58 out/target/product/komodo/system/xbin/overlay_remounter
+HOLD: xbin overlay_remounter PRESENT out/target/product/komodo/system/xbin/overlay_remounter (allowed on debug sidecar; not FAIL)
+
+--- Q-REMEDIATE-B1-DEBUG-M stays BLOCKED (this suite does not lift) ---
+PASS: Q-REMEDIATE-B1-DEBUG-M is BLOCKED (image PASS not lifted)
+
+--- adb (device HOLD; do not start Q-ONDEVICE / USB GO) ---
+List of devices attached
+HOLD: adb devices empty — device HOLD; USB GO not started
+PASS: FLASH_READY not invented true
+PASS: DEBUG_FLASH_READY not invented true
+
+PRED_PEM=false
+PRED_NEW_M=false
+RO_BUILD_TYPE=userdebug
+RO_BUILD_TAGS=test-keys
+FLASH_READY=false
+DEBUG_FLASH_READY=false
+FLASH_CLASS=HOLD
+DEBUG_CLASS=HOLD
+LIVE_FLASH_CLAIMED=false
+LIVE_DEVICE_CLAIMED=false
+PASS_HOLD=remains
+M_BUILD=not started
+USB_GO=not started
+ONDEVICE=not started
+Q-REMEDIATE-B1-DEBUG-M=BLOCKED
+KOMODO_LATEST=komodo-20260915-063833
+KOMODO_DEBUG_LATEST=ABSENT
+RESULT: PASS (host)  bash_PASS=24 bash_HOLD=10 FAIL=0

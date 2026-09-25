@@ -1,0 +1,81 @@
+=== Q-REMEDIATE-B4-MESSENGER UX rematch (item 19) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+F/Backend reports: not trusted
+USB_GO=not started
+
+--- required UX files ---
+PASS: present: vendor/guardtalk/apps/GuardTalkMessenger/res/values/strings.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkMessenger/res/layout/activity_messenger.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkMessenger/src/com/guardtalk/messenger/MessengerActivity.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkMessenger/src/com/guardtalk/messenger/JamiGatewayClient.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkMessenger/src/com/guardtalk/messenger/GatewayEndpoint.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkMessenger/AndroidManifest.xml
+PASS: present: vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/values/config.xml
+
+--- python UX + protocol rematch ---
+PASS: app_name is GT Messenger
+PASS: manifest launcher label uses @string/app_name
+PASS: first_run_hint present (Gateway + off-LAN)
+PASS: layout binds first_run_hint
+PASS: unreachable copy distinct from unregistered
+PASS: no-Wi-Fi copy distinct from unregistered
+PASS: not-RFC1918 copy fail-closed (no public Jami)
+PASS: unreachable copy names port 8080 + jamid
+PASS: timeout copy distinct from unregistered
+PASS: bindFailureCopy does not use unregistered copy
+PASS: mapRpcError maps unreachable token to err_gateway_unreachable
+PASS: empty state log_need_gateway
+PASS: empty state log_need_register
+PASS: empty state log_empty
+PASS: Activity paints three empty-state strings
+PASS: layout default empty state is need-gateway
+PASS: GatewayEndpoint JSONRPC_PORT=8080
+PASS: GatewayEndpoint JSONRPC_PATH=/jami/jsonrpc
+PASS: URL built only from RFC1918 host + PORT + PATH
+PASS: isRfc1918 covers 10/8, 192.168/16, 172.16/12
+PASS: resolve() fail-closed when not RFC1918
+PASS: RFC1918 vectors 14/14
+PASS: IPv6 fail-closed (non-IPv4 rejected)
+PASS: JSON-RPC methods exactly addAccount/getConversations/sendTextMessage
+PASS: wrapper still calls addAccount
+PASS: wrapper still calls getConversations
+PASS: wrapper still calls sendTextMessage
+PASS: app sources have no dl.jami.net / public DHT host
+PASS: no hardcoded public http(s) endpoint in Gateway/RPC
+PASS: exactly 9 default_workspace_*.xml grids
+PASS: workspace filenames match 9 known launcher grids
+PASS: default_workspace_2x2.xml pins MessengerActivity x=1 y=0
+PASS: default_workspace_2x2.xml no TrichromeChrome/AppStore favorite
+PASS: default_workspace_3x3.xml pins MessengerActivity x=1 y=0
+PASS: default_workspace_3x3.xml no TrichromeChrome/AppStore favorite
+PASS: default_workspace_4x4.xml pins MessengerActivity x=1 y=0
+PASS: default_workspace_4x4.xml no TrichromeChrome/AppStore favorite
+PASS: default_workspace_4x5.xml pins MessengerActivity x=1 y=0
+PASS: default_workspace_4x5.xml no TrichromeChrome/AppStore favorite
+PASS: default_workspace_5x5.xml pins MessengerActivity x=0 y=0
+PASS: default_workspace_5x5.xml no TrichromeChrome/AppStore favorite
+PASS: default_workspace_5x8.xml pins MessengerActivity x=1 y=0
+PASS: default_workspace_5x8.xml no TrichromeChrome/AppStore favorite
+PASS: default_workspace_6x5.xml pins MessengerActivity x=1 y=0
+PASS: default_workspace_6x5.xml no TrichromeChrome/AppStore favorite
+PASS: default_workspace_7x3.xml pins MessengerActivity x=1 y=0
+PASS: default_workspace_7x3.xml no TrichromeChrome/AppStore favorite
+PASS: default_workspace_8x3.xml pins MessengerActivity x=1 y=0
+PASS: default_workspace_8x3.xml no TrichromeChrome/AppStore favorite
+PASS: 9/9 grids pin com.guardtalk.messenger/.MessengerActivity
+PASS: Messenger absent from filtered_components items
+PASS: Activity BindState includes NO_WIFI and NOT_PRIVATE
+PASS: RPC client constructed only after resolve() Target
+PY_COUNTS PASS_COUNT=53 FAIL_COUNT=0 HOLD_COUNT=0
+PASS: python UX rematch exit 0
+
+--- adb / jamid e2e (must HOLD if empty) ---
+List of devices attached
+HOLD: adb devices empty — jamid e2e HOLD. Not device-fixed.
+HOLD: m GuardTalkMessenger not run (Soong compile HOLD)
+HOLD: Gateway jamid e2e HOLD (no USB GO; PASS HOLD remains)
+HOLD: never APPROVED; not live
+
+SUMMARY PASS=8 FAIL=0 HOLD=4
+VERDICT PASS (host-static UX; PASS HOLD remains)

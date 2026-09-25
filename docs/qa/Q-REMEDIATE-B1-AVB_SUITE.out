@@ -1,0 +1,189 @@
+=== Q-REMEDIATE-B1-AVB independent rematch (item 4) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+Q-ONDEVICE=not started
+BLOCK2_Q=not started
+USB_GO=not started
+LOCK_54111FDAS000GN=not started
+GREEN=HOLD (do not invent)
+
+--- required files ---
+PASS: present: vendor/guardtalk/device/komodo/BoardConfig-excised-late.mk
+PASS: present: vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk
+PASS: present: vendor/guardtalk/device/komodo/REGEN_HOOKS.md
+PASS: present: vendor/guardtalk/branding/signing-keys/RUNBOOK.md
+PASS: present: vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md
+PASS: present: vendor/guardtalk/branding/signing-keys/.gitignore
+PASS: present: frameworks/base/services/core/java/com/android/server/policy/keyguard/UsbPortSecurityHooks.java
+PASS: present: vendor/google_devices/komodo/BoardConfig.mk
+PASS: present: build/make/core/Makefile
+PASS: present: vendor/guardtalk/docs/SECURITY_FASTBOOT_PROT_REPORT.md
+
+--- packet rg (BOARD_AVB_KEY_PATH / BOARD_AVB_ALGORITHM) ---
+vendor/guardtalk/device/komodo/BoardConfig-excised-late.mk:18:# BOARD_AVB_KEY_PATH is unset). Operator-owned key material stays offline.
+vendor/guardtalk/device/komodo/BoardConfig-excised-late.mk:20:#   BOARD_AVB_KEY_PATH=/mnt/secure/keys/guardtalk/avb.pem
+vendor/guardtalk/device/komodo/BoardConfig-excised-late.mk:27:BOARD_AVB_ALGORITHM := SHA256_RSA4096
+vendor/guardtalk/device/komodo/BoardConfig-excised-late.mk:28:BOARD_AVB_KEY_PATH ?= vendor/guardtalk/branding/signing-keys/avb.pem
+vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk:18:# AVB (T-REMEDIATE-B1-AVB): user BoardConfig sets BOARD_AVB_KEY_PATH to
+vendor/guardtalk/device/komodo/REGEN_HOOKS.md:15:`BoardConfig-excised-late.mk` also sets user-only `BOARD_AVB_KEY_PATH` /
+vendor/guardtalk/device/komodo/REGEN_HOOKS.md:16:`BOARD_AVB_ALGORITHM` (T-REMEDIATE-B1-AVB). Re-apply the include after
+
+--- packet rg (USB duress + green gate) ---
+550:            "vendor.guardtalk.usb_duress_wipe.enabled";
+556:     *   1. {@code vendor.guardtalk.usb_duress_wipe.enabled} == 1 (feature flag, opt-in)
+611:        if (!isVerifiedBootGreen()) {
+657:    private static boolean isVerifiedBootGreen() {
+
+--- packet find (pem/pk8) ---
+PASS: no *.pem / *.pk8 under vendor/guardtalk
+
+--- avb.pem must be ABSENT ---
+PASS: test ! -f vendor/guardtalk/branding/signing-keys/avb.pem (ABSENT as required)
+
+--- git index must not contain pem/pk8 ---
+PASS: git ls-files: no pem/pk8/avb.pem under vendor/guardtalk
+
+--- static BoardConfig / docs / USB ---
+PASS: late BoardConfig sets SHA256_RSA4096
+PASS: late BoardConfig default path is project avb.pem (not AOSP testkey)
+PASS: late BoardConfig AVB is user-gated
+PASS: vendor/google_devices/komodo/BoardConfig.mk includes late mk
+PASS: device/google/komodo absent (pointer lives in vendor/guardtalk late mk)
+PASS: late BoardConfig assignment is not AOSP testkey_rsa4096
+PASS: AOSP Makefile still has testkey fallback when BOARD_AVB_KEY_PATH unset
+PASS: RUNBOOK §12 komodo section exists
+PASS: RUNBOOK §12c komodo lock procedure exists
+PASS: RUNBOOK documents fastboot flashing lock
+PASS: RUNBOOK names production-custody serial 54111FDAS000GN
+PASS: RUNBOOK forbids locking 54111FDAS000GN without operator GO
+PASS: RUNBOOK §12d documents Pixel truth vs operator goal
+PASS: RUNBOOK documents custom-key lock reports yellow
+PASS: RUNBOOK documents green HOLD for project key
+PASS: RUNBOOK does not claim green as achieved
+PASS: POLICY Verified Boot row documents yellow HOLD vs green
+PASS: POLICY does not claim green as achieved
+PASS: SECURITY_FASTBOOT_PROT_REPORT.md §4.1: custom-key is not green
+PASS: SECURITY_FASTBOOT_PROT_REPORT.md §4.1: yellow is custom-key locked state
+PASS: signing-keys .gitignore covers *.pem
+PASS: signing-keys .gitignore covers *.pk8
+PASS: signing-keys .gitignore covers avb.pem
+PASS: USB duress flag default is "0" (opt-in)
+PASS: isVerifiedBootGreen still requires verifiedbootstate=green
+PASS: no vendor/guardtalk product mk/prop default-on of USB duress
+PASS: komodo device tree does not PRODUCT-lie verifiedbootstate=green
+
+--- python structural rematch ---
+PASS: AVB algorithm+path are inside the user ifeq/endif (not userdebug)
+PASS: no BOARD_AVB_* assignments outside the user ifeq
+PASS: late mk product path is not AOSP testkey
+PASS: AOSP Makefile fallback to testkey_rsa4096.pem still present when unset
+PASS: RUNBOOK §12 + §12c lock + do-not-lock serial
+PASS: RUNBOOK documents yellow as Pixel custom-key truth; green not claimed
+PASS: POLICY documents yellow Pixel truth and HOLD green
+PASS: hardening.mk does not PRODUCT-force verifiedbootstate
+PASS: USB still opt-in default 0 and gated on isVerifiedBootGreen
+PASS: USB duress default is not "1"
+PY_COUNTS PASS_COUNT=10 FAIL_COUNT=0 HOLD_COUNT=0
+PASS: python structural rematch exit 0
+
+--- lunch komodo-trunk_staging-user (independent; do not skip) ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+10:49:00 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+10:49:06 Build sandboxing disabled due to nsjail error.
+10:49:12 Build sandboxing disabled due to nsjail error.
+10:49:18 Build sandboxing disabled due to nsjail error.
+10:49:24 Build sandboxing disabled due to nsjail error.
+10:49:30 Build sandboxing disabled due to nsjail error.
+10:49:36 Build sandboxing disabled due to nsjail error.
+10:49:42 Build sandboxing disabled due to nsjail error.
+10:49:48 Build sandboxing disabled due to nsjail error.
+10:49:53 Build sandboxing disabled due to nsjail error.
+10:50:02 Build sandboxing disabled due to nsjail error.
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_BUILD_TYPE=release
+PRODUCT_DEFAULT_DEV_CERTIFICATE=vendor/guardtalk/branding/signing-keys/releasekey
+BUILD_KEYS=dev-keys
+BOARD_AVB_ENABLE=true
+BOARD_AVB_KEY_PATH=vendor/guardtalk/branding/signing-keys/avb.pem
+BOARD_AVB_ALGORITHM=SHA256_RSA4096
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (USERBUILD not regressed to userdebug)
+PASS: TARGET_BUILD_TYPE=release
+PASS: USERBUILD cert stem still releasekey
+PASS: BOARD_AVB_ENABLE=true
+PASS: user BOARD_AVB_KEY_PATH is project avb.pem (not AOSP testkey)
+PASS: user BOARD_AVB_ALGORITHM=SHA256_RSA4096
+HOLD: BUILD_KEYS=dev-keys until operator post-sign (not FAIL; unsigned lunch honest)
+PASS: user PRODUCT_PACKAGES: su/overlay_remounter ABSENT (USERBUILD not regressed)
+PASS: user PRODUCT_PACKAGES_DEBUG: su/overlay_remounter ABSENT
+
+--- lunch komodo-trunk_staging-userdebug (sidecar adversarial; not product) ---
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+10:50:08 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=userdebug
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+10:50:14 Build sandboxing disabled due to nsjail error.
+10:50:20 Build sandboxing disabled due to nsjail error.
+10:50:26 Build sandboxing disabled due to nsjail error.
+userdebug TARGET_BUILD_VARIANT=userdebug
+userdebug BOARD_AVB_KEY_PATH=
+userdebug BUILD_KEYS=test-keys
+PASS: sidecar lunch is userdebug (not product truth)
+PASS: sidecar BOARD_AVB_KEY_PATH empty dumpvar (Makefile testkey fallback at m; do not lock)
+PASS: sidecar BUILD_KEYS=test-keys (not product truth)
+
+--- signed vbmeta / lock / adb (HOLD; do not execute lock) ---
+HOLD: m not run this QA stamp — signed vbmeta / avb_pkmd.bin HOLD (avb.pem ABSENT)
+HOLD: fastboot flashing lock NOT executed (no USB GO; do not lock 54111FDAS000GN)
+HOLD: verifiedbootstate green NOT claimed (Pixel custom-key truth is yellow)
+List of devices attached
+HOLD: adb devices empty / no komodo 54111FDAS000GN — device HOLD, never device-fixed, never lock
+
+RESULT: PASS (host)  bash_PASS=54 bash_HOLD=5 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+GREEN=HOLD
+KEYS_SIGN_LOCK=HOLD
+ITEM7=HOLD
+DEVICE=HOLD
+BUILD_KEYS_POSTSIGN=HOLD

@@ -1,0 +1,195 @@
+=== Q-REMEDIATE-B1-USERBUILD independent rematch (items 1,2,3,5) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+Q-ONDEVICE=not started
+Q-AVB=not started
+USB_GO=not started
+
+--- required files ---
+PASS: present: vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk
+PASS: present: vendor/guardtalk/feature-excised/userbuild-excised.mk
+PASS: present: vendor/guardtalk/radio-excised/product-config-late.mk
+PASS: present: vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk
+PASS: present: vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md
+PASS: present: vendor/guardtalk/docs/SPL_PIN.md
+PASS: present: vendor/guardtalk/docs/ENGINEERING_SIDECAR_USERDEBUG.md
+PASS: present: build/release/flag_values/trunk_staging/RELEASE_PLATFORM_SECURITY_PATCH.textproto
+PASS: present: build/soong/scripts/gen_build_prop.py
+PASS: present: system/core/rootdir/adb_debug.prop.in
+
+--- packet rg (su / overlay_remounter) ---
+vendor/guardtalk/feature-excised/guardtalk-feature-excised.mk:20:# T-REMEDIATE-B1-USERBUILD: su / overlay_remounter late filter lives in
+vendor/guardtalk/radio-excised/product-config-late.mk:28:  # T-REMEDIATE-B1-USERBUILD: drop su / overlay_remounter on user variant.
+vendor/guardtalk/feature-excised/userbuild-excised.mk:1:# T-REMEDIATE-B1-USERBUILD — drop setuid su and overlay_remounter from
+vendor/guardtalk/feature-excised/userbuild-excised.mk:6:# komodo userdebug out still installs /system/xbin/{su,overlay_remounter}.
+vendor/guardtalk/feature-excised/userbuild-excised.mk:10:# overlay_remounter is additionally a Soong `required:` of the init phony when
+vendor/guardtalk/feature-excised/userbuild-excised.mk:19:GUARDTALK_USERBUILD_DROP := su overlay_remounter
+
+--- packet rg (adb.secure / release-keys / testkey) ---
+vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md:12:| Profile | Lunch | `TARGET_BUILD_VARIANT` | `ro.debuggable` | `ro.adb.secure` | `su` / `overlay_remounter` |
+vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md:17:- **release-keys:** user variant sets `PRODUCT_DEFAULT_DEV_CERTIFICATE` to
+vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md:20:  reports `BUILD_KEYS=dev-keys` (not `testkey`); post-sign yields
+vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md:21:  `release-keys`. AVB user pointer + komodo lock procedure:
+vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md:24:- **`ro.adb.secure=1`:** product truth on the user image. `debug_ramdisk`
+vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md:41:rg -n "ro.adb.secure|release-keys|testkey" vendor/guardtalk/device/komodo vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md
+vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md:60:| `BOARD_AVB_KEY_PATH` | `vendor/guardtalk/branding/signing-keys/avb.pem` (overrideable) | **Not** `external/avb/test/data/testkey_rsa4096.pem`. File is gitignored and **absent** on this host. |
+vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md:62:| `BUILD_KEYS` (unsigned lunch) | `dev-keys` | Honest. Post-sign → `release-keys`. Do not invent release-keys. |
+vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md:92:rg -n "AVB_VBMETA|BOARD_AVB|release-keys|testkey" vendor/guardtalk/device/komodo vendor/google_devices/komodo device/google/komodo 2>/dev/null
+vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md:125:| `ro.secure` / `ro.adb.secure` | AOSP userdebug defaults | AOSP user defaults (ADB non-root) |
+vendor/guardtalk/device/komodo/BoardConfig-excised-late.mk:16:# the project AVB private-key path, not AOSP testkey_rsa4096.pem
+vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk:8:#   AOSP gen_build_prop.py maps user → ro.debuggable=0, ro.adb.secure=1
+vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk:17:# BUILD_KEYS=dev-keys; post-sign (RUNBOOK) yields release-keys.
+vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk:20:# or overrides to the offline path). Do not invent release-keys or green boot
+vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk:45:    ro.adb.secure=1
+vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk:48:# testkey is the AOSP default; this path is the production release-keys wiring.
+
+--- packet find (pem/pk8) ---
+PASS: no *.pem / *.pk8 under vendor/guardtalk
+
+--- static product wiring ---
+PASS: komodo harden sets ro.adb.secure=1
+PASS: komodo harden user-gates production profile / cert
+PASS: komodo harden cert stem is releasekey
+PASS: komodo harden SPL pin of record is 2026-09-05
+PASS: userbuild-excised.mk is user-gated
+PASS: userbuild-excised.mk filter-out PRODUCT_PACKAGES
+PASS: userbuild-excised.mk filter-out PRODUCT_PACKAGES_DEBUG
+PASS: drop set is su overlay_remounter
+PASS: userbuild-excised.mk does not add packages
+PASS: product-config-late.mk includes userbuild-excised.mk
+PASS: radio-excised includes per-device harden mk
+PASS: SPL_PIN.md documents pin 2026-09-05
+PASS: SPL_PIN.md documents live 2026-02-05
+PASS: trunk_staging RELEASE_PLATFORM_SECURITY_PATCH still 2026-02-05
+PASS: trunk_staging flag is not silently 2026-09-05
+PASS: gen_build_prop.py has user variant branch
+PASS: AOSP user maps ro.adb.secure=1
+PASS: AOSP user maps ro.debuggable=0
+PASS: debug_ramdisk adb_debug.prop.in still ro.adb.secure=0 (NOT product truth)
+PASS: policy documents product ro.adb.secure=1
+PASS: policy documents release-keys
+PASS: policy does not treat debug_ramdisk as product truth
+PASS: sidecar documents userdebug lunch (not this product)
+
+--- python structural rematch ---
+PASS: komodo harden user block present
+PASS: ro.adb.secure=1 is inside the user block (product wiring)
+PASS: user product block does not set ro.adb.secure=0
+PASS: releasekey stem assigned inside user block
+PASS: testkey is not the user product cert stem
+PASS: user block does not PRODUCT-force ro.debuggable
+PASS: komodo harden does not invent live PLATFORM_SECURITY_PATCH
+PASS: komodo harden does not add su/overlay_remounter
+PASS: pin of record GUARDTALK_SPL_PIN=2026-09-05 in harden mk
+PASS: userbuild-excised.mk user-gated (userdebug leftover is sidecar)
+PASS: user filter-out of PRODUCT_PACKAGES
+PASS: user filter-out of PRODUCT_PACKAGES_DEBUG
+PASS: userbuild-excised.mk is filter-out only
+PASS: late include order: feature-excised then userbuild-excised
+PASS: radio-excised uses per-device harden mk (komodo file wins)
+PASS: live flag file still 2026-02-05 (do not invent 2026-09-05 as live)
+PASS: AOSP user branch emits ro.adb.secure=1 (not debug_ramdisk)
+PASS: AOSP user branch disables target debugging (ro.debuggable=0 path)
+PASS: adb_debug.prop.in ro.adb.secure=0 is force_debuggable ramdisk, not product
+PASS: SPL_PIN.md records pin vs live HOLD honestly
+PY_COUNTS PASS_COUNT=20 FAIL_COUNT=0 HOLD_COUNT=0
+PASS: python structural rematch exit 0
+
+--- lunch komodo-trunk_staging-user (independent; do not skip) ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+10:10:37 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+10:10:43 Build sandboxing disabled due to nsjail error.
+10:10:49 Build sandboxing disabled due to nsjail error.
+10:10:55 Build sandboxing disabled due to nsjail error.
+10:11:01 Build sandboxing disabled due to nsjail error.
+10:11:07 Build sandboxing disabled due to nsjail error.
+10:11:12 Build sandboxing disabled due to nsjail error.
+10:11:18 Build sandboxing disabled due to nsjail error.
+10:11:24 Build sandboxing disabled due to nsjail error.
+10:11:33 Build sandboxing disabled due to nsjail error.
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_BUILD_TYPE=release
+PRODUCT_DEFAULT_DEV_CERTIFICATE=vendor/guardtalk/branding/signing-keys/releasekey
+PLATFORM_SECURITY_PATCH=2026-02-05
+BUILD_KEYS=dev-keys
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (not userdebug)
+PASS: TARGET_BUILD_TYPE=release
+PASS: PRODUCT_DEFAULT_DEV_CERTIFICATE is releasekey stem
+HOLD: BUILD_KEYS=dev-keys until operator post-sign (not FAIL; not test-keys)
+HOLD: live PLATFORM_SECURITY_PATCH=2026-02-05 (pin of record 2026-09-05; do not invent live current SPL)
+PASS: PRODUCT_PROPERTY_OVERRIDES contains ro.adb.secure=1 on user
+PASS: PRODUCT_PROPERTY_OVERRIDES does not set ro.adb.secure=0
+PASS: no PRODUCT-force of ro.debuggable on user dump
+PASS: user PRODUCT_PACKAGES: su and overlay_remounter ABSENT
+PASS: user PRODUCT_PACKAGES_DEBUG: su and overlay_remounter ABSENT
+
+--- lunch komodo-trunk_staging-userdebug (sidecar adversarial; not product) ---
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+10:11:39 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=userdebug
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+10:11:45 Build sandboxing disabled due to nsjail error.
+10:11:51 Build sandboxing disabled due to nsjail error.
+10:11:56 Build sandboxing disabled due to nsjail error.
+userdebug TARGET_BUILD_VARIANT=userdebug
+userdebug PRODUCT_DEFAULT_DEV_CERTIFICATE=
+PASS: sidecar lunch is userdebug (not product truth)
+PASS: sidecar PRODUCT_PACKAGES_DEBUG still has su/overlay_remounter (not this product)
+HOLD: sidecar cert stem= (document only; product is user+releasekey)
+
+--- xbin / m / adb (device HOLD if empty or not a built user image) ---
+HOLD: stale out xbin still present (m not a user image this stamp):
+-rwxr-xr-x+ 1 oss-c1 oss-c1 613776 Sep 15 04:58 out/target/product/komodo/system/xbin/overlay_remounter
+-rwxr-xr-x+ 1 oss-c1 oss-c1  51464 Sep 15 04:58 out/target/product/komodo/system/xbin/su
+HOLD: m not run this QA stamp (not a built user image; never device-fixed)
+List of devices attached
+HOLD: adb devices empty / no komodo 54111FDAS000GN — device HOLD, never device-fixed
+
+RESULT: PASS (host)  bash_PASS=47 bash_HOLD=6 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+ITEM5_LIVE_SPL=HOLD
+BUILD_KEYS_POSTSIGN=HOLD
+XBIN_M=HOLD
+DEVICE=HOLD

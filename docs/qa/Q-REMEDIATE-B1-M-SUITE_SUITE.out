@@ -1,0 +1,78 @@
+=== Q-REMEDIATE-B1-M-SUITE independent rematch (FLASH_READY image predicates) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+Q-ONDEVICE=not started
+USB_GO=not started
+M_BUILD=not started
+FLASH=not started
+FLASH_READY=false (not invented; computed at end)
+Q-REMEDIATE-B1-M=BLOCKED (this suite does not lift image PASS)
+PASS_HOLD=remains
+
+--- hygiene: this suite must not start m / USB / ondevice ---
+PASS: suite source does not invoke m, lunch, fastboot, or adb flash
+PASS: m not started this QA stamp
+PASS: USB GO / flash / lock not started
+PASS: Q-ONDEVICE / *_ondevice.sh not started
+
+--- git / tree: no committed key material (do not cat) ---
+PASS: git ls-files: no pem/pk8/avb.pem under vendor/guardtalk
+PASS: find: no *.pem / *.pk8 under vendor/guardtalk (keys stay offline)
+
+--- PRED pem used (existence only; contents not read) ---
+HOLD: avb.pem ABSENT at in-tree stem vendor/guardtalk/branding/signing-keys/avb.pem
+HOLD: avb.pem ABSENT at secure stem /mnt/secure/keys/guardtalk/avb.pem
+HOLD: /mnt/secure missing
+HOLD: pem used=false (no documented stem present; m must not start; no testkey fallback)
+PRED_PEM pem=false
+
+--- PRED no testkey (product AVB path; image tags rematched below) ---
+PASS: late BoardConfig does not assign AOSP testkey as product path
+PASS: late BoardConfig default path is project avb.pem (pem used requires the file + user out)
+PASS: late mk product path is not AOSP testkey-only
+
+--- PRED out ro.build.type=user (stale userdebug = HOLD) ---
+READ out/target/product/komodo/system/build.prop ro.build.type=userdebug ro.build.tags=test-keys
+-rw-rwxr--+ 1 oss-c1 oss-c1 5379 Sep 15 04:58 out/target/product/komodo/system/build.prop
+READ out/target/product/komodo/product/etc/build.prop ro.build.type=userdebug ro.build.tags=test-keys
+READ out/target/product/komodo/vendor/build.prop ro.vendor.build.type=userdebug ro.vendor.build.tags=test-keys
+HOLD: system ro.build.type=userdebug (stale out; not a user FLASH_READY image)
+HOLD: product ro.build.type=userdebug (stale out)
+HOLD: vendor ro.vendor.build.type=userdebug (stale out)
+
+--- PRED no xbin su / overlay_remounter (stale userdebug = HOLD) ---
+-rwxr-xr-x+ 1 oss-c1 oss-c1 51464 Sep 15 04:58 out/target/product/komodo/system/xbin/su
+HOLD: xbin su PRESENT out/target/product/komodo/system/xbin/su (stale userdebug out; m not a user image)
+-rwxr-xr-x+ 1 oss-c1 oss-c1 613776 Sep 15 04:58 out/target/product/komodo/system/xbin/overlay_remounter
+HOLD: xbin overlay_remounter PRESENT out/target/product/komodo/system/xbin/overlay_remounter (stale userdebug out)
+
+--- PRED no testkey on out tags (stale userdebug test-keys = HOLD) ---
+HOLD: system ro.build.tags=test-keys on userdebug out (stale; not FAIL while pem/out gap remains)
+HOLD: product ro.build.tags=test-keys on userdebug out (stale; not FAIL while pem/out gap remains)
+HOLD: vendor ro.vendor.build.tags=test-keys on userdebug out (stale; not FAIL while pem/out gap remains)
+
+--- vbmeta / avb_pkmd (read-only names; do not invent pem used) ---
+-rw-rw-r--+ 1 oss-c1 oss-c1 65536 Sep 15 05:21 out/target/product/komodo/vbmeta.img
+HOLD: vbmeta.img present on userdebug out (stale; not pem-used proof)
+HOLD: avb_pkmd.bin ABSENT (expected until signed user m)
+
+--- adb (device HOLD; do not start Q-ONDEVICE) ---
+List of devices attached
+HOLD: adb devices empty — device HOLD, never device-fixed
+HOLD: pem used=false (need pem present AND user out AND not test-keys)
+PASS: FLASH_READY not invented true (predicates incomplete or FAIL)
+
+PRED_PEM=false
+PRED_USER_OUT=false
+PRED_XBIN_CLEAN=false
+PRED_NO_TESTKEY=false
+PRED_PEM_USED=false
+FLASH_READY=false
+FLASH_CLASS=HOLD
+LIVE_DEVICE_CLAIMED=false
+PASS_HOLD=remains
+M_BUILD=not started
+USB_GO=not started
+ONDEVICE=not started
+Q-REMEDIATE-B1-M=BLOCKED
+RESULT: PASS (host)  bash_PASS=10 bash_HOLD=16 FAIL=0

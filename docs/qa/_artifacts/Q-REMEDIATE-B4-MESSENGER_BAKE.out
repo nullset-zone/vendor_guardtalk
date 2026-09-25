@@ -1,0 +1,172 @@
+=== T-REMEDIATE-B4-MESSENGER host rematch (item 19) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+USB_GO=not started
+
+--- required files ---
+PASS: present: vendor/guardtalk/apps/GuardTalkMessenger/Android.bp
+PASS: present: vendor/guardtalk/apps/GuardTalkMessenger/AndroidManifest.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkMessenger/src/com/guardtalk/messenger/MessengerActivity.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkMessenger/src/com/guardtalk/messenger/JamiGatewayClient.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkMessenger/src/com/guardtalk/messenger/GatewayEndpoint.kt
+PASS: present: vendor/guardtalk/radio-excised/product-config-late.mk
+PASS: present: vendor/guardtalk/device/komodo/guardtalk-messenger.mk
+PASS: present: vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk
+PASS: present: vendor/guardtalk/permissions/default-permissions-com.guardtalk.messenger.xml
+PASS: present: vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md
+
+--- package identity + Jami client ---
+PASS: Soong name GuardTalkMessenger
+PASS: product_specific bake
+PASS: manifest com.guardtalk.messenger
+PASS: INTERNET for Gateway jamid
+PASS: Jami RING addAccount
+PASS: Jami sendTextMessage
+PASS: RFC1918 fail-closed
+PASS: Gateway JSON-RPC path
+PASS: default-permissions XML
+
+--- PRODUCT_PACKAGES wiring ---
+PASS: late pass PRODUCT_PACKAGES GuardTalkMessenger
+PASS: late Soong namespace
+PASS: komodo messenger.mk PRODUCT_PACKAGES
+PASS: hardening includes messenger.mk
+
+--- no Play Store / browser / GMS in messenger wiring ---
+PASS: messenger.mk does not add TrichromeChrome/AppStore/GmsCompat
+PASS: SOP forbids Play Store install
+PASS: apps-excised still lists TrichromeChrome
+
+--- packet rg ---
+vendor/guardtalk/permissions/Android.bp:9:    name: "default-permissions-com.guardtalk.messenger",
+vendor/guardtalk/permissions/Android.bp:12:    src: "default-permissions-com.guardtalk.messenger.xml",
+vendor/guardtalk/permissions/default-permissions-com.guardtalk.messenger.xml:8:  Package: com.guardtalk.messenger
+vendor/guardtalk/permissions/default-permissions-com.guardtalk.messenger.xml:20:    <exception package="com.guardtalk.messenger">
+vendor/guardtalk/radio-excised/product-config-late.mk:80:  # T-REMEDIATE-B4-MESSENGER: bake Jami GuardTalk Messenger (com.guardtalk.messenger)
+vendor/guardtalk/radio-excised/product-config-late.mk:83:  # Do not add a browser or Play Store; jamid lives on the Gateway LAN
+vendor/guardtalk/feature-excised/guardtalk-feature-excised.mk:95:  PRODUCT_PACKAGES += default-permissions-com.guardtalk.messenger
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:1:# GuardTalk Messenger — Gateway Jami provision
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:16:`com.guardtalk.messenger`.
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:18:Gateway provision below is the **Jami daemon / rendezvous** path, not an
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:25:| Package | `com.guardtalk.messenger` |
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:28:| Protocol | Jami RING via JSON-RPC 2.0 |
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:30:| URL | `http://<gateway-ip>:8080/jami/jsonrpc` |
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:33:The client does **not** join the public Jami DHT. All traffic stays on the
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:39:SSID), run jamid and expose JSON-RPC on the LAN address only:
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:41:1. Install Jami daemon (`jamid`) from Savoir-faire Linux packages or a
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:42:   pinned in-house build. Do not point the phone at `dl.jami.net`.
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:43:2. Bind an HTTP JSON-RPC adapter to `0.0.0.0:8080` path `/jami/jsonrpc`
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:46:3. Implement (or proxy to jamid D-Bus) these methods:
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:52:| `sendTextMessage` | `[accountId, peerId, body]` | jamid send result |
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:56:5. First launch on device: **Register Jami account**, then send to a 40-hex
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:65:2. Remove the include of `guardtalk-messenger.mk` from
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:68:4. Keep `default-permissions-com.guardtalk.messenger.xml` unless also
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:74:rg -n "guardtalk.messenger|jami|Jami" vendor/guardtalk --glob '!out/**'
+vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md:79:On-device launch and Gateway jamid e2e are **HOLD** (PASS HOLD / adb empty).
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/AndroidManifest.xml:9:     GT Messenger (com.guardtalk.messenger) is pinned on the workspace
+vendor/guardtalk/device/tokay/guardtalk-tokay.mk:40:PRODUCT_PACKAGES += default-permissions-com.guardtalk.messenger
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/values/config.xml:10:  and GT Messenger (com.guardtalk.messenger) are intentionally NOT
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_2x2.xml:14:         (com.guardtalk.messenger/.MessengerActivity)
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_2x2.xml:52:        launcher:packageName="com.guardtalk.messenger"
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_2x2.xml:53:        launcher:className="com.guardtalk.messenger.MessengerActivity" />
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_5x8.xml:14:         (com.guardtalk.messenger/.MessengerActivity)
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_5x8.xml:52:        launcher:packageName="com.guardtalk.messenger"
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_5x8.xml:53:        launcher:className="com.guardtalk.messenger.MessengerActivity" />
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_3x3.xml:14:         (com.guardtalk.messenger/.MessengerActivity)
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_3x3.xml:52:        launcher:packageName="com.guardtalk.messenger"
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_3x3.xml:53:        launcher:className="com.guardtalk.messenger.MessengerActivity" />
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_6x5.xml:14:         (com.guardtalk.messenger/.MessengerActivity)
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_6x5.xml:52:        launcher:packageName="com.guardtalk.messenger"
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_6x5.xml:53:        launcher:className="com.guardtalk.messenger.MessengerActivity" />
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_4x5.xml:14:         (com.guardtalk.messenger/.MessengerActivity)
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_4x5.xml:52:        launcher:packageName="com.guardtalk.messenger"
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_4x5.xml:53:        launcher:className="com.guardtalk.messenger.MessengerActivity" />
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_7x3.xml:14:         (com.guardtalk.messenger/.MessengerActivity)
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_7x3.xml:52:        launcher:packageName="com.guardtalk.messenger"
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_7x3.xml:53:        launcher:className="com.guardtalk.messenger.MessengerActivity" />
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_8x3.xml:14:         (com.guardtalk.messenger/.MessengerActivity)
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_8x3.xml:52:        launcher:packageName="com.guardtalk.messenger"
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_8x3.xml:53:        launcher:className="com.guardtalk.messenger.MessengerActivity" />
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_4x4.xml:14:         (com.guardtalk.messenger/.MessengerActivity)
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_4x4.xml:52:        launcher:packageName="com.guardtalk.messenger"
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_4x4.xml:53:        launcher:className="com.guardtalk.messenger.MessengerActivity" />
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_5x5.xml:19:         (com.guardtalk.messenger/.MessengerActivity)
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_5x5.xml:49:        launcher:packageName="com.guardtalk.messenger"
+vendor/guardtalk/overlays/GuardTalkLauncherOverlay/res/xml/default_workspace_5x5.xml:50:        launcher:className="com.guardtalk.messenger.MessengerActivity" />
+vendor/guardtalk/device/komodo/guardtalk-messenger.mk:1:# GuardTalkOS komodo — Jami Messenger bake (T-REMEDIATE-B4-MESSENGER)
+vendor/guardtalk/device/komodo/guardtalk-messenger.mk:15:PRODUCT_PROPERTY_OVERRIDES += ro.guardtalk.messenger=1
+vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk:59:# T-REMEDIATE-B4-MESSENGER (item 19): bake Jami GuardTalk Messenger into the
+vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk:61:include vendor/guardtalk/device/komodo/guardtalk-messenger.mk
+vendor/guardtalk/device/komodo/REGEN_HOOKS.md:82:include vendor/guardtalk/device/komodo/guardtalk-messenger.mk
+vendor/guardtalk/device/komodo/REGEN_HOOKS.md:86:(`com.guardtalk.messenger`) is the bake path. Do **not** restore AppStore /
+vendor/guardtalk/device/komodo/REGEN_HOOKS.md:87:TrichromeChrome. Gateway jamid SOP: `vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md`.
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:20:| **Package name (constant)** | `com.guardtalk.messenger` |
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:26:**T-REMEDIATE-B4-MESSENGER closed the P4 APK GAP.** The product module is a Jami JSON-RPC client; jamid runs on the GuardTalk Gateway (see `GATEWAY_MESSENGER_PROVISION.md`). Do not substitute Play Store / browser / GMS. Do not invent a second package name.
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:73:                    when com.guardtalk.messenger is installed
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:80:| Product XML | `vendor/guardtalk/permissions/default-permissions-com.guardtalk.messenger.xml` | Installs to `product/etc/default-permissions/` (system-app / cert path when APK is system) |
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:92:| **R2 — Exception XML filter** | `etc/default-permissions` exceptions for **non-system** packages are **skipped**, except `com.guardtalk.messenger`. System-image exceptions (Seedvault, Updater, GmsCompat, carrier, etc.) remain. |
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:99:1. Do **not** invent a different Messenger package name in UI copy — use `com.guardtalk.messenger`.
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:115:2. Remove `PRODUCT_PACKAGES += default-permissions-com.guardtalk.messenger` from the same makefile.
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:120:4. Rebuild: `m services default-permissions-com.guardtalk.messenger -j$(nproc)`.
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:131:m services default-permissions-com.guardtalk.messenger -j$(nproc)
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:137:m services PermissionController default-permissions-com.guardtalk.messenger -j$(nproc)
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:143:grep -n 'com.guardtalk.messenger' \
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:145:  vendor/guardtalk/permissions/default-permissions-com.guardtalk.messenger.xml
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:148:get_build_var PRODUCT_PACKAGES | tr ' ' '\n' | grep default-permissions-com.guardtalk.messenger
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:157:| `vendor/guardtalk/permissions/default-permissions-com.guardtalk.messenger.xml` | **NEW** product XML |
+vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md:160:| `vendor/guardtalk/apps/GuardTalkMessenger/` | **T-REMEDIATE-B4-MESSENGER** product APK (Jami JSON-RPC client) |
+vendor/guardtalk/docs/qa/verify_remediate_b4_messenger_ux_host.sh:5:# Host static only. jamid e2e / m / device HOLD. Not device-fixed.
+vendor/guardtalk/docs/qa/verify_remediate_b4_messenger_ux_host.sh:23:ACT="vendor/guardtalk/apps/GuardTalkMessenger/src/com/guardtalk/messenger/MessengerActivity.kt"
+vendor/guardtalk/docs/qa/verify_remediate_b4_messenger_ux_host.sh:24:RPC="vendor/guardtalk/apps/GuardTalkMessenger/src/com/guardtalk/messenger/JamiGatewayClient.kt"
+
+--- python structural rematch ---
+PASS: manifest package com.guardtalk.messenger
+PASS: manifest has no store/browser package
+PASS: GatewayEndpoint RFC1918 + JSONRPC_PATH
+PASS: late mk adds GuardTalkMessenger
+PASS: SOP names jamid, bake, and rejects pm install
+PY_COUNTS PASS_COUNT=5 FAIL_COUNT=0 HOLD_COUNT=0
+PASS: python structural rematch exit 0
+
+--- lunch komodo-trunk_staging-user ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+13:59:17 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+13:59:23 Build sandboxing disabled due to nsjail error.
+13:59:29 Build sandboxing disabled due to nsjail error.
+13:59:35 Build sandboxing disabled due to nsjail error.
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (not userdebug)
+PASS: user PRODUCT_PACKAGES contains GuardTalkMessenger
+PASS: user PRODUCT_PACKAGES still has default-permissions-com.guardtalk.messenger
+PASS: user PRODUCT_PACKAGES: TrichromeChrome/AppStore ABSENT
+HOLD: adb devices empty — on-device Messenger e2e HOLD
+HOLD: m GuardTalkMessenger not run this card (Soong compile HOLD until rebuild)
+HOLD: Gateway jamid e2e HOLD (no USB GO; PASS HOLD remains)
+HOLD: not device-fixed; never APPROVED
+
+SUMMARY PASS=33 FAIL=0 HOLD=4
+VERDICT PASS (host-static; PASS HOLD remains)

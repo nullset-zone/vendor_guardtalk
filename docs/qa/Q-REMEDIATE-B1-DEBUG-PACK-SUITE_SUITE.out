@@ -1,0 +1,106 @@
+=== Q-REMEDIATE-B1-DEBUG-PACK-SUITE independent rematch (DEC-015/017 pack preconditions) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+LIVE_FLASH_CLAIMED=unverified (computed below)
+Q-ONDEVICE=not started
+USB_GO=not started
+M_BUILD=not started
+FLASH=not started
+FLASH_READY=false (not invented; computed at end)
+DEBUG_FLASH_READY=false (not invented; computed at end)
+Q-REMEDIATE-B1-DEBUG-PACK=BLOCKED (this suite does not lift stamp rematch)
+PASS_HOLD=remains
+
+--- hygiene: distinct script; do not start m / USB / ondevice ---
+PASS: basename is verify_remediate_debug_pack_host.sh (distinct)
+PASS: vendor/guardtalk/docs/qa/verify_remediate_b1_debug_m_host.sh still present (not overwritten)
+PASS: vendor/guardtalk/docs/qa/verify_remediate_debug_advertise_host.sh still present (not overwritten)
+PASS: suite source does not invoke m, lunch, fastboot, or adb flash
+PASS: m not started this QA stamp
+PASS: USB GO / flash / lock not started
+PASS: Q-ONDEVICE / *_ondevice.sh not started
+
+--- DEC-015 / DEC-017 pack card present (does not APPROVE T-DEBUG-PACK) ---
+PASS: .memory-bank/decisions.md binds DEC-REMEDIATE-015
+PASS: .memory-bank/decisions.md binds DEC-REMEDIATE-017
+PASS: TASK_QUEUE.md documents DEC-REMEDIATE-015
+PASS: TASK_QUEUE.md documents DEC-REMEDIATE-017
+PASS: Q-REMEDIATE-B1-DEBUG-PACK is BLOCKED (this suite does not lift it)
+HOLD: T-REMEDIATE-B1-DEBUG-PACK is not APPROVED (pack not done; expected)
+
+--- honesty: FLASH_READY=false; DEBUG_FLASH_READY=false; LIVE_FLASH_CLAIMED=false ---
+PASS: vendor/guardtalk/web-installer/src/types.ts exports LIVE_FLASH_CLAIMED = false
+PASS: vendor/guardtalk/web-installer/src/types.ts does not assign LIVE_FLASH_CLAIMED=true
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table documents DEBUG_FLASH_READY false
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table documents FLASH_READY false
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table documents LIVE_FLASH_CLAIMED false
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table does not claim DEBUG_FLASH_READY true
+
+--- komodo-latest still → komodo-20260915-063833 (not retargeted) ---
+readlink releases/desktop-flash/komodo-latest => komodo-20260915-063833
+PASS: releases/desktop-flash/komodo-latest -> komodo-20260915-063833 (relative symlink; not retargeted)
+
+--- komodo-debug-latest ABSENT / pack not staged → HOLD (not FAIL) ---
+HOLD: releases/desktop-flash/komodo-debug-latest PRESENT -> komodo-debug-20260918-180338 (pack landed; this suite still does not lift DEBUG_FLASH_READY or Q-DEBUG-PACK)
+HOLD: debug stamp dirs present (not a DEBUG_FLASH_READY lift; Q-DEBUG-PACK not lifted): releases/desktop-flash/komodo-debug-20260918-150847
+releases/desktop-flash/komodo-debug-20260918-180338
+releases/desktop-flash/komodo-debug-latest
+HOLD: pack artifacts present (HOLD; Q-REMEDIATE-B1-DEBUG-PACK still not lifted)
+
+--- DEC-017 A/B four SHA vs leftover / STALE_BAK (not a kernel rebuild) ---
+HOLD: STALE_BAK present at /tmp/t-remediate-b1-debug-pack-stale-20260915 (compare only; do not copy)
+STAT out/target/product/komodo/boot.img mtime=2026-09-18 17:57:54.829401747 +0000 size=67108864 sha256=449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc
+STALE_BAK /tmp/t-remediate-b1-debug-pack-stale-20260915/boot.img sha256=449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc
+HOLD: boot.img SHA equals Sept 15 leftover / STALE_BAK — not a kernel rebuild (DEC-017; HOLD not FAIL)
+STAT out/target/product/komodo/vendor_kernel_boot.img mtime=2026-09-18 17:57:54.698392160 +0000 size=67108864 sha256=a12a9fbd7f320cc5c797bf88fcece23ce75e98167cc6763b854bdfb4e6870eb8
+STALE_BAK /tmp/t-remediate-b1-debug-pack-stale-20260915/vendor_kernel_boot.img sha256=a12a9fbd7f320cc5c797bf88fcece23ce75e98167cc6763b854bdfb4e6870eb8
+HOLD: vendor_kernel_boot.img SHA equals Sept 15 leftover / STALE_BAK — not a kernel rebuild (DEC-017; HOLD not FAIL)
+STAT out/target/product/komodo/pvmfw.img mtime=2026-09-18 18:03:31.337823534 +0000 size=1048576 sha256=f7c5910e0bada491895519d3018cdc37164b5873ae46e1772bcee0dc7b84eee8
+STALE_BAK /tmp/t-remediate-b1-debug-pack-stale-20260915/pvmfw.img sha256=f7c5910e0bada491895519d3018cdc37164b5873ae46e1772bcee0dc7b84eee8
+HOLD: pvmfw.img SHA equals Sept 15 leftover / STALE_BAK — not a kernel rebuild (DEC-017; HOLD not FAIL)
+STAT out/target/product/komodo/dtbo.img mtime=2026-09-18 18:03:15.332500953 +0000 size=16777216 sha256=742a1e192a0199e11b2176829f9d818f5de0ad16b40132fcc0b8e4f6b162e433
+STALE_BAK /tmp/t-remediate-b1-debug-pack-stale-20260915/dtbo.img sha256=742a1e192a0199e11b2176829f9d818f5de0ad16b40132fcc0b8e4f6b162e433
+HOLD: dtbo.img SHA equals Sept 15 leftover / STALE_BAK — not a kernel rebuild (DEC-017; HOLD not FAIL)
+AB_FOUR_STALE=0 AB_FOUR_LEFTOVER_SHA=4 AB_FOUR_ABSENT=0 AB_FOUR_SHA_DIFF=0
+HOLD: all four A/B SHA equal leftover / STALE_BAK — not a kernel rebuild (DEC-017; Q-DEBUG-PACK not lifted)
+
+--- DEC-017 stamp A/B four (if pointer exists; SHA==leftover is not a rebuild) ---
+HOLD: debug stamp dir releases/desktop-flash/komodo-debug-20260918-180338 present (pointer is not DEBUG_FLASH_READY)
+STAMP releases/desktop-flash/komodo-debug-20260918-180338/boot.img sha256=449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc
+HOLD: stamp boot.img SHA equals Sept 15 leftover — not a kernel rebuild (DEC-017; HOLD not FAIL)
+STAMP releases/desktop-flash/komodo-debug-20260918-180338/vendor_kernel_boot.img sha256=a12a9fbd7f320cc5c797bf88fcece23ce75e98167cc6763b854bdfb4e6870eb8
+HOLD: stamp vendor_kernel_boot.img SHA equals Sept 15 leftover — not a kernel rebuild (DEC-017; HOLD not FAIL)
+STAMP releases/desktop-flash/komodo-debug-20260918-180338/pvmfw.img sha256=f7c5910e0bada491895519d3018cdc37164b5873ae46e1772bcee0dc7b84eee8
+HOLD: stamp pvmfw.img SHA equals Sept 15 leftover — not a kernel rebuild (DEC-017; HOLD not FAIL)
+STAMP releases/desktop-flash/komodo-debug-20260918-180338/dtbo.img sha256=742a1e192a0199e11b2176829f9d818f5de0ad16b40132fcc0b8e4f6b162e433
+HOLD: stamp dtbo.img SHA equals Sept 15 leftover — not a kernel rebuild (DEC-017; HOLD not FAIL)
+STAMP_AB_LEFTOVER_SHA=4 STAMP_AB_ABSENT=0 STAMP_AB_SHA_DIFF=0
+
+--- adb (device HOLD; do not start Q-ONDEVICE / USB GO) ---
+List of devices attached
+HOLD: adb devices empty — device HOLD; USB GO not started
+PASS: FLASH_READY not invented true
+PASS: DEBUG_FLASH_READY not invented true
+
+AB_FOUR_STALE=0
+AB_FOUR_LEFTOVER_SHA=4
+AB_FOUR_ABSENT=0
+AB_FOUR_SHA_DIFF=0
+STAMP_AB_LEFTOVER_SHA=4
+STAMP_AB_ABSENT=0
+STAMP_AB_SHA_DIFF=0
+PACK_STAGED=true
+FLASH_READY=false
+DEBUG_FLASH_READY=false
+FLASH_CLASS=HOLD
+DEBUG_CLASS=HOLD
+LIVE_FLASH_CLAIMED=false
+LIVE_DEVICE_CLAIMED=false
+PASS_HOLD=remains
+M_BUILD=not started
+USB_GO=not started
+ONDEVICE=not started
+Q-REMEDIATE-B1-DEBUG-PACK=BLOCKED
+KOMODO_LATEST=komodo-20260915-063833
+KOMODO_DEBUG_LATEST=komodo-debug-20260918-180338
+RESULT: PASS (host)  bash_PASS=21 bash_HOLD=16 FAIL=0

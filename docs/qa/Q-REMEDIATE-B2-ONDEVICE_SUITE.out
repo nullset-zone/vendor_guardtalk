@@ -1,0 +1,77 @@
+=== Q-REMEDIATE-B2-ONDEVICE independent probe (Block 2 PASS HOLD lift) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+SERIAL=54111FDAS000GN
+PAIR=T-REMEDIATE-B2-EXCISE+KERNEL+TELEMETRY (Architect-APPROVED static; not trusted)
+SIBLING=Q-REMEDIATE-B1-ONDEVICE (do not wait)
+USB_GO=not started
+FLASH=not started
+LOCK=not started
+WIPE=not started
+M_NOT_RUN=true
+PASS_HOLD=remains
+LIVE_DEVICE_CLAIMED=false
+
+--- adb devices -l ---
+PASS: adb binary present
+List of devices attached
+HOLD: adb devices -l empty — serial 54111FDAS000GN absent — HOLD REVIEW (successful HOLD delivery)
+PASS: empty-adb path taken; did not invent live Block 2
+NAMED_STATE=absent
+ADB_EMPTY=true
+
+--- image class (user vs userdebug) ---
+HOLD: ro.build.type=user / ro.debuggable=0 (live not proven this stamp)
+HOLD: user image not proven (serial absent or not in device state)
+
+--- location / GmsCompat (EXCISE) ---
+HOLD: location packages / GmsCompat absent (live not proven this stamp)
+HOLD: on-device GNSS-dead / dumpsys location (live not proven this stamp)
+
+--- /proc/sys kernel (KERNEL; documented HOLDs allowed) ---
+HOLD: /proc/sys/kernel/perf_event_paranoid (live not proven this stamp)
+HOLD: /proc/sys/kernel/yama/ptrace_scope (live not proven this stamp)
+HOLD: /proc/sys/kernel/unprivileged_bpf_disabled (live not proven this stamp)
+HOLD: YAMA live Image / __lsm_yama remains a documented static HOLD (not rematched live)
+
+--- persistent logs / EXIF (TELEMETRY) ---
+HOLD: persistent vendor logs off / /data log dirs empty (live not proven this stamp)
+HOLD: photo EXIF make/model absent (live not proven this stamp)
+
+--- pktrouter / BIP not restarting ---
+HOLD: pktrouter/BIP not restarting (live not proven this stamp)
+
+--- device-admins ---
+HOLD: empty device-admins / DeviceLockController absent (live not proven this stamp)
+HOLD: com.android.devicelock APEX remains a documented static HOLD
+
+--- process / forbidden-action checks ---
+PASS: Q-REMEDIATE-B1-ONDEVICE sibling not waited
+PASS: USB GO not started
+PASS: flash not started
+PASS: lock not started
+PASS: wipe not started
+PASS: m not run
+PASS: no APPROVED claim from this probe
+PASS: PASS HOLD remains (not lifted)
+PASS: LIVE_DEVICE_CLAIMED=false
+PASS: empty adb = successful HOLD delivery (EXIT 0)
+
+LIVE_DEVICE_CLAIMED=false
+ADB_EMPTY=true
+NAMED_STATE=absent
+BUILD_TYPE=unknown
+USER_IMAGE=false
+PASS_HOLD=remains
+USB_GO=not started
+Q_B1_ONDEVICE=not waited
+RESULT: HOLD (documented)  PASS_COUNT=12 HOLD_COUNT=14 FAIL=0 EXIT=0
+LIVE_DEVICE_CLAIMED=false
+PASS_HOLD=remains
+DEVICE=HOLD
+GNSS_DEAD_ONDEVICE=HOLD
+PROC_SYS=HOLD
+EXIF=HOLD
+LOGS=HOLD
+PKT_BIP=HOLD
+DEVICE_ADMINS=HOLD
+USERDEBUG_OR_EMPTY=HOLD

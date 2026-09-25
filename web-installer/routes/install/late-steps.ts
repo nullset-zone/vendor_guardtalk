@@ -16,6 +16,7 @@ import { consoleMarkup, type ConsoleLineKind } from "../../lib/ui/console.js";
 import { INSTALLER_CSP } from "../../lib/claims/csp.js";
 import { ProtectionLimit } from "../../lib/claims/components.js";
 import { GL_BTN_CONFIRM, glAlertHtml } from "../../lib/ui/pajamas.js";
+import { offeredProductIds } from "../../lib/ui/offered-devices.js";
 
 export const GATEWAY_URL = "https://guardtalk.io/system/gateway";
 export const DOCS_URL = "https://guardtalk.io/docs";
@@ -42,8 +43,8 @@ export const GATEWAY_LIMIT_SENTENCE =
 export const CUSTODY_LIMIT_SENTENCE =
   "Key custody protects the key on this computer; it cannot cover a signing machine already compromised or a key copied without your knowledge.";
 
-/** Advertised production devices (DEC-PORT-KOMODO-004). Rango is not production. */
-export const TARGET_PRODUCTS: readonly string[] = ["tokay", "akita", "komodo"];
+/** Advertised products from wizard/devices.ts (DEC-WEBINSTALL-015). Rango is experimental / boot HOLD. */
+export const TARGET_PRODUCTS: readonly string[] = offeredProductIds();
 
 // --- sim mode (D-011) --------------------------------------------------------
 

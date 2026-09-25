@@ -1,0 +1,15 @@
+# GuardTalkOS komodo telemetry kill (T-REMEDIATE-B2-TELEMETRY, items 11 + 14).
+#
+# Vendor init so persist.vendor.* writes are vendor_init (camera/slog/modem/rild
+# property types). post-fs-data so /data persist is mounted. Re-asserts after
+# an upgrade from a userdebug image that already stored the Google defaults.
+# Does not start RIL. Does not edit init.guardtalk.hardening.rc.
+
+on post-fs-data
+    setprop persist.vendor.camera.exif_reveal_make_model false
+    setprop persist.vendor.sys.silentlog.tcp Off
+    setprop persist.vendor.sys.modem.logging.enable false
+    setprop persist.vendor.ril.log_mask 0
+    setprop persist.logd.logpersistd ""
+    setprop logd.logpersistd.enable false
+    setprop logd.logpersistd ""

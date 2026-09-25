@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GT Messenger</string>
+    <string name="app_description">GuardTalk Messenger. Register a RING account on the Gateway LAN and send text. Public Jami is not used.</string>
+    <string name="header_title">GuardTalk Messenger</string>
+    <string name="first_run_hint">Connect to the GuardTalk Gateway Wi-Fi, tap Register, then send to a 40-character Jami peer ID. Off the LAN, messaging stays off.</string>
+    <string name="status_checking">Looking up the Gateway on this Wi-Fi…</string>
+    <string name="status_no_wifi">No Gateway on this Wi-Fi. Join the GuardTalk Gateway SSID. Messaging is off until then.</string>
+    <string name="status_not_private">Gateway address is not a private LAN (RFC1918). Messaging is blocked. Public Jami is not used.</string>
+    <string name="status_unregistered">Gateway %1$s is ready. Register a RING account to send.</string>
+    <string name="status_ok">Gateway %1$s · RING %2$s</string>
+    <string name="status_registering">Registering RING account on Gateway…</string>
+    <string name="status_refreshing">Loading conversations from Gateway…</string>
+    <string name="status_sending">Sending via Gateway jamid…</string>
+    <string name="btn_register">Register RING account</string>
+    <string name="btn_retry">Retry Gateway</string>
+    <string name="btn_refresh">Refresh conversations</string>
+    <string name="btn_send">Send text</string>
+    <string name="peer_label">Jami peer ID</string>
+    <string name="peer_hint">Jami peer ID (40 hex)</string>
+    <string name="body_label">Message</string>
+    <string name="body_hint">Text sent only through Gateway jamid</string>
+    <string name="log_need_gateway">No conversations. Connect to the Gateway Wi-Fi first.</string>
+    <string name="log_need_register">No conversations. Register a RING account, then refresh.</string>
+    <string name="log_empty">No conversations yet. Send a text or refresh after the peer accepts.</string>
+    <string name="err_register">Register failed: %1$s</string>
+    <string name="err_send">Send failed: %1$s</string>
+    <string name="err_refresh">Refresh failed: %1$s</string>
+    <string name="err_gateway_unreachable">Gateway %1$s is not answering on port 8080. Stay on the LAN. jamid may be down.</string>
+    <string name="err_gateway_timeout">Gateway %1$s timed out. Stay on the LAN and retry.</string>
+    <string name="err_gateway_http">Gateway HTTP error (%1$s). jamid may be down.</string>
+    <string name="err_peer_required">Enter the 40-character Jami peer ID before sending.</string>
+    <string name="err_body_required">Type a message before sending.</string>
+    <string name="err_peer_format">Peer ID must be 40 hexadecimal characters.</string>
+    <string name="register_ok">RING account registered on Gateway.</string>
+    <string name="send_ok">Text queued on Gateway jamid.</string>
+    <string name="retry_ok">Gateway endpoint updated.</string>
+    <string name="cd_status">Gateway and account status</string>
+    <string name="cd_conversations">Conversation list</string>
+</resources>

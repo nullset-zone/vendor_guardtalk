@@ -5,7 +5,7 @@ import {
   type ChannelManifest,
 } from "./types.js";
 
-/** tokay (Pixel 9), akita (Pixel 8a), komodo (Pixel 9 Pro XL). Rango / shiba / husky / caiman stay rejected (DEC-001/010, DEC-PORT-KOMODO-004). */
+/** tokay (Pixel 9), akita (Pixel 8a), komodo (Pixel 9 Pro XL), rango (Pixel 10 Pro Fold, experimental / boot HOLD). Unstamped shiba / husky / caiman / tegu / comet stay rejected (DEC-WEBINSTALL-015). */
 export function isAllowedProduct(product: string): product is AllowedProduct {
   return (ALLOWED_PRODUCTS as readonly string[]).includes(product.trim());
 }
@@ -31,9 +31,6 @@ export function assertManifestAllowlist(manifest: ChannelManifest): void {
     throw new ChannelError("advertisedDevices must include manifest.product");
   }
   for (const reserved of manifest.reservedProducts ?? []) {
-    if (reserved === "rango") {
-      throw new ChannelError("rango must not appear in reservedProducts");
-    }
     if (isAllowedProduct(reserved)) {
       throw new ChannelError("reservedProducts must not include an advertised device");
     }

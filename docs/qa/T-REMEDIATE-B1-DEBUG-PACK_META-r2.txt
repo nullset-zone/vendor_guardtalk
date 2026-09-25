@@ -1,0 +1,50 @@
+START=2026-09-18T15:03:01Z
+PWD=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+COMBO=komodo-trunk_staging-userdebug
+DEC=DEC-REMEDIATE-015
+TASK=T-REMEDIATE-B1-DEBUG-PACK
+ROUND=r2
+NPROC=96
+USB_GO=false
+FLASH_READY=false
+DEBUG_FLASH_READY=false
+LOG=/tmp/t-remediate-b1-debug-pack-r2-20260918T150300Z.log
+STALE_BAK=/tmp/t-remediate-b1-debug-pack-stale-20260915
+GOALS=bootimage vendorkernelbootimage out/target/product/komodo/pvmfw.img out/target/product/komodo/dtbo.img
+NOTE=pvmfwimage is empty phony; dtbo.img basename is not a ninja target
+OUT_ABSENT boot.img (expected before rebuild)
+STALE_BAK_OK boot.img sha=449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc
+OUT_ABSENT vendor_kernel_boot.img (expected before rebuild)
+STALE_BAK_OK vendor_kernel_boot.img sha=a12a9fbd7f320cc5c797bf88fcece23ce75e98167cc6763b854bdfb4e6870eb8
+OUT_ABSENT pvmfw.img (expected before rebuild)
+STALE_BAK_OK pvmfw.img sha=f7c5910e0bada491895519d3018cdc37164b5873ae46e1772bcee0dc7b84eee8
+OUT_ABSENT dtbo.img (expected before rebuild)
+STALE_BAK_OK dtbo.img sha=742a1e192a0199e11b2176829f9d818f5de0ad16b40132fcc0b8e4f6b162e433
+ENVSETUP_EXIT=0
+LUNCH_EXIT=0
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=userdebug
+TARGET_BUILD_TYPE=release
+BUILD_KEYS=test-keys
+M_START=2026-09-18T15:03:14Z
+BUILD_EXIT=0
+M_END=2026-09-18T15:03:31Z
+#### post-m stale-four rematch ####
+-rw-rw-r--+ 1 oss-c1 oss-c1 67108864 2026-09-18 15:03:30.528938659 +0000 /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/target/product/komodo/boot.img
+SHA boot.img 449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc
+HOLD_SAME_SHA boot.img matches Sept 15 backup — do not pack
+-rw-rw-r--+ 1 oss-c1 oss-c1 67108864 2026-09-18 15:03:30.393926061 +0000 /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/target/product/komodo/vendor_kernel_boot.img
+SHA vendor_kernel_boot.img a12a9fbd7f320cc5c797bf88fcece23ce75e98167cc6763b854bdfb4e6870eb8
+HOLD_SAME_SHA vendor_kernel_boot.img matches Sept 15 backup — do not pack
+-rw-rwxr--+ 1 oss-c1 oss-c1 1048576 2026-09-18 15:03:30.067895639 +0000 /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/target/product/komodo/pvmfw.img
+SHA pvmfw.img f7c5910e0bada491895519d3018cdc37164b5873ae46e1772bcee0dc7b84eee8
+HOLD_SAME_SHA pvmfw.img matches Sept 15 backup — do not pack
+-rwxrwxr-x+ 1 oss-c1 oss-c1 16777216 2026-09-18 15:03:30.259913556 +0000 /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/target/product/komodo/dtbo.img
+SHA dtbo.img 742a1e192a0199e11b2176829f9d818f5de0ad16b40132fcc0b8e4f6b162e433
+HOLD_SAME_SHA dtbo.img matches Sept 15 backup — do not pack
+SESSION_OK=0
+USB_GO=false
+FLASH_READY=false
+DEBUG_FLASH_READY=false
+WRAPPER_END=2026-09-18T15:03:32Z
+HOLD: rebuilt files missing, still 2026-09-15, or same SHA as Sept 15

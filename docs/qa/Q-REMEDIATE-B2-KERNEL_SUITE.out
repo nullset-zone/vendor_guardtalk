@@ -1,0 +1,86 @@
+=== Q-REMEDIATE-B2-KERNEL independent rematch (item 9) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+Q-ONDEVICE=not started
+Q-EXCISE=not started
+Q-TELEMETRY=not started
+USB_GO=not started
+P5_SCRIPT_SOT=false (historical paranoid 3; rematch against 2)
+
+--- required files ---
+PASS: present: vendor/guardtalk/init/init.guardtalk.hardening.rc
+PASS: present: device/google/caimito-kernels/6.1/guardtalk-security-yama.config
+PASS: present: device/google/caimito-kernels/6.1/grapheneos/System.map
+PASS: present: device/google/caimito-kernels/6.1/grapheneos/Image.lz4
+PASS: present: vendor/guardtalk/feature-excised/guardtalk-feature-excised.mk
+PASS: present: vendor/guardtalk/init/Android.bp
+PASS: present: vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md
+
+--- live init rc: paranoid 2 (FAIL if 3) ---
+PASS: live rc writes perf_event_paranoid 2
+PASS: live rc has no perf_event_paranoid 3
+PASS: paranoid 2 written twice (late-init + boot_completed)
+PASS: late-init writes perf_event_paranoid 2
+PASS: boot_completed writes perf_event_paranoid 2
+
+--- bpf=1 boot_completed only (not late-init) ---
+PASS: late-init does not write unprivileged_bpf_disabled
+PASS: boot_completed writes unprivileged_bpf_disabled 1
+PASS: exactly one bpf=1 write (boot_completed only)
+PASS: boot_completed property trigger present
+
+--- ptrace_scope=1 remains ---
+PASS: late-init writes ptrace_scope 1
+PASS: boot_completed writes ptrace_scope 1
+PASS: live rc does not raise ptrace_scope to 2
+
+--- modules_disabled must not be set ---
+PASS: live rc does not write modules_disabled
+PASS: modules_disabled mentioned only as intentionally not set
+
+--- PRODUCT_PACKAGES / Android.bp wiring ---
+PASS: Android.bp packages init.guardtalk.hardening.rc
+PASS: feature-excised.mk PRODUCT_PACKAGES includes hardening.rc
+
+--- YAMA fragment CONFIG_SECURITY_YAMA=y ---
+PASS: fragment has CONFIG_SECURITY_YAMA=y
+
+--- fragment not Makefile-included ---
+PASS: no Makefile/Android.mk/Android.bp/*.mk under caimito-kernels/6.1
+PASS: fragment not referenced from any Makefile (docs/README only)
+
+--- live System.map LSM list / __lsm_yama ---
+86323:ffff80000a328cd0 d __lsm_capability
+86325:ffff80000a328d00 d __lsm_selinux
+86326:ffff80000a328d30 d __lsm_safesetid_security_init
+86327:ffff80000a328d60 d __lsm_integrity
+PASS: live System.map LSM set includes capability/selinux/safesetid/integrity
+HOLD: live grapheneos/System.map __lsm_yama ABSENT (YAMA not in prebuilt Image)
+HOLD: trunk-14096387/System.map __lsm_yama ABSENT (same prebuilt LSM set)
+
+--- Image.lz4 not rewritten ---
+Image.lz4 mtime=2026-05-25 09:26:07
+fragment mtime=2026-09-16 10:48:54
+HOLD: Image.lz4 present (mtime 2026-05-25 09:26:07); fragment newer; not treated as rebuilt
+
+--- historical P5 script is NOT source of truth ---
+HOLD: verify_sec_p5_static.sh still asserts paranoid 3 (historical P5; not SoT)
+PASS: PRODUCTION_HARDENING_POLICY.md table lists paranoid 2
+
+--- init-perfetto residual (not this card) ---
+HOLD: init-perfetto.rc can still write paranoid -1/1/3 (traced/perf_harden; not item 9 SoT)
+
+--- stale out/ copies (m not run) ---
+HOLD: stale out/komodo init.guardtalk.hardening.rc still has paranoid 3 until rebuild
+HOLD: stale out product rc copies lack bpf=1 (m not run)
+
+--- adb / on-device /proc/sys ---
+List of devices attached
+HOLD: adb empty; on-device /proc/sys HOLD; Q-ONDEVICE not started
+
+RESULT: PASS (host static)  PASS_COUNT=28 HOLD_COUNT=8 FAIL=0 EXIT=0
+LIVE_DEVICE_CLAIMED=false
+YAMA_LIVE_IMAGE=HOLD
+PROC_SYS=HOLD
+DEVICE=HOLD
+P5_SCRIPT=HOLD (not SoT)

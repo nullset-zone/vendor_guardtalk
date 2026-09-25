@@ -2,9 +2,9 @@
 
 | Field | Value |
 |-------|--------|
-| Task | `T-RANGO-BOOT-FIX` → … → APEXSET → **STOCKVENDOR** (`T-RANGO-BOOT-STOCKVENDOR`) |
-| Date | 2026-08-01; **updated 2026-08-20** (061630 bflags + 0xfc; flag series CLOSED; next `gtsystemonstockfacsuper`) |
-| Status | **REVIEW** (061630 `0xfc` AB `11111111`; next `MODE=gtsystemonstockfacsuper`; HOLD without adb) |
+| Task | `T-RANGO-BOOT-FIX` → … → FACSUPER HOLD → **`T-RANGO-BOOT-REMEDIATE`** |
+| Date | 2026-08-01; **updated 2026-09-16** (no new stamp; next USB `145117`) |
+| Status | **REVIEW** (STOP; USB HOLD; `rango-latest` still `130756`) |
 | Depends on | `T-RANGO-BOOT-RCA` ✅; SELINUX closed (044126 FAIL); APEXSET closed (130329 FAIL); STOCKVENDOR active |
 | RCA | `vendor/guardtalk/docs/RANGO_BOOT_RCA.md` (§1.0 active; §1.0.1 vendor diff) |
 | Flash path (binding) | `scripts/flash-from-remote.sh` / `vendor/guardtalk/scripts/flash-from-remote.sh` only — **zero** new `scripts/flash-*.sh` (GrapheneOS A/B+uart+dpm parity retained; auto-harvest built in) |
@@ -15,7 +15,16 @@
 
 ---
 
-## 0. Active bind (2026-08-20) — `061630` closed; next `facsuper` only if real
+## 0. Active bind (2026-09-16) — remediating STOP; next USB `145117`
+
+`T-RANGO-BOOT-REMEDIATE`: no new stamp, no `--link-latest`, no USB.
+Named `061630` early-boot leftovers MATCH stock. Next operator flash is
+the already-staged stockvendor stamp `rango-20260803-145117` (never
+flashed). After a `0xfc` bind there, Architect may dispatch a rango-gated
+official `fastboot update` card — **not** wipe-super omit-super, **not**
+GOS lock. Full write-up: `RANGO_BOOT_REMEDIATE.md`.
+
+### 0.1 Prior bind (2026-08-20) — `061630` closed; next `facsuper` only if real
 
 `rango-20260820-061630` / `MODE=gtsystemonstockbflags`: flash OK / boot
 `0xfc` ~18s `AB 11111111` (harvest `harvest-rango-20260820-102522`).

@@ -1,0 +1,237 @@
+=== Q-OS-BACK-NAV independent rematch ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+
+PASS: present: frameworks/base/core/java/android/app/Activity.java
+PASS: present: frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java
+PASS: present: frameworks/base/services/core/java/com/android/server/wm/ActivityClientController.java
+=== RAW: packet rg KEYCODE_BACK|onBackInvoked|BackAnimation|handleBack|predictiveBack ===
+frameworks/base/core/java/android/window/IBackAnimationHandoffHandler.aidl:32:oneway interface IBackAnimationHandoffHandler {
+frameworks/base/core/java/android/window/IBackAnimationFinishedCallback.aidl:25:interface IBackAnimationFinishedCallback {
+frameworks/base/core/java/android/window/ObserverOnBackAnimationCallback.java:22: * Privileged marker interface for {@link OnBackAnimationCallback} that's only available to system
+frameworks/base/core/java/android/window/ObserverOnBackAnimationCallback.java:25: * {@link OnBackAnimationCallback#onBackStarted}, {@link OnBackAnimationCallback#onBackInvoked()}
+frameworks/base/core/java/android/window/ObserverOnBackAnimationCallback.java:26: * and {@link OnBackAnimationCallback#onBackCancelled()} callbacks whenever ANY back navigation
+frameworks/base/core/java/android/window/ObserverOnBackAnimationCallback.java:30:public interface ObserverOnBackAnimationCallback extends OnBackAnimationCallback {
+frameworks/base/core/java/android/window/ObserverOnBackAnimationCallback.java:36:    void onBackInvoked();
+frameworks/base/core/java/android/window/SystemOnBackInvokedCallbacks.java:128:                public void onBackInvoked() {
+frameworks/base/core/java/android/window/SystemOnBackInvokedCallbacks.java:149:                public void onBackInvoked() {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:22:import static com.android.window.flags.Flags.predictiveBackCallbackCancellationFix;
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:23:import static com.android.window.flags.Flags.predictiveBackStopKeycodeBackForwarding;
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:44:import android.view.ImeBackAnimationController;
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:108:    private ImeBackAnimationController mImeBackAnimationController;
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:147:        if (!mProgressAnimator.isBackAnimationInProgress()) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:160:            @Nullable ImeBackAnimationController imeBackAnimationController) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:165:            mImeBackAnimationController = imeBackAnimationController;
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:179:            mImeBackAnimationController = null;
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:232:                if (callback instanceof ImeBackCallbackProxy.DefaultImeOnBackAnimationCallback
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:233:                        && mImeBackAnimationController != null) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:234:                    // register ImeBackAnimationController instead to play predictive back animation
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:235:                    callback = mImeBackAnimationController;
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:299:            if (callback instanceof ImeBackCallbackProxy.DefaultImeOnBackAnimationCallback) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:300:                callback = mImeBackAnimationController;
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:324:            if (!predictiveBackCallbackCancellationFix()) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:333:        if (predictiveBackCallbackCancellationFix() && mProgressAnimator.isBackAnimationInProgress()
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:371:        boolean isInProgress = callback != null && mProgressAnimator.isBackAnimationInProgress()
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:372:                && (!predictiveBackCallbackCancellationFix()
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:374:        if (isInProgress && callback instanceof OnBackAnimationCallback) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:375:            OnBackAnimationCallback animatedCallback = (OnBackAnimationCallback) callback;
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:396:                if (predictiveBackCallbackCancellationFix()) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:430:     * Calls the {@link OnBackAnimationCallback#onBackStarted} function of the provided callback
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:431:     * if it is an instance of {@link OnBackAnimationCallback}.
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:434:     * @param callback The callback to call {@link OnBackAnimationCallback#onBackStarted} on.
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:440:        if (predictiveBackStopKeycodeBackForwarding()) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:442:                if (observerCallback instanceof ObserverOnBackAnimationCallback) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:443:                    ((ObserverOnBackAnimationCallback) observerCallback).onBackStarted(backEvent);
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:447:        if (callback instanceof OnBackAnimationCallback && !observerOnly) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:448:            ((OnBackAnimationCallback) callback).onBackStarted(backEvent);
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:453:     * Calls the {@link OnBackAnimationCallback#onBackCancelled} function of the provided callback
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:454:     * if it is an instance of {@link OnBackAnimationCallback}.
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:457:     * @param callback The callback to call {@link OnBackAnimationCallback#onBackCancelled} on.
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:460:        if (predictiveBackStopKeycodeBackForwarding()) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:462:                if (observerCallback instanceof ObserverOnBackAnimationCallback) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:463:                    ((ObserverOnBackAnimationCallback) observerCallback).onBackCancelled();
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:467:        if (callback instanceof OnBackAnimationCallback) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:468:            ((OnBackAnimationCallback) callback).onBackCancelled();
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:473:     * Calls the {@link OnBackInvokedCallback#onBackInvoked} function of the provided callback.
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:475:     * @param callback The callback to call {@link OnBackInvokedCallback#onBackInvoked} on.
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:477:    public void onBackInvoked(OnBackInvokedCallback callback) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:484:            if (isSystemCallback || observerCallback instanceof ObserverOnBackAnimationCallback) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:486:                // When there is a ObserverOnBackAnimationCallback registered (which is only
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:488:                observerCallback.onBackInvoked();
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:491:        callback.onBackInvoked();
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:538:                        callback instanceof OnBackAnimationCallback,
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:655:                final OnBackAnimationCallback callback = getBackAnimationCallback();
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:660:                if (callback != null && mProgressAnimator.isBackAnimationInProgress()) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:671:                    if (predictiveBackCallbackCancellationFix()) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:682:        public void setHandoffHandler(IBackAnimationHandoffHandler handoffHandler) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:692:                if (getBackAnimationCallback() != null) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:701:                final OnBackAnimationCallback callback = getBackAnimationCallback();
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:711:        public void onBackInvoked() throws RemoteException {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:715:                boolean isInProgress = mProgressAnimator.isBackAnimationInProgress();
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:719:                    Log.d(TAG, "Trying to call onBackInvoked() on a null callback reference.");
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:722:                if (callback instanceof OnBackAnimationCallback && !isInProgress) {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:723:                    // KEYCODE_BACK / 3-button / a committed gesture that never received
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:727:                            + "dispatching onBackInvoked without animation.");
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:730:                WindowOnBackInvokedDispatcher.this.onBackInvoked(callback);
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:736:            if (callback instanceof ImeBackAnimationController
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:744:                        final OnBackAnimationCallback animationCallback =
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:745:                                getBackAnimationCallback();
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:764:        private OnBackAnimationCallback getBackAnimationCallback() {
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:766:            return callback instanceof OnBackAnimationCallback ? (OnBackAnimationCallback) callback
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:774:     * Legacy back behavior dispatches KEYCODE_BACK instead of invoking the application registered
+frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java:832:                    || callback instanceof ObserverOnBackAnimationCallback)) {
+frameworks/base/core/java/android/window/IOnBackInvokedCallback.aidl:21:import android.window.IBackAnimationHandoffHandler;
+frameworks/base/core/java/android/window/IOnBackInvokedCallback.aidl:57:     * Wraps {@link OnBackInvokedCallback#onBackInvoked()}.
+frameworks/base/core/java/android/window/IOnBackInvokedCallback.aidl:59:    void onBackInvoked();
+frameworks/base/core/java/android/window/IOnBackInvokedCallback.aidl:67:    * Sets a {@link IBackAnimationHandoffHandler} that can be used to hand off the back animation.
+frameworks/base/core/java/android/window/IOnBackInvokedCallback.aidl:69:    void setHandoffHandler(in IBackAnimationHandoffHandler handoffHandler);
+frameworks/base/core/java/android/window/OnBackAnimationCallback.java:41:public interface OnBackAnimationCallback extends OnBackInvokedCallback {
+frameworks/base/core/java/android/window/BackProgressAnimator.java:53:    private OnBackAnimationCallback mBackCallback;
+frameworks/base/core/java/android/window/BackProgressAnimator.java:57:    private boolean mBackAnimationInProgress = false;
+frameworks/base/core/java/android/window/BackProgressAnimator.java:116:        if (!mBackAnimationInProgress) {
+frameworks/base/core/java/android/window/BackProgressAnimator.java:138:            @NonNull OnBackAnimationCallback backCallback) {
+frameworks/base/core/java/android/window/BackProgressAnimator.java:153:        mBackAnimationInProgress = true;
+frameworks/base/core/java/android/window/BackProgressAnimator.java:183:        mBackAnimationInProgress = false;
+frameworks/base/core/java/android/window/BackProgressAnimator.java:213:    public boolean isBackAnimationInProgress() {
+frameworks/base/core/java/android/window/BackProgressAnimator.java:214:        return mBackAnimationInProgress;
+frameworks/base/core/java/android/window/BackProgressAnimator.java:223:    public OnBackAnimationCallback getActiveBackCallback() {
+frameworks/base/core/java/android/window/BackProgressAnimator.java:236:        if (mLastBackEvent == null || mCallback == null || !mBackAnimationInProgress) {
+frameworks/base/core/java/android/window/ImeBackCallbackProxy.java:134:            imeCallback = new DefaultImeOnBackAnimationCallback(iCallback, callbackId, priority);
+frameworks/base/core/java/android/window/ImeBackCallbackProxy.java:233:    public static class ImeOnBackInvokedCallback implements OnBackAnimationCallback {
+frameworks/base/core/java/android/window/ImeBackCallbackProxy.java:275:        public void onBackInvoked() {
+frameworks/base/core/java/android/window/ImeBackCallbackProxy.java:277:                mIOnBackInvokedCallback.onBackInvoked();
+frameworks/base/core/java/android/window/ImeBackCallbackProxy.java:308:    public static class DefaultImeOnBackAnimationCallback extends ImeOnBackInvokedCallback {
+frameworks/base/core/java/android/window/ImeBackCallbackProxy.java:309:        DefaultImeOnBackAnimationCallback(@NonNull IOnBackInvokedCallback iCallback, int id,
+frameworks/base/core/java/android/window/ImeBackCallbackProxy.java:316:            return "DefaultImeOnBackAnimationCallback@" + mId
+frameworks/base/core/java/android/window/BackAnimationAdapter.java:32:public class BackAnimationAdapter implements Parcelable {
+frameworks/base/core/java/android/window/BackAnimationAdapter.java:35:    private final IBackAnimationRunner mRunner;
+frameworks/base/core/java/android/window/BackAnimationAdapter.java:38:    public BackAnimationAdapter(IBackAnimationRunner runner) {
+frameworks/base/core/java/android/window/BackAnimationAdapter.java:42:    public BackAnimationAdapter(Parcel in) {
+frameworks/base/core/java/android/window/BackAnimationAdapter.java:43:        mRunner = IBackAnimationRunner.Stub.asInterface(in.readStrongBinder());
+frameworks/base/core/java/android/window/BackAnimationAdapter.java:49:    public IBackAnimationRunner getRunner() {
+frameworks/base/core/java/android/window/BackAnimationAdapter.java:75:    public static final @android.annotation.NonNull Creator<BackAnimationAdapter> CREATOR =
+frameworks/base/core/java/android/window/BackAnimationAdapter.java:76:            new Creator<BackAnimationAdapter>() {
+frameworks/base/core/java/android/window/BackAnimationAdapter.java:77:        public BackAnimationAdapter createFromParcel(Parcel in) {
+frameworks/base/core/java/android/window/BackAnimationAdapter.java:78:            return new BackAnimationAdapter(in);
+frameworks/base/core/java/android/window/BackAnimationAdapter.java:81:        public BackAnimationAdapter[] newArray(int size) {
+frameworks/base/core/java/android/window/BackAnimationAdapter.java:82:            return new BackAnimationAdapter[size];
+frameworks/base/core/java/android/window/BackNavigationInfo.java:146:     * @param onBackInvokedCallback The back callback registered by the current top level window.
+frameworks/base/core/java/android/window/BackNavigationInfo.java:150:            @Nullable IOnBackInvokedCallback onBackInvokedCallback,
+frameworks/base/core/java/android/window/BackNavigationInfo.java:160:        mOnBackInvokedCallback = onBackInvokedCallback;
+frameworks/base/core/java/android/window/BackNavigationInfo.java:230:     * Return true if the callback is {@link OnBackAnimationCallback}.
+frameworks/base/core/java/android/window/BackNavigationInfo.java:486:                @Nullable IOnBackInvokedCallback onBackInvokedCallback) {
+frameworks/base/core/java/android/window/BackNavigationInfo.java:487:            mOnBackInvokedCallback = onBackInvokedCallback;
+frameworks/base/core/java/android/window/BackNavigationInfo.java:525:         * @param isAnimationCallback whether the callback is {@link OnBackAnimationCallback}
+frameworks/base/core/java/android/window/OnBackInvokedCallback.java:37: * {@link android.view.KeyEvent#KEYCODE_BACK}
+frameworks/base/core/java/android/window/OnBackInvokedCallback.java:40: * register its subclass instances {@link OnBackAnimationCallback} instead.
+frameworks/base/core/java/android/window/OnBackInvokedCallback.java:52:    void onBackInvoked();
+frameworks/base/core/java/android/window/CompatOnBackInvokedCallback.java:29:    void onBackInvoked();
+frameworks/base/core/java/android/window/ImeBackCallbackSender.java:213:            maybeRunOnAnimationCallback(OnBackAnimationCallback::onBackCancelled);
+frameworks/base/core/java/android/window/ImeBackCallbackSender.java:217:        public void onBackInvoked() {
+frameworks/base/core/java/android/window/ImeBackCallbackSender.java:218:            mHandler.post(mCallback::onBackInvoked);
+frameworks/base/core/java/android/window/ImeBackCallbackSender.java:227:        public void setHandoffHandler(IBackAnimationHandoffHandler handoffHandler) {
+frameworks/base/core/java/android/window/ImeBackCallbackSender.java:231:        private void maybeRunOnAnimationCallback(Consumer<OnBackAnimationCallback> block) {
+frameworks/base/core/java/android/window/ImeBackCallbackSender.java:232:            if (mCallback instanceof OnBackAnimationCallback) {
+frameworks/base/core/java/android/window/ImeBackCallbackSender.java:233:                mHandler.post(() -> block.accept((OnBackAnimationCallback) mCallback));
+frameworks/base/core/java/android/window/flags/windowing_frontend.aconfig:440:    description: "No longer forward KEYCODE_BACK events when app has enableOnBackInvokedCallback=true"
+frameworks/base/core/java/android/window/BackAnimationAdapter.aidl:22:parcelable BackAnimationAdapter;
+frameworks/base/core/java/android/window/IBackAnimationRunner.aidl:20:import android.window.IBackAnimationFinishedCallback;
+frameworks/base/core/java/android/window/IBackAnimationRunner.aidl:28:oneway interface IBackAnimationRunner {
+frameworks/base/core/java/android/window/IBackAnimationRunner.aidl:49:            in IBackAnimationFinishedCallback finishedCallback) = 2;
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:62:import android.window.BackAnimationAdapter;
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:64:import android.window.IBackAnimationFinishedCallback;
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:87:    private boolean mBackAnimationInProgress;
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:131:    boolean startPredictiveBackAnimation() {
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:157:            BackAnimationAdapter adapter) {
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:240:            if (Flags.predictiveBackInterceptTransition()
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:461:                mBackAnimationInProgress = builder != null;
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:462:                if (mBackAnimationInProgress) {
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:463:                    if (Flags.predictiveBackDelayWmTransition()) {
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:919:                clearBackAnimations(true /* cancel */);
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:1037:                .containsBackAnimationTargets(mTmpOpenApps, mTmpCloseApps);
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:1073:        // Once the close transition is ready, it means the onBackInvoked callback has invoked, and
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:1083:    void clearBackAnimations(boolean cancel) {
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:1096:                clearBackAnimations(true /* cancel */);
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:1101:            clearBackAnimations(false /* cancel */);
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:1103:        if (!mBackAnimationInProgress || mPendingAnimationBuilder == null) {
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:1163:            builder.mBackAnimationAdapter.getRunner().onAnimationCancelled();
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:1496:        boolean containsBackAnimationTargets(@NonNull ArrayList<WindowContainer> openApps,
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:1876:                BackAnimationAdapter adapter,
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:1908:            final BackAnimationAdapter mBackAnimationAdapter;
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:1915:            ScheduleAnimationBuilder(BackAnimationAdapter adapter,
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:1917:                mBackAnimationAdapter = adapter;
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:2024:                final IBackAnimationFinishedCallback callback = makeAnimationFinishedCallback();
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:2031:                            mBackAnimationAdapter.getRunner().onAnimationCancelled();
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:2033:                            mBackAnimationAdapter.getRunner().onAnimationStart(targets,
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:2044:            private IBackAnimationFinishedCallback makeAnimationFinishedCallback() {
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:2045:                return new IBackAnimationFinishedCallback.Stub() {
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:2206:        if (!mBackAnimationInProgress) {
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:2225:        if (!mBackAnimationInProgress) {
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:2229:                    clearBackAnimations(true /* cancel */);
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:2242:        if (!Flags.predictiveBackInterceptTransition()
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:2264:                mBackAnimationInProgress = false;
+frameworks/base/services/core/java/com/android/server/wm/BackNavigationController.java:2337:        proto.write(ANIMATION_IN_PROGRESS, mBackAnimationInProgress);
+frameworks/base/services/core/java/com/android/server/wm/ActivityStarter.java:1568:    private boolean handleBackgroundActivityAbort(ActivityRecord r) {
+frameworks/base/services/core/java/com/android/server/wm/ActivityStarter.java:2304:                && handleBackgroundActivityAbort(r)) {
+frameworks/base/services/core/java/com/android/server/wm/ActivityTaskManagerService.java:255:import android.window.BackAnimationAdapter;
+frameworks/base/services/core/java/com/android/server/wm/ActivityTaskManagerService.java:1903:    public boolean startPredictiveBackAnimation() {
+frameworks/base/services/core/java/com/android/server/wm/ActivityTaskManagerService.java:1905:                "startPredictiveBackAnimation()");
+frameworks/base/services/core/java/com/android/server/wm/ActivityTaskManagerService.java:1908:            return mBackNavigationController.startPredictiveBackAnimation();
+frameworks/base/services/core/java/com/android/server/wm/ActivityTaskManagerService.java:1916:            RemoteCallback navigationObserver, BackAnimationAdapter adapter) {
+
+=== RAW: packet rg this::onBackPressed|skip onBackInvoked|shouldMoveTaskToBack ===
+frameworks/base/services/core/java/com/android/server/wm/ActivityClientController.java:1883:                if (shouldMoveTaskToBack(r, root)) {
+frameworks/base/services/core/java/com/android/server/wm/ActivityClientController.java:1896:    static boolean shouldMoveTaskToBack(ActivityRecord r, ActivityRecord rootActivity) {
+frameworks/base/core/java/android/app/Activity.java:1939:            mDefaultBackCallback = this::onBackPressed;
+
+=== RAW: vendor/guardtalk KEYCODE_BACK / OnBackInvoked (excl. this qa tree) ===
+
+=== RAW: adb devices ===
+List of devices attached
+
+PASS: Activity assigns mDefaultBackCallback = this::onBackPressed
+PASS: NEGATIVE refuted: system callback is not this::onBackInvoked
+PASS: Activity registers mDefaultBackCallback as system OnBackInvokedCallback
+PASS: Activity.onBackPressed() extracted
+PASS: onBackPressed: popBackStackImmediate then onBackInvoked()
+PASS: onBackPressed still collapses ActionBar first
+PASS: OnBackInvokedCallbackWrapper.onBackInvoked extracted
+PASS: NEGATIVE refuted: 'skip onBackInvoked' string absent
+PASS: wrapper OnBackAnimationCallback && !isInProgress does not return (no skip)
+PASS: wrapper always reaches WindowOnBackInvokedDispatcher.this.onBackInvoked(callback)
+PASS: wrapper still has IME onKeyPreIme consume path (not a blanket skip)
+PASS: wrapper still returns only on null callback after reset
+PASS: shouldMoveTaskToBack extracted
+PASS: shouldMoveTaskToBack checks relative-root
+PASS: shouldMoveTaskToBack checks top-in-TF
+PASS: NEGATIVE refuted: shouldMoveTaskToBack has no HOME+MAIN / ACTION_MAIN gate
+PASS: shouldMoveTaskToBack final return is true (last-in-task → moveTaskToBack)
+PASS: shouldMoveTaskToBack still false for non-root and non-top-in-TF
+PASS: ActivityClientController.onBackPressed extracted
+PASS: onBackPressed order: organizer intercept → shouldMoveTaskToBack → moveActivityTaskToBack → else requestCallbackFinish
+PASS: organizer intercept still returns first (no fall-through)
+PASS: no GuardTalk KEYCODE_BACK/OnBackInvoked overlay under vendor/guardtalk (excl. qa)
+PASS: git porcelain clean for SystemUI and Launcher3 (this rematch did not edit Frontend)
+--- host truth-table shouldMoveTaskToBack ---
+  PASS: last_in_task_not_HOME_MAIN root=True rel=False topTF=True → True expected=True
+  PASS: last_in_task_HOME_MAIN_still_true root=True rel=False topTF=True → True expected=True
+  PASS: relative_root_top root=False rel=True topTF=True → True expected=True
+  PASS: not_root_not_rel root=False rel=False topTF=True → False expected=False
+  PASS: root_not_top_in_tf root=True rel=False topTF=False → False expected=False
+  PASS: rel_root_not_top root=False rel=True topTF=False → False expected=False
+PASS: host truth-table shouldMoveTaskToBack 6/6 (HOME+MAIN not required)
+--- host truth-table wrapper onBackInvoked ---
+  PASS: anim_idle_KEYCODE_BACK anim=True inProg=False null=False ime=False → invoke=True expected=True
+  PASS: anim_in_progress anim=True inProg=True null=False ime=False → invoke=True expected=True
+  PASS: plain_callback anim=False inProg=False null=False ime=False → invoke=True expected=True
+  PASS: null_callback anim=True inProg=False null=True ime=False → invoke=False expected=False
+  PASS: ime_preime_consume anim=True inProg=False null=False ime=True → invoke=False expected=False
+PASS: host truth-table wrapper 5/5 (anim+idle still invokes)
+HOLD: adb devices empty — Settings/Files/multi-activity back HOLD; not device-fixed
+HOLD: lunch not run (adevtool pin risk); adevtool-version-check.mk not edited
+
+SUITE_COUNTS PASS_COUNT=25 FAIL_COUNT=0 HOLD_COUNT=2 EXIT=0
+LIVE_DEVICE_CLAIMED=false
+
+RESULT: PASS (static)  bash_PASS=3 bash_HOLD=0 PY_RC=0
+Device back-stack: HOLD unless adb proof above. LIVE_DEVICE_CLAIMED=false

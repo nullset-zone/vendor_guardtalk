@@ -70,10 +70,30 @@ Fail-closed: unresolvable / traversal-suspect paths are treated as protected whe
 | `OPEN_DOCUMENT` / `CREATE_DOCUMENT` / `GET_CONTENT` / `OPEN_DOCUMENT_TREE` | DocumentsUI `PickActivity` | **Yes** — SAF contract (`*/*`) |
 | `VIEW` `vnd.android.document/root` \| `directory` | DocumentsUI `FilesActivity` | **Yes** — document roots only |
 | `VIEW_DOWNLOADS` | DocumentsUI `ViewDownloadsActivity` alias | **Yes** — downloads entry |
+| `VIEW` `image/jpeg` \| `image/png` \| `image/webp` | HTMLViewer `HTMLViewerActivity` | **Yes** — T-OS-FILES-MEDIA; no `LAUNCHER` |
+| `VIEW` `video/mp4` \| `video/webm` (and `video/*`) | UniversalMediaPlayer `VideoPlayerActivity` | **Yes** — T-OS-FILES-MEDIA; no `LAUNCHER` |
 | Compose `DocumentsUICompose` `MAIN`+`LAUNCHER` | Disabled / no `LAUNCHER` | **No** — technical shell; must not duplicate Files icon |
 | StorageManager | `MANAGE_STORAGE` only (no `LAUNCHER`) | OK — not a second Files app |
+| Gallery2 (`com.android.gallery3d`) | Excised (`apps-excised.mk`) | **No** — not the smallest handler fix |
 
 Do **not** add broad `VIEW` + `*/*` handlers on DocumentsUI (that would create “Open with Files” spam). Frontend must not ship a second file-manager APK.
+
+### T-OS-FILES-MEDIA (DEC-OS-UX-001)
+
+RCA: `GuardTalkFilesPolicy` does **not** over-block VIEW. It only gates trash/delete of critical mounts. Files could not open photos/video because no in-tree VIEW handler was installed:
+
+- DocumentsUI VIEW filters remain `vnd.android.document/root` and `directory` only (no `*/*`).
+- HTMLViewer was late-filtered out of `PRODUCT_PACKAGES`.
+- Gallery2 remains excised (launcher + JNI + extra permissions).
+- UniversalMediaPlayer was never a default `PRODUCT_PACKAGES` entry.
+
+Restore (smallest in-tree handler set, no second Files launcher):
+
+1. Un-excise HTMLViewer; add a **narrow** VIEW filter for `image/jpeg`, `image/png`, `image/webp` (`content` + `file`).
+2. Ship UniversalMediaPlayer as VIEW-only (`PumpActivity` has no `LAUNCHER`); `VideoPlayerActivity` handles `video/mp4`, `video/webm`, `video/*`.
+3. Keep critical-partition protect unchanged.
+
+`queryIntentActivities(ACTION_VIEW, mime)` for those five types must be non-empty after the image is flashed. Device proof is HOLD when adb is empty.
 
 ## Frontend contract (`F-SEC-P4-SYSTEM-UI`)
 
@@ -103,6 +123,8 @@ Do **not** add broad `VIEW` + `*/*` handlers on DocumentsUI (that would create �
    - `ExternalStorageProvider.isTrashSupported` GuardTalk check
    - `packages/apps/DocumentsUI` `FlagUtils` + `guardtalk/GuardTalkFilesLocalPolicy.java`
    - restore `DocumentsUICompose` launcher intent-filter if needed
+   - restore HTMLViewer excision / drop UniversalMediaPlayer from PRODUCT_PACKAGES
+     if rolling back T-OS-FILES-MEDIA handlers
    - this doc (optional)
 3. Rebuild:
 
@@ -134,6 +156,12 @@ getprop ro.guardtalk.files_protect_critical  # expect 1
 # Launcher: only one Files entry (DocumentsUI); DocumentsUICompose not listed
 cmd package query-activities -a android.intent.action.MAIN -c android.intent.category.LAUNCHER \
   | grep -i document
+# Media VIEW handlers (HOLD if adb empty — do not claim device-fixed)
+cmd package query-activities -a android.intent.action.VIEW -t image/jpeg
+cmd package query-activities -a android.intent.action.VIEW -t image/png
+cmd package query-activities -a android.intent.action.VIEW -t image/webp
+cmd package query-activities -a android.intent.action.VIEW -t video/mp4
+cmd package query-activities -a android.intent.action.VIEW -t video/webm
 ```
 
 ### Static checks
@@ -147,18 +175,25 @@ rg -n "GuardTalkFilesPolicy|files_policy|files_trash|files_protect_critical" \
   packages/apps/DocumentsUI/src/com/android/documentsui/guardtalk/GuardTalkFilesLocalPolicy.java \
   packages/apps/DocumentsUI/compose/AndroidManifest.xml \
   vendor/guardtalk/device/tokay/guardtalk-product-props.mk
+rg -n "android.intent.action.VIEW" packages/apps/DocumentsUI/AndroidManifest.xml
+rg -n "Gallery2|HTMLViewer|UniversalMediaPlayer" vendor/guardtalk/feature-excised/apps-excised.mk
+rg -n "image/jpeg|video/mp4|image/webp|video/webm" packages/apps/Gallery2/AndroidManifest.xml \
+  packages/apps/HTMLViewer/AndroidManifest.xml packages/apps/UniversalMediaPlayer/AndroidManifest.xml
 ```
 
 ## Files touched
 
 | Path | Change |
 |------|--------|
-| `frameworks/base/core/java/android/guardtalk/GuardTalkFilesPolicy.java` | **NEW** policy API |
+| `frameworks/base/core/java/android/guardtalk/GuardTalkFilesPolicy.java` | Policy API (trash/protect; VIEW not restricted) |
 | `frameworks/base/core/java/com/android/internal/content/storage/FileSystemProvider.java` | Delete/trash block + flag strip |
 | `frameworks/base/packages/ExternalStorageProvider/.../ExternalStorageProvider.java` | Trash eligibility guard |
 | `packages/apps/DocumentsUI/.../FlagUtils.kt` | Baklava trash enable via GuardTalk prop |
-| `packages/apps/DocumentsUI/.../guardtalk/GuardTalkFilesLocalPolicy.java` | **NEW** prop bridge |
+| `packages/apps/DocumentsUI/.../guardtalk/GuardTalkFilesLocalPolicy.java` | Prop bridge |
 | `packages/apps/DocumentsUI/compose/AndroidManifest.xml` | Disable duplicate technical launcher |
+| `packages/apps/HTMLViewer/AndroidManifest.xml` | T-OS-FILES-MEDIA: narrow image VIEW |
+| `packages/apps/UniversalMediaPlayer/AndroidManifest.xml` | T-OS-FILES-MEDIA: video VIEW, no LAUNCHER |
+| `vendor/guardtalk/feature-excised/apps-excised.mk` | Un-excise HTMLViewer; ship UniversalMediaPlayer; Gallery2 stays out |
 | `vendor/guardtalk/device/tokay/guardtalk-product-props.mk` | Live props |
 | `vendor/guardtalk/device/tokay/guardtalk-tokay.mk` | Docs mirror props |
-| `vendor/guardtalk/docs/FILES_HANDLERS_POLICY.md` | **NEW** this doc |
+| `vendor/guardtalk/docs/FILES_HANDLERS_POLICY.md` | This doc |

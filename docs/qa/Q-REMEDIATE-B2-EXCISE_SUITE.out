@@ -1,0 +1,229 @@
+=== Q-REMEDIATE-B2-EXCISE independent rematch (items 8,10,12,13) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+Q-ONDEVICE=not started
+Q-KERNEL=sibling not overwritten
+Q-TELEMETRY=not started
+USB_GO=not started
+GNSS_DEAD_ONDEVICE=not claimed
+
+--- required files ---
+PASS: present: vendor/guardtalk/feature-excised/apps-excised.mk
+PASS: present: vendor/guardtalk/feature-excised/loc-excised.mk
+PASS: present: vendor/guardtalk/feature-excised/guardtalk-feature-excised.mk
+PASS: present: vendor/guardtalk/feature-excised/handheld_core_hardware.prebuilt.xml
+PASS: present: frameworks/base/services/core/java/com/android/server/pm/GosPackageStatePermission.java
+PASS: present: frameworks/base/services/java/com/android/server/SystemServer.java
+PASS: present: vendor/google_devices/komodo/proprietary/vendor/etc/init/pktrouter.rc
+PASS: present: vendor/google_devices/komodo/proprietary/vendor/etc/init/bipchmgr.rc
+PASS: present: vendor/google_devices/komodo/sysprop/vendor.prop
+
+--- packet rg (GmsCompat / AppCompatConfig / KEEP) ---
+50:#   HTMLViewer               -> KEPT (T-OS-FILES-MEDIA). Was media_system.mk:32.
+171:# NOTE: GmsCompat cluster was originally part of Wave C, restored after a
+174:# patch. See GUARDTALK_APPS_PACKAGES += GmsCompat* below.
+195:# GmsCompat cluster (GrapheneOS Google-compatibility shim). T-REMEDIATE-B2-EXCISE
+197:#   GmsCompat      -> handheld_system.mk:56
+198:#   GmsCompatConfig -> late-*.mk install: system/app/GmsCompatConfig/
+199:#   GmsCompatLib   -> late-*.mk install: system/app/GmsCompatLib/
+239:# GmsCompat / GmsCompatConfig / GmsCompatLib / AppCompatConfig from the
+240:# image (not “disabled but present”). DeviceLockController is the
+244:#   Builder.apply(GmsCompatApp.PKG_NAME)
+248:# skipped for GmsCompatApp.PKG_NAME in GosPackageStatePermission.java
+258:    GmsCompat \
+259:    GmsCompatConfig \
+260:    GmsCompatLib \
+261:    AppCompatConfig \
+262:    DeviceLockController \
+263:    DeviceLockControllerDebug
+265:# SUPERSEDED (Wave C 2026-06-30 REGRESSION FIX): GmsCompat cluster was
+352:# T-OS-FILES-MEDIA: in-tree media VIEW handlers. HTMLViewer (images) is already
+354:# UniversalMediaPlayer (video) is NOT a default PRODUCT_PACKAGES entry; it
+360:    HTMLViewer \
+361:    UniversalMediaPlayer
+784:# ContactsProvider, HTMLViewer, UniversalMediaPlayer) somehow landed in the
+789:# T-OS-FILES-MEDIA: UniversalMediaPlayer is not sourced via media_system.mk /
+792:PRODUCT_PACKAGES += UniversalMediaPlayer
+
+--- packet rg (FusedLocation / gnssd / pkt / bip) ---
+3:# NetworkLocation app.
+10:# the Lassen modem-bridge daemon + test binary + constants (gnssd, gnss_test,
+42:# T-REMEDIATE-B2-EXCISE item 8: FusedLocation is REMOVED (service absent,
+49:# CRITICAL INVARIANT: The NetworkLocation app (app.grapheneos.networklocation,
+50:# Soong module name `NetworkLocation`, added to PRODUCT_PACKAGES at
+70:# FusedLocation is now an exact-name drop (T-REMEDIATE-B2-EXCISE item 8).
+74:# + FusedLocation + init .rc are what this card makes absent).
+77:# Layer 1 — Package layer: GNSS HAL packages, daemons, libs, NetworkLocation,
+78:# FusedLocation, and radio leftover daemons (bipchmgr / wfc-pkt-router).
+95:    gnssd \
+99:    NetworkLocation \
+100:    FusedLocation \
+101:    bipchmgr \
+102:    wfc-pkt-router
+106:# GNSS-only tokens + exact NetworkLocation / FusedLocation names + radio
+117:  $(findstring gnssd,$(1)), \
+120:  $(findstring NetworkLocation,$(1)), \
+121:  $(findstring FusedLocation,$(1)), \
+122:  $(findstring bipchmgr,$(1)), \
+123:  $(findstring wfc-pkt-router,$(1)))
+135:#     the gnssd daemon, slsi_gnss_service -> android.hardware.gnss-service,
+143:#   - vendor/etc/init/pktrouter.rc  (IMS packet router; vendor.pktrouter=1)
+144:#   - vendor/etc/init/bipchmgr.rc   (BIP channel manager daemon)
+155:  $(findstring /etc/init/pktrouter.rc,$(1)), \
+156:  $(findstring /etc/init/bipchmgr.rc,$(1)))
+165:# T-REMEDIATE-B2-EXCISE item 8: drop FusedLocation from the system_server
+171:PRODUCT_SYSTEM_SERVER_APPS := $(filter-out FusedLocation,$(PRODUCT_SYSTEM_SERVER_APPS))
+225:#   - init.gnss.rc (tokay.mk:1710): defines `service gnssd /vendor/bin/hw/gnssd`
+228:#     copy-files filter above), init never loads the gnssd or
+
+--- packet rg (GmsCompatApp.PKG_NAME) ---
+166:                if (GmsCompatApp.PKG_NAME.equals(pkgName)) {
+
+--- packet rg (LMS Lifecycle) ---
+2384:            mSystemServiceManager.startService(LocationManagerService.Lifecycle.class);
+
+--- packet rg (service stanzas in vendor init) ---
+
+--- static product wiring ---
+PASS: feature-excised includes apps-excised.mk
+PASS: feature-excised includes loc-excised.mk
+PASS: loc-excised drop list contains FusedLocation
+PASS: loc-excised drop list contains gnssd
+PASS: loc-excised drop list contains NetworkLocation
+PASS: loc-excised drop list contains bipchmgr
+PASS: loc-excised drop list contains wfc-pkt-router
+PASS: loc-excised filter-out FusedLocation from PRODUCT_SYSTEM_SERVER_APPS
+PASS: loc-excised drops init.gnss.rc from COPY_FILES
+PASS: loc-excised drops pixel-gnss-default.rc from COPY_FILES
+PASS: loc-excised drops pktrouter.rc from COPY_FILES
+PASS: loc-excised drops bipchmgr.rc from COPY_FILES
+PASS: apps-excised drop list contains GmsCompat
+PASS: apps-excised drop list contains GmsCompatConfig
+PASS: apps-excised drop list contains GmsCompatLib
+PASS: apps-excised drop list contains AppCompatConfig
+PASS: apps-excised drop list contains DeviceLockController
+PASS: apps-excised drop list contains DeviceLockControllerDebug
+PASS: apps-excised KEEP list contains HTMLViewer
+PASS: apps-excised KEEP / add UniversalMediaPlayer
+PASS: apps-excised explicitly adds UniversalMediaPlayer after filter-out
+PASS: GosPackageStatePermission special-cases GmsCompatApp.PKG_NAME
+PASS: GosPackageStatePermission log-and-return for missing GmsCompat
+
+--- python structural rematch ---
+PASS: GmsCompat is in GUARDTALK_APPS_PACKAGES drop list (remove, not disabled)
+PASS: GmsCompatConfig is in GUARDTALK_APPS_PACKAGES drop list (remove, not disabled)
+PASS: GmsCompatLib is in GUARDTALK_APPS_PACKAGES drop list (remove, not disabled)
+PASS: AppCompatConfig is in GUARDTALK_APPS_PACKAGES drop list (remove, not disabled)
+PASS: DeviceLockController is in GUARDTALK_APPS_PACKAGES drop list (remove, not disabled)
+PASS: DeviceLockControllerDebug is in GUARDTALK_APPS_PACKAGES drop list (remove, not disabled)
+PASS: HTMLViewer is in GUARDTALK_APPS_KEEP
+PASS: UniversalMediaPlayer is in GUARDTALK_APPS_KEEP
+PASS: GmsCompat is not restored via GUARDTALK_APPS_KEEP
+PASS: GmsCompatConfig is not restored via GUARDTALK_APPS_KEEP
+PASS: GmsCompatLib is not restored via GUARDTALK_APPS_KEEP
+PASS: AppCompatConfig is not restored via GUARDTALK_APPS_KEEP
+PASS: HTMLViewer is not in GUARDTALK_APPS_PACKAGES drop list
+PASS: UniversalMediaPlayer is explicitly re-added after filter-out
+PASS: FusedLocation is in GUARDTALK_LOC_PACKAGES drop list
+PASS: gnssd is in GUARDTALK_LOC_PACKAGES drop list
+PASS: NetworkLocation is in GUARDTALK_LOC_PACKAGES drop list
+PASS: bipchmgr is in GUARDTALK_LOC_PACKAGES drop list
+PASS: wfc-pkt-router is in GUARDTALK_LOC_PACKAGES drop list
+PASS: loc-excised writes back PRODUCT_SYSTEM_SERVER_APPS without FusedLocation
+PASS: loc-excised COPY_FILES drop includes /etc/init/init.gnss.rc
+PASS: loc-excised COPY_FILES drop includes /etc/init/pixel-gnss-default.rc
+PASS: loc-excised COPY_FILES drop includes /etc/init/pktrouter.rc
+PASS: loc-excised COPY_FILES drop includes /etc/init/bipchmgr.rc
+PASS: include order: apps-excised then loc-excised
+PASS: GmsCompat special-case present in apply(String)
+PASS: GmsCompat log-and-return precedes IS_DEBUGGABLE throw
+PASS: GmsCompat branch returns before IS_DEBUGGABLE
+PASS: pktrouter.rc has no service stanzas
+PASS: bipchmgr.rc has no service stanzas
+PASS: handheld_core_hardware declares no android.hardware.location* features
+HOLD: LocationManagerService.Lifecycle still starts in SystemServer.java (lines [2384]; not FEATURE-gated; not GNSS-dead)
+HOLD: BT start is FEATURE_BLUETOOTH-gated; location Lifecycle is not — LMS HOLD stands
+HOLD: vendor.pktrouter=1 leftover in vendor.prop (no-op without rc; not FAIL)
+PY_COUNTS PASS_COUNT=31 FAIL_COUNT=0 HOLD_COUNT=3
+PASS: python structural rematch exit 0
+
+--- lunch komodo-trunk_staging-user (independent; do not skip) ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+12:37:34 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+12:37:40 Build sandboxing disabled due to nsjail error.
+12:37:45 Build sandboxing disabled due to nsjail error.
+12:37:51 Build sandboxing disabled due to nsjail error.
+12:38:00 Build sandboxing disabled due to nsjail error.
+12:38:06 Build sandboxing disabled due to nsjail error.
+DUMP_PKGS_BYTES=35175 DUMP_PKGS_WORDS=1390
+DUMP_SSA_WORDS=5 DUMP_COPY_BYTES=638370
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (not userdebug)
+
+--- user PRODUCT_PACKAGES (Law 0 remove, not disabled) ---
+PASS: user PRODUCT_PACKAGES: GmsCompat ABSENT
+PASS: user PRODUCT_PACKAGES: GmsCompatConfig ABSENT
+PASS: user PRODUCT_PACKAGES: GmsCompatLib ABSENT
+PASS: user PRODUCT_PACKAGES: AppCompatConfig ABSENT
+PASS: user PRODUCT_PACKAGES: FusedLocation ABSENT
+PASS: user PRODUCT_PACKAGES: gnssd ABSENT
+PASS: user PRODUCT_PACKAGES: NetworkLocation ABSENT
+PASS: user PRODUCT_PACKAGES: bipchmgr ABSENT
+PASS: user PRODUCT_PACKAGES: wfc-pkt-router ABSENT
+PASS: user PRODUCT_PACKAGES: DeviceLockController ABSENT
+PASS: user PRODUCT_PACKAGES: DeviceLockControllerDebug ABSENT
+PASS: user PRODUCT_PACKAGES: HTMLViewer PRESENT (KEEP)
+PASS: user PRODUCT_PACKAGES: UniversalMediaPlayer PRESENT (KEEP)
+HOLD: user PRODUCT_PACKAGES: com.android.devicelock APEX PRESENT (BCP leftover; not FAIL this card)
+
+--- user PRODUCT_SYSTEM_SERVER_APPS ---
+PASS: PRODUCT_SYSTEM_SERVER_APPS: FusedLocation ABSENT
+
+--- user PRODUCT_COPY_FILES (gnss / pkt / bip rc) ---
+PASS: PRODUCT_COPY_FILES: /etc/init/init.gnss.rc ABSENT
+PASS: PRODUCT_COPY_FILES: /etc/init/pixel-gnss-default.rc ABSENT
+PASS: PRODUCT_COPY_FILES: /etc/init/pktrouter.rc ABSENT
+PASS: PRODUCT_COPY_FILES: /etc/init/bipchmgr.rc ABSENT
+
+--- stale out/ APKs are NOT product truth (m not run) ---
+HOLD: stale out/target/product/komodo APKs still present; not treated as product truth:
+drwxrwxr-x+ 3 oss-c1 oss-c1 4096 Sep 15 05:14 out/target/product/komodo/system/priv-app/FusedLocation
+HOLD: m not run this QA stamp (not a built user image; never device-fixed)
+HOLD: on-device GNSS-dead not claimed (Q-ONDEVICE not started)
+
+--- adb / device HOLD ---
+List of devices attached
+HOLD: adb devices empty / no komodo 54111FDAS000GN — device HOLD, never device-fixed
+
+RESULT: PASS (host)  bash_PASS=54 bash_HOLD=5 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+LMS_START=HOLD
+DEVICELOCK_APEX=HOLD_IF_PRESENT
+PKTRTR_PROP=HOLD_IF_PRESENT
+GNSS_DEAD_ONDEVICE=HOLD
+DEVICE=HOLD
+Q-ONDEVICE=not started

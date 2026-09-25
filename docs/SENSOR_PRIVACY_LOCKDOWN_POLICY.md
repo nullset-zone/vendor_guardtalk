@@ -43,6 +43,10 @@ Keyguard lock / USER_UNLOCKED / StrongAuth lockdown
         │
         ▼
 GuardTalkSensorPrivacyHooks (SensorPrivacyService)
+        │  Unlocked (CE + keyguard dismissed, not lockdown):
+        │    persist toggle; AppOps = toggle
+        │  Locked / pre-unlock / lockdown:
+        │    AppOps force-deny; privacy-ON may persist; privacy-OFF rejected
         │  effectiveRestriction = toggle OR mustDeny
         ▼
 AppOpsManagerInternal.setGlobalRestriction (mic + camera ops)
@@ -67,6 +71,23 @@ Lockdown enter (STRONG_AUTH_REQUIRED_AFTER_USER_LOCKDOWN)
 
 Persisted mic/camera toggle state is **not** overwritten on lock — only AppOps restrictions are forced. After unlock, the user’s prior toggle preference applies again.
 
+## Gate 0 — unlocked user toggle vs locked fail-closed (DEC-OS-UX-001 / T-OS-CAMMIC-TOGGLE)
+
+Settings `SensorToggleController.setChecked` inverts to `setSensorBlocked` (`enablePrivacy=true` = camera/mic **off**). That path was a no-op because AOSP `canChangeToggleSensorPrivacy` silently dropped **all** changes while `KeyguardManager.isDeviceLocked` (including privacy-ON), and TrustManager `isDeviceLocked` can stay true / default-true after the user is interactively using Settings.
+
+**Split (do not weaken lockdown):**
+
+| State | User may persist privacy ON (sensors off) | User may persist privacy OFF (sensors on) | AppOps / capture |
+|-------|-------------------------------------------|-------------------------------------------|------------------|
+| Interactively unlocked (CE unlocked **and** keyguard not showing, not lockdown) | Yes | Yes | Follows persisted toggle |
+| Lockscreen showing / screen-off keyguard | Yes (preference only) | **No** | Force-denied |
+| Pre-first-unlock (`!isUserUnlocked`) | Yes (preference only) | **No** | Force-denied |
+| User lockdown (`STRONG_AUTH_REQUIRED_AFTER_USER_LOCKDOWN`) | Yes (preference only) | **No** | Force-denied + airplane |
+
+`mustDenySensors` uses **keyguard showing** + CE unlock + lockdown. A stale `isDeviceLocked=true` while keyguard is dismissed does **not** force-deny and does **not** block Settings toggles. Emergency-call mic and admin `DISALLOW_*_TOGGLE` still block changes.
+
+No Lockdown QS tile. No camera/radio HAL re-enable.
+
 ## Frontend contract (`F-SEC-P2-SECURITY-SCREENS`)
 
 1. **Sensor privacy row** (`guardtalk_security_sensor_privacy`) is live — shows policy/locked summaries; opens platform Privacy settings for manual toggles when unlocked.
@@ -90,7 +111,8 @@ Persisted mic/camera toggle state is **not** overwritten on lock — only AppOps
 1. Missing / unset props on non-GuardTalk builds ⇒ policy **off** (stock behavior).
 2. On GuardTalk (`sensor_privacy_when_locked=1`):
    - `!UserManager.isUserUnlocked` ⇒ mic/camera restricted
-   - `KeyguardManager.isDeviceLocked` ⇒ mic/camera restricted
+   - `KeyguardManager.isKeyguardLocked` (lockscreen showing / screen off) ⇒ mic/camera restricted
+   - Stale `KeyguardManager.isDeviceLocked` with keyguard dismissed does **not** restrict (DEC-OS-UX-001)
 3. Lockdown (`lockdown_fail_closed=1` or implied): strong-auth lockdown ⇒ sensors restricted + airplane ON.
 4. If Keyguard/UserManager unavailable while policy on ⇒ treat as locked (deny).
 5. Network restore failure on lockdown exit ⇒ leave airplane on (fail-closed).

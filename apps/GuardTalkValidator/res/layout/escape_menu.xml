@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <Button
+        android:id="@+id/menu_open_settings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/menu_open_settings"
+        android:contentDescription="@string/menu_open_settings_cd" />
+
+    <!-- F-REMEDIATE-B3-SENSORS owns polarity and view ids. -->
+    <include layout="@layout/sensor_privacy_toggles" />
+
+    <Button
+        android:id="@+id/menu_device_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/menu_device_status"
+        android:contentDescription="@string/menu_device_status_cd" />
+</LinearLayout>

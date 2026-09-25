@@ -17,6 +17,10 @@
 # to guarantee the GuardTalk overlays are never accidentally stripped by a
 # later excision filter.
 #
+# T-REMEDIATE-B1-USERBUILD: su / overlay_remounter late filter lives in
+# userbuild-excised.mk and is included from product-config-late.mk (after
+# this bridge) so PRODUCT_PACKAGES_DEBUG is fully merged.
+#
 # Self-set the flag here (mirrors guardtalk-radio-excised.mk:3 setting
 # GUARDTALK_RADIO_EXCISED := true). guardtalk-flags.mk is not yet wired into
 # the device makefile chain, so without this self-set the gate would always
@@ -27,6 +31,12 @@
 GUARDTALK_FEATURE_EXCISED_WAVE2 := true
 
 ifeq ($(GUARDTALK_FEATURE_EXCISED_WAVE2),true)
+
+# T-PORT-EXCISION-MATRIX (P0): resolve the device's excision variant from the
+# shared registry BEFORE any excision file runs, so the fingerprint drop-pattern
+# set below is data-driven and an unregistered device fails loudly here instead
+# of silently no-opping. Uses PRODUCT_DEVICE (set in generated <codename>.mk).
+include vendor/guardtalk/feature-excised/excision-variant-select.mk
 
 # T-W2-I1-UI-APPS — Non-HAL UI app excision (Browser + AppStore + Dialer +
 # Messaging + Auditor + ExactCalculator + InfoApp).
@@ -106,7 +116,9 @@ include vendor/guardtalk/radio-excised/telephony-features.mk
   #   - com.android.uwb              -> feature-permission XML already absent
   #   - com.android.profiling        -> feature-permission XML already absent
   #   - com.android.uprobestats      -> feature-permission XML already absent
-  #   - com.android.devicelock       -> feature-permission XML already absent
+  #   - com.android.devicelock       -> PRODUCT_PACKAGES filter in
+  #                                    devicelock-apex-excised.mk (T-REMEDIATE-B2-APEX);
+  #                                    feature-permission XML already absent (defence)
   # With the feature declarations gone, hasSystemFeature() returns false for
   # each corresponding PackageManager.FEATURE_* constant, so the APEX mainline
   # stack stays dormant (its components key off the feature flags at runtime)
@@ -138,5 +150,10 @@ include vendor/guardtalk/radio-excised/telephony-features.mk
 # silently never fire. Matches the proven pattern used by every sibling
 # excision file in this directory (apps-excised.mk, nfc-excised.mk, etc.).
 include vendor/guardtalk/feature-excised/apex-bcp-excised.mk
+
+# T-REMEDIATE-B2-APEX — DeviceLock APEX PRODUCT_PACKAGES filter. Dedicated
+# file (not the GmsCompat stanza). After apps-excised KEEP restore so
+# HTMLViewer/UMP cannot be stripped here.
+include vendor/guardtalk/feature-excised/devicelock-apex-excised.mk
 
 endif # GUARDTALK_FEATURE_EXCISED_WAVE2

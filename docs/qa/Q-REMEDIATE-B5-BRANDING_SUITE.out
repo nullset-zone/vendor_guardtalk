@@ -1,0 +1,77 @@
+=== Q-REMEDIATE-B5-BRANDING independent rematch (items 22, 23) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+USB_GO=not started
+ZIP_REBUILD=not started (USERBUILD not delayed)
+
+--- required files ---
+PASS: present: vendor/guardtalk/branding/bootanimation/logo_1008x2244.png
+PASS: present: vendor/guardtalk/overlays/GuardTalkSetupWizardOverlay/res/drawable-nodpi/guardtalk_welcome_square.png
+PASS: present: vendor/guardtalk/overlays/GuardTalkSetupWizardOverlay/AndroidManifest.xml
+PASS: present: vendor/guardtalk/overlays/GuardTalkSetupWizardOverlay/Android.bp
+PASS: present: vendor/guardtalk/branding/bootanimation/bootanimation.zip
+PASS: present brand-kit boot copy: vendor/guardtalk/branding/GuardTalkOS_Brand_Assets/01_boot_animation/logo_1008x2244.png
+PASS: present brand-kit SUW copy: vendor/guardtalk/branding/GuardTalkOS_Brand_Assets/07_setup_wizard/guardtalk_welcome_square_transparent.png
+
+--- item 22 file(1) IHDR (libmagic; second decoder) ---
+file: PNG image data, 1008 x 2244, 8-bit/color RGB, non-interlaced
+PASS: file(1) reports 1008 x 2244
+PASS: file(1) reports PNG
+
+--- item 23 file(1) overlay PNG ---
+file: PNG image data, 1024 x 1024, 8-bit/color RGBA, non-interlaced
+PASS: file(1) reports 1024 x 1024
+PASS: file(1) reports RGBA
+
+--- item 23 XML placeholder ABSENT ---
+PASS: res/drawable/guardtalk_welcome_square.xml ABSENT
+PASS: overlay res/drawable has no XML files
+
+--- overlay package ---
+PASS: AndroidManifest package=com.guardtalk.overlay.setupwizard
+PASS: overlay targets app.grapheneos.setupwizard
+
+--- python IHDR + luma-sum>80 bbox + SUW RGBA corners (zlib decoder) ---
+BOOT_IHDR w=1008 h=2244 bit=8 color=2 ch=3
+PASS: python IHDR exactly 1008×2244
+PASS: boot PNG color type 2 (RGB)
+BOOT_CORNERS tl=(10, 11, 12) tr=(10, 11, 12) bl=(10, 11, 12) br=(10, 11, 12)
+PASS: boot canvas corners are dark (10,11,12) — luma-sum>30 is unsafe
+BOOT_BBOX luma-sum>30 (0, 0, 1007, 2243) n=2261952
+PASS: adversarial: luma-sum>30 bbox is the full canvas (decoder trap; not used for AC)
+BOOT_BBOX luma-sum>80 (348, 900, 659, 1219) n=40581
+BOOT_INSETS L=348 R=348 T=900 B=1024
+PASS: G content inside ~12%/14%/12% safe zone (insets L/R 348/348 T 900 B 1024; need L/R>=120 T>=314 B>=269)
+PASS: luma-sum>80 bbox exactly (348,900)–(659,1219) insets L/R 348 T 900 B 1024
+PASS: brand-kit boot PNG bytes match bootanimation/logo_1008x2244.png
+SUW_IHDR w=1024 h=1024 bit=8 color=6 ch=4
+PASS: SUW overlay IHDR 1024×1024
+PASS: SUW overlay PNG color type 6 (RGBA)
+SUW_CORNERS [(0, 0, 0, 0), (0, 0, 0, 0), (0, 0, 0, 0), (0, 0, 0, 0)]
+PASS: SUW four corners alpha=0
+SUW_CENTER (195, 255, 97, 255)
+PASS: SUW center has branded content (alpha=255)
+PASS: SUW has 70699 nonzero-alpha pixels (not an empty transparent sheet)
+PASS: brand-kit SUW PNG bytes match overlay drawable-nodpi PNG
+PASS: python: guardtalk_welcome_square.xml ABSENT
+ZIP_DESC_FIRST '1080 2400 24'
+HOLD: bootanimation.zip desc.txt still 1080×2400 (USERBUILD not delayed; not product FAIL)
+PY_COUNTS PASS_COUNT=14 FAIL_COUNT=0 HOLD_COUNT=1
+PASS: python PNG rematch exit 0
+
+--- secrets (pem/pk8/.env under branding + overlay) ---
+PASS: no pem/pk8/.env under branding + SetupWizard overlay
+PASS: git index has no pem/pk8/.env under branding + overlay
+
+--- identify (optional; ImageMagick) ---
+HOLD: identify not installed — python zlib IHDR used; not product FAIL
+
+--- adb (device HOLD if empty) ---
+List of devices attached
+HOLD: adb devices empty / no komodo 54111FDAS000GN — Welcome + boot HOLD, never device-fixed
+
+RESULT: PASS (host)  bash_PASS=18 bash_HOLD=2 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+ZIP=HOLD
+DEVICE=HOLD
+PASS_HOLD=remains

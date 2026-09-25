@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # pack-webinstall-channel.sh
 #
-# Adapt an existing tokay, akita, or komodo desktop-flash stamp into a GuardTalkOS web-install
-# channel (manifest + SHA256SUMS + GOS-like pointer). Does not rebuild images.
+# Adapt an existing tokay, akita, komodo, or rango desktop-flash stamp into a
+# GuardTalkOS web-install channel (manifest + SHA256SUMS + GOS-like pointer).
+# Does not rebuild images.
 #
-# DEC-WEBINSTALL-001/010 + DEC-PORT-KOMODO-004: advertised allowlist is
-# tokay + akita + komodo.
+# DEC-WEBINSTALL-015: advertised allowlist is tokay + akita + komodo + rango.
+# Rango is image-ready / packable / experimental / boot HOLD, not
+# production-boot-green. Unstamped shiba / husky / caiman / tegu / comet reject.
 # DEC-WEBINSTALL-006: flashOrder is firmware → avb_custom_key → os.
 # DEC-WEBINSTALL-007: this channel is labeled dev/unlocked. Not GOS-equivalent
 #   locked verified boot. Do not generate or commit private keys.
@@ -22,7 +24,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
-readonly ADVERTISED_DEVICES=(tokay akita komodo)
+readonly ADVERTISED_DEVICES=(tokay akita komodo rango)
 readonly CHANNEL_DEFAULT="dev"
 readonly BOOT_STATE="unlocked"
 readonly CHANNEL_LABEL="dev/unlocked"
@@ -33,11 +35,14 @@ log() { echo "$*"; }
 
 usage() {
     cat <<'EOF'
-pack-webinstall-channel.sh — tokay/akita/komodo desktop-flash → web-install channel
+pack-webinstall-channel.sh — tokay/akita/komodo/rango desktop-flash → web-install channel
 
-Reads an existing tokay, akita, or komodo stamp (default: latest).
+Reads an existing tokay, akita, komodo, or rango stamp (default: latest).
 Emits a GOS-like pointer, SHA256SUMS, public avb_pkmd.bin, and manifest.json.
 Does not rebuild Android images. Does not write *.pem / *.pk8 / .env.
+
+Rango is experimental / boot HOLD (DEC-WEBINSTALL-015, DEC-RANGO-REMEDIATE-002).
+It is image-ready and packable, not production-boot-green.
 
 This channel is DEV/UNLOCKED (DEC-WEBINSTALL-007). It is not a GrapheneOS-
 equivalent locked verified-boot product.
@@ -114,7 +119,7 @@ assert_advertised_product() {
     for allowed in "${ADVERTISED_DEVICES[@]}"; do
         [[ "$product" == "$allowed" ]] && return 0
     done
-    die "product '$product' is not in the advertised allowlist (tokay, akita, komodo)"
+    die "product '$product' is not in the advertised allowlist (tokay, akita, komodo, rango)"
 }
 
 assert_public_avb() {
@@ -277,6 +282,7 @@ find_signature() {
         "${dir}/tokay-dev.sig" \
         "${dir}/akita-dev.sig" \
         "${dir}/komodo-dev.sig" \
+        "${dir}/rango-dev.sig" \
         "${dir}/SHA256SUMS.sig"; do
         [[ -f "$cand" ]] && { echo "$cand"; return 0; }
     done
@@ -324,19 +330,19 @@ verify_channel_dir() {
     local hash_root="${2:-$dir}"
     local pointer="" cand
     shopt -s nullglob
-    for cand in "$dir"/tokay-dev "$dir"/akita-dev "$dir"/komodo-dev; do
+    for cand in "$dir"/tokay-dev "$dir"/akita-dev "$dir"/komodo-dev "$dir"/rango-dev; do
         [[ -f "$cand" ]] && pointer="$cand"
     done
     shopt -u nullglob
     local sums="${dir}/SHA256SUMS"
     local manifest="${dir}/manifest.json"
-    [[ -n "$pointer" && -f "$pointer" ]] || die "missing channel pointer: tokay-dev, akita-dev, or komodo-dev"
+    [[ -n "$pointer" && -f "$pointer" ]] || die "missing channel pointer: tokay-dev, akita-dev, komodo-dev, or rango-dev"
     [[ -f "$sums" ]] || die "missing SHA256SUMS"
     [[ -f "$manifest" ]] || die "missing manifest.json"
     [[ -f "${dir}/avb_pkmd.bin" ]] || die "missing public avb_pkmd.bin"
     local body
     body="$(tr -d '\r' <"$pointer")"
-    [[ "$body" =~ ^[A-Za-z0-9._-]+[[:space:]]+[0-9]+[[:space:]]+(tokay|akita|komodo)[[:space:]]+(dev|unlocked)$ ]] \
+    [[ "$body" =~ ^[A-Za-z0-9._-]+[[:space:]]+[0-9]+[[:space:]]+(tokay|akita|komodo|rango)[[:space:]]+(dev|unlocked)$ ]] \
         || die "pointer must be: ${POINTER_FORMAT} (or unlocked)"
     local product
     product="$(awk '{print $3}' <<<"$body")"
@@ -431,6 +437,7 @@ self_test() {
     printf 'os\n' >"${komodo_stamp}/boot.img"
     cp -p -- "${tokay_stamp}/avb_pkmd.bin" "${rango_stamp}/avb_pkmd.bin"
     printf 'fw\n' >"${rango_stamp}/bootloader.img"
+    printf 'os\n' >"${rango_stamp}/boot.img"
     out="${tmp}/out-tokay"
     CHANNEL_TOKEN="dev" DRY_RUN=0 COPY_IMAGES=0 \
         pack_channel "$tokay_stamp" "$out"
@@ -443,12 +450,25 @@ self_test() {
     CHANNEL_TOKEN="dev" verify_channel_dir "${tmp}/out-komodo"
     [[ -f "${tmp}/out-komodo/komodo-dev" ]] \
         || die "self-test: komodo-dev pointer missing"
-    if ( CHANNEL_TOKEN="dev" DRY_RUN=0 COPY_IMAGES=0 \
-        pack_channel "$rango_stamp" "${tmp}/out-rango" ) 2>"${tmp}/rango.err"; then
-        die "self-test: rango stamp must be rejected"
-    fi
-    grep -q "not in the advertised allowlist" "${tmp}/rango.err" \
-        || die "self-test: rango error text missing"
+    CHANNEL_TOKEN="dev" DRY_RUN=0 COPY_IMAGES=0 \
+        pack_channel "$rango_stamp" "${tmp}/out-rango"
+    CHANNEL_TOKEN="dev" verify_channel_dir "${tmp}/out-rango"
+    [[ -f "${tmp}/out-rango/rango-dev" ]] \
+        || die "self-test: rango-dev pointer missing"
+    local unstamped stamp
+    for unstamped in shiba husky caiman; do
+        stamp="${tmp}/${unstamped}-20990101-000000"
+        mkdir -p "$stamp"
+        printf 'public-avb-blob\n' >"${stamp}/avb_pkmd.bin"
+        printf 'fw\n' >"${stamp}/bootloader.img"
+        printf 'os\n' >"${stamp}/boot.img"
+        if ( CHANNEL_TOKEN="dev" DRY_RUN=0 COPY_IMAGES=0 \
+            pack_channel "$stamp" "${tmp}/out-${unstamped}" ) 2>"${tmp}/${unstamped}.err"; then
+            die "self-test: ${unstamped} stamp must be rejected"
+        fi
+        grep -q "not in the advertised allowlist" "${tmp}/${unstamped}.err" \
+            || die "self-test: ${unstamped} error text missing"
+    done
     if ( CHANNEL_TOKEN="production" DRY_RUN=1 COPY_IMAGES=0 \
         pack_channel "$tokay_stamp" "" ) 2>"${tmp}/prod.err"; then
         die "self-test: CHANNEL=production without sig must fail"

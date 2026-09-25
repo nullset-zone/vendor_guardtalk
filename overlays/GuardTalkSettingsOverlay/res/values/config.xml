@@ -387,6 +387,10 @@
       KEEP: Internet/Wi-Fi, Airplane, VPN
       HIDE: Hotspot/tether, Data Saver, Private DNS, Adaptive connectivity
       Mobile/Calls/SMS/Cellular already feature-gated by radio excision.
+      T-REMEDIATE-B4-WIFI-GW: keep Wi-Fi settings visible (do not hide the
+      gateway path). Add/tap-connect is blocked by first-user
+      no_add_wifi_config (mechanism), not by hiding this page. Hotspot
+      stays hidden. Do not open Wi-Fi.
     -->
     <bool name="config_show_internet_settings">true</bool>
     <bool name="config_show_wifi_settings">true</bool>

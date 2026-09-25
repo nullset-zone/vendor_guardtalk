@@ -1,17 +1,31 @@
 import type { AllowedProduct } from "../src/types.js";
+import {
+  DEFAULT_OFFERED_PRODUCT,
+  WIZARD_DEVICES,
+  deviceFromSearch,
+  isOfferedDevice as isOfferedProductId,
+  offeredProductIds,
+  parseOfferedDevice,
+  statusChipWord,
+  type OfferedDeviceStatus,
+  type OfferedProduct,
+  type WizardDevice,
+} from "../lib/ui/offered-devices.js";
 
-export interface WizardDevice {
-  id: AllowedProduct;
-  label: string;
-}
+export {
+  DEFAULT_OFFERED_PRODUCT,
+  WIZARD_DEVICES,
+  deviceFromSearch,
+  offeredProductIds,
+  parseOfferedDevice,
+  statusChipWord,
+  type OfferedDeviceStatus,
+  type WizardDevice,
+};
 
-/** Advertised picker. tokay + akita + komodo (DEC-PORT-KOMODO-004). Rango / shiba / husky / caiman are not offered. */
-export const WIZARD_DEVICES: readonly WizardDevice[] = [
-  { id: "tokay", label: "Pixel 9 (tokay)" },
-  { id: "akita", label: "Pixel 8a (akita)" },
-  { id: "komodo", label: "Pixel 9 Pro XL (komodo)" },
-];
-
+/** Picker membership; advertised ids match AllowedProduct after DEC-WEBINSTALL-015. */
 export function isOfferedDevice(id: string): id is AllowedProduct {
-  return WIZARD_DEVICES.some((device) => device.id === id);
+  return isOfferedProductId(id);
 }
+
+export type { OfferedProduct };

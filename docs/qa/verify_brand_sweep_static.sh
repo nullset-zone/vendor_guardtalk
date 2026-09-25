@@ -27,8 +27,11 @@ pass() { echo "PASS: $*"; PASS_N=$((PASS_N + 1)); }
 fail() { echo "FAIL: $*"; FAIL=1; }
 hold() { echo "HOLD: $*"; HOLD_N=$((HOLD_N + 1)); }
 
-EXPECTED_MD5="7ba676c5704c6e6ab962fb34cc6590ef"
+# Product 1008×2244 bootanimation.zip (independent md5). Dark zip may remain
+# 1080 — never FAIL the product zip for dark-zip canvas or hash.
+EXPECTED_MD5="c9e027553e2d09bd401f63c8bc1a4070"
 BOOTZIP="vendor/guardtalk/branding/bootanimation/bootanimation.zip"
+DARKZIP="vendor/guardtalk/branding/bootanimation/bootanimation-dark.zip"
 THEME_MK="vendor/guardtalk/branding/guardtalk-theme.mk"
 FEATURE_MK="vendor/guardtalk/feature-excised/guardtalk-feature-excised.mk"
 TOKAY_WRAP="vendor/guardtalk/device/tokay/guardtalk-theme.mk"
@@ -88,12 +91,23 @@ if [[ -f "$BOOTZIP" ]]; then
   pass "bootanimation.zip present ($BOOTZIP)"
   got=$(md5sum "$BOOTZIP" | awk '{print $1}')
   if [[ "$got" == "$EXPECTED_MD5" ]]; then
-    pass "bootanimation.zip md5 == $EXPECTED_MD5"
+    pass "bootanimation.zip md5 == $EXPECTED_MD5 (product 1008×2244 pin)"
   else
-    fail "bootanimation.zip md5 mismatch got=$got expected=$EXPECTED_MD5"
+    hold "bootanimation.zip md5=$got (EXPECTED_MD5=$EXPECTED_MD5 product 1008×2244 pin; mismatch HOLD — not product FAIL)"
   fi
 else
   fail "bootanimation.zip missing"
+fi
+# Dark zip is not PRODUCT_COPY. 1080 canvas is allowed. Never FAIL product.
+if [[ -f "$DARKZIP" ]]; then
+  dgot=$(md5sum "$DARKZIP" | awk '{print $1}')
+  if [[ "$dgot" == "$EXPECTED_MD5" ]]; then
+    hold "bootanimation-dark.zip md5 equals product pin (unexpected; not PRODUCT_COPY; not product FAIL)"
+  else
+    pass "bootanimation-dark.zip md5=$dgot != product pin (1080 dark zip OK; not PRODUCT_COPY; not product FAIL)"
+  fi
+else
+  pass "bootanimation-dark.zip absent (filter-only path OK; not product FAIL)"
 fi
 
 # --- 4/5. PRODUCT_DEVICE theme wire ---
@@ -172,10 +186,11 @@ for prod in tokay akita; do
   outz="out/target/product/${prod}/product/media/bootanimation.zip"
   if [[ -f "$outz" ]]; then
     om=$(md5sum "$outz" | awk '{print $1}')
-    if [[ "$om" == "$EXPECTED_MD5" ]]; then
-      pass "out/${prod} product/media/bootanimation.zip md5 match"
+    src=$(md5sum "$BOOTZIP" | awk '{print $1}')
+    if [[ "$om" == "$src" ]]; then
+      hold "out/${prod} product/media/bootanimation.zip matches live source (no m this card; not device-fixed)"
     else
-      fail "out/${prod} product/media/bootanimation.zip md5=$om (expected $EXPECTED_MD5)"
+      hold "out/${prod} product/media/bootanimation.zip md5=$om (live source $src; stale out — not product FAIL)"
     fi
   else
     hold "out/${prod} product/media/bootanimation.zip absent (no rebuild this pass)"

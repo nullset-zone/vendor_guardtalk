@@ -1,0 +1,208 @@
+=== Q-REMEDIATE-B4-WIFI-GW independent rematch (item 21) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+USB_GO=not started
+OPEN_WIFI=forbidden
+STALE_OUT_WPA=HOLD (not SoT)
+
+--- required files ---
+PASS: present: vendor/guardtalk/device/komodo/guardtalk-wifi-gateway.mk
+PASS: present: vendor/guardtalk/device/komodo/init.guardtalk.wifi-gateway.rc
+PASS: present: vendor/guardtalk/device/komodo/wifi/wpa_supplicant_overlay.conf
+PASS: present: vendor/guardtalk/device/komodo/wifi/guardtalk_gateway_ssids
+PASS: present: vendor/google_devices/komodo/proprietary/vendor/etc/wifi/wpa_supplicant_overlay.conf
+PASS: present: vendor/guardtalk/overlays/GuardTalkFrameworksBaseOverlay/res/values/config.xml
+PASS: present: vendor/guardtalk/overlays/GuardTalkSettingsOverlay/res/values/config.xml
+PASS: present: vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk
+PASS: present: vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk
+PASS: present: vendor/guardtalk/device/komodo/REGEN_HOOKS.md
+
+--- packet rg (first-user / wpa / SSID file) ---
+54:         creation. no_add_wifi_config disables Settings add-network and
+57:         the signed GMP SSID. no_wifi_tethering / no_wifi_direct close
+59:         no_config_wifi_private/shared here — that blocks privileged GMP
+63:        <item>no_add_wifi_config</item>
+64:        <item>no_wifi_tethering</item>
+65:        <item>no_wifi_direct</item>
+
+11:interworking=0
+12:hs20=0
+13:auto_interworking=0
+20:filter_ssids=1
+
+vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk:69:include vendor/guardtalk/device/komodo/guardtalk-wifi-gateway.mk
+vendor/guardtalk/device/komodo/guardtalk-wifi-gateway.mk:24:    vendor/google_devices/komodo/proprietary/vendor/etc/wifi/wpa_supplicant_overlay.conf:$(TARGET_COPY_OUT_VENDOR)/etc/wifi/wpa_supplicant_overlay.conf, \
+vendor/guardtalk/device/komodo/guardtalk-wifi-gateway.mk:28:    vendor/guardtalk/device/komodo/wifi/wpa_supplicant_overlay.conf:$(TARGET_COPY_OUT_VENDOR)/etc/wifi/wpa_supplicant_overlay.conf \
+vendor/guardtalk/device/komodo/guardtalk-wifi-gateway.mk:29:    vendor/guardtalk/device/komodo/wifi/guardtalk_gateway_ssids:$(TARGET_COPY_OUT_VENDOR)/etc/wifi/guardtalk_gateway_ssids \
+vendor/guardtalk/device/komodo/guardtalk-wifi-gateway.mk:35:    ro.guardtalk.wifi.ssid_allowlist_path=/vendor/etc/wifi/guardtalk_gateway_ssids
+
+--- first-user overlay (GuardTalkFrameworksBaseOverlay) ---
+PASS: first-user restriction no_add_wifi_config
+PASS: first-user restriction no_wifi_tethering
+PASS: first-user restriction no_wifi_direct
+PASS: config_defaultFirstUserRestrictions present
+PASS: first-user does not set no_config_wifi_private (GMP add path)
+PASS: first-user does not set no_config_wifi_shared (GMP add path)
+
+--- Settings overlay (do not open Wi-Fi / hotspot) ---
+PASS: Wi-Fi settings stay shown (gateway path visible)
+PASS: hotspot settings stay hidden
+PASS: hotspot not re-opened
+
+--- GuardTalk wpa overlay ---
+PASS: wpa overlay filter_ssids=1
+PASS: wpa overlay hs20=0
+PASS: wpa overlay interworking=0
+PASS: GuardTalk wpa overlay is not Pixel hs20=1
+PASS: GuardTalk wpa overlay is not Pixel interworking=1
+PASS: filter_ssids is not 0
+
+--- Pixel wpa overlay (source; must be filtered at lunch) ---
+PASS: Pixel source still hs20=1 (must not ship)
+PASS: Pixel source still interworking=1 (must not ship)
+PASS: Pixel source has no filter_ssids (late overlay must add it)
+
+--- SSID allowlist file (comments only, zero SSIDs) ---
+SSID_NONCOMMENT_COUNT=0
+PASS: guardtalk_gateway_ssids has zero non-comment SSID lines
+PASS: komodo wifi dir has no PSK/passphrase
+
+--- wifi-gateway.mk + harden include ---
+PASS: production-hardening.mk includes guardtalk-wifi-gateway.mk
+PASS: wifi-gateway.mk filter-out Pixel wpa overlay
+PASS: wifi-gateway.mk names Pixel overlay dest to drop
+PASS: wifi-gateway.mk copies GuardTalk wpa overlay
+PASS: wifi-gateway.mk copies SSID list
+PASS: wifi-gateway.mk copies vendor init rc
+PASS: wifi-gateway.mk sets gateway_only=1
+PASS: wifi-gateway.mk sets fail_closed=1
+PASS: wifi-gateway.mk does not add PRODUCT_PACKAGES
+PASS: wifi-gateway.mk does not restore RIL/BT/NFC
+
+--- vendor init (wifi-gateway.rc) ---
+PASS: wifi-gateway.rc re-asserts persist.vendor.wifi.guardtalk_gateway_only 1
+PASS: wifi-gateway.rc has on post-fs-data
+PASS: wifi-gateway.rc does not touch persist.radio.disabled
+PASS: wifi-gateway.rc does not start RIL
+PASS: wifi-gateway.rc does not ctl.start services
+
+--- RIL stays disabled (must not re-enable) ---
+PASS: radio-excised still sets persist.radio.disabled=1
+PASS: no persist.radio.disabled=0 in vendor/guardtalk mk/rc/prop/bp
+
+--- REGEN_HOOKS documents late Pixel filter-out ---
+PASS: REGEN_HOOKS names guardtalk-wifi-gateway.mk
+PASS: REGEN_HOOKS documents Pixel wpa filter-out
+
+--- python structural rematch ---
+PASS: first-user restrictions parsed: ['no_install_unknown_sources', 'no_add_wifi_config', 'no_wifi_tethering', 'no_wifi_direct']
+PASS: first-user has no_add_wifi_config
+PASS: first-user has no_wifi_tethering
+PASS: first-user has no_wifi_direct
+PASS: first-user has no_install_unknown_sources
+PASS: first-user does not set no_config_wifi_private
+PASS: first-user does not set no_config_wifi_shared
+PASS: first-user does not set no_config_wifi
+PASS: wpa overlay exact filter_ssids=1
+PASS: wpa overlay exact hs20=0
+PASS: wpa overlay exact interworking=0
+PASS: Pixel overlay remains hs20=1/interworking=1 (must be filtered at lunch)
+PASS: SSID file comments/blanks only (zero SSIDs)
+PASS: SSID file has no secret-like token
+PASS: no secret-like token in guardtalk_gateway_ssids
+PASS: no secret-like token in wpa_supplicant_overlay.conf
+PASS: harden mk includes wifi-gateway overlay
+PASS: wifi-gateway.mk filter-out Pixel wpa overlay
+PASS: mk copies vendor/guardtalk/device/komodo/wifi/wpa_supplicant_overlay.conf
+PASS: mk copies vendor/guardtalk/device/komodo/wifi/guardtalk_gateway_ssids
+PASS: mk copies vendor/guardtalk/device/komodo/init.guardtalk.wifi-gateway.rc
+PASS: wifi-gateway.rc post-fs-data re-assert
+PASS: wifi-gateway.rc does not re-enable RIL
+PASS: radio-excised persist.radio.disabled=1 remains
+HOLD: no in-tree Java/Kotlin/C reader of guardtalk_gateway_ssids / ssid_allowlist_path — vendor list is not a runtime firewall; wpa filter_ssids uses saved networks; empty saved set does not filter association until an SSID is saved
+PY_COUNTS PASS_COUNT=24 FAIL_COUNT=0 HOLD_COUNT=1
+PASS: python structural rematch exit 0
+
+--- lunch komodo-trunk_staging-user (independent; do not skip) ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+13:58:31 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+13:58:38 Build sandboxing disabled due to nsjail error.
+13:58:43 Build sandboxing disabled due to nsjail error.
+13:58:49 Build sandboxing disabled due to nsjail error.
+13:58:55 Build sandboxing disabled due to nsjail error.
+13:59:04 Build sandboxing disabled due to nsjail error.
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (not userdebug)
+PASS: PRODUCT_PROPERTY_OVERRIDES contains persist.radio.disabled=1 (RIL stays disabled)
+PASS: PRODUCT_PROPERTY_OVERRIDES does not set persist.radio.disabled=0
+PASS: PRODUCT_PROPERTY_OVERRIDES contains ro.guardtalk.wifi.gateway_only=1
+PASS: PRODUCT_PROPERTY_OVERRIDES contains ro.guardtalk.wifi.fail_closed=1
+--- filtered PRODUCT_COPY_FILES wifi hits ---
+vendor/google_devices/komodo/proprietary/vendor/etc/wifi/p2p_supplicant_overlay.conf:vendor/etc/wifi/p2p_supplicant_overlay.conf
+vendor/guardtalk/device/komodo/wifi/wpa_supplicant_overlay.conf:vendor/etc/wifi/wpa_supplicant_overlay.conf
+vendor/guardtalk/device/komodo/wifi/guardtalk_gateway_ssids:vendor/etc/wifi/guardtalk_gateway_ssids
+vendor/guardtalk/device/komodo/init.guardtalk.wifi-gateway.rc:vendor/etc/init/init.guardtalk.wifi-gateway.rc
+PASS: PRODUCT_COPY_FILES includes GuardTalk wpa_supplicant_overlay.conf
+PASS: Pixel wpa_supplicant_overlay.conf ABSENT from PRODUCT_COPY_FILES
+PASS: PRODUCT_COPY_FILES includes guardtalk_gateway_ssids
+PASS: PRODUCT_COPY_FILES includes init.guardtalk.wifi-gateway.rc
+PASS: p2p_supplicant_overlay.conf still copied (no_wifi_direct is the block)
+--- filtered PRODUCT_PACKAGES overlay / radio hits ---
+GuardTalkFrameworksBaseOverlay
+GuardTalkSettingsOverlay
+PASS: user PRODUCT_PACKAGES contains GuardTalkFrameworksBaseOverlay
+PASS: user PRODUCT_PACKAGES contains GuardTalkSettingsOverlay
+PASS: user PRODUCT_PACKAGES: NFC/BT HAL packages still ABSENT
+
+--- stale out/ (HOLD until rebuild; not PASS/FAIL of this card) ---
+--- stale out wpa overlay ---
+6:interworking=1
+7:hs20=1
+8:auto_interworking=0
+HOLD: stale out wpa overlay still Pixel hs20=1/interworking=1 — HOLD until rebuild (not FAIL)
+HOLD: stale out missing guardtalk_gateway_ssids — HOLD until rebuild
+HOLD: stale out missing init.guardtalk.wifi-gateway.rc — HOLD until rebuild
+HOLD: m not run this QA stamp (stale vendor wifi overlay not product truth; never device-fixed)
+
+--- empty saved-set / association HOLD ---
+HOLD: empty saved-network set does not filter association until an SSID is saved (wpa filter_ssids); first-user no_add_wifi_config is the pre-provision Settings block
+HOLD: upgrade users already created: default-restrictions apply at user creation only (not rematched live)
+
+--- adb / on-device associate ---
+List of devices attached
+HOLD: adb devices empty / no komodo 54111FDAS000GN — on-device associate HOLD, never device-fixed
+HOLD: on-device coffee-shop / non-gateway associate HOLD (not claimed live)
+HOLD: PASS HOLD remains; never APPROVED this panel
+
+RESULT: PASS (host)  bash_PASS=65 bash_HOLD=9 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+STALE_OUT_WPA=HOLD
+ONDEVICE_ASSOCIATE=HOLD
+EMPTY_SAVED_SET_FILTER=HOLD
+DEVICE=HOLD
+PASS_HOLD=remains
+VERDICT PASS (host-static; PASS HOLD remains)

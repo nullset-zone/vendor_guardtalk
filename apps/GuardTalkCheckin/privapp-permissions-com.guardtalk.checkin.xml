@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    GuardTalkCheckin privapp-permissions whitelist (T-REMEDIATE-B4-CHECKIN).
+
+    The app is privileged so it lands in system_ext/priv-app (harder to
+    remove than a user APK). It requests no signature|privileged permissions:
+    INTERNET, ACCESS_NETWORK_STATE, and RECEIVE_BOOT_COMPLETED are normal
+    permissions granted at install for a priv-app.
+
+    Empty <privapp-permissions> is still required so the privapp allowlist
+    scanner has a package entry. No WRITE_SECURE_SETTINGS (Config/Gateway
+    writes the Global keys). No location, phone, or SMS.
+-->
+<permissions>
+    <privapp-permissions package="com.guardtalk.checkin">
+    </privapp-permissions>
+</permissions>

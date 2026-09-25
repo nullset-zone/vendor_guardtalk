@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      T-REMEDIATE-B5-DEFAULTS (item 24).
+      Settings.Secure.lock_screen_show_notifications=0 (AOSP default 1).
+      DatabaseHelper.loadSecureSettings reads def_lock_screen_show_notifications.
+    -->
+    <integer name="def_lock_screen_show_notifications">0</integer>
+
+    <!--
+      MTP / UMS off by default. Settings.Global.usb_mass_storage_enabled.
+      persist.sys.usb.config=none on the user product (not mtp). Does not
+      re-enable RIL or USB GO. USB data remains fail-closed when locked
+      (ro.guardtalk.usb_protection_fail_closed).
+    -->
+    <bool name="def_usb_mass_storage_enabled">false</bool>
+</resources>

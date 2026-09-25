@@ -15,26 +15,44 @@
     <integer name="config_fingerprintMaxTemplatesPerUser">0</integer>
     <bool name="config_fingerprintSupportsGestures">false</bool>
 
-    <!-- T-W2-I5-LOC: GNSS HAL excision grace layer (location-only).
-         The GNSS HAL packages + the android.hardware.location.gps feature
-         prebuilt are dropped in feature-excised/loc-excised.mk, so
-         hasSystemFeature(FEATURE_LOCATION_GPS) returns false. FusedLocation
-         (com.android.location.fused, the AOSP network-location provider from
-         build/make/target/product/handheld_system.mk) is KEPT — only the GNSS
-         hardware HAL is removed. These overlay values are defence-in-depth so
-         the framework's GnssLocationProvider never tries to bind to a HAL
-         that is no longer installed. The LocationManager service itself stays
-         running and continues to serve network-based fixes from FusedLocation.
-         No config_gpsLocationGpsOnly or equivalent boolean exists in the
-         framework to override (verified: the GnssLocationProvider is gated on
-         FEATURE_LOCATION_GPS at construction, so dropping the feature is
-         sufficient); this entry documents the contract. -->
+    <!-- T-W2-I5-LOC / T-LOC-FULL / T-REMEDIATE-B2-LMS: location excision.
+         loc-excised.mk drops GNSS HAL + FEATURE_LOCATION* + FusedLocation.
+         SystemServer FEATURE-gates LocationManagerService.Lifecycle on
+         FEATURE_LOCATION (BT pattern), so LMS does not start on komodo.
+         This overlay documents the contract; no extra boolean is required. -->
+
+    <!-- T-REMEDIATE-B3-SENSORS (item 17): software camera/mic toggles.
+         AOSP defaults config_supportsMicToggle / config_supportsCamToggle
+         are false (frameworks/base/core/res/res/values/config.xml). Pixel
+         set both true in PixelConfigOverlayCommon, which Wave D excised
+         (apps-excised.mk). Without these, SensorPrivacyService.supportsSensorToggle
+         is false: QS CameraToggleTile / MicrophoneToggleTile isAvailable() is
+         false (tiles vanish even when GuardTalkSystemUIOverlay lists
+         mictoggle/cameratoggle), and `cmd sensor_privacy enable` no-ops.
+         Restore only the two SW toggle bools here (android package, platform
+         cert). Do NOT restore the rest of PixelConfigOverlayCommon (Pixel
+         strings, config_fingerprintSupportsGestures=true). Hardware toggles
+         stay false. T-OS-CAMMIC-TOGGLE lock / lockdown fail-closed is unchanged
+         (GuardTalkSensorPrivacyHooks.allowToggleChange). -->
+    <bool name="config_supportsMicToggle">true</bool>
+    <bool name="config_supportsCamToggle">true</bool>
 
     <!-- T-SEC-P5-HARDEN: default SYSTEM-user restriction — block unknown-source
          installs at first-user creation. Defence-in-depth with
          GuardTalkProductionHardeningPolicy.mustBlockUnknownSources() in
          ComputerEngine (covers existing users + secondary profiles). -->
+    <!-- T-REMEDIATE-B4-WIFI-GW: fail-closed gateway-only Wi-Fi at first-user
+         creation. no_add_wifi_config disables Settings add-network and
+         tap-to-connect (LongPressWifiEntryPreference / WifiDialogActivity /
+         AddNetworkFragment). Privileged SUW/GuardTalkConfig may still add
+         the signed GMP SSID. no_wifi_tethering / no_wifi_direct close
+         hotspot and Wi-Fi Direct join paths. Do not set
+         no_config_wifi_private/shared here — that blocks privileged GMP
+         addOrUpdateNetwork. Do not open Wi-Fi. Keep unknown-source block. -->
     <string-array translatable="false" name="config_defaultFirstUserRestrictions">
         <item>no_install_unknown_sources</item>
+        <item>no_add_wifi_config</item>
+        <item>no_wifi_tethering</item>
+        <item>no_wifi_direct</item>
     </string-array>
 </resources>

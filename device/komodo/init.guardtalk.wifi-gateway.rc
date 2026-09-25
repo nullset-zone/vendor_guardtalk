@@ -1,0 +1,11 @@
+# GuardTalkOS komodo gateway-only Wi-Fi (T-REMEDIATE-B4-WIFI-GW).
+#
+# Vendor init re-asserts fail-closed marker after /data persist is mounted.
+# Does not start RIL. Does not enable BT/NFC. Does not open Wi-Fi.
+# SSID allowlist: /vendor/etc/wifi/guardtalk_gateway_ssids (empty = fail-closed).
+
+on post-fs-data
+    setprop persist.vendor.wifi.guardtalk_gateway_only 1
+
+on property:sys.boot_completed=1
+    setprop persist.vendor.wifi.guardtalk_gateway_only 1

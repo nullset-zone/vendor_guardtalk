@@ -1,4 +1,4 @@
-# GuardTalk production hardening sysctls (T-SEC-P5-HARDEN)
+# GuardTalk production hardening sysctls (T-SEC-P5-HARDEN / T-REMEDIATE-B2-KERNEL)
 #
 # Applied when PRODUCT_PACKAGES includes this .rc (GuardTalk products only).
 # Property ro.guardtalk.sysctl_hardening=1 documents intent / Security status.
@@ -6,8 +6,14 @@
 # Intentionally NOT set here (would brick or break Pixel bring-up):
 #   - kernel.modules_disabled=1  (vendor_dlkm / late module loads)
 #   - debugfs unmount forks      (GrapheneOS/AOSP sepolicy already restricts)
+#   - kernel.unprivileged_bpf_disabled=1 on late-init
+#     NetBpfLoad writes 0 first (packages/modules/Connectivity/bpf/loader/
+#     NetBpfLoad.cpp). Value 1 is irreversible; a late-init 1 makes that write
+#     fail and bpfloader returns 23 / reboot_on_failure. Lock to 1 only after
+#     boot_completed (programs already loaded as root).
 #
 # Fail-soft: if a write is denied by sepolicy/kernel, init logs and continues.
+# ptrace_scope requires CONFIG_SECURITY_YAMA (see caimito-kernels fragment).
 
 on late-init
     # Hide kernel pointers from unprivileged readers.
@@ -19,8 +25,8 @@ on late-init
     write /proc/sys/kernel/yama/ptrace_scope 1
     # Block new kexec image loads after boot.
     write /proc/sys/kernel/kexec_load_disabled 1
-    # Perf: deny unprivileged perf_event_open.
-    write /proc/sys/kernel/perf_event_paranoid 3
+    # Perf: deny unprivileged kernel profiling (audit item 9 wants 2, not 3).
+    write /proc/sys/kernel/perf_event_paranoid 2
 
 on property:ro.guardtalk.sysctl_hardening=1 && property:sys.boot_completed=1
     # Re-assert after boot in case early writers relaxed values.
@@ -28,4 +34,6 @@ on property:ro.guardtalk.sysctl_hardening=1 && property:sys.boot_completed=1
     write /proc/sys/kernel/dmesg_restrict 1
     write /proc/sys/kernel/yama/ptrace_scope 1
     write /proc/sys/kernel/kexec_load_disabled 1
-    write /proc/sys/kernel/perf_event_paranoid 3
+    write /proc/sys/kernel/perf_event_paranoid 2
+    # Lock unprivileged bpf off after bpfloader/NetBpfLoad has finished.
+    write /proc/sys/kernel/unprivileged_bpf_disabled 1

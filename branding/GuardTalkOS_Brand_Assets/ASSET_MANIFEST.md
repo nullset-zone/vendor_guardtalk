@@ -25,8 +25,9 @@ Generated from the GuardTalk Brand Book mark geometry + verified palette.
 
 ## 01_boot_animation
 
-- `bootanimation.zip` — 3097 KB
-- `desc.txt` — 1 KB
+- `bootanimation.zip` — 150 KB (F-REMEDIATE-B5-BOOTZIP 1008×2244 STORED)
+- `desc.txt` — 1 KB (first line `1008 2244 24`)
+- `logo_1008x2244.png` — 75 KB (F-REMEDIATE-B5-BRANDING komodo safe-zone boot logo)
 - `preview_frame_assembled.png` — 56 KB
 - `preview_frame_first.png` — 7 KB
 
@@ -227,6 +228,7 @@ Generated from the GuardTalk Brand Book mark geometry + verified palette.
 - `guardtalk_welcome_1080x1920.png` — 88 KB
 - `guardtalk_welcome_1080x2400.png` — 91 KB
 - `guardtalk_welcome_square_1024.png` — 79 KB
+- `guardtalk_welcome_square_transparent.png` — 21 KB (F-REMEDIATE-B5-BRANDING RGBA; overlay copy)
 
 ## 08_themed_icon
 

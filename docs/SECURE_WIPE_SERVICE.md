@@ -58,12 +58,33 @@ SecureWipeEngine.run(context, Reason)
 | Binder | `ILockSettings.requestSecureWipe` | UI path after owner LSKF verify |
 | SettingsLib keys | `GuardTalkSecureWipeKeys` | Pref keys + prop names for Frontend |
 
+### Programmatic duress Binder rematch (T-REMEDIATE-B1-DURESS item 6)
+
+Lockscreen Keyguard already wipes via `doVerifyCredential` → `DuressPasswordHelper.onVerifyCredentialResult` → `SecureWipeEngine(DURESS)`. Item 6 rematches **every Binder LSKF path** so a caller of `ILockSettings.checkCredential` / `verifyCredential` cannot skip that helper. Do **not** rewrite the lockscreen wipe reason.
+
+| Binder method (`ILockSettings.aidl`) | Funnel | Duress helper |
+|----------------------------------------|--------|----------------|
+| `checkCredential` | `LockSettingsService.checkCredential` → `doVerifyCredential` (2493) | `finally` `onVerifyCredentialResult` (2584) |
+| `verifyCredential` | `verifyCredential` → `doVerifyCredential` (2518) | same `finally` |
+| `verifyTiedProfileChallenge` | `doVerifyTiedProfileChallenge` → `doVerifyCredential` parent then profile (2775, 2788) | same `finally` (twice on success) |
+| `validateRemoteLockscreen` | `RecoverableKeyStoreManager` → `verifyCredential` (~1081) | same `finally` |
+| `requestSecureWipe` / `hasDuressCredentials` / `setDuressCredentials` | `checkCredential` / `checkOwnerCredential` | same `finally` (match → no wipe; mismatch still checked) |
+| `setLockCredential` (savedCredential miss) | `setLockCredentialInternal` `unlockLskfBasedProtector` (cannot reuse `doVerifyCredential` — needs `SyntheticPassword`) | explicit `onVerifyCredentialResult` on unwrap failure (2144) |
+| `getHashFactor` (currentCredential miss) | `getHashFactorInternal` (success needs SP-derived hash factor) | explicit `onVerifyCredentialResult` when factor is null (3678) |
+| `verifyGatekeeperPasswordHandle` | GK handle after a **successful** verify; not an LSKF guess | **not** a duress path |
+| `tryUnlockWithCachedUnifiedChallenge` | cached profile password → `doVerifyCredential` (3890) | same `finally` (not user-typed) |
+| `cmd lock_settings verify` | `LockSettingsShellCommand` → `LockPatternUtils.checkCredential` → Binder `checkCredential` | same `finally` |
+
+Lockscreen wipe call site (do not regress): `DuressPasswordHelper` 66–67 `SecureWipeEngine.run(..., Reason.DURESS)`.
+
+Item **7** (USB duress default-on + device proof) is **HOLD** until `T-REMEDIATE-B1-AVB` APPROVED. `UsbPortSecurityHooks` stays opt-in (`vendor.guardtalk.usb_duress_wipe.enabled` default `0`) and still requires `verifiedbootstate=green`.
+
 ### Call sites (must stay on this engine)
 
 | Trigger | Entry |
 |---------|--------|
 | Secure wipe UI | `LockPatternUtils.requestSecureWipe` → `SecureWipeEngine(USER_REQUESTED)` |
-| Duress credential | `DuressPasswordHelper` → `DuressWipe` → `SecureWipeEngine(DURESS)` |
+| Duress credential | `DuressPasswordHelper` → `SecureWipeEngine(DURESS)` (not via `DuressWipe`) |
 | USB duress path | `UsbPortSecurityHooks` → `DuressWipe` → same engine |
 | Anti-bruteforce@10 | `LockSettingsService` → `SecureWipeEngine(ANTI_BRUTEFORCE)` |
 

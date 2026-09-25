@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "guardtalk.checkin.v1",
+  "title": "GuardTalk seizure check-in payload",
+  "description": "POST body from the device client to Gateway/Tor admin. Fail-closed: no public-internet C2, no PII fields.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "interval_s",
+    "grace_s",
+    "sent_at_unix",
+    "seq",
+    "device_id",
+    "status"
+  ],
+  "properties": {
+    "schema": { "const": "guardtalk.checkin.v1" },
+    "interval_s": { "const": 43200 },
+    "grace_s": { "const": 3600 },
+    "sent_at_unix": { "type": "integer", "minimum": 0 },
+    "seq": { "type": "integer", "minimum": 0 },
+    "device_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32,64}$",
+      "description": "Opaque provisioned id. Not IMEI/serial/phone."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "skipped_no_endpoint",
+        "skipped_no_tor",
+        "rejected_endpoint",
+        "failed_transport"
+      ]
+    }
+  }
+}

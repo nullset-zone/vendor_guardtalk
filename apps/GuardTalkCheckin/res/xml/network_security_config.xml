@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Cleartext is required for Gateway LAN http://RFC1918 and for http://*.onion
+    over SOCKS. Public DNS/IP is still rejected in CheckinEndpoint before any
+    socket is opened. Do not treat this as permission to talk to the internet.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

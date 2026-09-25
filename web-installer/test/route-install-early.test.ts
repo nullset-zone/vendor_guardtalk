@@ -508,13 +508,28 @@ test("step 0 renders posture pill, targets table, honesty blocks, custody senten
   assert.match(html, /◢ offline · your key · alpha/);
   assert.deepEqual(
     SUPPORTED_TARGETS.map((t) => t.codename),
-    ["tokay", "akita", "komodo"],
+    ["tokay", "akita", "komodo", "rango"],
   );
+  assert.equal(SUPPORTED_TARGETS.find((t) => t.codename === "rango")?.status, "experimental");
+  assert.equal(SUPPORTED_TARGETS.find((t) => t.codename === "tokay")?.status, "supported");
   assert.match(html, />tokay</);
   assert.match(html, />akita</);
   assert.match(html, />komodo</);
-  assert.doesNotMatch(html, />rango</);
-  assert.match(html, /rango, caiman, shiba, and husky are not production advertised devices/);
+  assert.match(html, />rango</);
+  assert.match(html, /Pixel 10 Pro Fold/);
+  assert.match(html, /EXPERIMENTAL · BOOT HOLD/);
+  assert.match(html, /data-role="target-product"/);
+  assert.match(html, /option value="rango"/);
+  assert.doesNotMatch(html, /rango stays hidden/);
+  assert.match(html, /rango is advertised as experimental \/ boot HOLD/);
+  assert.match(html, /komodo-20260915-063833 is userdebug\/test-keys, not a signed user FLASH_READY image/);
+  assert.match(html, /LIVE_FLASH_CLAIMED=false/);
+  assert.doesNotMatch(html, /FLASH_READY=true/);
+  assert.match(html, /caiman, shiba, husky, tegu, and comet stay unstamped/);
+  const rangoRow = html.split("<tr").find((row) => row.includes('data-codename="rango"'));
+  assert.ok(rangoRow !== undefined);
+  assert.match(rangoRow, /chip-caution/);
+  assert.doesNotMatch(rangoRow, /SUPPORTED/);
   assert.match(html, /Tor Browser cannot flash over USB/);
   assert.match(html, /CLI export/);
   assert.match(html, /wipes the phone twice/);

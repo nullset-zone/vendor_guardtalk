@@ -1,0 +1,191 @@
+=== Q-REMEDIATE-B3-SENSORS independent rematch (item 17) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+Q-REMEDIATE-B3-OSUX-DEVICE=not started (BLOCKED; not folded here)
+USB_GO=not started
+T/F reports: not trusted
+
+--- required files ---
+PASS: present: vendor/guardtalk/overlays/GuardTalkFrameworksBaseOverlay/res/values/config.xml
+PASS: present: vendor/guardtalk/overlays/GuardTalkSystemUIOverlay/res/values/config.xml
+PASS: present: vendor/guardtalk/feature-excised/apps-excised.mk
+PASS: present: vendor/guardtalk/feature-excised/feature-overlays.mk
+PASS: present: vendor/guardtalk/radio-excised/telephony-features.mk
+PASS: present: frameworks/base/services/core/java/com/android/server/sensorprivacy/SensorPrivacyService.java
+PASS: present: frameworks/base/services/core/java/com/android/server/sensorprivacy/GuardTalkSensorPrivacyHooks.java
+PASS: present: frameworks/base/core/java/android/guardtalk/GuardTalkSensorPrivacyPolicy.java
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleHelper.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleViews.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/EscapeMenu.kt
+PASS: present: packages/apps/Settings/src/com/android/settings/privacy/SensorToggleController.java
+PASS: present: packages/apps/Settings/src/com/android/settings/guardtalk/GuardTalkSensorPrivacyHelper.java
+PASS: present: frameworks/base/core/res/res/values/config.xml
+PASS: present: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/CameraToggleTile.java
+PASS: present: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/MicrophoneToggleTile.java
+PASS: present: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/SensorPrivacyToggleTile.java
+PASS: present: frameworks/base/packages/SystemUI/src/com/android/systemui/statusbar/policy/PolicyModule.kt
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/privapp-permissions-com.guardtalk.validator.xml
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/Android.bp
+PASS: present: vendor/guardtalk/apps/GuardTalkValidator/AndroidManifest.xml
+
+--- packet rg (overlay bools / QS specs / Pixel overlay) ---
+vendor/guardtalk/feature-excised/apps-excised.mk:463:    PixelConfigOverlayCommon \
+vendor/guardtalk/overlays/GuardTalkFrameworksBaseOverlay/res/values/config.xml:34:         AOSP defaults config_supportsMicToggle / config_supportsCamToggle
+vendor/guardtalk/overlays/GuardTalkFrameworksBaseOverlay/res/values/config.xml:36:         set both true in PixelConfigOverlayCommon, which Wave D excised
+vendor/guardtalk/overlays/GuardTalkFrameworksBaseOverlay/res/values/config.xml:42:         cert). Do NOT restore the rest of PixelConfigOverlayCommon (Pixel
+vendor/guardtalk/overlays/GuardTalkFrameworksBaseOverlay/res/values/config.xml:46:    <bool name="config_supportsMicToggle">true</bool>
+vendor/guardtalk/overlays/GuardTalkFrameworksBaseOverlay/res/values/config.xml:47:    <bool name="config_supportsCamToggle">true</bool>
+
+24:         battery,mictoggle,cameratoggle,location,nfc
+42:         (phone). Tail placement left mictoggle/cameratoggle off the visible
+45:         lockdown QS policy (no lockdown tile). -->
+47:        mictoggle,cameratoggle,internet,dnd,airplane,flashlight,rotation,alarm,screenrecord,battery,location
+53:           battery (Battery Saver), mictoggle, cameratoggle, autoreboot
+55:         Forbidden tiles absent: lockdown, usb, wipe, duress.
+58:        internet,flashlight,dnd,modes_dnd,alarm,airplane,controls,wallet,rotation,battery,mictoggle,cameratoggle,autoreboot,batteryShare,cast,screenrecord,location,hotspot,inversion,saver,dark,work,night,reverse,reduce_brightness,qr_code_scanner,onehanded,color_correction,dream,font_scaling,record_issue,notes,desktopeffects
+63:         F-REMEDIATE-B3-SENSORS: mictoggle/cameratoggle lead the panel (same
+66:        mictoggle,cameratoggle,internet,flashlight,dnd,alarm,airplane,controls,wallet,rotation,battery,cast,screenrecord,custom(com.android.permissioncontroller/.permission.service.v33.SafetyCenterQsTileService)
+
+--- packet rg (allowToggleChange / mustDenySensors / polarity) ---
+packages/apps/Settings/src/com/android/settings/privacy/SensorToggleController.java:172:        final boolean accessOn = isChecked();
+packages/apps/Settings/src/com/android/settings/privacy/SensorToggleController.java:173:        if (isSensorEnableBlocked() && !accessOn) {
+frameworks/base/services/core/java/com/android/server/sensorprivacy/GuardTalkSensorPrivacyHooks.java:46: * privacy-OFF is rejected only while {@link #mustDenySensors} applies.
+frameworks/base/services/core/java/com/android/server/sensorprivacy/GuardTalkSensorPrivacyHooks.java:151:    boolean ownsLockToggleAuthority() {
+frameworks/base/services/core/java/com/android/server/sensorprivacy/GuardTalkSensorPrivacyHooks.java:157:    boolean mustDenySensors(int userId) {
+frameworks/base/services/core/java/com/android/server/sensorprivacy/GuardTalkSensorPrivacyHooks.java:161:        return GuardTalkSensorPrivacyPolicy.mustDenySensors(
+frameworks/base/services/core/java/com/android/server/sensorprivacy/GuardTalkSensorPrivacyHooks.java:171:        return toggleEnabled || mustDenySensors(userId);
+frameworks/base/services/core/java/com/android/server/sensorprivacy/GuardTalkSensorPrivacyHooks.java:183:    boolean allowToggleChange(int userId, boolean enablePrivacy) {
+frameworks/base/services/core/java/com/android/server/sensorprivacy/GuardTalkSensorPrivacyHooks.java:213:        pw.println("ownsLockToggleAuthority=" + ownsLockToggleAuthority());
+frameworks/base/services/core/java/com/android/server/sensorprivacy/GuardTalkSensorPrivacyHooks.java:219:        pw.println("mustDenySensors=" + GuardTalkSensorPrivacyPolicy.mustDenySensors(
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleHelper.kt:16: * `accessOn == !isSensorPrivacyEnabled`. Privacy-ON (access off) is always
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleHelper.kt:18: * [GuardTalkSensorPrivacyPolicy.mustDenySensors] is true so lockdown-when-locked
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleHelper.kt:32:            !spm.isSensorPrivacyEnabled(sensor)
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleHelper.kt:44:    fun setAccessOn(context: Context, sensor: Int, accessOn: Boolean): Boolean {
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleHelper.kt:45:        if (accessOn && isEnableBlocked(context)) {
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleHelper.kt:50:            spm.setSensorPrivacy(SensorPrivacyManager.Sources.OTHER, sensor, !accessOn)
+vendor/guardtalk/apps/GuardTalkValidator/src/com/guardtalk/validator/SensorToggleHelper.kt:75:        return GuardTalkSensorPrivacyPolicy.mustDenySensors(
+frameworks/base/services/core/java/com/android/server/sensorprivacy/SensorPrivacyService.java:364:            mSensorPrivacyStateController.setSensorPrivacyListener(
+frameworks/base/services/core/java/com/android/server/sensorprivacy/SensorPrivacyService.java:815:        public void setSensorPrivacy(boolean enable) {
+frameworks/base/services/core/java/com/android/server/sensorprivacy/SensorPrivacyService.java:851:            if (mGuardTalkHooks != null && !mGuardTalkHooks.allowToggleChange(userId, enable)) {
+frameworks/base/services/core/java/com/android/server/sensorprivacy/SensorPrivacyService.java:852:                Log.i(TAG, "Dropping setToggleSensorPrivacy: GuardTalk allowToggleChange=false"
+frameworks/base/services/core/java/com/android/server/sensorprivacy/SensorPrivacyService.java:894:                    && !mGuardTalkHooks.allowToggleChange(userId, state != DISABLED)) {
+frameworks/base/services/core/java/com/android/server/sensorprivacy/SensorPrivacyService.java:895:                Log.i(TAG, "Dropping setToggleSensorPrivacyState: GuardTalk allowToggleChange=false"
+frameworks/base/services/core/java/com/android/server/sensorprivacy/SensorPrivacyService.java:1129:                // decision via allowToggleChange: privacy-ON always persists;
+frameworks/base/services/core/java/com/android/server/sensorprivacy/SensorPrivacyService.java:1131:                if (mGuardTalkHooks == null || !mGuardTalkHooks.ownsLockToggleAuthority()) {
+frameworks/base/services/core/java/com/android/server/sensorprivacy/SensorPrivacyService.java:1301:        public boolean isSensorPrivacyEnabled() {
+frameworks/base/services/core/java/com/android/server/sensorprivacy/SensorPrivacyService.java:2049:        public boolean isSensorPrivacyEnabled(int userId, int sensor) {
+
+--- python structural rematch ---
+PASS: GuardTalkFrameworksBaseOverlay config_supportsMicToggle=true (live bool, not comment)
+PASS: GuardTalkFrameworksBaseOverlay config_supportsCamToggle=true (live bool, not comment)
+PASS: MicToggle true is a live <bool>, not comment-only
+PASS: CamToggle true is a live <bool>, not comment-only
+PASS: overlay does not set config_supportsHardwareMicToggle=true
+PASS: overlay does not set config_supportsHardwareCamToggle=true
+PASS: overlay does not restore Pixel fingerprint-gestures=true
+PASS: AOSP framework-res still defaults both SW toggles false (overlay must supply true)
+PASS: quick_settings_tiles_new_default leads with mictoggle,cameratoggle (11 tokens)
+PASS: quick_settings_tiles_new_default has no lockdown tile
+PASS: quick_settings_tiles_default leads with mictoggle,cameratoggle (14 tokens)
+PASS: quick_settings_tiles_default has no lockdown tile
+PASS: stock catalog still lists mictoggle and cameratoggle
+PASS: stock catalog has no lockdown tile
+PASS: apps-excised.mk lists PixelConfigOverlayCommon in drop set
+PASS: PixelConfigOverlayCommon is not in GUARDTALK_OVERLAY_KEEP
+PASS: KEEP list includes GuardTalkFrameworksBaseOverlay and GuardTalkSystemUIOverlay
+PASS: feature-overlays.mk still wires GuardTalkSystemUIOverlay
+PASS: telephony-features.mk still wires GuardTalkFrameworksBaseOverlay
+PASS: setToggleSensorPrivacy still consults allowToggleChange(userId, enable)
+PASS: setToggleSensorPrivacyState still consults allowToggleChange
+PASS: stock isDeviceLocked drop log still present (non-GuardTalk path)
+PASS: lock blanket still skipped iff ownsLockToggleAuthority (T-OS-CAMMIC)
+PASS: emergency-call mic block still present
+PASS: DISALLOW_*_TOGGLE still present
+PASS: canChangeToggleSensorPrivacy order: emergency → lock skip → DISALLOW mic/cam
+PASS: hooks.allowToggleChange still 4-arg allowUserToggle (T-OS-CAMMIC)
+PASS: 4-arg mustDenySensors does not OR stale deviceLocked
+PASS: 4-arg deny = lockdown | !userUnlocked | keyguardShowing
+HOLD: git diff rc=129: warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           gen
+PASS: SensorToggleHelper isAccessOn = !isSensorPrivacyEnabled (Settings polarity)
+PASS: isAccessOn is not inverted to raw privacy
+PASS: setAccessOn persists privacy = !accessOn
+PASS: setAccessOn fail-closes access ON while mustDeny
+PASS: SensorToggleHelper 4-arg mustDenySensors(keyguardShowing, deviceLocked, userUnlocked, strongAuth)
+PASS: mustDenySensors uses getStrongAuthForUser (not strongAuth=0)
+PASS: helper reads strongAuth via LockPatternUtils
+PASS: SensorToggleViews isChecked = accessOn (not inverted)
+PASS: SensorToggleViews does not invert accessOn
+PASS: views persist via setAccessOn(..., isChecked)
+PASS: views disable OFF→ON while mustDeny (access still off)
+PASS: EscapeMenu binds SensorToggleViews (in-app toggles)
+PASS: Settings SensorToggleController isChecked = !isSensorBlocked
+PASS: Settings setChecked persists blocked = !isChecked
+PASS: Settings still fail-closes enable via GuardTalk helper
+PASS: Settings helper 4-arg mustDenySensors (same polarity contract)
+PASS: CameraToggleTile TILE_SPEC=cameratoggle; isAvailable uses supportsSensorToggle
+PASS: MicrophoneToggleTile TILE_SPEC=mictoggle; isAvailable uses supportsSensorToggle
+PASS: PolicyModule still registers cameratoggle/mictoggle
+PASS: QS tile value = !isBlocked (access ON = privacy OFF)
+PASS: SensorPrivacyService.supportsSensorToggle still reads overlay SW bools
+PASS: Validator manifest requests MANAGE/OBSERVE_SENSOR_PRIVACY
+PASS: Validator privapp whitelist grants MANAGE/OBSERVE_SENSOR_PRIVACY
+PASS: GuardTalkValidator Android.bp platform_apis: true
+PY_COUNTS pass=53 fail=0 hold=1
+PASS: python structural rematch exit 0
+
+--- lunch komodo-trunk_staging-user (independent; do not skip) ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+13:48:02 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+13:48:09 Build sandboxing disabled due to nsjail error.
+13:48:14 Build sandboxing disabled due to nsjail error.
+13:48:20 Build sandboxing disabled due to nsjail error.
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (not userdebug)
+--- filtered PRODUCT_PACKAGES overlay presence ---
+PASS: filtered PRODUCT_PACKAGES: GuardTalkFrameworksBaseOverlay PRESENT
+PASS: filtered PRODUCT_PACKAGES: GuardTalkSystemUIOverlay PRESENT
+PASS: filtered PRODUCT_PACKAGES: PixelConfigOverlayCommon ABSENT
+PASS: filtered PRODUCT_PACKAGES: GuardTalkValidator PRESENT (in-app toggles ship)
+GuardTalkFrameworksBaseOverlay
+GuardTalkSystemUIOverlay
+GuardTalkValidator
+
+--- adb (device tile visibility HOLD if empty; not device-fixed) ---
+List of devices attached
+HOLD: adb devices empty — device tile visibility HOLD; not device-fixed
+HOLD: Q-REMEDIATE-B3-OSUX-DEVICE remains BLOCKED; OS-UX on-device proof not folded here
+HOLD: m not run this QA stamp (QS APK not rebuilt here)
+HOLD: PASS HOLD remains; live not claimed
+
+RESULT: PASS (host)  bash_PASS=29 bash_HOLD=4 bash_FAIL=0 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+DEVICE_TILE_VISIBILITY=HOLD
+OSUX_DEVICE_PROOF=not folded (Q-REMEDIATE-B3-OSUX-DEVICE BLOCKED)

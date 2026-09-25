@@ -47,7 +47,9 @@
 #   Tag                      -> build/make/target/product/generic_system.mk:37
 #   BookmarkProvider         -> build/make/target/product/handheld_system.mk:41
 #   PartnerBookmarksProvider -> build/make/target/product/generic_system.mk:34
-#   HTMLViewer               -> build/make/target/product/media_system.mk:32
+#   HTMLViewer               -> KEPT (T-OS-FILES-MEDIA). Was media_system.mk:32.
+#                               Restored as the in-tree image VIEW handler
+#                               (jpeg/png/webp). Do not re-excise.
 #   CallLogBackup            -> build/make/target/product/telephony_system.mk:23
 #   BlockedNumberProvider    -> build/make/target/product/handheld_system.mk:39
 # NOTE: com.android.se / SecureElement is paired with the NFC subsystem and is
@@ -88,7 +90,6 @@ GUARDTALK_APPS_PACKAGES := \
     Tag \
     BookmarkProvider \
     PartnerBookmarksProvider \
-    HTMLViewer \
     CallLogBackup \
     BlockedNumberProvider
 
@@ -167,9 +168,10 @@ GUARDTALK_APPS_PACKAGES += \
 # AND as a PRODUCT_PACKAGES entry in build/make/target/product/*.mk before being
 # added here. Pure late filter-out (Law 11: Reversibility); no source deletion.
 #
-# NOTE: GmsCompat cluster was originally part of Wave C but had to be RESTORED
-# (see REGRESSION FIX comment below the package list). The framework hard-
-# requires app.grapheneos.gmscompat as a system package at PMS.systemReady().
+# NOTE: GmsCompat cluster was originally part of Wave C, restored after a
+# 2026-06-30 userdebug boot loop, then REMOVED again by T-REMEDIATE-B2-EXCISE
+# (DEC-REMEDIATE-001 item 10, Law 0) together with a PMS tolerate-missing
+# patch. See GUARDTALK_APPS_PACKAGES += GmsCompat* below.
 #
 # Enterprise provisioning / device-management cluster (operator-approved removal):
 #   ManagedProvisioning
@@ -190,13 +192,11 @@ GUARDTALK_APPS_PACKAGES += \
 #       -> handheld_system.mk:70  (com.android.privatespace)
 #          install: system/priv-app/PrivateSpace/PrivateSpace.apk
 #
-# GmsCompat cluster (GrapheneOS Google-compatibility shim; operator-approved
-# removal — GuardTalkOS is a no-GMS build):
-#   GmsCompat      -> handheld_system.mk:56  install: GmsCompatConfig.apk (deps)
-#   GmsCompatConfig -> verified via late-tokay.mk
-#                     install: system/app/GmsCompatConfig/GmsCompatConfig.apk
-#   GmsCompatLib   -> verified via late-tokay.mk
-#                     install: system/app/GmsCompatLib/GmsCompatLib.apk
+# GmsCompat cluster (GrapheneOS Google-compatibility shim). T-REMEDIATE-B2-EXCISE
+# removes these (item 10). Names verified as Soong install targets:
+#   GmsCompat      -> handheld_system.mk:56
+#   GmsCompatConfig -> late-*.mk install: system/app/GmsCompatConfig/
+#   GmsCompatLib   -> late-*.mk install: system/app/GmsCompatLib/
 #
 # Backup cluster (operator-approved removal; Seedvault + local transports):
 #   Seedvault              -> media_system.mk:43  install: Seedvault.apk (deps)
@@ -234,21 +234,36 @@ GUARDTALK_APPS_PACKAGES += \
     Calendar \
     CalendarProvider
 
-# REGRESSION FIX (2026-06-30 boot loop, Law 11 reversibility):
-# GmsCompat / GmsCompatConfig / GmsCompatLib were removed in Wave C of the
-# Deep Per-Package Audit as "GuardTalkOS is a no-GMS build". This was WRONG.
-# GrapheneOS framework code unconditionally calls
-#   GosPackageStatePermissions.init() -> Builder.apply(GmsCompatApp.PKG_NAME)
-# during PackageManagerService.systemReady(). On userdebug builds
-# (Build.IS_DEBUGGABLE == true), Builder.apply() throws
-#   IllegalStateException("app.grapheneos.gmscompat is not a system package")
-# when the package is absent, killing system_server -> zygote -> init
-# InitFatalReboot -> boot loop (observed on tokay, 4 zygote deaths before
-# boot completed). The packages are small, platform-signed, and inert when
-# no GMS app invokes them, so retaining them carries negligible attack
-# surface. They MUST stay in the build. Do NOT re-excise without also
-# patching frameworks/base/services/core/java/com/android/server/pm/
-# GosPackageStatePermission.java to tolerate a missing gmscompat package.
+# T-REMEDIATE-B2-EXCISE (DEC-REMEDIATE-001 items 10, 13) — Human Authority
+# overrides the Wave-C restore. GuardTalkOS is a no-GMS product: REMOVE
+# GmsCompat / GmsCompatConfig / GmsCompatLib / AppCompatConfig from the
+# image (not “disabled but present”). DeviceLockController is the
+# SYSTEM_FINANCED leftover APK (platform + debug variants).
+#
+# PMS: GosPackageStatePermissions.init() still calls
+#   Builder.apply(GmsCompatApp.PKG_NAME)
+# at PackageManagerService.systemReady(). The 2026-06-30 tokay boot loop
+# happened because Builder.apply() threw IllegalStateException when
+# Build.IS_DEBUGGABLE and the package was missing. That throw is now
+# skipped for GmsCompatApp.PKG_NAME in GosPackageStatePermission.java
+# (log-and-return on every variant). User lunch already logged-and-returned;
+# this patch is what keeps the userdebug sidecar from depending on the APK.
+#
+# com.android.devicelock APEX is NOT filtered in this stanza. Dedicated
+# late filter: vendor/guardtalk/feature-excised/devicelock-apex-excised.mk
+# (T-REMEDIATE-B2-APEX). Controller APK names stay in this drop list.
+GUARDTALK_APPS_PACKAGES += \
+    GmsCompat \
+    GmsCompatConfig \
+    GmsCompatLib \
+    AppCompatConfig \
+    DeviceLockController \
+    DeviceLockControllerDebug
+
+# SUPERSEDED (Wave C 2026-06-30 REGRESSION FIX): GmsCompat cluster was
+# restored after a userdebug boot loop. DEC-REMEDIATE-001 item 10 + Law 0
+# require removal plus the PMS tolerate-missing patch above. Do not restore
+# these APKs to “keep the throw happy”.
 
 # T-PKG-EXCISE-WAVE-C Part 2 — Mainline APEX modules: INVESTIGATE (not excised).
 #
@@ -331,9 +346,23 @@ GUARDTALK_APPS_PACKAGES += \
 # GuardTalkLauncherOverlay filtered_components + Settings
 # GuardTalkContactsVisibility + PackageManagerHooks package-visibility.
 # Messenger independence is a prerequisite before any APK removal.
+#
+# T-OS-FILES-MEDIA: in-tree media VIEW handlers. HTMLViewer (images) is already
+# in media_system.mk PRODUCT_PACKAGES — KEEP prevents re-excision.
+# UniversalMediaPlayer (video) is NOT a default PRODUCT_PACKAGES entry; it
+# is added explicitly after the filter-out. Gallery2 stays excised (not the
+# smallest handler fix; JNI + launcher + extra permissions).
+#
+# T-REMEDIATE-B3-VIEWER (DEC-REMEDIATE-002 item 18): komodo-trunk_staging-user
+# lunch proves HTMLViewer + UniversalMediaPlayer in PRODUCT_PACKAGES (jpeg/png/
+# webp VIEW via HTMLViewer; mp4/webm via UMP). ImageViewer priv-app not required.
+# Gallery2 stays in GUARDTALK_APPS_PACKAGES. GmsCompat/AppCompatConfig filter-out
+# is T-REMEDIATE-B2-EXCISE — do not edit that stanza from this card.
 GUARDTALK_APPS_KEEP := \
     Contacts \
-    ContactsProvider
+    ContactsProvider \
+    HTMLViewer \
+    UniversalMediaPlayer
 
 
 # T-PKG-EXCISE-WAVE-D P1 — Safety / dev / regulatory apps. Each module name
@@ -394,6 +423,14 @@ GUARDTALK_APPS_PACKAGES += \
 # aggregator itself (sourced via build/make/target/product/handheld_product.mk
 # :44) severs the transitive install. frameworks/ source is NOT edited (Law 6:
 # minimal footprint; forbidden path) — only the late filter-out is applied.
+#
+# F-OS-BACK-GESTURE (DEC-OS-UX-001): NavigationBarMode3ButtonOverlay and
+# NavigationBarModeGesturalOverlay remain in this drop list (aggregator is
+# still excised) but are restored via GUARDTALK_OVERLAY_KEEP after the
+# filter-out. Without those APKs, framework-res keeps config_backGestureInset
+# at 0dp (EdgeBackGestureHandler never matches an edge) and OverlayManager
+# cannot enable com.android.internal.systemui.navbar.threebutton. Do NOT
+# restore the full aggregator (cutout / transparent-nav overlays stay out).
 GUARDTALK_APPS_PACKAGES += \
     GoogleConfigOverlay \
     GooglePermissionControllerOverlay \
@@ -462,6 +499,13 @@ GUARDTALK_APPS_PACKAGES += \
 # restore-on-collision line below (PRODUCT_PACKAGES += $(filter
 # $(GUARDTALK_OVERLAY_KEEP),$(GUARDTALK_APPS_PACKAGES))) will re-add any
 # icon overlay that a careless append to GUARDTALK_APPS_PACKAGES drops.
+#
+# F-OS-BACK-GESTURE: NavigationBarMode3ButtonOverlay / GesturalOverlay were
+# Wave D P2-dropped via this file + frameworks-base-overlays. Keep-restore
+# reinstalls only those two AOSP exclusive-category RROs (same package names
+# OverlayManager and ro.boot.vendor.overlay.theme already expect). Gestural
+# overlay supplies config_backGestureInset=30dp; 3-button overlay does not
+# (pagers are not stolen in button mode).
 GUARDTALK_OVERLAY_KEEP := \
     GuardTalkFrameworkBrandOverlay \
     GuardTalkFrameworksBaseOverlay \
@@ -474,6 +518,8 @@ GUARDTALK_OVERLAY_KEEP := \
     GuardTalkDocumentsUIIconOverlay \
     GuardTalkCameraIconOverlay \
     GuardTalkPdfViewerIconOverlay \
+    NavigationBarMode3ButtonOverlay \
+    NavigationBarModeGesturalOverlay \
     GosOverlay \
     NetworkStackOverlay \
     framework-res__tokay__auto_generated_rro_product \
@@ -739,9 +785,16 @@ PRODUCT_PACKAGES_DEBUG := $(filter-out $(GUARDTALK_APPS_PACKAGES),$(PRODUCT_PACK
 PRODUCT_PACKAGES += $(filter $(GUARDTALK_WEBVIEW_KEEP),$(GUARDTALK_APPS_PACKAGES))
 
 # Defence-in-depth (Wave C): if any of the KEEP packages (Contacts,
-# ContactsProvider) somehow landed in the drop list above, restore them.
-# (No-op in normal operation.)
+# ContactsProvider, HTMLViewer, UniversalMediaPlayer) somehow landed in the
+# drop list above, restore them. (No-op in normal operation for packages that
+# were not also listed in GUARDTALK_APPS_PACKAGES.)
 PRODUCT_PACKAGES += $(filter $(GUARDTALK_APPS_KEEP),$(GUARDTALK_APPS_PACKAGES))
+
+# T-OS-FILES-MEDIA / T-REMEDIATE-B3-VIEWER: UniversalMediaPlayer is not sourced
+# via media_system.mk / handheld_product.mk. Ship it as the in-tree video VIEW
+# handler (mp4/webm). Manifest has no LAUNCHER (VIEW-only). Gallery2 remains
+# excised. HTMLViewer stays via media_system.mk + KEEP (not a second +=).
+PRODUCT_PACKAGES += UniversalMediaPlayer
 
 # Defence-in-depth (Wave D): if any protected GuardTalk/essential overlay
 # somehow landed in the drop list above, restore them. (No-op in normal

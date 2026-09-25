@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://guardtalk.local/web-installer/schema/channel-manifest.schema.json",
   "title": "GuardTalkOS web-install channel manifest",
-  "description": "Metadata a future flashcore can fetch. MVP channel is tokay + dev/unlocked (DEC-WEBINSTALL-007). Not a GrapheneOS-equivalent locked verified-boot claim.",
+  "description": "Metadata a future flashcore can fetch. Advertised set is tokay + akita + komodo + rango / dev/unlocked (DEC-WEBINSTALL-015, DEC-WEBINSTALL-007). Rango is experimental / boot HOLD, not production-boot-green. Not a GrapheneOS-equivalent locked verified-boot claim.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -29,20 +29,20 @@
     },
     "product": {
       "type": "string",
-      "enum": ["tokay", "akita", "komodo"],
-      "description": "Advertised devices: Pixel 9 (tokay), Pixel 8a (akita), Pixel 9 Pro XL (komodo). Packer fails closed on rango/shiba/husky/caiman."
+      "enum": ["tokay", "akita", "komodo", "rango"],
+      "description": "Advertised devices: Pixel 9 (tokay), Pixel 8a (akita), Pixel 9 Pro XL (komodo), Pixel 10 Pro Fold (rango, experimental / boot HOLD). Packer fails closed on unstamped shiba/husky/caiman/tegu/comet. Rango is image-ready, not production-boot-green."
     },
     "advertisedDevices": {
       "type": "array",
       "minItems": 1,
-      "maxItems": 3,
-      "items": { "enum": ["tokay", "akita", "komodo"] },
-      "description": "Public allowlist. tokay, akita, and/or komodo. Must include product."
+      "maxItems": 4,
+      "items": { "enum": ["tokay", "akita", "komodo", "rango"] },
+      "description": "Public allowlist. tokay, akita, komodo, and/or rango. Must include product. Rango is selectable experimental / boot HOLD."
     },
     "reservedProducts": {
       "type": "array",
       "items": { "type": "string", "not": { "enum": ["tokay", "akita", "komodo", "rango"] } },
-      "description": "Must not list advertised devices or rango."
+      "description": "Must not list advertised devices (tokay, akita, komodo, rango). Unstamped products (shiba, husky, caiman, tegu, comet) may appear here; they must not appear in product/advertisedDevices."
     },
     "channel": {
       "type": "string",

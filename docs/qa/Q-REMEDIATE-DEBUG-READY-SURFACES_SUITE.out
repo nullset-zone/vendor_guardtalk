@@ -1,0 +1,159 @@
+=== Q-REMEDIATE-DEBUG-READY independent rematch (DEC-018) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+DEBUG_FLASH_READY=unverified (computed below)
+FLASH_READY=false (not invented; sidecar bind is not signed-user FLASH_READY)
+LIVE_FLASH_CLAIMED=unverified (computed below)
+USB_GO=not started
+M_BUILD=not started
+FLASH=not started
+ONDEVICE=not started
+PASS_HOLD=remains
+
+--- hygiene: distinct script; do not collide with siblings ---
+PASS: basename is verify_remediate_debug_ready_host.sh (distinct)
+PASS: vendor/guardtalk/docs/qa/verify_remediate_debug_advertise_host.sh still present (not overwritten)
+PASS: vendor/guardtalk/docs/qa/verify_remediate_debug_pack_honesty_host.sh still present (not overwritten)
+PASS: vendor/guardtalk/docs/qa/verify_remediate_debug_pack_host.sh still present (not overwritten)
+PASS: suite source does not invoke m, lunch, fastboot, or adb flash
+PASS: m not started this QA stamp
+PASS: USB GO / flash / lock not started
+PASS: Q-ONDEVICE / *_ondevice.sh not started
+
+--- packet verification commands (independent) ---
+7:**USB_GO:** false
+10:It is **not** a signed-user FLASH_READY claim.
+16:| `DEBUG_FLASH_READY` | **true** | Debug sidecar stamp `komodo-debug-20260918-180338` / `komodo-debug-latest` is flash-ready (DEC-018; Q-DEBUG-PACK APPROVED). SHA==Sept 15 leftover HOLD residual remains (DEC-017). |
+17:| `FLASH_READY` | **false** | Signed **user** image is **not** flash-ready (pem ABSENT; `T-REMEDIATE-B1-M` HOLD CONFIRMED) |
+20:`DEBUG_FLASH_READY` is **true** for sidecar stamp `komodo-debug-20260918-180338`
+28:Items 1–4 are APPROVED. DEC-018 binds `DEBUG_FLASH_READY=true` to that stamp
+29:only. This is **not** signed-user `FLASH_READY`. `USB_GO` stays **false**.
+32:~~T-DEBUG-PACK HOLD CONFIRMED~~ — struck. T-DEBUG-PACK is APPROVED
+46:| **Signed user** (production) | `komodo-trunk_staging-user` | release-keys; `su` / `overlay_remounter` absent | `releases/desktop-flash/komodo-latest` (after `T-REMEDIATE-B1-PACK`) | `FLASH_READY` — **false** (pem ABSENT) |
+47:| **Debug sidecar** (lab only) | `komodo-trunk_staging-userdebug` | test-keys and `su` **allowed on this sidecar only** | `releases/desktop-flash/komodo-debug-latest` → `komodo-debug-20260918-180338` | `DEBUG_FLASH_READY` — **true** (DEC-018) |
+68:`FLASH_READY`.
+72:`DEBUG_FLASH_READY`. DEC-017 / DEC-018: do **not** retarget `komodo-latest`
+79:**USB_GO:** false
+106:**USB_GO:** false  
+117:`DEBUG_FLASH_READY=true` under DEC-017. ~~T-DEBUG-PACK HOLD CONFIRMED
+120:2026-09-19T04:14:00Z. DEC-018 (below) binds `DEBUG_FLASH_READY=true` to
+146:- set `FLASH_READY=true` or `LIVE_FLASH_CLAIMED=true`
+149:DEC-017 itself did **not** set `DEBUG_FLASH_READY=true`. Writing the
+153:## DEC-018 — DEBUG_FLASH_READY=true for stamp 180338
+157:**USB_GO:** false  
+160:Q-DEBUG-PACK is APPROVED. DEC-018 binds `DEBUG_FLASH_READY=true` for:
+167:This bind is the **debug sidecar** only. Signed-user `FLASH_READY` stays
+168:**false**. `LIVE_FLASH_CLAIMED` stays **false**. `USB_GO` stays **false**.
+179:  Q-DEBUG-PACK APPROVED is `DEBUG_FLASH_READY=true`. DEC-011 / DEC-015 /
+189:`LIVE_FLASH_CLAIMED` remains **false**. `FLASH_READY` remains **false**.
+190:`DEBUG_FLASH_READY` is **true** for the sidecar stamp only.
+197:- `FLASH_READY=true`
+205:Restore `DEBUG_FLASH_READY=false` and the pre-DEC-018 “stays false until
+206:pack APPROVED” wording. Restore the struck ~~T-DEBUG-PACK HOLD CONFIRMED~~
+209:`komodo-latest` was not retargeted. `FLASH_READY` and `LIVE_FLASH_CLAIMED`
+PASS: rg flag/HOLD hits vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md
+10:**USB_GO:** false
+19:image. Q-DEBUG-PACK is **APPROVED** (DEC-018), so `DEBUG_FLASH_READY` is
+20:**true**. That is **not** USB GO and **not** signed-user `FLASH_READY`.
+24:| `DEBUG_FLASH_READY` | **true** — Q-DEBUG-PACK APPROVED / DEC-018 |
+25:| `FLASH_READY` | **false** — signed-user path is a different channel (`komodo-latest`) |
+27:| `USB_GO` | **false** |
+31:- Do **not** treat `DEBUG_FLASH_READY=true` as `FLASH_READY` or USB GO.
+PASS: rg flag hits releases/desktop-flash/komodo-debug-20260918-180338/README-FLASH-DESKTOP.md
+readlink releases/desktop-flash/komodo-latest => komodo-20260915-063833
+readlink releases/desktop-flash/komodo-debug-latest => komodo-debug-20260918-180338
+
+--- KOMODO_DEBUG_FLASH.md DEC-018 bind: DEBUG_FLASH_READY=true ---
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md exists
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md has DEC-018 heading for stamp 180338
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table current DEBUG_FLASH_READY is **true** for 180338
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table current FLASH_READY is **false**
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table current LIVE_FLASH_CLAIMED is **false**
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table does not claim FLASH_READY **true**
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md USB_GO=false; no USB GO
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md does not claim USB_GO true
+
+--- T-DEBUG-PACK HOLD CONFIRMED struck (no unstruck current claim) ---
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md strikes T-DEBUG-PACK HOLD CONFIRMED
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md has no unstruck T-DEBUG-PACK HOLD CONFIRMED
+
+--- leftover SHA HOLD residual still documented ---
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md keeps DEC-017 leftover SHA HOLD residual
+
+--- stamp README same flags ---
+PASS: releases/desktop-flash/komodo-debug-20260918-180338/README-FLASH-DESKTOP.md exists
+PASS: releases/desktop-flash/komodo-debug-20260918-180338/README-FLASH-DESKTOP.md DEBUG_FLASH_READY is **true**
+PASS: releases/desktop-flash/komodo-debug-20260918-180338/README-FLASH-DESKTOP.md FLASH_READY is **false**
+PASS: releases/desktop-flash/komodo-debug-20260918-180338/README-FLASH-DESKTOP.md USB_GO=false
+PASS: releases/desktop-flash/komodo-debug-20260918-180338/README-FLASH-DESKTOP.md does not claim FLASH_READY/USB_GO true
+PASS: releases/desktop-flash/komodo-debug-20260918-180338/README-FLASH-DESKTOP.md denies this-continue kernel rebuild
+
+--- live pointers (do not invent; do not retarget) ---
+PASS: releases/desktop-flash/komodo-latest -> komodo-20260915-063833 (not retargeted)
+PASS: releases/desktop-flash/komodo-debug-latest -> komodo-debug-20260918-180338
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md documents komodo-latest unchanged → komodo-20260915-063833
+PASS: releases/desktop-flash/komodo-debug-20260918-180338/README-FLASH-DESKTOP.md names komodo-latest target komodo-20260915-063833
+
+--- documented A/B four SHA == live out/ = stamp = leftover ---
+boot.img out=449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc stamp=449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc leftover=449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc doc=449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc
+PASS: boot.img SHA+cmp out=stamp=leftover=doc (HOLD residual, not a rebuild claim)
+PASS: both docs name leftover digest for boot.img
+vendor_kernel_boot.img out=a12a9fbd7f320cc5c797bf88fcece23ce75e98167cc6763b854bdfb4e6870eb8 stamp=a12a9fbd7f320cc5c797bf88fcece23ce75e98167cc6763b854bdfb4e6870eb8 leftover=a12a9fbd7f320cc5c797bf88fcece23ce75e98167cc6763b854bdfb4e6870eb8 doc=a12a9fbd7f320cc5c797bf88fcece23ce75e98167cc6763b854bdfb4e6870eb8
+PASS: vendor_kernel_boot.img SHA+cmp out=stamp=leftover=doc (HOLD residual, not a rebuild claim)
+PASS: both docs name leftover digest for vendor_kernel_boot.img
+pvmfw.img out=f7c5910e0bada491895519d3018cdc37164b5873ae46e1772bcee0dc7b84eee8 stamp=f7c5910e0bada491895519d3018cdc37164b5873ae46e1772bcee0dc7b84eee8 leftover=f7c5910e0bada491895519d3018cdc37164b5873ae46e1772bcee0dc7b84eee8 doc=f7c5910e0bada491895519d3018cdc37164b5873ae46e1772bcee0dc7b84eee8
+PASS: pvmfw.img SHA+cmp out=stamp=leftover=doc (HOLD residual, not a rebuild claim)
+PASS: both docs name leftover digest for pvmfw.img
+dtbo.img out=742a1e192a0199e11b2176829f9d818f5de0ad16b40132fcc0b8e4f6b162e433 stamp=742a1e192a0199e11b2176829f9d818f5de0ad16b40132fcc0b8e4f6b162e433 leftover=742a1e192a0199e11b2176829f9d818f5de0ad16b40132fcc0b8e4f6b162e433 doc=742a1e192a0199e11b2176829f9d818f5de0ad16b40132fcc0b8e4f6b162e433
+PASS: dtbo.img SHA+cmp out=stamp=leftover=doc (HOLD residual, not a rebuild claim)
+PASS: both docs name leftover digest for dtbo.img
+AB_FOUR_LEFTOVER_SHA=4
+PASS: A/B four leftover SHA residual rematched 4/4
+
+--- SHA256SUMS 20/20 on stamp (integrity; not USB) ---
+PASS: stamp SHA256SUMS 20/20
+
+--- LIVE_FLASH_CLAIMED=false (types.ts:119 + served dist) ---
+types.ts:119: export const LIVE_FLASH_CLAIMED = false;
+PASS: vendor/guardtalk/web-installer/src/types.ts:119 exports LIVE_FLASH_CLAIMED = false
+PASS: vendor/guardtalk/web-installer/src/types.ts does not assign LIVE_FLASH_CLAIMED=true
+PASS: vendor/guardtalk/web-installer/src/types.ts does not assign FLASH_READY=true
+PASS: vendor/guardtalk/web-installer/dist/src/types.js exports LIVE_FLASH_CLAIMED = false
+PASS: vendor/guardtalk/web-installer/dist/src/types.js does not assign LIVE_FLASH_CLAIMED=true
+
+--- leftover honesty surfaces (DEC-018 bind; was HOLD residual) ---
+PASS: vendor/guardtalk/web-installer/README.md exists
+PASS: vendor/guardtalk/web-installer/README.md binds DEBUG_FLASH_READY **true** for 180338
+PASS: vendor/guardtalk/web-installer/README.md USB_GO stays **false**; No USB GO
+PASS: vendor/guardtalk/web-installer/README.md signed-user FLASH_READY stays **false**
+PASS: vendor/guardtalk/web-installer/README.md still mentions leftover SHA HOLD residual
+PASS: vendor/guardtalk/web-installer/README.md keeps komodo-latest / 063833 (not retargeted)
+PASS: vendor/guardtalk/web-installer/README.md does not claim current DEBUG_FLASH_READY **false**
+PASS: vendor/guardtalk/web-installer/README.md does not invent USB_GO true
+PASS: vendor/guardtalk/web-installer/README.md does not invent FLASH_READY true
+PASS: vendor/guardtalk/docs/ENGINEERING_SIDECAR_USERDEBUG.md exists
+PASS: vendor/guardtalk/docs/ENGINEERING_SIDECAR_USERDEBUG.md binds DEBUG_FLASH_READY=true for 180338
+PASS: vendor/guardtalk/docs/ENGINEERING_SIDECAR_USERDEBUG.md USB_GO=false
+PASS: vendor/guardtalk/docs/ENGINEERING_SIDECAR_USERDEBUG.md FLASH_READY=false
+PASS: vendor/guardtalk/docs/ENGINEERING_SIDECAR_USERDEBUG.md still mentions leftover SHA HOLD residual
+PASS: vendor/guardtalk/docs/ENGINEERING_SIDECAR_USERDEBUG.md does not retarget komodo-latest
+PASS: vendor/guardtalk/docs/ENGINEERING_SIDECAR_USERDEBUG.md does not claim DEBUG_FLASH_READY=false
+PASS: vendor/guardtalk/docs/ENGINEERING_SIDECAR_USERDEBUG.md does not invent USB_GO=true
+PASS: vendor/guardtalk/docs/ENGINEERING_SIDECAR_USERDEBUG.md does not invent FLASH_READY=true
+
+--- adb (device HOLD; do not start Q-ONDEVICE) ---
+List of devices attached
+HOLD: adb devices empty — not device-fixed; on-device working not invented
+
+LIVE_FLASH_CLAIMED=false
+FLASH_READY=false
+DEBUG_FLASH_READY=true
+FLASH_CLASS=HOLD
+LIVE_DEVICE_CLAIMED=false
+PASS_HOLD=remains
+M_BUILD=not started
+USB_GO=not started
+ONDEVICE=not started
+KOMODO_LATEST=komodo-20260915-063833
+KOMODO_DEBUG_LATEST=komodo-debug-20260918-180338
+AB_FOUR_LEFTOVER_SHA=4
+RESULT: PASS (host)  bash_PASS=64 bash_HOLD=1 FAIL=0

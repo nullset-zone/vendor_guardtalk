@@ -1,0 +1,181 @@
+=== Q-REMEDIATE-B1-DURESS-USB independent rematch (item 7) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+Q-ONDEVICE=not started
+USB_GO=not started
+WIPE_E2E=HOLD
+GREEN=HOLD (do not invent)
+LOCK_WIPE_54111FDAS000GN=not started
+PASS_HOLD=remains
+
+--- required files ---
+PASS: present: vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk
+PASS: present: frameworks/base/services/core/java/com/android/server/policy/keyguard/UsbPortSecurityHooks.java
+PASS: present: frameworks/base/services/core/java/com/android/server/locksettings/DuressPasswordHelper.java
+PASS: present: frameworks/base/services/core/java/com/android/server/locksettings/DuressWipe.java
+PASS: present: vendor/guardtalk/docs/USB_PROTECTION_POLICY.md
+
+--- packet rg (UsbPortSecurityHooks) ---
+113:    public static boolean mustDenyUsbDataFunctions(Context ctx) {
+129:            Slog.e(TAG, "mustDenyUsbDataFunctions: failing closed", t);
+140:        if (!mustDenyUsbDataFunctions(ctx)) {
+232:        if (mustDenyUsbDataFunctions(context)) {
+296:                            && !mustDenyUsbDataFunctions(context)) {
+301:                    if (!mustDenyUsbDataFunctions(context)) {
+360:            } else if (mustDenyUsbDataFunctions(ctx)) {
+391:                                && !mustDenyUsbDataFunctions(ctx)) {
+427:        if (PortSecurityState.PORTS_ENABLED.equals(state) && mustDenyUsbDataFunctions(context)) {
+551:            "vendor.guardtalk.usb_duress_wipe.enabled";
+557:     *   1. {@code vendor.guardtalk.usb_duress_wipe.enabled} == 1
+561:     *   4. port is connected AND {@code data_role == DATA_ROLE_DEVICE}
+606:        if (portStatus.getCurrentDataRole() != UsbPortStatus.DATA_ROLE_DEVICE) {
+619:        if (!isVerifiedBootYellowOrGreen(vbootState)) {
+674:    private static boolean isVerifiedBootYellowOrGreen(String state) {
+
+--- packet rg (isVerifiedBootGreen must be ABSENT) ---
+(no matches — expected)
+PASS: isVerifiedBootGreen ABSENT from UsbPortSecurityHooks.java
+
+--- packet rg (Reason.DURESS) ---
+frameworks/base/services/core/java/com/android/server/locksettings/DuressWipe.java:21:        SecureWipeEngine.run(context, SecureWipeEngine.Reason.DURESS);
+frameworks/base/services/core/java/com/android/server/locksettings/LockSettingsService.java:2565:     * {@link SecureWipeEngine.Reason#DURESS}. Do not add a parallel LSKF verify path for
+frameworks/base/services/core/java/com/android/server/locksettings/DuressPasswordHelper.java:41:     * {@link SecureWipeEngine.Reason#DURESS}; this method must not change that reason.
+frameworks/base/services/core/java/com/android/server/locksettings/DuressPasswordHelper.java:67:                        SecureWipeEngine.Reason.DURESS);
+
+--- packet rg (komodo user flag) ---
+8:#   AOSP gen_build_prop.py maps user → ro.debuggable=0, ro.adb.secure=1
+47:    ro.adb.secure=1 \
+48:    vendor.guardtalk.usb_duress_wipe.enabled=1
+
+--- static Java / mk / policy ---
+PASS: UsbPortSecurityHooks has isVerifiedBootYellowOrGreen
+PASS: yellow or green accepted (exact equals, not orange/red/empty)
+PASS: Java isUsbDuressWipeEnabled default remains "0"
+PASS: USB duress prop name present
+PASS: DATA_ROLE_DEVICE still required (NONE/HOST do not wipe)
+PASS: USB path still calls DuressWipe.run
+PASS: mustDenyUsbDataFunctions still present
+PASS: mustDenyUsbDataFunctions still delegates to fail-closed policy
+PASS: mustDenyUsbDataFunctions still null-ctx fail-closed
+PASS: sanitizeUsbFunctions still gated on mustDenyUsbDataFunctions
+PASS: DuressPasswordHelper still Reason.DURESS
+PASS: DuressWipe.run still Reason.DURESS
+PASS: hardening.mk assigns usb_duress_wipe.enabled=1
+PASS: USERBUILD ro.adb.secure=1 still in hardening.mk
+PASS: hardening.mk still has user ifeq
+PASS: USB_PROTECTION_POLICY documents yellow or green
+PASS: USB_PROTECTION_POLICY still requires USB data-role DEVICE
+PASS: USB_PROTECTION_POLICY still documents lockscreen Reason.DURESS
+PASS: USB_PROTECTION_POLICY names production-custody serial
+PASS: USB_PROTECTION_POLICY still forbids USB GO this stamp
+PASS: isVerifiedBootGreen identifier gone (renamed)
+PASS: Java default is not flipped to "1"
+PASS: komodo device tree does not PRODUCT-lie verifiedbootstate=green
+PASS: charge-only DATA_ROLE_NONE is not a wipe trigger
+PASS: DATA_ROLE_HOST is not a wipe trigger
+
+--- python structural rematch ---
+PASS: isVerifiedBootGreen identifier ABSENT
+PASS: isVerifiedBootYellowOrGreen body is yellow||green only
+PASS: truth table: yellow/green accept; orange/red/empty/case/space reject
+PASS: Java flag default remains "0" (userdebug/unset stay opt-in)
+PASS: Java default is not "1"
+PASS: DATA_ROLE_DEVICE required (NONE/HOST return before wipe)
+PASS: USB wipe path gates on isVerifiedBootYellowOrGreen
+PASS: USB path still DuressWipe.run (same engine as lockscreen)
+PASS: mustDenyUsbDataFunctions present, used, null-ctx fail-closed
+PASS: sanitizeUsbFunctions still strips blocked data functions
+PASS: DuressPasswordHelper still Reason.DURESS
+PASS: DuressWipe.run still Reason.DURESS
+PASS: user ifeq contains usb_duress_wipe.enabled=1 next to ro.adb.secure=1
+PASS: flag=1 is user-gated only (not in un-gated overrides)
+PASS: USB_PROTECTION_POLICY documents yellow/green + DEVICE + DURESS
+PASS: USB_PROTECTION_POLICY forbids inventing on-device boot color
+PY_COUNTS PASS_COUNT=16 FAIL_COUNT=0 HOLD_COUNT=0
+PASS: python structural rematch exit 0
+
+--- lunch komodo-trunk_staging-user (independent; do not skip) ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+13:44:34 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+13:44:40 Build sandboxing disabled due to nsjail error.
+13:44:46 Build sandboxing disabled due to nsjail error.
+13:44:52 Build sandboxing disabled due to nsjail error.
+13:44:58 Build sandboxing disabled due to nsjail error.
+13:45:06 Build sandboxing disabled due to nsjail error.
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+PRODUCT_PROPERTY_OVERRIDES written to vendor/guardtalk/docs/qa/_artifacts/Q-REMEDIATE-B1-DURESS-USB_PRODUCT_PROPERTY_OVERRIDES.txt
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (not userdebug)
+PASS: user PRODUCT_PROPERTY_OVERRIDES contains vendor.guardtalk.usb_duress_wipe.enabled=1
+PASS: user PRODUCT_PROPERTY_OVERRIDES does not set usb_duress_wipe.enabled=0
+PASS: user PRODUCT_PROPERTY_OVERRIDES still contains ro.adb.secure=1
+PASS: user PRODUCT_PROPERTY_OVERRIDES still contains ro.guardtalk.production_profile=1
+PASS: user PRODUCT_PROPERTY_OVERRIDES does not PRODUCT-lie verifiedbootstate=green
+PASS: user PRODUCT_PACKAGES: su/overlay_remounter ABSENT (USERBUILD not regressed)
+PASS: user PRODUCT_PACKAGES_DEBUG: su/overlay_remounter ABSENT
+
+--- lunch komodo-trunk_staging-userdebug (sidecar adversarial; not product) ---
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+13:45:12 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=userdebug
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+13:45:18 Build sandboxing disabled due to nsjail error.
+userdebug TARGET_BUILD_VARIANT=userdebug
+PASS: sidecar lunch is userdebug (not product truth)
+PASS: sidecar PRODUCT_PROPERTY_OVERRIDES does not contain vendor.guardtalk.usb_duress_wipe.enabled=1 (Java default 0)
+
+--- wipe e2e / adb / USB GO (HOLD; do not execute) ---
+HOLD: wipe e2e HOLD — designated test unit + operator GO required; not this card
+HOLD: USB GO NOT executed (no fastboot, no lock, no wipe of 54111FDAS000GN)
+HOLD: verifiedbootstate green NOT claimed (do not invent live boot color)
+List of devices attached
+HOLD: adb devices empty / no komodo 54111FDAS000GN — device HOLD, never device-fixed, never lock/wipe
+
+RESULT: PASS (host)  bash_PASS=44 bash_HOLD=4 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+GREEN=HOLD
+WIPE_E2E=HOLD
+USB_GO=not started
+DEVICE=HOLD
+PASS_HOLD=remains

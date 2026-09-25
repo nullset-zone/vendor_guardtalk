@@ -1,0 +1,132 @@
+=== Q-OS-CAMMIC-SETTINGS independent rematch ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+
+=== RAW: packet rg setSensorBlocked|isSensorBlocked|setChecked|privacy_*_toggle ===
+packages/apps/Settings/res/xml/privacy_controls_settings.xml:25:        android:key="privacy_camera_toggle"
+packages/apps/Settings/res/xml/privacy_controls_settings.xml:32:        android:key="privacy_mic_toggle"
+packages/apps/Settings/src/com/android/settings/privacy/SensorToggleController.java:102:        return !mSensorPrivacyManagerHelper.isSensorBlocked(getSensor());
+packages/apps/Settings/src/com/android/settings/privacy/SensorToggleController.java:106:    public boolean setChecked(boolean isChecked) {
+packages/apps/Settings/src/com/android/settings/privacy/SensorToggleController.java:111:        mSensorPrivacyManagerHelper.setSensorBlocked(getSensor(), !isChecked);
+packages/apps/Settings/src/com/android/settings/privacy/EnableContentCapturePreferenceController.java:41:    public boolean setChecked(boolean isChecked) {
+packages/apps/Settings/src/com/android/settings/privacy/PrivacyControlsFragment.java:34:    private static final String CAMERA_KEY = "privacy_camera_toggle";
+packages/apps/Settings/src/com/android/settings/privacy/PrivacyControlsFragment.java:35:    private static final String MIC_KEY = "privacy_mic_toggle";
+packages/apps/Settings/src/com/android/settings/privacy/ShowClipAccessNotificationPreferenceController.java:58:    public boolean setChecked(boolean isChecked) {
+packages/apps/Settings/src/com/android/settings/privacy/CameraExtensionsFallbackPreferenceController.java:43:    public boolean setChecked(boolean isChecked) {
+packages/apps/Settings/src/com/android/settings/privacy/EnableContentCaptureWithServiceSettingsPreferenceController.java:53:    public boolean setChecked(boolean isChecked) {
+
+=== RAW: packet rg mustDenySensors(|isKeyguardLocked Helper + QS tiles ===
+frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/MicrophoneToggleTile.java:149:        final boolean keyguardShowing = km != null && km.isKeyguardLocked();
+frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/MicrophoneToggleTile.java:153:        return GuardTalkSensorPrivacyPolicy.mustDenySensors(
+frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/CameraToggleTile.java:149:        final boolean keyguardShowing = km != null && km.isKeyguardLocked();
+frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/CameraToggleTile.java:153:        return GuardTalkSensorPrivacyPolicy.mustDenySensors(
+packages/apps/Settings/src/com/android/settings/guardtalk/GuardTalkSensorPrivacyHelper.java:73:     * {@link KeyguardManager#isKeyguardLocked()} as keyguardShowing. Do not
+packages/apps/Settings/src/com/android/settings/guardtalk/GuardTalkSensorPrivacyHelper.java:85:        final boolean keyguardShowing = km != null && km.isKeyguardLocked();
+packages/apps/Settings/src/com/android/settings/guardtalk/GuardTalkSensorPrivacyHelper.java:90:        return GuardTalkSensorPrivacyPolicy.mustDenySensors(
+
+=== RAW: adb devices ===
+List of devices attached
+
+PASS: present: packages/apps/Settings/src/com/android/settings/guardtalk/GuardTalkSensorPrivacyHelper.java
+PASS: present: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/CameraToggleTile.java
+PASS: present: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/MicrophoneToggleTile.java
+PASS: present: packages/apps/Settings/src/com/android/settings/privacy/SensorToggleController.java
+PASS: present: packages/apps/Settings/src/com/android/settings/privacy/PrivacyControlsFragment.java
+PASS: present: packages/apps/Settings/res/xml/privacy_controls_settings.xml
+PASS: present: packages/apps/Settings/src/com/android/settings/security/guardtalk/GuardTalkSensorPrivacyPreferenceController.java
+PASS: present: packages/apps/Settings/src/com/android/settings/privacy/CameraToggleController.java
+PASS: present: packages/apps/Settings/src/com/android/settings/privacy/MicToggleController.java
+PASS: present: frameworks/base/core/java/android/guardtalk/GuardTalkSensorPrivacyPolicy.java
+PASS: packages/apps/Settings/src/com/android/settings/guardtalk/GuardTalkSensorPrivacyHelper.java: isKeyguardLocked() present
+PASS: packages/apps/Settings/src/com/android/settings/guardtalk/GuardTalkSensorPrivacyHelper.java: keyguardShowing = isKeyguardLocked()
+PASS: packages/apps/Settings/src/com/android/settings/guardtalk/GuardTalkSensorPrivacyHelper.java: 4-arg mustDenySensors(keyguardShowing, deviceLocked, …)
+PASS: packages/apps/Settings/src/com/android/settings/guardtalk/GuardTalkSensorPrivacyHelper.java: no 3-arg mustDenySensors leftover
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/CameraToggleTile.java: isKeyguardLocked() present
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/CameraToggleTile.java: keyguardShowing = isKeyguardLocked()
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/CameraToggleTile.java: 4-arg mustDenySensors(keyguardShowing, deviceLocked, …)
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/CameraToggleTile.java: no 3-arg mustDenySensors leftover
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/MicrophoneToggleTile.java: isKeyguardLocked() present
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/MicrophoneToggleTile.java: keyguardShowing = isKeyguardLocked()
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/MicrophoneToggleTile.java: 4-arg mustDenySensors(keyguardShowing, deviceLocked, …)
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/MicrophoneToggleTile.java: no 3-arg mustDenySensors leftover
+PASS: policy 3-arg legacy still maps deviceLocked→keyguardShowing (unused by Helper/QS)
+PASS: Helper isSensorEnableBlocked → areSensorsForceDenied (4-arg path)
+PASS: SensorToggleController.isChecked = !isSensorBlocked (access ON = privacy OFF)
+PASS: setChecked(true) rejected when isSensorEnableBlocked (4-arg)
+PASS: setChecked(false) → setSensorBlocked(true) (access OFF still blocks)
+PASS: enable-blocked reject is before persist; OFF (isChecked=false) still persists
+PASS: disable + locked summary only when mustDeny AND access OFF
+PASS: locked/lockdown summary shown when enable-blocked
+PASS: availability DISABLED_DEPENDENT_SETTING when 4-arg mustDeny and access OFF
+PASS: SensorToggleController enable-blocked uses Helper 4-arg
+PASS: SensorToggleController ON_START adds sensor listener
+PASS: SensorToggleController ON_STOP removes sensor listener
+PASS: PrivacyControlsFragment keys privacy_camera_toggle / privacy_mic_toggle
+PASS: XML keys privacy_camera_toggle / privacy_mic_toggle
+PASS: XML controllers CameraToggleController / MicToggleController
+PASS: PrivacyControlsFragment observes CameraToggleController
+PASS: PrivacyControlsFragment observes MicToggleController
+PASS: createPreferenceControllers binds camera/mic keys
+PASS: CameraToggleController sensor = CAMERA
+PASS: MicToggleController sensor = MICROPHONE
+PASS: GuardTalkSensorPrivacyPreferenceController deep-links ACTION_PRIVACY_CONTROLS
+PASS: Settings.ACTION_PRIVACY_CONTROLS = android.settings.PRIVACY_CONTROLS
+PASS: PrivacyControlsActivity intent-filter → PrivacyControlsFragment
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/CameraToggleTile.java: TILE_SPEC=cameratoggle
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/CameraToggleTile.java: handleClick refuses turning access ON while 4-arg mustDeny
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/CameraToggleTile.java: non-mustDeny click still reaches parent toggle (OFF persist)
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/CameraToggleTile.java: tile UNAVAILABLE when blocked && 4-arg mustDeny
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/CameraToggleTile.java: long-click ACTION_PRIVACY_CONTROLS
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/CameraToggleTile.java: enable-blocked uses policy 4-arg + isKeyguardLocked
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/MicrophoneToggleTile.java: TILE_SPEC=mictoggle
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/MicrophoneToggleTile.java: handleClick refuses turning access ON while 4-arg mustDeny
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/MicrophoneToggleTile.java: non-mustDeny click still reaches parent toggle (OFF persist)
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/MicrophoneToggleTile.java: tile UNAVAILABLE when blocked && 4-arg mustDeny
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/MicrophoneToggleTile.java: long-click ACTION_PRIVACY_CONTROLS
+PASS: frameworks/base/packages/SystemUI/src/com/android/systemui/qs/tiles/MicrophoneToggleTile.java: enable-blocked uses policy 4-arg + isKeyguardLocked
+PASS: QS parent: value=!isBlocked; click setSensorBlocked(!blocked)
+PASS: Camera/Mic QS enable-blocked bodies identical (no QS desync in 4-arg)
+--- host truth-table (UI enable-blocked) ---
+  PASS: unlocked kg=False deviceLocked=False unlocked=True flags=0x0 enableBlocked4=False expected4=False leftover3=False expected3=False
+PASS: truth-table 4-arg unlocked enableBlocked=False
+PASS: truth-table 3-arg residual unlocked would_block=False
+  PASS: stale_deviceLocked_keyguard_dismissed kg=False deviceLocked=True unlocked=True flags=0x0 enableBlocked4=False expected4=False leftover3=True expected3=True
+PASS: truth-table 4-arg stale_deviceLocked_keyguard_dismissed enableBlocked=False
+PASS: truth-table 3-arg residual stale_deviceLocked_keyguard_dismissed would_block=True
+  PASS: keyguard_showing kg=True deviceLocked=True unlocked=True flags=0x0 enableBlocked4=True expected4=True leftover3=True expected3=True
+PASS: truth-table 4-arg keyguard_showing enableBlocked=True
+PASS: truth-table 3-arg residual keyguard_showing would_block=True
+  PASS: pre_unlock kg=False deviceLocked=True unlocked=False flags=0x0 enableBlocked4=True expected4=True leftover3=True expected3=True
+PASS: truth-table 4-arg pre_unlock enableBlocked=True
+PASS: truth-table 3-arg residual pre_unlock would_block=True
+  PASS: lockdown_0x20 kg=False deviceLocked=False unlocked=True flags=0x20 enableBlocked4=True expected4=True leftover3=True expected3=True
+PASS: truth-table 4-arg lockdown_0x20 enableBlocked=True
+PASS: truth-table 3-arg residual lockdown_0x20 would_block=True
+  PASS: keyguard_plus_lockdown kg=True deviceLocked=True unlocked=True flags=0x20 enableBlocked4=True expected4=True leftover3=True expected3=True
+PASS: truth-table 4-arg keyguard_plus_lockdown enableBlocked=True
+PASS: truth-table 3-arg residual keyguard_plus_lockdown would_block=True
+PASS: NEGATIVE refuted: 4-arg does NOT disable-as-locked while interactively unlocked; 3-arg would
+PASS: setChecked(false) while keyguard still persists setSensorBlocked(true)
+PASS: setChecked(true) while keyguard rejected
+PASS: unlocked: OFF persists blocked=true; ON persists blocked=false
+PASS: stale deviceLocked + keyguard dismissed: turning access ON not rejected
+PASS: QS click: access OFF + mustDeny → refuse turning ONfatal: detected dubious ownership in repository at '/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/vendor/adevtool'
+To add an exception for this directory, call:
+
+	git config --global --add safe.directory /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/vendor/adevtool
+
+PASS: QS click: access ON + mustDeny → still allow toggle OFF
+PASS: QS click: stale deviceLocked unlocked → does not refuse ON
+PASS: T persist files present (not re-run as this card; Q-OS-CAMMIC-TOGGLE already APPROVED)
+PASS: no overlay GuardTalkSensorPrivacyHelper (no 3-arg overlay leftover)
+HOLD: vendor/adevtool HEAD unreadable: Command '['git', '-C', '/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/vendor/adevtool', 'rev-parse', 'HEAD']' returned non-zero exit status 128.
+
+SUITE_COUNTS PASS_COUNT=81 FAIL_COUNT=0 HOLD_COUNT=1
+
+=== adb device proof ===
+List of devices attached
+HOLD: adb devices empty — Settings/QS vs dumpsys not run; not device-fixed
+
+RESULT: PASS (static)  bash_PASS=0 bash_HOLD=1 bash_FAIL=0 PY_RC=0
+Device Settings/QS vs dumpsys: HOLD unless adb proof above.
+LIVE_DEVICE_CLAIMED=false

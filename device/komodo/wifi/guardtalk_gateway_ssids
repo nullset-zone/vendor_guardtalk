@@ -1,0 +1,14 @@
+# GuardTalkOS komodo — gateway SSID allowlist (T-REMEDIATE-B4-WIFI-GW).
+#
+# Fail-closed: comments and blank lines are ignored. Zero SSIDs means no
+# user-selectable network matches this list. Non-gateway SSIDs are blocked
+# by product mechanism (framework first-user restrictions + wpa overlay
+# filter_ssids + this vendor list), not by SOP.
+#
+# GMP SSID is per-deployment from signed QR field `wifi_ssid`
+# (vendor/guardtalk/docs/SUW_DEVICE_PASSWORD_QR.md). Do not invent a
+# passphrase, PSK, or secret here. Privileged SUW / GuardTalkConfig may
+# add the QR SSID after signature verify.
+#
+# Operators may append known Gateway SSIDs from existing GMP docs, one
+# UTF-8 SSID per line. Do not restore RIL / BT / NFC. Do not open Wi-Fi.

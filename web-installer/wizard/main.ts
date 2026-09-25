@@ -1,4 +1,4 @@
-import { WIZARD_DEVICES } from "./devices.js";
+import { WIZARD_DEVICES, deviceFromSearch } from "./devices.js";
 import { fetchHostedChannel, hostedChannelBase } from "./hosted-channel.js";
 import { HttpArtifactStore } from "./http-store.js";
 import { formatMib } from "./quota.js";
@@ -90,9 +90,10 @@ function fillDeviceSelect(): void {
     const option = document.createElement("option");
     option.value = device.id;
     option.textContent = device.label;
+    option.dataset.status = device.status;
     select.append(option);
   }
-  select.value = WIZARD_DEVICES[0]?.id ?? "tokay";
+  select.value = deviceFromSearch(window.location.search);
 }
 
 async function loadHostedFor(product: string): Promise<void> {
@@ -115,6 +116,10 @@ async function loadHostedFor(product: string): Promise<void> {
   el("channel-status").textContent =
     `${plan.product} channel ready. Artifacts stay on the server until flashcore reads them.`;
   logLine(`Loaded hosted ${plan.product} channel. Artifact total ${formatMib(payload)}.`, "ok");
+  const meta = WIZARD_DEVICES.find((device) => device.id === plan.product);
+  if (meta?.status === "experimental") {
+    logLine(`${plan.product} is experimental / boot HOLD — not production-boot-green.`, "warn");
+  }
   setStatus("Hosted channel loaded. Use dry-run, then connect.");
 }
 
@@ -370,7 +375,7 @@ function markWebUsb(): void {
 
 function init(): void {
   fillDeviceSelect();
-  const initial = WIZARD_DEVICES[0]?.id ?? "tokay";
+  const initial = el<HTMLSelectElement>("device").value || deviceFromSearch(window.location.search);
   wizard.selectDevice(initial);
   markWebUsb();
   bindPlanActions();

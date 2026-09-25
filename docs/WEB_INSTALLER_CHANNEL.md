@@ -1,12 +1,13 @@
 # GuardTalkOS web-install channel (dev/unlocked)
 
-**Task:** `T-WEBINSTALL-FACTORY-CHANNEL`  
-**Contract:** `vendor/guardtalk/docs/WEB_INSTALLER.md` (DEC-WEBINSTALL-001..007)  
+**Task:** `T-WEBINSTALL-DEVICES-INVENTORY` (channel packer bind; original factory-channel wave was `T-WEBINSTALL-FACTORY-CHANNEL`)  
+**Contract:** `vendor/guardtalk/docs/WEB_INSTALLER.md` (DEC-WEBINSTALL-001..007, DEC-WEBINSTALL-015)  
 **Status:** Channel metadata wave. Not a flash engine. Not a wizard.
 
 This document describes the **factory-image + release-manifest channel** that a
-future web installer can fetch. It is packed from an existing tokay, akita, or
-komodo `releases/desktop-flash/` stamp. There is **no second image pipeline**.
+future web installer can fetch. It is packed from an existing tokay, akita,
+komodo, or rango `releases/desktop-flash/` stamp. There is **no second image
+pipeline**.
 
 ## Label (DEC-WEBINSTALL-007)
 
@@ -14,24 +15,29 @@ This channel is **dev/unlocked**.
 
 | Claim | Allowed? |
 |-------|----------|
-| Tokay / akita / komodo desktop-flash artifacts, hashed, public AVB key published | yes |
+| Tokay / akita / komodo / rango desktop-flash artifacts, hashed, public AVB key published | yes |
 | Bootloader expected unlocked (same as current CLI) | yes |
+| Rango **production-boot-green** / SUPPORTED-green | **no** (experimental / boot HOLD; DEC-RANGO-REMEDIATE-002 / `0xfc`) |
 | GrapheneOS-equivalent **locked** verified boot | **no** |
 | Production / `stable` channel | **no** (no in-tree public signer this wave) |
 
 `verifiedBootClaim` in the manifest is `none`. Do not advertise this as a
-locked GrapheneOS install.
+locked GrapheneOS install. Do not claim rango boot-green.
 
-## Advertised allowlist
+## Advertised allowlist (DEC-WEBINSTALL-015)
 
-**tokay (Pixel 9), akita (Pixel 8a), and komodo (Pixel 9 Pro XL).**
+**tokay (Pixel 9), akita (Pixel 8a), komodo (Pixel 9 Pro XL), and rango (Pixel 10 Pro Fold, experimental / boot HOLD).**
 
-The packer fails closed if the stamp product is not `tokay`, `akita`, or
-`komodo`. Pixel 8 (`shiba`), Pixel 8 Pro (`husky`), `caiman`, and `rango` are
-rejected. Experimental or other desktop-flash products are rejected the same
-way. `rango-latest` stays hidden (`130756`).
+The packer fails closed if the stamp product is not `tokay`, `akita`, `komodo`,
+or `rango`. Unstamped Pixel 8 (`shiba`), Pixel 8 Pro (`husky`), `caiman`,
+`tegu`, and `comet` are rejected. Rango is **image-ready and packable**; it is
+**not** production-boot-green. Copy must chip experimental / boot HOLD.
 
-Komodo channel source stamp: `releases/desktop-flash/komodo-latest`.
+`rango-latest` stays `rango-20260802-130756` (inode 193110354). Do not retarget.
+DEC-009 live execute/lock remains HOLD.
+
+Komodo channel source stamp: `releases/desktop-flash/komodo-latest`.  
+Rango channel source stamp: `releases/desktop-flash/rango-latest` (130756).
 
 ## What the packer emits
 
@@ -39,10 +45,11 @@ Script: `vendor/guardtalk/scripts/pack-webinstall-channel.sh`
 
 Default source: `releases/desktop-flash/latest` (must resolve to
 `tokay-YYYYMMDD-HHMMSS`). Komodo packs from `releases/desktop-flash/komodo-latest`.
+Rango packs from `releases/desktop-flash/rango-latest` (experimental / boot HOLD).
 
 | File | Role |
 |------|------|
-| `tokay-dev` / `akita-dev` / `komodo-dev` | GOS-like pointer: `{releaseId} {unixEpoch} {product} dev` |
+| `tokay-dev` / `akita-dev` / `komodo-dev` / `rango-dev` | GOS-like pointer: `{releaseId} {unixEpoch} {product} dev` |
 | `manifest.json` | Flashcore-oriented metadata (schema below) |
 | `SHA256SUMS` | SHA-256 of every published artifact |
 | `files.txt` | Name + phase + size (no zip) |
@@ -64,6 +71,10 @@ Example (illustrative): `20260725-102506 1753439106 tokay dev`
 
 Komodo example: `{releaseId} {unixEpoch} komodo dev` packed from
 `releases/desktop-flash/komodo-latest`.
+
+Rango example: `{releaseId} {unixEpoch} rango dev` packed from
+`releases/desktop-flash/rango-latest` (`rango-20260802-130756`). Rango remains
+experimental / boot HOLD.
 
 `releaseId` is the stamp time token so it traces to the desktop-flash directory.
 
@@ -109,6 +120,10 @@ Do not generate or commit private keys to “fill” the signature slot.
 - Schema: `vendor/guardtalk/web-installer/schema/channel-manifest.schema.json`
 - Example: `vendor/guardtalk/web-installer/schema/manifest.example.json`
 
+`product` / `advertisedDevices` enum is tokay, akita, komodo, rango (`maxItems`
+4). `reservedProducts` must not list those advertised devices. Unstamped
+products (shiba, husky, caiman, tegu, comet) stay out of the advertised enums.
+
 ## Commands (no phone)
 
 ```bash
@@ -124,7 +139,15 @@ vendor/guardtalk/scripts/pack-webinstall-channel.sh \
 vendor/guardtalk/scripts/pack-webinstall-channel.sh \
   --stamp releases/desktop-flash/komodo-latest \
   --out /tmp/gt-webinstall-channel-komodo
+vendor/guardtalk/scripts/pack-webinstall-channel.sh \
+  --stamp releases/desktop-flash/rango-latest \
+  --out /tmp/gt-webinstall-channel-rango
 ```
+
+`--self-test` uses a **synthetic** rango fixture (tiny `boot.img`). It does
+not USB-flash and does not claim boot-green. Hosted packer
+`pack-wizard-hosted-channels.sh` also has a rango line; do not run it against
+live multi-GiB stamps unless an operator asks.
 
 If `releases/desktop-flash/latest` is missing, treat live packing as **HOLD**.
 The script and schema remain the deliverable.
@@ -132,7 +155,9 @@ The script and schema remain the deliverable.
 ## Non-goals
 
 - WebUSB flash engine (`T-WEBINSTALL-FLASHCORE`)
-- Wizard UI (`F-WEBINSTALL-WIZARD`)
+- Wizard UI (`F-WEBINSTALL-DEVICES-PICKER` owns picker copy)
 - Editing `flash-from-remote.sh` or `stage-rango-release.sh`
 - Rebuilding Android images
 - Committing factory zips or new image blobs
+- Promoting `rango-latest` off `130756`
+- Claiming rango boot-green or live-flash GO

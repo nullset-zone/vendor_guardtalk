@@ -1,0 +1,184 @@
+=== Q-REMEDIATE-B2-TELEMETRY independent rematch (items 11,14) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_DEVICE_CLAIMED=false
+Q-ONDEVICE=not started
+Q-EXCISE=not started
+Q-KERNEL=not started
+USB_GO=not started
+STALE_OUT_VENDOR_BUILD_PROP=HOLD (not SoT)
+
+--- required files ---
+PASS: present: vendor/google_devices/komodo/sysprop/vendor.prop
+PASS: present: vendor/guardtalk/device/komodo/guardtalk-telemetry.mk
+PASS: present: vendor/guardtalk/device/komodo/init.guardtalk.telemetry.rc
+PASS: present: vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk
+PASS: present: vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk
+PASS: present: vendor/guardtalk/device/komodo/REGEN_HOOKS.md
+
+--- packet rg (exif / silentlog / modem / ril mask) ---
+vendor/google_devices/komodo/sysprop/vendor.prop:55:persist.vendor.camera.exif_reveal_make_model=false
+vendor/guardtalk/device/komodo/init.guardtalk.telemetry.rc:9:    setprop persist.vendor.camera.exif_reveal_make_model false
+vendor/guardtalk/device/komodo/REGEN_HOOKS.md:66:persist.vendor.camera.exif_reveal_make_model=false
+
+79:persist.vendor.sys.silentlog.tcp=Off
+78:persist.vendor.sys.modem.logging.enable=false
+73:persist.vendor.ril.log_mask=0
+
+--- vendor.prop defaults (source of record; not stale out/) ---
+PASS: vendor.prop EXIF make/model false
+PASS: vendor.prop EXIF make/model is not true
+PASS: vendor.prop silentlog.tcp=Off
+PASS: vendor.prop silentlog.tcp is not On
+PASS: vendor.prop modem.logging.enable=false
+PASS: vendor.prop modem.logging.enable is not true
+PASS: vendor.prop ril.log_mask=0
+PASS: vendor.prop ril.log_mask is not a nonzero Pixel mask
+
+--- overlay mk + vendor init re-assert ---
+PASS: production-hardening.mk includes guardtalk-telemetry.mk
+PASS: telemetry.mk copies init.guardtalk.telemetry.rc to vendor/etc/init
+PASS: telemetry.mk PRODUCT_PROPERTY_OVERRIDES logd.logpersistd.enable=false
+PASS: telemetry.mk user-gates logpersist.start/logcatd drop
+PASS: telemetry.mk filter-out logpersist.start logcatd on user
+PASS: telemetry.mk does not add packages
+PASS: telemetry.mk does not PRODUCT_PROPERTY_OVERRIDES EXIF vendor.prop key
+PASS: telemetry.mk does not PRODUCT_PROPERTY_OVERRIDES silentlog vendor.prop key
+PASS: telemetry.mk does not PRODUCT_PROPERTY_OVERRIDES modem.logging vendor.prop key
+PASS: telemetry.mk does not PRODUCT_PROPERTY_OVERRIDES ril.log_mask vendor.prop key
+PASS: telemetry.rc re-asserts EXIF false
+PASS: telemetry.rc re-asserts silentlog Off
+PASS: telemetry.rc re-asserts modem.logging false
+PASS: telemetry.rc re-asserts ril.log_mask 0
+PASS: telemetry.rc re-asserts logd.logpersistd.enable false
+PASS: telemetry.rc clears persist.logd.logpersistd
+PASS: telemetry.rc trigger is on post-fs-data
+
+--- RIL stays disabled (must not re-enable) ---
+PASS: radio-excised still sets persist.radio.disabled=1
+PASS: no persist.radio.disabled=0 in vendor/guardtalk mk/rc/prop/bp
+
+--- KERNEL rc / apps-excised not this card ---
+PASS: init.guardtalk.hardening.rc has no telemetry bleed
+PASS: apps-excised.mk has no telemetry bleed
+
+--- python structural rematch ---
+PASS: vendor.prop exact persist.vendor.camera.exif_reveal_make_model=false
+PASS: vendor.prop exact persist.vendor.sys.silentlog.tcp=Off
+PASS: vendor.prop exact persist.vendor.sys.modem.logging.enable=false
+PASS: vendor.prop exact persist.vendor.ril.log_mask=0
+PASS: vendor.prop persist.vendor.camera.exif_reveal_make_model is not Pixel default true
+PASS: vendor.prop persist.vendor.sys.silentlog.tcp is not Pixel default On
+PASS: vendor.prop persist.vendor.sys.modem.logging.enable is not Pixel default true
+PASS: vendor.prop ril.log_mask is 0 (not Pixel 3)
+PASS: harden mk includes telemetry overlay
+PASS: user block filter-out logpersist.start logcatd
+PASS: user block is filter-out only
+PASS: telemetry.mk does not duplicate vendor.prop key persist.vendor.camera.exif_reveal_make_model
+PASS: telemetry.mk does not duplicate vendor.prop key persist.vendor.sys.silentlog.tcp
+PASS: telemetry.mk does not duplicate vendor.prop key persist.vendor.sys.modem.logging.enable
+PASS: telemetry.mk does not duplicate vendor.prop key persist.vendor.ril.log_mask
+PASS: telemetry.mk sets logd.logpersistd.enable=false
+PASS: telemetry.rc has post-fs-data
+PASS: telemetry.rc has setprop persist.vendor.camera.exif_reveal_make_model false
+PASS: telemetry.rc has setprop persist.vendor.sys.silentlog.tcp Off
+PASS: telemetry.rc has setprop persist.vendor.sys.modem.logging.enable false
+PASS: telemetry.rc has setprop persist.vendor.ril.log_mask 0
+PASS: telemetry.rc has setprop logd.logpersistd.enable false
+PASS: telemetry.rc does not touch persist.radio.disabled
+PASS: radio-excised persist.radio.disabled=1 remains
+PASS: radio-excised does not set persist.radio.disabled=0
+PY_COUNTS PASS_COUNT=25 FAIL_COUNT=0 HOLD_COUNT=0
+PASS: python structural rematch exit 0
+
+--- lunch komodo-trunk_staging-user (independent; do not skip) ---
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+12:37:16 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+PASS: lunch komodo-trunk_staging-user exit 0
+12:37:22 Build sandboxing disabled due to nsjail error.
+12:37:28 Build sandboxing disabled due to nsjail error.
+12:37:34 Build sandboxing disabled due to nsjail error.
+12:37:40 Build sandboxing disabled due to nsjail error.
+12:37:48 Build sandboxing disabled due to nsjail error.
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=user
+PASS: TARGET_PRODUCT=komodo
+PASS: TARGET_BUILD_VARIANT=user (not userdebug)
+PASS: user PRODUCT_PACKAGES: logpersist.start and logcatd ABSENT
+PASS: PRODUCT_PROPERTY_OVERRIDES contains logd.logpersistd.enable=false
+PASS: PRODUCT_PROPERTY_OVERRIDES does not set logd.logpersistd.enable=true
+PASS: PRODUCT_PROPERTY_OVERRIDES contains persist.radio.disabled=1 (RIL stays disabled)
+PASS: PRODUCT_PROPERTY_OVERRIDES does not set persist.radio.disabled=0
+PASS: PRODUCT_COPY_FILES includes init.guardtalk.telemetry.rc
+
+--- lunch komodo-trunk_staging-userdebug (sidecar adversarial; not product) ---
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+12:38:01 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=userdebug
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+12:38:07 Build sandboxing disabled due to nsjail error.
+12:38:13 Build sandboxing disabled due to nsjail error.
+userdebug TARGET_BUILD_VARIANT=userdebug
+PASS: sidecar lunch is userdebug (not product truth)
+PASS: sidecar PRODUCT_PACKAGES still has logpersist.start/logcatd (userdebug leftover is NOT product)
+
+--- stale out/vendor/build.prop (HOLD until rebuild; not PASS/FAIL of this card) ---
+--- stale vendor.prop telemetry keys ---
+86:persist.vendor.camera.exif_reveal_make_model=true
+104:persist.vendor.ril.log_mask=3
+109:persist.vendor.sys.modem.logging.enable=true
+110:persist.vendor.sys.silentlog.tcp=On
+HOLD: stale out/vendor/build.prop still Pixel true/On/log_mask=3 — HOLD until rebuild (not FAIL)
+HOLD: m not run this QA stamp (stale vendor/build.prop not product truth; never device-fixed)
+
+--- adb / on-device EXIF / /data log dirs ---
+List of devices attached
+HOLD: adb devices empty / no komodo 54111FDAS000GN — device HOLD, EXIF HOLD, /data log dirs HOLD, never device-fixed
+HOLD: on-device photo EXIF HOLD (Q-REMEDIATE-B2-ONDEVICE BLOCKED)
+HOLD: runtime /data vendor log dirs HOLD (slog / sit-ril / logpersist not proven empty live)
+
+RESULT: PASS (host)  bash_PASS=47 bash_HOLD=5 PY_RC=0
+LIVE_DEVICE_CLAIMED=false
+STALE_OUT_VENDOR_BUILD_PROP=HOLD
+ONDEVICE_EXIF=HOLD
+DATA_LOG_DIRS=HOLD
+DEVICE=HOLD
+PASS_HOLD=remains

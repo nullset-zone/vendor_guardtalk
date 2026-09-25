@@ -1,0 +1,82 @@
+=== Q-REMEDIATE-FLASH-HONESTY independent rematch (DEC-010 advertise) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+LIVE_FLASH_CLAIMED=unverified (computed below)
+FLASH_READY=false (not invented; honesty rematch does not lift image PASS)
+LIVE_DEVICE_CLAIMED=false
+USB_GO=not started
+M_BUILD=not started
+FLASH=not started
+ONDEVICE=not started
+PASS_HOLD=remains
+
+--- hygiene: this suite must not start m / USB / ondevice ---
+PASS: suite source does not invoke m, lunch, fastboot, or adb flash
+PASS: m not started this QA stamp
+PASS: USB GO / flash / lock not started
+PASS: Q-ONDEVICE / *_ondevice.sh not started
+
+--- packet verification commands (independent) ---
+119:export const LIVE_FLASH_CLAIMED = false;
+PASS: rg LIVE_FLASH_CLAIMED hit vendor/guardtalk/web-installer/src/types.ts
+15:This stamp is **not** a signed **user** FLASH_READY image.
+18:- `FLASH_READY=false`. Not user-signed.
+20:- A `komodo-latest` pointer at this stamp is **not** a FLASH_READY claim.
+27:not as FLASH_READY.
+PASS: rg FLASH_READY hit releases/desktop-flash/komodo-20260915-063833/README-FLASH-DESKTOP.md
+readlink releases/desktop-flash/komodo-latest => komodo-20260915-063833
+
+--- LIVE_FLASH_CLAIMED=false (source of truth + served dist) ---
+PASS: vendor/guardtalk/web-installer/src/types.ts exports LIVE_FLASH_CLAIMED = false
+PASS: vendor/guardtalk/web-installer/src/types.ts does not assign LIVE_FLASH_CLAIMED=true
+PASS: vendor/guardtalk/web-installer/dist/src/types.js exports LIVE_FLASH_CLAIMED = false
+PASS: vendor/guardtalk/web-installer/dist/src/types.js does not assign LIVE_FLASH_CLAIMED=true
+
+--- stamp README does not claim signed-user FLASH_READY ---
+PASS: releases/desktop-flash/komodo-20260915-063833/README-FLASH-DESKTOP.md states FLASH_READY=false
+PASS: releases/desktop-flash/komodo-20260915-063833/README-FLASH-DESKTOP.md denies signed-user FLASH_READY for this stamp
+PASS: releases/desktop-flash/komodo-20260915-063833/README-FLASH-DESKTOP.md states LIVE_FLASH_CLAIMED=false
+PASS: releases/desktop-flash/komodo-20260915-063833/README-FLASH-DESKTOP.md has no FLASH_READY=true
+PASS: releases/desktop-flash/komodo-20260915-063833/README-FLASH-DESKTOP.md names komodo-20260915-063833
+
+--- installer advertise does not claim signed-user FLASH_READY ---
+PASS: KOMODO_STAMP_HONESTY names komodo-20260915-063833 and denies signed-user FLASH_READY
+PASS: vendor/guardtalk/web-installer/lib/ui/offered-devices.ts has no FLASH_READY=true
+PASS: vendor/guardtalk/web-installer/README.md names komodo-20260915-063833 and denies signed user FLASH_READY
+PASS: vendor/guardtalk/web-installer/README.md has no FLASH_READY=true
+PASS: wizard data-dec=010 banner names stamp and FLASH_READY=false
+PASS: vendor/guardtalk/web-installer/wizard/index.html has no FLASH_READY=true
+PASS: vendor/guardtalk/web-installer/routes/install/early-steps.ts injects KOMODO_STAMP_HONESTY into advertise note
+
+--- komodo-latest still points at komodo-20260915-063833 (not retargeted) ---
+PASS: releases/desktop-flash/komodo-latest -> komodo-20260915-063833 (relative symlink; not retargeted)
+
+--- tokay+akita+komodo listed; no new SKU ---
+PASS: WIZARD_DEVICES lists tokay
+PASS: WIZARD_DEVICES lists akita
+PASS: WIZARD_DEVICES lists komodo
+PASS: WIZARD_DEVICES has no shiba/husky/caiman/tegu/comet id
+PASS: rango remains experimental / boot HOLD (pre-existing; not a new SKU)
+PASS: ALLOWED_PRODUCTS is tokay+akita+komodo+rango (no new SKU)
+
+--- FLASH_READY=true absent except negative tests ---
+PASS: FLASH_READY=true absent from stamp README + installer advertise sources
+PASS: no test asserts FLASH_READY=true as a positive claim
+PASS: FLASH_READY=true appears only as doesNotMatch negative tests
+
+--- residual advertise drift (not a FLASH_READY lie; not a new SKU) ---
+HOLD: vendor/guardtalk/web-installer/README.md still says rango is not offered (stale vs WIZARD_DEVICES; DEC-WEBINSTALL-015 residual; not FLASH_READY=true)
+
+--- adb (device HOLD; do not start Q-ONDEVICE) ---
+List of devices attached
+HOLD: adb devices empty — not device-fixed; on-device working not invented
+
+LIVE_FLASH_CLAIMED=false
+FLASH_READY=false
+FLASH_CLASS=HOLD
+LIVE_DEVICE_CLAIMED=false
+PASS_HOLD=remains
+M_BUILD=not started
+USB_GO=not started
+ONDEVICE=not started
+KOMODO_LATEST=komodo-20260915-063833
+RESULT: PASS (host)  bash_PASS=32 bash_HOLD=2 FAIL=0

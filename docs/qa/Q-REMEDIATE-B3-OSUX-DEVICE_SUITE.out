@@ -1,0 +1,42 @@
+=== Q-REMEDIATE-B3-OSUX-DEVICE independent on-device rematch ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+SERIAL_EXPECTED=54111FDAS000GN
+DEC=DEC-REMEDIATE-003
+STATIC_Q_VIEWER_SENSORS_LIVE=false
+FOLD_INTO_Q_VIEWER=false
+T_OS_CAMMIC_BACK_FILES=APPROVED static (not re-opened)
+USB_GO=not started
+FLASH=not started
+LOCK=not started
+WIPE=not started
+M=not started
+LIVE_DEVICE_CLAIMED=false
+PASS_HOLD=remains
+
+PASS: scope: on-device OS-UX rematch only (cam/mic tiles, system back, Files jpeg/png/webp)
+PASS: static Q-VIEWER / Q-SENSORS APPROVE is not treated as live
+PASS: T-OS-CAMMIC / T-OS-BACK / T-OS-FILES left APPROVED static (not re-opened)
+PASS: not folded into Q-REMEDIATE-B3-VIEWER
+PASS: USB GO / flash / lock / wipe / m not started
+
+--- adb devices -l (raw) ---
+List of devices attached
+HOLD: adb devices -l empty — cam/mic QS tiles HOLD; not device-fixed
+HOLD: adb devices -l empty — system back HOLD; not device-fixed
+HOLD: adb devices -l empty — Files HTMLViewer jpeg/png/webp HOLD; not device-fixed
+HOLD: no flashed komodo user image on 54111FDAS000GN this stamp
+
+--- honesty / residuals ---
+HOLD: PASS HOLD remains (Blocks 1-2 on-device rematch not this card's lift)
+PASS: LIVE_DEVICE_CLAIMED=false
+PASS: did not claim static OS-UX / Q-VIEWER / Q-SENSORS wave is live
+PASS: did not USB GO / flash / lock / wipe / m
+PASS: did not git commit; did not edit derived queue; did not edit memory-bank
+
+DEVICE_STATE=empty
+USER_IMAGE=false
+LIVE_DEVICE_CLAIMED=false
+PASS_COUNT=9 FAIL_COUNT=0 HOLD_COUNT=5
+RESULT: PASS (documented HOLD delivery)  EXIT=0
+OVERALL: HOLD REVIEW (adb empty / wrong serial / not user image). Not device-fixed.
+Empty adb = successful HOLD delivery.

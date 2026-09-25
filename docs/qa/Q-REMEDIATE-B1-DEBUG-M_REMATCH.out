@@ -1,0 +1,59 @@
+# Q-REMEDIATE-B1-DEBUG-M independent rematch — 2026-09-18T14:35:19Z
+# QA_ENGINEER. lunch/m/USB not started. T-DEBUG-M evidence not overwritten.
+
+BUILD_PROP=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/target/product/komodo/system/build.prop
+mtime_iso=2026-09-18 11:28:52.317616251 +0000
+mtime_utc=2026-09-18T11:28:52Z
+size=5379
+ro.build.type=userdebug
+ro.build.tags=test-keys
+ro.build.flavor=mainline-userdebug
+ro.system.build.type=userdebug
+ro.debuggable=1
+
+R3_LOG=vendor/guardtalk/docs/qa/T-REMEDIATE-B1-DEBUG-M_M-r3.log
+r3log_mtime=2026-09-18 11:49:47.230911273 +0000
+r3log_size=3768789
+COMBO=komodo-trunk_staging-userdebug
+LUNCH_EXIT=0
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=userdebug
+BUILD_KEYS=test-keys
+BUILD_SUCCESS_LINE=#### build completed successfully (22:31 (mm:ss)) ####
+BUILD_EXIT=0
+NINJA_STOPPED=0
+FAILED_COLON=0
+
+XBIN_SU=PRESENT mtime=2026-09-15 04:58:56 size=51464
+XBIN_OVERLAY=PRESENT mtime=2026-09-15 04:58:56 size=613776
+TREE_PEM_COUNT=0
+AVB_PEM_TREE=ABSENT
+AVB_PEM_SECURE=ABSENT
+MNT_SECURE=missing
+
+KOMODO_LATEST=komodo-20260915-063833
+KOMODO_DEBUG_LATEST=ABSENT
+KOMODO_DEBUG_DIRS=ABSENT
+
+ADB_DEVICES=empty
+M_RUNNING=false
+USB_GO=false
+FLASH_READY=false
+DEBUG_FLASH_READY=false
+LIVE_FLASH_CLAIMED=false
+
+system.img mtime=2026-09-18 11:45:21
+vbmeta.img mtime=2026-09-18 11:49:45
+vendor.img mtime=2026-09-18 11:34:39
+product.img mtime=2026-09-18 11:34:51
+boot.img mtime=2026-09-15 04:59:09 HOLD_FOR_PACK
+
+product/etc/build.prop mtime=2026-09-18 11:28:52 ro.build.type=userdebug
+vendor/build.prop mtime=2026-09-18 10:31:54 ro.vendor.build.type=userdebug
+
+RESULT=PASS_HOST
+FAIL=0
+STATUS=REVIEW
+APPROVED=false
+M_STARTED=false
+USB_GO=false

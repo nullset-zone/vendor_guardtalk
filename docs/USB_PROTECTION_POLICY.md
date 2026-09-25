@@ -64,7 +64,16 @@ ADB / MTP / PTP gadget functions stripped while denied
 | Security row | `GuardTalkUsbProtectionPreferenceController` | Status + deep-link to Exploit protection (USB-C port) |
 | Mode picker | `UsbPortSecurityPrefController` | Hides AFU / On under GuardTalk |
 
-Existing USB duress watchdog (`maybeTriggerUsbDuressWipe`) is unchanged and remains opt-in via `vendor.guardtalk.usb_duress_wipe.enabled`.
+USB duress watchdog (`maybeTriggerUsbDuressWipe`) fires only when **all** of:
+locked (keyguard showing) + dismissed-at-least-once + duress armed + USB data-role **DEVICE** + `vendor.guardtalk.usb_duress_wipe.enabled=1` + `ro.boot.verifiedbootstate` is **yellow or green**. Charge-only (`DATA_ROLE_NONE`) and HOST/OTG do **not** wipe. Orange/red/empty verified-boot do **not** fire. Charging-only-when-locked (lock kills ADB) is unchanged. Lockscreen duress wipe remains `SecureWipeEngine.Reason.DURESS` (not this path).
+
+**DEC-REMEDIATE-002 / T-REMEDIATE-B1-DURESS-USB:** Pixel custom-key production lock is **yellow**. Java helper default for the flag stays `"0"` (userdebug / unset stay opt-in). Komodo **user** product default-enables the flag.
+
+| Property | Komodo user | userdebug / unset | Effect |
+|----------|-------------|-------------------|--------|
+| `vendor.guardtalk.usb_duress_wipe.enabled` | `1` (`guardtalk-production-hardening.mk`) | Java default `0` | USB duress watchdog |
+
+Destructive e2e proof **HOLD** (no USB GO; no lock/wipe of serial `54111FDAS000GN`).
 
 ## Post-unlock policy
 
@@ -105,7 +114,15 @@ Existing USB duress watchdog (`maybeTriggerUsbDuressWipe`) is unchanged and rema
 3. Revert extensions in `UsbPortSecurityHooks` / `UsbDeviceManager` and Settings USB preference controller wiring to stubs.
 4. Rebuild: `m services Settings -j$(nproc)`.
 
-No irreversible state: sysprops and HAL mode are runtime-reversible; duress wipe engine is not armed by this task.
+No irreversible state from the fail-closed USB data path: sysprops and HAL mode are runtime-reversible.
+
+USB duress flag rollback (T-REMEDIATE-B1-DURESS-USB): remove
+`vendor.guardtalk.usb_duress_wipe.enabled=1` from the komodo user block in
+`vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk` (Java
+default returns to `"0"`). Revert `isVerifiedBootYellowOrGreen` to green-only
+only if a later Gate 0 withdraws yellow. The wipe engine itself is still
+recoverable-by-reflash; do not run it on production-custody devices without
+operator + designated test unit.
 
 ## Verification
 
@@ -123,3 +140,15 @@ getprop persist.security.usb_mode                 # expect 2
 getprop sys.port_security_mode                    # charging-only* while locked
 getprop security.deny_new_usb2                    # 1 while data denied
 ```
+
+### Item 7 host-static (T-REMEDIATE-B1-DURESS-USB)
+
+```bash
+rg -n "usb_duress_wipe.enabled|isUsbDuressWipeEnabled|isVerifiedBootGreen|verifiedbootstate" \
+  frameworks/base/services/core/java/com/android/server/policy/keyguard/UsbPortSecurityHooks.java \
+  vendor/guardtalk/device/komodo/
+```
+
+Expect: Java `isVerifiedBootYellowOrGreen` accepts yellow or green; Java flag default `"0"`;
+komodo user mk `vendor.guardtalk.usb_duress_wipe.enabled=1`. Do not invent on-device
+`getprop` until a flashed user image. No USB GO.

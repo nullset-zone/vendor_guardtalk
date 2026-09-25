@@ -1,0 +1,85 @@
+=== Q-REMEDIATE-DEBUG-ADVERTISE independent rematch (DEC-011) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+DEBUG_FLASH_READY=unverified (computed below)
+FLASH_READY=false (not invented; honesty rematch does not lift image PASS)
+LIVE_FLASH_CLAIMED=unverified (computed below)
+USB_GO=not started
+M_BUILD=not started
+FLASH=not started
+ONDEVICE=not started
+PASS_HOLD=remains
+
+--- hygiene: distinct script; do not collide with Q-B1-DEBUG-SUITE ---
+PASS: basename is verify_remediate_debug_advertise_host.sh (distinct)
+PASS: vendor/guardtalk/docs/qa/verify_remediate_b1_debug_m_host.sh still present (not overwritten)
+PASS: suite source does not invoke m, lunch, fastboot, or adb flash
+PASS: m not started this QA stamp
+PASS: USB GO / flash / lock not started
+PASS: Q-ONDEVICE / *_ondevice.sh not started
+
+--- packet verification commands (independent) ---
+16:| `DEBUG_FLASH_READY` | **false** | Debug sidecar is **not** flash-ready |
+20:`DEBUG_FLASH_READY` stays **false** until **all** of the following are
+30:lift `DEBUG_FLASH_READY`.
+37:| **Debug sidecar** (lab only) | `komodo-trunk_staging-userdebug` | test-keys and `su` **allowed on this sidecar only** | `releases/desktop-flash/komodo-debug-latest` (after debug pack) | `DEBUG_FLASH_READY` — **false** |
+62:`komodo` on `/install/` does not make that stamp `DEBUG_FLASH_READY`.
+83:- `DEBUG_FLASH_READY=true`
+PASS: rg DEBUG_FLASH_READY hit vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md
+119:export const LIVE_FLASH_CLAIMED = false;
+PASS: rg LIVE_FLASH_CLAIMED hit vendor/guardtalk/web-installer/src/types.ts
+readlink releases/desktop-flash/komodo-latest => komodo-20260915-063833
+komodo-debug-latest ABSENT
+
+--- KOMODO_DEBUG_FLASH.md exists; current flags false ---
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md exists
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table current DEBUG_FLASH_READY is **false**
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table current FLASH_READY is **false**
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table current LIVE_FLASH_CLAIMED is **false**
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table does not claim DEBUG_FLASH_READY **true**
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table does not claim FLASH_READY **true**
+
+--- distinguishes debug sidecar vs signed-user FLASH_READY ---
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md names signed-user vs debug-sidecar lunches
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md denies stale komodo-20260915-063833 as this debug gate
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md denies signed-user FLASH_READY for the debug channel
+
+--- LIVE_FLASH_CLAIMED=false (types.ts:119 + served dist) ---
+types.ts:119: export const LIVE_FLASH_CLAIMED = false;
+PASS: vendor/guardtalk/web-installer/src/types.ts:119 exports LIVE_FLASH_CLAIMED = false
+PASS: vendor/guardtalk/web-installer/src/types.ts does not assign LIVE_FLASH_CLAIMED=true
+PASS: vendor/guardtalk/web-installer/src/types.ts does not assign FLASH_READY=true (FLASH_READY is documentary false)
+PASS: vendor/guardtalk/web-installer/dist/src/types.js exports LIVE_FLASH_CLAIMED = false
+PASS: vendor/guardtalk/web-installer/dist/src/types.js does not assign LIVE_FLASH_CLAIMED=true
+
+--- README DEC-011 + sidecar pointer ---
+PASS: vendor/guardtalk/web-installer/README.md DEC-011 paragraph: DEBUG_FLASH_READY false; no retarget
+PASS: vendor/guardtalk/docs/ENGINEERING_SIDECAR_USERDEBUG.md points at KOMODO_DEBUG_FLASH.md; DEBUG_FLASH_READY=false
+PASS: vendor/guardtalk/docs/ENGINEERING_SIDECAR_USERDEBUG.md still distinguishes production user vs sidecar userdebug
+
+--- komodo-latest still points at komodo-20260915-063833 (not retargeted) ---
+PASS: releases/desktop-flash/komodo-latest -> komodo-20260915-063833 (relative symlink; not retargeted)
+
+--- komodo-debug-latest ABSENT (not invented) ---
+PASS: releases/desktop-flash/komodo-debug-latest ABSENT (not invented)
+PASS: no releases/desktop-flash/komodo-debug-* stamp invented
+
+--- current-value READY=true absent from honesty surfaces ---
+PASS: honesty docs do not claim current DEBUG_FLASH_READY/FLASH_READY true
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md lists READY=true only as denied claims
+
+--- adb (device HOLD; do not start Q-ONDEVICE) ---
+List of devices attached
+HOLD: adb devices empty — not device-fixed; on-device working not invented
+
+LIVE_FLASH_CLAIMED=false
+FLASH_READY=false
+DEBUG_FLASH_READY=false
+FLASH_CLASS=HOLD
+LIVE_DEVICE_CLAIMED=false
+PASS_HOLD=remains
+M_BUILD=not started
+USB_GO=not started
+ONDEVICE=not started
+KOMODO_LATEST=komodo-20260915-063833
+KOMODO_DEBUG_LATEST=ABSENT
+RESULT: PASS (host)  bash_PASS=30 bash_HOLD=1 FAIL=0

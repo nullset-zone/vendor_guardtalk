@@ -1,0 +1,89 @@
+=== Q-REMEDIATE-DEBUG-PACK-HONESTY independent rematch (DEC-017) ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+DEBUG_FLASH_READY=unverified (computed below)
+FLASH_READY=false (not invented; honesty rematch does not lift image PASS)
+LIVE_FLASH_CLAIMED=unverified (computed below)
+USB_GO=not started
+M_BUILD=not started
+FLASH=not started
+ONDEVICE=not started
+PASS_HOLD=remains
+
+--- hygiene: distinct script; do not collide with siblings ---
+PASS: basename is verify_remediate_debug_pack_honesty_host.sh (distinct)
+PASS: vendor/guardtalk/docs/qa/verify_remediate_debug_advertise_host.sh still present (not overwritten)
+PASS: vendor/guardtalk/docs/qa/verify_remediate_debug_pack_host.sh still present (not overwritten)
+PASS: suite source does not invoke m, lunch, fastboot, or adb flash
+PASS: m not started this QA stamp
+PASS: USB GO / flash / lock not started
+PASS: Q-ONDEVICE / *_ondevice.sh not started
+
+--- DEC-017 section present; restamp is not a kernel rebuild ---
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md exists
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md has DEC-017 heading (SHA-identical restamp ≠ kernel rebuild)
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md states SHA-identical A/B after packaging restamp is not a kernel rebuild
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md does not require a fake new hash
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md does not invent a stamp / symlink / SKU
+
+--- current flags false; pointer may exist; not DEBUG_FLASH_READY=true ---
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table current DEBUG_FLASH_READY is **false**
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table current FLASH_READY is **false**
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table current LIVE_FLASH_CLAIMED is **false**
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table does not claim DEBUG_FLASH_READY **true**
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md table does not claim FLASH_READY **true**
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md says komodo-debug-latest may exist; existence ≠ DEBUG_FLASH_READY=true
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md USB_GO=false; no USB GO
+
+--- komodo-latest still documented as komodo-20260915-063833 ---
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md documents komodo-latest unchanged → komodo-20260915-063833
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md restates komodo-latest still komodo-20260915-063833
+
+--- live pointers (do not invent; do not retarget) ---
+readlink releases/desktop-flash/komodo-latest => komodo-20260915-063833
+readlink releases/desktop-flash/komodo-debug-latest => komodo-debug-20260918-180338
+PASS: releases/desktop-flash/komodo-latest -> komodo-20260915-063833 (not retargeted)
+PASS: releases/desktop-flash/komodo-debug-latest -> komodo-debug-20260918-180338 (may exist; not a ready claim)
+
+--- documented A/B four SHA == live out/ = stamp = leftover ---
+boot.img out=449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc stamp=449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc leftover=449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc doc=449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc
+PASS: boot.img SHA+cmp out=stamp=leftover=doc (STALE_BAK; not a rebuild claim)
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md names leftover digest for boot.img
+vendor_kernel_boot.img out=a12a9fbd7f320cc5c797bf88fcece23ce75e98167cc6763b854bdfb4e6870eb8 stamp=a12a9fbd7f320cc5c797bf88fcece23ce75e98167cc6763b854bdfb4e6870eb8 leftover=a12a9fbd7f320cc5c797bf88fcece23ce75e98167cc6763b854bdfb4e6870eb8 doc=a12a9fbd7f320cc5c797bf88fcece23ce75e98167cc6763b854bdfb4e6870eb8
+PASS: vendor_kernel_boot.img SHA+cmp out=stamp=leftover=doc (STALE_BAK; not a rebuild claim)
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md names leftover digest for vendor_kernel_boot.img
+pvmfw.img out=f7c5910e0bada491895519d3018cdc37164b5873ae46e1772bcee0dc7b84eee8 stamp=f7c5910e0bada491895519d3018cdc37164b5873ae46e1772bcee0dc7b84eee8 leftover=f7c5910e0bada491895519d3018cdc37164b5873ae46e1772bcee0dc7b84eee8 doc=f7c5910e0bada491895519d3018cdc37164b5873ae46e1772bcee0dc7b84eee8
+PASS: pvmfw.img SHA+cmp out=stamp=leftover=doc (STALE_BAK; not a rebuild claim)
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md names leftover digest for pvmfw.img
+dtbo.img out=742a1e192a0199e11b2176829f9d818f5de0ad16b40132fcc0b8e4f6b162e433 stamp=742a1e192a0199e11b2176829f9d818f5de0ad16b40132fcc0b8e4f6b162e433 leftover=742a1e192a0199e11b2176829f9d818f5de0ad16b40132fcc0b8e4f6b162e433 doc=742a1e192a0199e11b2176829f9d818f5de0ad16b40132fcc0b8e4f6b162e433
+PASS: dtbo.img SHA+cmp out=stamp=leftover=doc (STALE_BAK; not a rebuild claim)
+PASS: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md names leftover digest for dtbo.img
+AB_FOUR_LEFTOVER_SHA=4
+PASS: A/B four SHA-identical after packaging restamp (HOLD-documented, not a kernel rebuild)
+
+--- LIVE_FLASH_CLAIMED=false (types.ts:119 + served dist) ---
+types.ts:119: export const LIVE_FLASH_CLAIMED = false;
+PASS: vendor/guardtalk/web-installer/src/types.ts:119 exports LIVE_FLASH_CLAIMED = false
+PASS: vendor/guardtalk/web-installer/src/types.ts does not assign LIVE_FLASH_CLAIMED=true
+PASS: vendor/guardtalk/web-installer/dist/src/types.js exports LIVE_FLASH_CLAIMED = false
+PASS: vendor/guardtalk/web-installer/dist/src/types.js does not assign LIVE_FLASH_CLAIMED=true
+
+--- T-PACK status sentence vs owner-root queue (HOLD residual, not FAIL) ---
+HOLD: vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md still says T-DEBUG-PACK HOLD CONFIRMED (queue may have APPROVED later; no product edit)
+
+--- adb (device HOLD; do not start Q-ONDEVICE) ---
+List of devices attached
+HOLD: adb devices empty — not device-fixed; on-device working not invented
+
+LIVE_FLASH_CLAIMED=false
+FLASH_READY=false
+DEBUG_FLASH_READY=false
+FLASH_CLASS=HOLD
+LIVE_DEVICE_CLAIMED=false
+PASS_HOLD=remains
+M_BUILD=not started
+USB_GO=not started
+ONDEVICE=not started
+KOMODO_LATEST=komodo-20260915-063833
+KOMODO_DEBUG_LATEST=komodo-debug-20260918-180338
+AB_FOUR_LEFTOVER_SHA=4
+RESULT: PASS (host)  bash_PASS=36 bash_HOLD=2 FAIL=0

@@ -21,9 +21,16 @@ test("suite does not claim a live-flash PASS", () => {
   assert.equal(orch.claimsLiveFlash(), false);
 });
 
-test("wrong product (rango) is rejected on connect", async () => {
+test("mismatched product (rango on tokay channel) is rejected on connect", async () => {
   const transport = new MockFastboot();
   transport.product = "rango";
+  const orch = makeOrch(transport);
+  await assert.rejects(() => orch.connect(), WrongProductError);
+});
+
+test("unstamped product (shiba) is rejected on connect", async () => {
+  const transport = new MockFastboot();
+  transport.product = "shiba";
   const orch = makeOrch(transport);
   await assert.rejects(() => orch.connect(), WrongProductError);
 });

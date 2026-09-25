@@ -1,0 +1,37 @@
+# GuardTalkOS — laguna_muzel (laguna / laguna) vendor_dlkm modules blocklist.
+#
+# T-PORT-EXCISION-MATRIX (P0): canonical blocklist for excision variant 'laguna_muzel'.
+# Derivation (mechanical, no invented entries):
+#   upstream device/google/laguna-kernels/6.6/grapheneos/muzel/vendor_dlkm.modules.blocklist
+#   + GuardTalk BT-excision addition 'blocklist nitrous.ko' (T-BT-FULL FR-3, nitrous
+#     BCM BT power/rfkill driver, present in vendor_dlkm.modules.load).
+# Every upstream 'blocklist' line is preserved verbatim and in order.
+# Devices mapped to this variant: see excision-variants.mk GT_DEVICE_VARIANT_*.
+# In-force exemplars: vendor/guardtalk/device/{akita,komodo,rango}/vendor_dlkm.modules.blocklist.
+#
+# Wi-Fi two-phase load (upstream: blocklist in the bulk pass, then re-modprobe
+# without -b in init.insmod.frankel.cfg) is preserved verbatim. WiFi is NOT broken.
+
+blocklist bcmdhd4383.ko
+blocklist bcmdhd4390.ko
+blocklist cs40l26-i2c.ko
+blocklist g_serial.ko
+blocklist irq-gia-google-test.ko
+blocklist sscoredump_sample_test.ko
+blocklist sscoredump_test.ko
+blocklist syna_touch.ko
+blocklist focal_touch.ko
+blocklist fst2.ko
+blocklist trusty-test.ko
+blocklist google_gem_test.ko
+blocklist ebu-google.ko
+blocklist google-cpm-tracepoint.ko
+
+# Display
+blocklist gs-panel-common-test.ko
+
+# IOMMU
+blocklist iommu_map_benchmark.ko
+
+# T-BT-FULL (FR-3): Bluetooth power/rfkill driver — BCM BT on UART.
+blocklist nitrous.ko

@@ -1,0 +1,24 @@
+PASS: VALUE-side GrapheneOS = 0 (rg >GrapheneOS<|>grapheneos< on overlay/SUW strings)
+PASS: strict string-body GrapheneOS = 0 (overlays + SUW)
+PASS: bootanimation.zip present (vendor/guardtalk/branding/bootanimation/bootanimation.zip)
+PASS: bootanimation.zip md5 == c9e027553e2d09bd401f63c8bc1a4070 (product 1008×2244 pin)
+PASS: bootanimation-dark.zip md5=7ba676c5704c6e6ab962fb34cc6590ef != product pin (1080 dark zip OK; not PRODUCT_COPY; not product FAIL)
+PASS: feature-excised.mk uses PRODUCT_DEVICE theme path
+PASS: feature-excised.mk not tokay-hardcoded for theme
+PASS: tokay wrapper includes shared branding/guardtalk-theme.mk
+PASS: akita wrapper includes shared branding/guardtalk-theme.mk
+PASS: guardtalk-theme.mk wires PRODUCT media bootanimation.zip
+PASS: guardtalk-theme.mk dark-zip filter present
+PASS: SUW grapheneos_icon.xml deleted
+PASS: Settings about_settings_summary GuardTalkOS
+PASS: Settings overlay about_settings_summary GuardTalkOS
+PASS: ic_guardtalk_logo present (Settings + overlay)
+PASS: MyDeviceInfoFragment uses ic_guardtalk_logo
+PASS: GuardTalkLauncherOverlay ic_launcher_home present
+HOLD: out/tokay product/media/bootanimation.zip md5=7ba676c5704c6e6ab962fb34cc6590ef (live source c9e027553e2d09bd401f63c8bc1a4070; stale out — not product FAIL)
+HOLD: out/akita product/media/bootanimation.zip md5=7ba676c5704c6e6ab962fb34cc6590ef (live source c9e027553e2d09bd401f63c8bc1a4070; stale out — not product FAIL)
+HOLD: adb empty — device boot smoke HOLD (artifact inspection used)
+PASS: documented residual resource names *_grapheneos* count=12 (values GuardTalkOS; justified)
+
+PASS_COUNT=18 HOLD_COUNT=3 FAIL=0
+ALL STATIC CHECKS PASSED

@@ -15,6 +15,8 @@
      Pinned inventory (exhaustive):
        Hotseat screen 0 x=0: GT Info (com.guardtalk.validator/.ValidatorActivity)
        Hotseat screen 0 x=1: GT Config (com.guardtalk.config/.ConfigActivity)
+       Workspace screen 0 x=0 y=0: GT Messenger
+         (com.guardtalk.messenger/.MessengerActivity)
 
      Excised apps NOT pinned (T-RM-APPS dependency): Auditor,
      ExactCalculator, InfoApp, Messaging, Dialer, TrichromeChrome, AppStore.
@@ -38,5 +40,13 @@
         launcher:y="0"
         launcher:packageName="com.guardtalk.config"
         launcher:className="com.guardtalk.config.ConfigActivity" />
+
+    <!-- Workspace: GT Messenger (F-REMEDIATE-B4-MESSENGER — first-user RING). -->
+    <favorite
+        launcher:screen="0"
+        launcher:x="0"
+        launcher:y="0"
+        launcher:packageName="com.guardtalk.messenger"
+        launcher:className="com.guardtalk.messenger.MessengerActivity" />
 
 </favorites>

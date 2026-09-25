@@ -3,6 +3,7 @@ package com.guardtalk.validator
 import android.app.Activity
 import android.content.Context
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -36,7 +37,9 @@ class ProcessListActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_process_list)
 
-        val titleView = findViewById<TextView>(R.id.process_title)
+        ValidatorChrome.attach(this, /* leaveAppOnBack= */ false)
+
+        val titleView = findViewById<TextView>(R.id.escape_hotspot)
         summaryView = findViewById(R.id.process_summary)
         listView = findViewById(R.id.process_list)
         val refresh = findViewById<Button>(R.id.process_refresh)
@@ -46,6 +49,25 @@ class ProcessListActivity : Activity() {
         refresh.setOnClickListener { refresh() }
 
         refresh()
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        ValidatorChrome.onScreenBack(this, /* leaveAppOnBack= */ false)
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (ValidatorChrome.handleKey(this, keyCode, event)) {
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        if (ValidatorChrome.handleKey(this, keyCode, event)) {
+            return true
+        }
+        return super.onKeyUp(keyCode, event)
     }
 
     /** Re-enumerate and update the list. */

@@ -8,8 +8,10 @@
           launcher remains usable (GT Info pinned in hotseat).
 
      Pinned inventory (exhaustive):
-       Hotseat screen 0: GT Info (com.guardtalk.validator/.ValidatorActivity)
-       Workspace screen 0, x=0 y=0: Settings (com.android.settings/.Settings)
+       Hotseat screen 0: GT Info + GT Config
+       Workspace screen 0, x=0 y=0: Settings
+       Workspace screen 0, x=1 y=0: GT Messenger
+         (com.guardtalk.messenger/.MessengerActivity)
 
      Excised apps NOT pinned (T-RM-APPS dependency): Auditor,
      ExactCalculator, InfoApp, Messaging, Dialer, TrichromeChrome, AppStore.
@@ -41,5 +43,13 @@
         launcher:y="0"
         launcher:packageName="com.android.settings"
         launcher:className="com.android.settings.Settings" />
+
+    <!-- Workspace: GT Messenger (F-REMEDIATE-B4-MESSENGER — first-user RING). -->
+    <favorite
+        launcher:screen="0"
+        launcher:x="1"
+        launcher:y="0"
+        launcher:packageName="com.guardtalk.messenger"
+        launcher:className="com.guardtalk.messenger.MessengerActivity" />
 
 </favorites>

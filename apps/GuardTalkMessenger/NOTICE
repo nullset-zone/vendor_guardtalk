@@ -1,0 +1,7 @@
+GuardTalkMessenger
+Copyright (C) 2026 GuardTalkOS Contributors
+
+Licensed under the Apache License, Version 2.0
+The Jami protocol identity and Gateway JSON-RPC client in this package
+are GuardTalkOS product code. Jami / Savoir-faire Linux names are used
+to describe protocol compatibility; this package does not vendor jamid.

@@ -1,0 +1,33 @@
+package {
+    default_applicable_licenses: ["vendor_guardtalk_messenger_app_license"],
+}
+
+license {
+    name: "vendor_guardtalk_messenger_app_license",
+    visibility: [":__subpackages__"],
+    license_kinds: ["SPDX-license-identifier-Apache-2.0"],
+    license_text: ["NOTICE"],
+}
+
+// GuardTalkMessenger — Jami-based product messenger (T-REMEDIATE-B4-MESSENGER).
+//
+// Baked into the komodo user image as a product app (not priv-app). Unknown-APK
+// / sideload block (PMS ComputerEngine) forbids Gateway or USB install of an
+// unsigned APK, so PRODUCT_PACKAGES is the install mechanism. The app talks
+// Jami JSON-RPC to the LAN Gateway (jamid). No Play Store, no browser, no GMS.
+//
+//   * product_specific: true — /product/app (FLAG_SYSTEM; default-permissions XML applies)
+//   * not privileged — least privilege; runtime grants come from
+//     default-permissions-com.guardtalk.messenger.xml
+//   * sdk_version: current — public APIs only (WifiManager DHCP, HttpURLConnection)
+android_app {
+    name: "GuardTalkMessenger",
+    srcs: ["src/**/*.kt"],
+    resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
+    sdk_version: "current",
+    product_specific: true,
+    optimize: {
+        enabled: false,
+    },
+}

@@ -1,0 +1,104 @@
+START=2026-09-18T18:02:47Z
+ROUND=r3b
+DEC=DEC-REMEDIATE-016
+USB_GO=false
+FLASH_READY=false
+DEBUG_FLASH_READY=false
+NOTE=get_build_var INSTALLED_DTBOIMAGE_TARGET printed empty after nsjail; use known installed path
+NOTE=pvmfwimage is empty phony; build out/target/product/komodo/pvmfw.img
+export BUILD_DATETIME=1782971948 BUILD_NUMBER=eng.openst
+ENVSETUP_EXIT=0
+============================================
+Commands from vendor/google_devices/komodo/cmds-for-envsetup.sh:
+export BUILD_ID_komodo="BP4A.260205.002"
+unset PLATFORM_SECURITY_PATCH_komodo
+============================================
+18:02:48 Build sandboxing disabled due to nsjail error.
+
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=userdebug
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+LUNCH_EXIT=0 TARGET_PRODUCT=komodo VARIANT=userdebug
+#### get_build_var INSTALLED_DTBOIMAGE_TARGET ####
+DTBO_VAR_STDOUT= 
+DTBO_TARGET_FALLBACK=out/target/product/komodo/dtbo.img
+M2_START=2026-09-18T18:02:59Z
+18:03:01 Build sandboxing disabled due to nsjail error.
+Running product configuration...
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=userdebug
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+[100% 1/1] bootstrap blueprint
+Running globs...
+ninja: no work to do.
+No need to regenerate ninja file
+No need to regenerate ninja file
+No need to regenerate ninja file
+Starting ninja...
+[100% 2/2 0s remaining] build out/target/product/komodo/dtbo.img
+
+#### build completed successfully (17 seconds) ####
+
+M2_EXIT=0
+M3_START=2026-09-18T18:03:16Z
+18:03:17 Build sandboxing disabled due to nsjail error.
+Running product configuration...
+============================================
+PLATFORM_VERSION_CODENAME=Baklava
+PLATFORM_VERSION=Baklava
+TARGET_PRODUCT=komodo
+TARGET_BUILD_VARIANT=userdebug
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv9-a
+TARGET_CPU_VARIANT=cortex-a76
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-6.8.0-138-generic-x86_64-Ubuntu-24.04.4-LTS
+BUILD_ID=BP4A.260205.002
+PLATFORM_SECURITY_PATCH=2026-02-05
+OUT_DIR=out
+SOONG_ONLY=false
+============================================
+[100% 1/1] bootstrap blueprint
+Running globs...
+ninja: no work to do.
+No need to regenerate ninja file
+No need to regenerate ninja file
+No need to regenerate ninja file
+Starting ninja...
+[100% 2/2 0s remaining] Copy: out/target/product/komodo/pvmfw.img
+
+#### build completed successfully (16 seconds) ####
+
+M3_EXIT=0
+#### post-m rematch ####
+-rw-rw-r--+ 1 oss-c1 oss-c1 67108864 2026-09-18 17:57:54.829401747 +0000 /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/target/product/komodo/boot.img
+-rw-rw-r--+ 1 oss-c1 oss-c1 67108864 2026-09-18 17:57:54.698392160 +0000 /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/target/product/komodo/vendor_kernel_boot.img
+-rw-rwxr--+ 1 oss-c1 oss-c1 1048576 2026-09-18 18:03:31.337823534 +0000 /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/target/product/komodo/pvmfw.img
+-rwxrwxr-x+ 1 oss-c1 oss-c1 16777216 2026-09-18 18:03:15.332500953 +0000 /mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/out/target/product/komodo/dtbo.img
+SESSION_OK=1
+USB_GO=false FLASH_READY=false DEBUG_FLASH_READY=false
+WRAPPER_END=2026-09-18T18:03:32Z

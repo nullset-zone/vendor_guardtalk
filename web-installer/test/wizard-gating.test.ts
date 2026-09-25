@@ -5,7 +5,7 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { LiveExecuteHoldError, LockBeforeCompleteError } from "../src/errors.js";
 import { channelTextsFromBlobs, MockFastboot, tokayBlobs } from "./helpers.js";
-import { WIZARD_DEVICES } from "../wizard/devices.js";
+import { WIZARD_DEVICES, deviceFromSearch } from "../wizard/devices.js";
 import {
   WizardGateError,
   assertCanFlash,
@@ -25,14 +25,20 @@ function gatedWizard(): InstallWizard {
   return session;
 }
 
-test("picker offers tokay, akita, and komodo", () => {
+test("picker offers tokay, akita, komodo, and rango", () => {
   assert.deepEqual(
     WIZARD_DEVICES.map((d) => d.id),
-    ["tokay", "akita", "komodo"],
+    ["tokay", "akita", "komodo", "rango"],
   );
-  assert.equal(JSON.stringify(WIZARD_DEVICES).includes("rango"), false);
+  assert.equal(WIZARD_DEVICES.find((d) => d.id === "rango")?.status, "experimental");
+  assert.equal(WIZARD_DEVICES.find((d) => d.id === "rango")?.deviceName, "Pixel 10 Pro Fold");
+  assert.equal(WIZARD_DEVICES.find((d) => d.id === "tokay")?.deviceName, "Pixel 9");
+  assert.equal(WIZARD_DEVICES.find((d) => d.id === "akita")?.deviceName, "Pixel 8a");
+  assert.equal(WIZARD_DEVICES.find((d) => d.id === "komodo")?.deviceName, "Pixel 9 Pro XL");
+  assert.equal(WIZARD_DEVICES.find((d) => d.id === "tokay")?.status, "supported");
   assert.equal(JSON.stringify(WIZARD_DEVICES).includes("shiba"), false);
   assert.equal(JSON.stringify(WIZARD_DEVICES).includes("caiman"), false);
+  assert.equal(JSON.stringify(WIZARD_DEVICES).includes("husky"), false);
 });
 
 test("flash is gated until unlock", async () => {
@@ -102,17 +108,27 @@ test("tiny quota is called out as a private-window problem", () => {
   assert.match(assessment.summary, /Incognito is not a supported path/);
 });
 
-test("rango cannot be selected", () => {
+test("rango can be selected as experimental; unstamped products cannot", () => {
   const session = new InstallWizard();
-  assert.throws(() => session.selectDevice("rango"), WizardGateError);
+  assert.doesNotThrow(() => session.selectDevice("rango"));
   assert.throws(() => session.selectDevice("shiba"), WizardGateError);
   assert.throws(() => session.selectDevice("caiman"), WizardGateError);
+  assert.throws(() => session.selectDevice("husky"), WizardGateError);
 });
 
-test("akita and komodo can be selected", () => {
+test("akita, komodo, and rango can be selected", () => {
   const session = new InstallWizard();
   assert.doesNotThrow(() => session.selectDevice("akita"));
   assert.doesNotThrow(() => session.selectDevice("komodo"));
+  assert.doesNotThrow(() => session.selectDevice("rango"));
+});
+
+test("deviceFromSearch reads ?device= and rejects unknown products", () => {
+  assert.equal(deviceFromSearch("?device=rango"), "rango");
+  assert.equal(deviceFromSearch("sim=1&device=akita"), "akita");
+  assert.equal(deviceFromSearch(new URLSearchParams("device=komodo")), "komodo");
+  assert.equal(deviceFromSearch("?device=shiba"), "tokay");
+  assert.equal(deviceFromSearch("?sim=1"), "tokay");
 });
 
 test("wizard HTML is GuardTalkOS-branded and carries DEC labels", async () => {
@@ -123,12 +139,20 @@ test("wizard HTML is GuardTalkOS-branded and carries DEC labels", async () => {
   assert.match(html, /flash-from-remote\.sh/);
   assert.match(html, /dual-slot/);
   assert.match(html, /data-dec="009"/);
+  assert.match(html, /data-dec="010"/);
   assert.match(html, /Live Flash\/Lock are HOLD/);
+  assert.match(html, /komodo-20260915-063833/);
+  assert.match(html, /not a signed user FLASH_READY image/);
+  assert.match(html, /FLASH_READY=false/);
+  assert.match(html, /LIVE_FLASH_CLAIMED=false/);
+  assert.doesNotMatch(html, /FLASH_READY=true/);
   assert.match(html, /Incognito windows are not a supported path/);
   assert.match(html, /Reconnect after reboot-bootloader/);
   assert.match(html, /Pixel 9 \(tokay\)/);
   assert.match(html, /Pixel 8a \(akita\)/);
   assert.match(html, /Pixel 9 Pro XL \(komodo\)/);
+  assert.match(html, /Pixel 10 Pro Fold \(rango\)/);
+  assert.match(html, /experimental \/ boot HOLD/);
   assert.match(html, /channels\/tokay/);
   assert.match(html, /reboot-to-fastboot\.sh/);
   assert.match(html, /adb reboot bootloader/);
@@ -137,6 +161,8 @@ test("wizard HTML is GuardTalkOS-branded and carries DEC labels", async () => {
   assert.match(html, /btn-reboot-fastboot/);
   assert.match(html, /WebUSB ADB/);
   assert.match(html, /reboot:bootloader/);
+  assert.doesNotMatch(html, /rango stays hidden/);
+  assert.match(html, /tokay \+ akita \+ komodo \+ rango \(experimental \/ boot HOLD\)/);
   assert.doesNotMatch(html, /value="rango"/);
   assert.doesNotMatch(html, /channel-files/);
   assert.doesNotMatch(html, /Load selected files/);

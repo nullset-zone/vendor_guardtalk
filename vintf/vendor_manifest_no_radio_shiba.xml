@@ -1,0 +1,88 @@
+<!--
+  GuardTalkOS — shiba (Pixel 8 / zuma) vendor device manifest without
+  cellular radio HALs.
+
+  Derived from vendor/google_devices/shiba/vintf/vendor/manifest.xml by
+  removing radio / RIL / SIM secure-element / gril antenna entries:
+  android.hardware.radio.*, android.hardware.secure_element,
+  hardware.google.ril_ext, com.google.input.algos.gril and
+  vendor.samsung_slsi.telephony.hardware.radioExternal.
+
+  The shared tokay-derived excised manifest (vendor_manifest_no_radio.xml) is
+  Pixel 9 era: it declares com.google.input.gia.core/IGiaService (@2), which
+  shiba (a Pixel 8) does not have and its FCM does not cover ->
+    check_vintf: com.google.input.gia.core.IGiaService/default (@2) is in the
+    device manifest but not specified in the framework compatibility matrix.
+  Selecting shiba's own excised manifest fixes the mismatch
+  (T-PORT-FINISH-WAVE; same class as T-PORT-AKITA-FLASH).
+
+  Selected by vendor/guardtalk/radio-excised/vintf-excised.mk when
+  PRODUCT_DEVICE / TARGET_DEVICE / TARGET_PRODUCT / INTERNAL_PRODUCT
+  is shiba.
+-->
+<manifest version="9.0" type="device" target-level="8">
+    <hal format="aidl">
+        <name>android.hardware.bluetooth</name>
+        <fqname>IBluetoothHci/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.bluetooth.finder</name>
+        <fqname>IBluetoothFinder/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.bluetooth.ranging</name>
+        <fqname>IBluetoothChannelSounding/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.boot</name>
+        <fqname>IBootControl/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.media.c2</name>
+        <fqname>IComponentStore/default1</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.media.c2</name>
+        <fqname>IComponentStore/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.security.keymint</name>
+        <version>3</version>
+        <fqname>IRemotelyProvisionedComponent/strongbox</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input</name>
+        <version>6</version>
+        <fqname>ITouchContextService/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input</name>
+        <version>6</version>
+        <fqname>ITwoshayNotificationService/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input</name>
+        <version>6</version>
+        <fqname>ITwoshayFileDumpService/touchflow_default</fqname>
+        <fqname>ITwoshayFileDumpService/twoshay</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input.algos.spd</name>
+        <version>6</version>
+        <fqname>IScreenProtectorDetectorService/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>vendor.google.bluetooth_ext</name>
+        <version>4</version>
+        <fqname>IBTChannelAvoidance/default</fqname>
+        <fqname>IBluetoothCcc/default</fqname>
+        <fqname>IBluetoothCco/default</fqname>
+        <fqname>IBluetoothEwp/default</fqname>
+        <fqname>IBluetoothExt/default</fqname>
+        <fqname>IBluetoothFinder/default</fqname>
+        <fqname>IBluetoothSar/default</fqname>
+    </hal>
+    <sepolicy>
+        <version>202504</version>
+    </sepolicy>
+</manifest>

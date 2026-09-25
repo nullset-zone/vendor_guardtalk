@@ -5,13 +5,16 @@
     android:orientation="vertical"
     android:fitsSystemWindows="true">
 
+    <include layout="@layout/validator_chrome" />
+
     <TextView
-        android:id="@+id/header_title"
+        android:id="@+id/escape_hotspot"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"
         android:text="@string/header_title"
-        android:textAppearance="?android:attr/textAppearanceMedium" />
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:contentDescription="@string/escape_hotspot_cd" />
 
     <TextView
         android:id="@+id/summary_text"
@@ -27,6 +30,8 @@
         android:layout_height="1dp"
         android:background="?android:attr/listDivider" />
 
+    <include layout="@layout/sensor_privacy_toggles" />
+
     <Button
         android:id="@+id/btn_open_processes"
         android:layout_width="match_parent"
@@ -35,6 +40,16 @@
         android:layout_marginEnd="16dp"
         android:layout_marginTop="8dp"
         android:text="@string/process_view_title" />
+
+    <Button
+        android:id="@+id/btn_open_sample_image"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/sample_image_open"
+        android:contentDescription="@string/sample_image_open_cd" />
 
     <ListView
         android:id="@+id/checks_list"

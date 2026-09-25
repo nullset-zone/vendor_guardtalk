@@ -6,8 +6,9 @@
   ContactsProvider / Contacts APK remain installed (UI hide only).
   Settings/search/Default-apps hardening is owned by Settings
   GuardTalkContactsVisibility + GuardTalkSettingsOverlay.
-  GT Config (com.guardtalk.config) and GT Info (com.guardtalk.validator)
-  are intentionally NOT filtered — kept visible via LAUNCHER + workspace pin.
+  GT Config (com.guardtalk.config), GT Info (com.guardtalk.validator),
+  and GT Messenger (com.guardtalk.messenger) are intentionally NOT
+  filtered — kept visible via LAUNCHER + workspace pin.
 -->
 <resources>
     <string-array name="filtered_components" translatable="false">

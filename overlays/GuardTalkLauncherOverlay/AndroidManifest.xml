@@ -5,9 +5,9 @@
      7x3, 8x3) so the home screen + hotseat ship ONLY with the GuardTalk
      app(s). Excised apps (Auditor, ExactCalculator, InfoApp, Messaging,
      Dialer, TrichromeChrome, AppStore) are NOT pinned.
-     GT Info (com.guardtalk.validator) is the renamed Validator app and
-     is the sole GuardTalk app currently shipped; it is pinned to the
-     hotseat so the home screen is never empty/unusable. -->
+     GT Info (com.guardtalk.validator) and GT Config stay in the hotseat.
+     GT Messenger (com.guardtalk.messenger) is pinned on the workspace
+     (F-REMEDIATE-B4-MESSENGER) so a first user can register RING. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.guardtalk.overlay.launcher">
 

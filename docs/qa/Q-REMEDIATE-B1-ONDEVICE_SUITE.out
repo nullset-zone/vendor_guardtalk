@@ -1,0 +1,58 @@
+=== Q-REMEDIATE-B1-ONDEVICE independent on-device probe ===
+ROOT=/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree
+STAMP=2026-09-16T14:14:24Z
+SERIAL=54111FDAS000GN
+DEC=DEC-REMEDIATE-003
+LIVE_DEVICE_CLAIMED=false
+PASS_HOLD_LIFTED=false
+Q-REMEDIATE-B2-ONDEVICE=sibling (not waited)
+USB_GO=not started
+FASTBOOT_FLASH=not started
+FASTBOOT_LOCK=not started
+WIPE=not started
+M=not started
+
+--- forbidden actions (never executed this stamp) ---
+PASS: USB GO not executed
+PASS: fastboot flash not executed
+PASS: fastboot flashing lock not executed
+PASS: programmatic duress wipe not executed
+PASS: USB duress wipe not executed
+PASS: m not executed
+PASS: git commit/push not executed
+PASS: PASS HOLD not lifted (this card cannot lift it)
+PASS: APPROVED not claimed (Status REVIEW only)
+
+=== RAW: adb devices -l ===
+List of devices attached
+ADB_RC=0
+
+--- serial presence ---
+ADB_LIST_EMPTY=true
+SERIAL_PRESENT=false
+PASS: adb devices -l recorded (empty list; honest HOLD)
+HOLD: adb devices -l empty — named komodo 54111FDAS000GN absent this stamp
+HOLD: ro.build.type not read — empty adb (do not invent user)
+HOLD: ro.debuggable not read — empty adb
+HOLD: su presence not probed — empty adb
+HOLD: ro.adb.secure / RSA prompt not probed — empty adb
+HOLD: SPL live vs pin 2026-09-05 not read — empty adb (HOLD allowed anyway)
+HOLD: verifiedbootstate not read — empty adb (DEC-002 yellow OR green; do not invent)
+HOLD: ro.build.tags / test-keys not read — empty adb (do not lift PASS HOLD)
+HOLD: programmatic duress wipe e2e HOLD — no operator-present test-unit confirmation
+HOLD: USB duress wipe e2e HOLD — no operator-present test-unit confirmation
+HOLD: PASS HOLD remains — empty adb cannot lift Blocks 1–2 on-device rematch
+HOLD: not device-fixed — empty adb is successful HOLD delivery, not a live PASS
+
+--- PASS HOLD / live claims ---
+PASS: LIVE_DEVICE_CLAIMED=false (this suite never claims live)
+PASS: PASS_HOLD_LIFTED=false (Blocks 1–2 on-device lift is Architect/operator; not this card)
+HOLD: Q-REMEDIATE-B2-ONDEVICE is a sibling probe — not waited, not claimed complete
+
+RESULT: HOLD (on-device probe)  bash_PASS=12 bash_HOLD=13 FAIL=0 EXIT=0
+LIVE_DEVICE_CLAIMED=false
+PASS_HOLD_LIFTED=false
+DEVICE=HOLD
+WIPE_E2E=HOLD
+USB_DURESS_WIPE=HOLD
+STATUS=REVIEW

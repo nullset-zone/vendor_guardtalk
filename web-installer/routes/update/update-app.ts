@@ -4,6 +4,7 @@
  */
 import { onPageHide, zeroise } from "../../lib/keys/zeroise.js";
 import { initialInstallState, reduce } from "../../lib/install-state/machine.js";
+import { deviceFromSearch } from "../../lib/ui/offered-devices.js";
 import { renderUpdateInner, type UpdatePageModel } from "./update-route.js";
 
 function isSimMode(): boolean {
@@ -17,7 +18,7 @@ function model(): UpdatePageModel {
   return {
     state,
     simMode: isSimMode(),
-    targetProduct: "tokay",
+    targetProduct: deviceFromSearch(window.location.search),
   };
 }
 

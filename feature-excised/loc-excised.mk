@@ -29,24 +29,59 @@
 # from PRODUCT_PACKAGES below. hasSystemFeature(FEATURE_LOCATION),
 # FEATURE_LOCATION_NETWORK, and FEATURE_LOCATION_GPS all return false.
 #
-# Boot-loop risk was assessed and is SAFE:
-#   - LocationManagerService.Lifecycle is started UNCONDITIONALLY in
-#     SystemServer (line ~2374, no feature guard), so the service always
-#     boots.
-#   - Inside LocationManagerService (line ~483), the FEATURE_LOCATION check
-#     only gates GNSS init, NOT the service startup.
-#   - The "no fused location provider" path just calls Log.wtf; it does NOT
-#     crash. So removing FEATURE_LOCATION is safe: LocationManagerService
-#     starts, finds no providers, logs a warning, and continues. No boot loop.
+# Boot-loop risk — CORRECTED TWICE. Read (3) before touching the LMS gate.
 #
-# CRITICAL INVARIANT: FusedLocation (com.android.location.fused) is STILL KEPT
-# (out of reach of this filter — it is delivered from
-# build/make/target/product/handheld_system.mk, NOT tokay.mk, and the bare
-# `location` token is deliberately NOT matched by the wildcard below). It is
-# harmless dead weight once FEATURE_LOCATION is gone (LocationManagerService
-# simply logs that no provider is available) but removing it would be out of
-# this increment's scope and would violate Law 6 (Minimal Footprint). It is
-# intentionally NOT matched by the filter below.
+# (1) T-REMEDIATE-B2-LMS added a SystemServer FEATURE-gate around
+#     LocationManagerService.Lifecycle (BT pattern), reasoning that with
+#     FEATURE_LOCATION=false LMS should not start. That reasoning was
+#     incomplete and has been REVERSED.
+#
+# (2) FALSIFIED BY MACHINE EVIDENCE (2026-09-20). The original analysis reasoned
+#     only about the LMS path and the GNSS path. It missed the
+#     CROSS-EXCISION INTERACTION:
+#       - SystemServer starts ContextHubSystemService when FEATURE_CONTEXT_HUB
+#         is present; komodo declares it, so it starts — INDEPENDENT of
+#         FEATURE_LOCATION.
+#       - ContextHubService.<init> -> initLocationSettingNotifications() ->
+#         sendLocationSettingUpdate() called
+#         mContext.getSystemService(LocationManager.class).isLocationEnabledForUser(...).
+#         With LMS not started that returned null -> NPE.
+#       - The NPE failed onBootPhase(PHASE_SYSTEM_SERVICES_READY=500) and killed
+#         system_server in a loop.
+#     Observed: komodo stuck on the boot animation, init.svc.bootanim=running,
+#     sys.boot_completed unset. Capture:
+#     .agent-comm/evidence/B6-CHRE-LOCATION-NPE-MACHINE-EVIDENCE.md
+#
+# (3) FALSIFIED AGAIN — THE BUG IS THE CONTRACT, NOT ONE CONSUMER (2026-09-21).
+#     Null-guarding ContextHubService alone was whack-a-mole. Stamp
+#     `komodo-debug-20260920-175743` PROVED the guard executed on device
+#     (log: "ContextHubService: LocationManager absent (location feature
+#     excised)"), and boot STILL failed — a different consumer threw the same
+#     NPE. A full audit
+#     (.agent-comm/evidence/B6-LOCATIONMANAGER-CONSUMER-AUDIT.md) established
+#     that getSystemService(LocationManager.class) was returning null
+#     PROCESS-WIDE, with many consumers: ContextHubService,
+#     ServiceConfigAccessorImpl (timezone detector), TwilightService,
+#     DevicePolicyManagerService, WifiPermissionsUtil / AfcManager,
+#     Connectivity LocationPermissionChecker, telephony LocationAccessPolicy.
+#
+#     RESOLUTION: LocationManagerService now starts UNCONDITIONALLY — the
+#     T-REMEDIATE-B2-LMS gate is REVERSED — so the LocationManager contract
+#     holds framework-wide. This is safe because LMS was ALREADY
+#     location-feature aware: GNSS init inside it is gated on FEATURE_LOCATION,
+#     and its fused-provider branch already had a graceful null path
+#     (`else { Log.wtf(TAG, "no fused location provider found"); }`) — the hard
+#     `Preconditions.checkState` immediately above that branch was the only
+#     blocker, and is now a warning. ServiceConfigAccessorImpl — the single
+#     consumer whose capture preceded LMS start (TZD.onStart is SystemServer:2375,
+#     LMS :2390) — resolves its LocationManager lazily.
+#     FEATURE_LOCATION remains false, so GT Info's ValidatorActivity.kt:109-113
+#     and the Settings/SystemUI gating are UNAFFECTED.
+#
+#   Lesson (Law 14 cascade accountability): excising a FEATURE_* contract must
+#   audit every consumer of the SERVICE it also removes. When a removed service
+#   has many consumers, RESTORE THE CONTRACT — do not guard each consumer; two
+#   consecutive flashes proved that approach misses sites.
 #
 # CRITICAL INVARIANT: The NetworkLocation app (app.grapheneos.networklocation,
 # Soong module name `NetworkLocation`, added to PRODUCT_PACKAGES at
@@ -68,20 +103,19 @@
 # NOT the GNSS HAL. They feed the always-on context hub DSP low-power sensor
 # fusion, not GNSS. Removing them would be collateral damage beyond the
 # location-excision scope and would violate Law 6 (Minimal Footprint). They
-# are intentionally NOT matched by the filter below (the bare `location` token
-# is too broad and would risk matching FusedLocation; the filter is scoped to
-# GNSS-only + the exact NetworkLocation app name).
+# are intentionally NOT matched by a bare `location` token (CHRE nanoapp keep).
+# FusedLocation is now an exact-name drop (T-REMEDIATE-B2-EXCISE item 8).
 #
-# Out of scope (MUST NOT touch in this increment): Bluetooth, NFC, Fingerprint,
-# Face biometrics, FusedLocation, CHRE nanoapps, frameworks/base source
-# (LocationManagerService starts unconditionally and is safe).
+# Out of scope: Bluetooth, NFC, Fingerprint, Face biometrics, CHRE nanoapps.
+# NOTE (2026-09-21): T-REMEDIATE-B2-LMS's SystemServer FEATURE_LOCATION gate
+# around LocationManagerService.Lifecycle has been REVERSED — LMS now starts
+# unconditionally. This file still makes the GNSS HAL + FusedLocation + init
+# .rc absent, and the vendor hook still makes FEATURE_LOCATION false; only the
+# *service* lifecycle gate changed. See CRITICAL INVARIANT / item (3) above.
 
 # ---------------------------------------------------------------------------
-# Layer 1 — Package layer: GNSS HAL packages, daemons, libs, and the
-# NetworkLocation app. FEATURE_LOCATION / FEATURE_LOCATION_NETWORK are dropped
-# at the XML layer (handheld_core_hardware.prebuilt.xml); the GPS feature
-# prebuilt (android.hardware.location.gps.prebuilt.xml) and the NetworkLocation
-# app are dropped here at the PRODUCT_PACKAGES layer.
+# Layer 1 — Package layer: GNSS HAL packages, daemons, libs, NetworkLocation,
+# FusedLocation, and radio leftover daemons (bipchmgr / wfc-pkt-router).
 # ---------------------------------------------------------------------------
 GUARDTALK_LOC_PACKAGES := \
     android.hardware.gnss-V3-ndk.vendor \
@@ -102,17 +136,16 @@ GUARDTALK_LOC_PACKAGES := \
     lassen_dmd_constants \
     libcustomgnss \
     vendor.google.gnss_ext-V1-ndk \
-    NetworkLocation
+    NetworkLocation \
+    FusedLocation \
+    bipchmgr \
+    wfc-pkt-router
 
 # Defence-in-depth: catch any other GNSS-named packages that a future adevtool
 # regen might slide into PRODUCT_PACKAGES. The wildcard match is scoped to
-# GNSS-only tokens + the exact NetworkLocation app name so it cannot
-# accidentally hit FusedLocation, the CHRE location nanoapp, or unrelated
-# packages. Scoped to android.hardware.gnss*,
-# adevtool_vintf_fragment_vendor_*gnss*, vendor.google.gnss*, libcustomgnss,
-# gnssd, gnss_test, lassen_dmd_constants, and NetworkLocation. The bare
-# `location` token is deliberately NOT matched (would hit FusedLocation + the
-# CHRE nanoapp).
+# GNSS-only tokens + exact NetworkLocation / FusedLocation names + radio
+# leftover daemons. The bare `location` token is deliberately NOT matched
+# (would hit the CHRE nanoapp).
 define _gt-loc-package-drop
 $(or \
   $(findstring android.hardware.gnss,$(1)), \
@@ -124,7 +157,10 @@ $(or \
   $(findstring gnssd,$(1)), \
   $(findstring gnss_test,$(1)), \
   $(findstring lassen_dmd_constants,$(1)), \
-  $(findstring NetworkLocation,$(1)))
+  $(findstring NetworkLocation,$(1)), \
+  $(findstring FusedLocation,$(1)), \
+  $(findstring bipchmgr,$(1)), \
+  $(findstring wfc-pkt-router,$(1)))
 endef
 
 _gt_filtered_product_packages :=
@@ -142,6 +178,10 @@ PRODUCT_PACKAGES := $(strip $(_gt_filtered_product_packages))
 #     -> android.hardware.gnss-service.pixel)
 #   - vendor/etc/gnss/ca.pem, gps.cfg, hash.bin (Lassen GNSS cert + config +
 #     integrity hash; no consumer once the HAL is gone)
+# T-REMEDIATE-B2-EXCISE item 12: also drop radio leftover init that still
+# started after RIL excision (service absent, not disabled):
+#   - vendor/etc/init/pktrouter.rc  (IMS packet router; vendor.pktrouter=1)
+#   - vendor/etc/init/bipchmgr.rc   (BIP channel manager daemon)
 # Leaving them would be dead weight and could let a stale config revive HAL
 # assumptions after a future regen. The non-GNSS chre/location.napp_header
 # (tokay.mk:1611) is intentionally NOT matched (CHRE nanoapp, kept).
@@ -151,7 +191,9 @@ $(or \
   $(findstring /etc/init/pixel-gnss-default.rc,$(1)), \
   $(findstring /etc/gnss/ca.pem,$(1)), \
   $(findstring /etc/gnss/gps.cfg,$(1)), \
-  $(findstring /etc/gnss/hash.bin,$(1)))
+  $(findstring /etc/gnss/hash.bin,$(1)), \
+  $(findstring /etc/init/pktrouter.rc,$(1)), \
+  $(findstring /etc/init/bipchmgr.rc,$(1)))
 endef
 
 _gt_loc_filtered_copy_files :=
@@ -159,6 +201,15 @@ $(foreach cf,$(PRODUCT_COPY_FILES),\
   $(if $(call _gt-loc-copy-file-drop,$(cf)),,\
     $(eval _gt_loc_filtered_copy_files += $(cf))))
 PRODUCT_COPY_FILES := $(strip $(_gt_loc_filtered_copy_files))
+
+# T-REMEDIATE-B2-EXCISE item 8: drop FusedLocation from the system_server
+# app list as well as PRODUCT_PACKAGES (handheld_system.mk lists both).
+# product-config-late.mk only hydrates PRODUCT_PACKAGES / COPY_FILES /
+# PACKAGES_DEBUG from the PRODUCTS store — load and write back this list
+# here so get_build_var sees the filter (same PRODUCTS. eval as BCP).
+$(eval PRODUCT_SYSTEM_SERVER_APPS := $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SYSTEM_SERVER_APPS))
+PRODUCT_SYSTEM_SERVER_APPS := $(filter-out FusedLocation,$(PRODUCT_SYSTEM_SERVER_APPS))
+$(eval PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SYSTEM_SERVER_APPS := $(PRODUCT_SYSTEM_SERVER_APPS))
 
 # ---------------------------------------------------------------------------
 # Layer 2 — Feature XML layer: location feature declarations.
@@ -180,10 +231,11 @@ PRODUCT_COPY_FILES := $(strip $(_gt_loc_filtered_copy_files))
 # hasSystemFeature(FEATURE_LOCATION) and FEATURE_LOCATION_NETWORK return false.
 # This is what makes GT Info's ValidatorActivity.kt:109-113 pass
 # (Kind.FAIL if FEATURE_LOCATION present) and what hides Settings' Location
-# screen. The boot-loop risk was assessed as SAFE (see CRITICAL INVARIANT
-# above): LocationManagerService starts unconditionally, the FEATURE_LOCATION
-# check only gates GNSS init, and the "no fused provider" path logs wtf
-# without crashing.
+# screen. NOTE (2026-09-21): T-REMEDIATE-B2-LMS's companion change — skipping
+# LocationManagerService.Lifecycle when FEATURE_LOCATION is false — has been
+# REVERSED. LMS now starts unconditionally so getSystemService(LocationManager)
+# is non-null framework-wide; FEATURE_LOCATION still returns false, so this
+# layer's contract is unchanged. See CRITICAL INVARIANT above.
 
 # ---------------------------------------------------------------------------
 # Layer 3 — VINTF fragment layer: remove GNSS HAL from vendor manifest.
