@@ -1,27 +1,30 @@
 <!--
-  GuardTalkOS — tokay vendor device manifest without cellular radio HALs.
-  Replaces vendor/google_devices/tokay/vintf/vendor/manifest.xml when
-  GUARDTALK_RADIO_EXCISED is set.
+  GuardTalkOS — rango (Pixel 10 Pro Fold / laguna) vendor device manifest
+  without cellular radio HALs.
+
+  Derived from vendor/google_devices/rango/vintf/vendor/manifest.xml by
+  removing radio / RIL / SIM secure-element / gril antenna entries.
+
+  media.c2 IComponentStore/default is NOT declared here — stock rango
+  provides it via adevtool_vintf_fragment_vendor_manifest_media_c2_cnm.xml
+  (unlike tokay/akita, which inline default/default1 in the main manifest).
+
+  Foldable twoshay touchflow_outer is preserved.
+
+  Selected by vendor/guardtalk/radio-excised/vintf-excised.mk when
+  PRODUCT_DEVICE=rango.
 
   Bluetooth-free variant (T-EXCISE-BT-VINTF-NOBT): identical to
-  vendor/guardtalk/vintf/vendor_manifest_no_radio.xml except the four Bluetooth HAL declarations are
+  vendor/guardtalk/vintf/vendor_manifest_no_radio_rango.xml except the four Bluetooth HAL declarations are
   removed (android.hardware.bluetooth, .finder, .ranging,
   vendor.google.bluetooth_ext). Selected by
   vendor/guardtalk/radio-excised/vintf-excised.mk instead of the radio-only
   variant when GUARDTALK_FEATURE_EXCISED_WAVE2 is set.
 -->
-<manifest version="9.0" type="device" target-level="8">
+<manifest version="9.0" type="device" target-level="202504">
     <hal format="aidl">
         <name>android.hardware.boot</name>
         <fqname>IBootControl/default</fqname>
-    </hal>
-    <hal format="aidl">
-        <name>android.hardware.media.c2</name>
-        <fqname>IComponentStore/default1</fqname>
-    </hal>
-    <hal format="aidl">
-        <name>android.hardware.media.c2</name>
-        <fqname>IComponentStore/default</fqname>
     </hal>
     <hal format="aidl">
         <name>android.hardware.security.keymint</name>
@@ -42,6 +45,7 @@
         <name>com.google.input</name>
         <version>6</version>
         <fqname>ITwoshayFileDumpService/touchflow_default</fqname>
+        <fqname>ITwoshayFileDumpService/touchflow_outer</fqname>
         <fqname>ITwoshayFileDumpService/twoshay</fqname>
     </hal>
     <hal format="aidl">

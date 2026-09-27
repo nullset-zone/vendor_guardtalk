@@ -1,16 +1,34 @@
 <!--
-  GuardTalkOS — tokay vendor device manifest without cellular radio HALs.
-  Replaces vendor/google_devices/tokay/vintf/vendor/manifest.xml when
-  GUARDTALK_RADIO_EXCISED is set.
+  GuardTalkOS — stallion (Pixel 10a / zumapro) vendor device manifest without
+  cellular radio HALs.
+
+  Derived from vendor/google_devices/stallion/vintf/vendor/manifest.xml by
+  removing radio / RIL / SIM secure-element / gril antenna entries:
+  android.hardware.radio.*, android.hardware.secure_element,
+  hardware.google.ril_ext, com.google.input.algos.gril and
+  vendor.samsung_slsi.telephony.hardware.radioExternal.
+
+  The shared tokay-derived excised manifest (vendor_manifest_no_radio.xml) is
+  Pixel 9 era: it declares vendor.google.bluetooth_ext @4, which stallion's
+  target-level 202404 FCM does not cover ->
+    check_vintf: vendor.google.bluetooth_ext.{IBTChannelAvoidance,IBluetoothCcc,
+    IBluetoothCco,IBluetoothEwp,IBluetoothExt,IBluetoothFinder,IBluetoothSar}/default (@4)
+    in the device manifest but not specified in framework compatibility matrix.
+  Selecting stallion's own excised manifest fixes the mismatch
+  (T-PORT-FINISH-WAVE; same class as T-PORT-AKITA-FLASH).
+
+  Selected by vendor/guardtalk/radio-excised/vintf-excised.mk when
+  PRODUCT_DEVICE / TARGET_DEVICE / TARGET_PRODUCT / INTERNAL_PRODUCT
+  is stallion.
 
   Bluetooth-free variant (T-EXCISE-BT-VINTF-NOBT): identical to
-  vendor/guardtalk/vintf/vendor_manifest_no_radio.xml except the four Bluetooth HAL declarations are
+  vendor/guardtalk/vintf/vendor_manifest_no_radio_stallion.xml except the four Bluetooth HAL declarations are
   removed (android.hardware.bluetooth, .finder, .ranging,
   vendor.google.bluetooth_ext). Selected by
   vendor/guardtalk/radio-excised/vintf-excised.mk instead of the radio-only
   variant when GUARDTALK_FEATURE_EXCISED_WAVE2 is set.
 -->
-<manifest version="9.0" type="device" target-level="8">
+<manifest version="9.0" type="device" target-level="202404">
     <hal format="aidl">
         <name>android.hardware.boot</name>
         <fqname>IBootControl/default</fqname>
