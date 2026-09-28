@@ -53,6 +53,11 @@ The client POSTs JSON only to a **provisioned** URL in
 
 Empty endpoint → local status `skipped_no_endpoint` (HOLD), nothing leaves the
 device. Onion URL without SOCKS → `skipped_no_tor`, nothing leaves the device.
+**Law 7 correction (2026-09-26, `T-EXCISE-CLAIM-HONESTY-RESIDUAL`):** those are
+*conditional* guarantees. The `GuardTalkCheckin` client ships on **10/13** and **does
+send when an endpoint is provisioned** (umbrella `telemetry_checkin` = C\* 10/13;
+`C-S1`). "Nothing leaves the device" holds only while no reachable endpoint is
+provisioned.
 
 SOCKS default is **empty** (not `127.0.0.1:9050` baked in). Gateway/Orbot
 provision writes `host:port` when Tor is actually present.

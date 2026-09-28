@@ -1,0 +1,7 @@
+<manifest version="9.0" type="device" target-level="8">
+    <hal format="aidl">
+        <name>android.hardware.bluetooth.audio</name>
+        <version>5</version>
+        <fqname>IBluetoothAudioProviderFactory/default</fqname>
+    </hal>
+</manifest>

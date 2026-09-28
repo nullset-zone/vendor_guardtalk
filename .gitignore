@@ -1,0 +1,26 @@
+# GuardTalk repo-root build / dependency output trees.
+# Added by T-EXCISE-REPO-IGNORE-GAP (2026-09-25) — repo hygiene, prevention half.
+#
+# WHY THESE PATTERNS ARE ROOT-ANCHORED (`/...`) AND NOT `out*/` / `*.stale-*` bare:
+#   This repo tracks a REAL fixture tree at
+#     docs/qa/fixtures/un-excised/out/target/product/<device>/...
+#   An unanchored `out*/` would match that nested path. Git itself never hides
+#   already-tracked files, but ripgrep-based agent search DOES apply .gitignore
+#   patterns blindly — so an unanchored rule would silently hide tracked fixture
+#   files (radio.img / installed-files-vendor.txt / ...) from every future grep.
+#   Anchoring to the repository root keeps those tracked fixtures visible.
+#
+# SCOPE / HONEST LIMIT:
+#   The stale `out_adevtool_deps.stale-*` tree that caused the ~95% grep false
+#   hits lives at the WORKSPACE ROOT, which is an Android `repo` checkout with
+#   NO `.git` and is OUTSIDE this repository. This file therefore CANNOT exclude
+#   it. See .agent-comm/evidence/T-EXCISE-REPO-IGNORE-GAP/ and the per-task
+#   report for the root-scope gap and the recommended root-level ignore file.
+
+# --- Emulator / adevtool dependency output trees (repository root only) ---
+/out/
+/out_adevtool_deps/
+/out_adevtool_deps.stale-*/
+
+# --- Stale snapshots (e.g. *.stale-<timestamp>/) at repository root only ---
+/*.stale-*/

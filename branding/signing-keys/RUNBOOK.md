@@ -22,8 +22,11 @@
 A dedicated, air-gapped machine:
 
 - **No network** (Ethernet unplugged, Wi-Fi off).
-- **No Bluetooth** (BT is excised from GuardTalkOS anyway; the signing
-  host should have its BT radio disabled or removed).
+- **No Bluetooth** (the signing host must have its BT radio disabled or removed
+  **regardless** — do not rely on GuardTalkOS BT excision, which is **not
+  complete**: per `A-EXCISE-BT`, the shipped stamps load 8 BT/NFC GKI modules
+  unblocklisted 13/13 and declare 4 BT HALs in the vendor VINTF manifest
+  (`H-B1`)). Law 7 correction 2026-09-26, `T-EXCISE-CLAIM-HONESTY-RESIDUAL`.
 - **No persistent plaintext keys.** Plaintext keys exist only in tmpfs
   (`/dev/shm`) during signing and are shredded on exit.
 - A TTY or terminal (the key-generation scripts are interactive — they

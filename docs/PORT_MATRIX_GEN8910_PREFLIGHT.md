@@ -7,6 +7,12 @@
 > **Date:** 2026-09-21
 > **Status:** `REVIEW` (Backend Engineer) — **never `APPROVED` by this task**
 > **Scope:** prerequisites only. **No** device layer, **no** stamp, **no** advertise, **no** flash.
+> **Reconciliation addendum (2026-09-26, `T-EXCISE-MATRIX-D07-OPEN`):** §17 reconciles this preflight
+> against `EXCISION_MATRIX.md`. The `T-PORT-EXCISION-MATRIX` `APPROVED` gate in the §11 wave plan is a
+> **document / static-suite** approval — **not** evidence that excision is clean (umbrella verdict
+> **`FALSE`**, 8 CRITICALs; register `D-01…D-08`). `QA-W1` (stallion `16-QPR1` platform lag), `QA-W2`
+> (`build_id` **pin asymmetry** + undocumented `tegu` pin) and `QI-1` (mutable `show-status` present-set)
+> are stated in §17. **Do not read the wave plan as evidence that excision is clean.**
 
 ## 0. Explicit non-claims
 
@@ -220,6 +226,13 @@ provable **today** — but a device with 5 indexed builds has a much smaller mar
 pinned build is ever withdrawn by Google. This is recorded as the explicit stallion
 risk, not hidden.
 
+> ⚠ **Understated — `QA-W1` (reconciled 2026-09-26, `T-EXCISE-MATRIX-D07-OPEN`):** "stale pin
+> (oldest)" understates the risk. The pinned `BD6A.251031.001.A4` is a **`16-QPR1`** platform image
+> (`vendor/adevtool/config/device/stallion.yml`: *"BD6A.251031.001.A4 is a 16 QPR1 image, so Multiuser
+> isn't in stock"*; 9 × `sdk_full = 36.0` exclusions), and the newest indexed build
+> `CP1A.260505.005.A1` is **4 images newer**. The §9 GO stays **conditional** on this divergence.
+> Recorded in full at §17; this is a documentation reconciliation, **not** a resolution of the lag.
+
 ## 6. Upstream GrapheneOS support (per device) — authoritative citation
 
 **Citation A — `https://grapheneos.org/faq` → "Device support" section** (fetched 2026-09-21,
@@ -270,6 +283,14 @@ Base URL: `https://dl.google.com/dl/android/aosp/`
 the 4 supported devices under `vendor/adevtool/dl/` (akita, komodo, rango, tokay — primary +
 backport). All 13 have a `vendor-specs/google_devices/<dev>.yml` reference spec and a
 `vendor/state/<dev>.json` state file, so `generate-all` can both generate **and** verify.
+
+> ⚠ **Undocumented — `QA-W2` (reconciled 2026-09-26, `T-EXCISE-MATRIX-D07-OPEN`):** the table above
+> lists resolved ids but never states that only **three** devices actually pin an explicit `build_id` —
+> `{tegu BP4A.260205.001, stallion BD6A.251031.001.A4, rango CP1A.260505.005}` — while the other **ten**
+> resolve via `build-index` with **no pin**. That is a `build_id` **pin asymmetry**. `rango` (inline
+> reason: *"Match proven on-device boot"*) and `stallion` (the `16-QPR1` workaround) carry stated
+> rationales; `tegu`'s pin carries **no stated rationale** and is not the newest of its 29 entries.
+> Recorded at §17; the asymmetry is documented here, **not** newly justified.
 
 ## 8. `T-PORT-CAIMAN` HOLD — re-confirmed as cleared
 
@@ -348,6 +369,15 @@ family), Wave B is `zuma` (one SoC generation of HAL/module-name divergence), Wa
 
 Stop-between-waves is mandatory. `T-PORT-EXCISION-MATRIX` + `T-PORT-KERNEL-MATRIX` are the
 cross-cutting P0 foundation and gate every wave.
+
+> ⚠ **Correction (reconciled 2026-09-26, `T-EXCISE-MATRIX-D07-OPEN`):** the Wave-A entry
+> prerequisite `T-PORT-EXCISION-MATRIX` `APPROVED` in the table above is the **document / static-suite**
+> approval only. It is **not** evidence that excision took effect on any shipped image. The umbrella
+> audit `A-EXCISE-AIRGAP-MATRIX` (`DEC-EXCISE-AIRGAP-001`) rules the airgap verdict **`FALSE`** on every
+> service and every device — 36 residuals / **8 CRITICAL**; the best honest reading is
+> `TRUE-WITH-DORMANT-RESIDUALS`, never `TRUE` — and `EXCISION_MATRIX.md` carries the reconciliation
+> register **`D-01…D-08`**. **Do not read this wave plan as evidence that excision is clean.** `QA-W1`,
+> `QA-W2` and `QI-1` are stated in §17.
 
 ## 12. Blockers / HOLDS register (no silent claims)
 
@@ -439,6 +469,57 @@ the caiman LAYER card and the akita/komodo/rango preflights use `trunk_staging`.
 **Known bias self-check.** Anchoring: scores were derived after re-running every command, not
 from the first read. Confirmation: the two "traps" were deliberately re-derived from an
 independent source (adevtool `pixel-gen9.yml`) rather than only re-reading the same files.
+
+---
+
+## 17. Reconciliation vs the excision matrix — `T-EXCISE-MATRIX-D07-OPEN` (2026-09-26)
+
+**Purpose.** Close residual **`D-07`** of `A-PORT-MATRIX-R2` §8: this preflight's wave plan
+(§11) was read as implying the excision foundation was settled, and `QA-W1`/`QA-W2`/`QI-1` were
+recorded as *"accepted → docs corrected"* (`TASK_QUEUE.md:6387`) although this deliverable was
+byte-identical to QA's pre-remediation hash. This section reconciles the deliverable against
+`vendor/guardtalk/docs/EXCISION_MATRIX.md`. **Additive only — no prior text deleted** (Law 10
+audit trail / Law 11 reversibility). It states facts; it does **not** fabricate a resolution.
+
+**1. Wave-gate reading — corrected.** `T-PORT-EXCISION-MATRIX` `APPROVED` (Wave-A entry
+prerequisite, §11) is a **document / static-suite** approval. It is **not** evidence that excision
+took effect on any shipped image. The umbrella audit `A-EXCISE-AIRGAP-MATRIX`
+(`DEC-EXCISE-AIRGAP-001`) rules the airgap verdict **`FALSE`** on every service and every device;
+36 residuals / **8 CRITICAL**; best honest reading `TRUE-WITH-DORMANT-RESIDUALS` — never `TRUE`.
+`EXCISION_MATRIX.md` carries register `D-01…D-08` (`D-01`–`D-06` reconciled there; `D-07` is this
+addendum; `D-08` is the shipped `stallion` stamp README lane). **Do not read the wave plan as
+evidence that excision is clean.**
+
+**2. `QA-W1` — `stallion` `16-QPR1` platform lag (material, previously understated).** The §5/§9
+wording ("5-entry index / stale pin (oldest)") is retained but incomplete. The pinned
+`BD6A.251031.001.A4` is a **`16-QPR1`** platform image
+(`vendor/adevtool/config/device/stallion.yml`: *"BD6A.251031.001.A4 is a 16 QPR1 image, so
+Multiuser isn't in stock"*; 9 × `sdk_full = 36.0` exclusions), and the newest indexed build
+`CP1A.260505.005.A1` is **4 images newer** than the pin. The `stallion` GO is conditional on this
+**platform** divergence, not merely on index thinness. Carried into the stallion
+preflight/flash cards; **the lag itself remains `OPEN`** (a 16-QPR1 platform gap is not closed by
+documentation).
+
+**3. `QA-W2` — `build_id` `pin asymmetry` (previously undocumented).** Exactly **three** of the 13
+devices pin an explicit `build_id` — `{tegu BP4A.260205.001, stallion BD6A.251031.001.A4,
+rango CP1A.260505.005}` (`vendor/adevtool/config/device/*.yml`) — the other **ten** resolve via
+`build-index` with **no pin**. `rango` (inline reason: proven on-device boot) and `stallion` (the
+`16-QPR1` workaround) carry stated rationales; `tegu`'s pin carries **no stated rationale** and is
+**not** the newest of its 29 entries (it aligns `tegu` with the Gen 8/9 `BP4A.260205.001` group,
+plausible but unrecorded). The asymmetry is now **documented**, not newly justified; `tegu`'s pin
+rationale remains **`OPEN`** (source-side, not this doc).
+
+**4. `QI-1` — `adevtool show-status` present-set is mutable.** The `show-status` factory
+present-set is **`mutable`** while a `adevtool download` is in flight; it moved **4 → 5 → 13**
+during the program. It must **not** be asserted as a fixed invariant by any consumer of this
+preflight (§7/§10). Recorded; the underlying volatility is inherent, not fixable here.
+
+**Status of `D-07` after this addendum:** the **documentation gap is reconciled** — the tokens
+`QA-W1`, `QA-W2`, `QI-1`, `16-QPR1`, `asymmetry` and `mutable` are now present, and the wave-gate
+caveat is stated. The **underlying conditions remain `OPEN`** (excision not clean; stallion
+platform lag; `tegu` pin rationale unrecorded; mutable present-set). **No resolution is
+fabricated** (Law 7). Cross-reference: `EXCISION_MATRIX.md` §"Correction register" /
+`D-07` row; `KERNEL_MATRIX.md` §10 carries the matching kernel-side note.
 
 ---
 

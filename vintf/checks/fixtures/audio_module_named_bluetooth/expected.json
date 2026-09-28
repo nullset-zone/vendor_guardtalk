@@ -1,0 +1,6 @@
+{
+  "expect": 0,
+  "forbid": "bt",
+  "raw": false,
+  "why": "android.hardware.audio.core / IModule/bluetooth is an audio module, not a BT HAL"
+}

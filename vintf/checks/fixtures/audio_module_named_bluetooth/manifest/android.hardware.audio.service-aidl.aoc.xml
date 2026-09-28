@@ -1,0 +1,7 @@
+<manifest version="9.0" type="device" target-level="8">
+    <hal format="aidl">
+        <name>android.hardware.audio.core</name>
+        <fqname>IModule/bluetooth</fqname>
+        <fqname>IModule/primary</fqname>
+    </hal>
+</manifest>

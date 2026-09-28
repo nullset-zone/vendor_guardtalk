@@ -1,0 +1,301 @@
+=== A) independent XML declaration scan (13/13) ===
+device	oemservice_files	oemservice_in_main	tel_decl_baseline	tel_forbidden_baseline	tel_decl_after_drop	tel_forbidden_after_drop	bt_decl_baseline	bt_decl_after_drop
+akita	manifest/dmd.xml	False	1	2	0	0	5	5
+blazer	manifest/dmd.xml	False	1	2	0	0	5	5
+caiman	manifest/dmd.xml	False	1	2	0	0	5	5
+comet	manifest/dmd.xml	False	1	2	0	0	5	5
+frankel	manifest/dmd.xml	False	1	2	0	0	5	5
+husky	manifest/dmd.xml	False	1	2	0	0	5	5
+komodo	manifest/dmd.xml	False	1	2	0	0	5	5
+mustang	manifest/dmd.xml	False	1	2	0	0	5	5
+rango	manifest/dmd.xml	False	1	2	0	0	5	5
+shiba	manifest/dmd.xml	False	1	2	0	0	5	5
+stallion	manifest/dmd.xml	False	1	2	0	0	5	5
+tegu	manifest/dmd.xml	False	1	2	0	0	5	5
+tokay	manifest/dmd.xml	False	1	2	0	0	5	5
+
+SUMMARY: oemservice in MAIN manifest = 0/13 (Architect claimed 0); oemservice in dmd.xml ONLY = 13/13; telephony declarations after dropping dmd.xml = 0 on 13/13
+
+=== B) REAL gate_g5 replay on shipped stamps ===
+device	forbidden_baseline	forbidden_after_drop	oem_baseline	oem_after_drop	unbacked_baseline	unbacked_after_drop
+akita	7	5	2	0	38	37
+blazer	7	5	2	0	41	40
+caiman	7	5	2	0	39	38
+comet	7	5	2	0	40	39
+frankel	7	5	2	0	40	39
+husky	7	5	2	0	38	37
+komodo	7	5	2	0	39	38
+mustang	7	5	2	0	41	40
+rango	7	5	2	0	41	40
+shiba	7	5	2	0	37	36
+stallion	7	5	2	0	38	37
+tegu	7	5	2	0	38	37
+tokay	7	5	2	0	38	37
+
+SUMMARY: gate_g5 forbidden_refs baseline [7] -> after-drop [5]; oemservice matches baseline [2] -> 0 after drop (all 13)
+{
+  "scan": [
+    {
+      "device": "akita",
+      "oemservice_files": "manifest/dmd.xml",
+      "oemservice_in_main": false,
+      "tel_decl_baseline": 1,
+      "tel_forbidden_baseline": 2,
+      "tel_decl_after_drop": 0,
+      "tel_forbidden_after_drop": 0,
+      "bt_decl_baseline": 5,
+      "bt_decl_after_drop": 5
+    },
+    {
+      "device": "blazer",
+      "oemservice_files": "manifest/dmd.xml",
+      "oemservice_in_main": false,
+      "tel_decl_baseline": 1,
+      "tel_forbidden_baseline": 2,
+      "tel_decl_after_drop": 0,
+      "tel_forbidden_after_drop": 0,
+      "bt_decl_baseline": 5,
+      "bt_decl_after_drop": 5
+    },
+    {
+      "device": "caiman",
+      "oemservice_files": "manifest/dmd.xml",
+      "oemservice_in_main": false,
+      "tel_decl_baseline": 1,
+      "tel_forbidden_baseline": 2,
+      "tel_decl_after_drop": 0,
+      "tel_forbidden_after_drop": 0,
+      "bt_decl_baseline": 5,
+      "bt_decl_after_drop": 5
+    },
+    {
+      "device": "comet",
+      "oemservice_files": "manifest/dmd.xml",
+      "oemservice_in_main": false,
+      "tel_decl_baseline": 1,
+      "tel_forbidden_baseline": 2,
+      "tel_decl_after_drop": 0,
+      "tel_forbidden_after_drop": 0,
+      "bt_decl_baseline": 5,
+      "bt_decl_after_drop": 5
+    },
+    {
+      "device": "frankel",
+      "oemservice_files": "manifest/dmd.xml",
+      "oemservice_in_main": false,
+      "tel_decl_baseline": 1,
+      "tel_forbidden_baseline": 2,
+      "tel_decl_after_drop": 0,
+      "tel_forbidden_after_drop": 0,
+      "bt_decl_baseline": 5,
+      "bt_decl_after_drop": 5
+    },
+    {
+      "device": "husky",
+      "oemservice_files": "manifest/dmd.xml",
+      "oemservice_in_main": false,
+      "tel_decl_baseline": 1,
+      "tel_forbidden_baseline": 2,
+      "tel_decl_after_drop": 0,
+      "tel_forbidden_after_drop": 0,
+      "bt_decl_baseline": 5,
+      "bt_decl_after_drop": 5
+    },
+    {
+      "device": "komodo",
+      "oemservice_files": "manifest/dmd.xml",
+      "oemservice_in_main": false,
+      "tel_decl_baseline": 1,
+      "tel_forbidden_baseline": 2,
+      "tel_decl_after_drop": 0,
+      "tel_forbidden_after_drop": 0,
+      "bt_decl_baseline": 5,
+      "bt_decl_after_drop": 5
+    },
+    {
+      "device": "mustang",
+      "oemservice_files": "manifest/dmd.xml",
+      "oemservice_in_main": false,
+      "tel_decl_baseline": 1,
+      "tel_forbidden_baseline": 2,
+      "tel_decl_after_drop": 0,
+      "tel_forbidden_after_drop": 0,
+      "bt_decl_baseline": 5,
+      "bt_decl_after_drop": 5
+    },
+    {
+      "device": "rango",
+      "oemservice_files": "manifest/dmd.xml",
+      "oemservice_in_main": false,
+      "tel_decl_baseline": 1,
+      "tel_forbidden_baseline": 2,
+      "tel_decl_after_drop": 0,
+      "tel_forbidden_after_drop": 0,
+      "bt_decl_baseline": 5,
+      "bt_decl_after_drop": 5
+    },
+    {
+      "device": "shiba",
+      "oemservice_files": "manifest/dmd.xml",
+      "oemservice_in_main": false,
+      "tel_decl_baseline": 1,
+      "tel_forbidden_baseline": 2,
+      "tel_decl_after_drop": 0,
+      "tel_forbidden_after_drop": 0,
+      "bt_decl_baseline": 5,
+      "bt_decl_after_drop": 5
+    },
+    {
+      "device": "stallion",
+      "oemservice_files": "manifest/dmd.xml",
+      "oemservice_in_main": false,
+      "tel_decl_baseline": 1,
+      "tel_forbidden_baseline": 2,
+      "tel_decl_after_drop": 0,
+      "tel_forbidden_after_drop": 0,
+      "bt_decl_baseline": 5,
+      "bt_decl_after_drop": 5
+    },
+    {
+      "device": "tegu",
+      "oemservice_files": "manifest/dmd.xml",
+      "oemservice_in_main": false,
+      "tel_decl_baseline": 1,
+      "tel_forbidden_baseline": 2,
+      "tel_decl_after_drop": 0,
+      "tel_forbidden_after_drop": 0,
+      "bt_decl_baseline": 5,
+      "bt_decl_after_drop": 5
+    },
+    {
+      "device": "tokay",
+      "oemservice_files": "manifest/dmd.xml",
+      "oemservice_in_main": false,
+      "tel_decl_baseline": 1,
+      "tel_forbidden_baseline": 2,
+      "tel_decl_after_drop": 0,
+      "tel_forbidden_after_drop": 0,
+      "bt_decl_baseline": 5,
+      "bt_decl_after_drop": 5
+    }
+  ],
+  "gate_replay": [
+    {
+      "device": "akita",
+      "forbidden_baseline": 7,
+      "forbidden_after_drop": 5,
+      "oem_baseline": 2,
+      "oem_after_drop": 0,
+      "unbacked_baseline": 38,
+      "unbacked_after_drop": 37
+    },
+    {
+      "device": "blazer",
+      "forbidden_baseline": 7,
+      "forbidden_after_drop": 5,
+      "oem_baseline": 2,
+      "oem_after_drop": 0,
+      "unbacked_baseline": 41,
+      "unbacked_after_drop": 40
+    },
+    {
+      "device": "caiman",
+      "forbidden_baseline": 7,
+      "forbidden_after_drop": 5,
+      "oem_baseline": 2,
+      "oem_after_drop": 0,
+      "unbacked_baseline": 39,
+      "unbacked_after_drop": 38
+    },
+    {
+      "device": "comet",
+      "forbidden_baseline": 7,
+      "forbidden_after_drop": 5,
+      "oem_baseline": 2,
+      "oem_after_drop": 0,
+      "unbacked_baseline": 40,
+      "unbacked_after_drop": 39
+    },
+    {
+      "device": "frankel",
+      "forbidden_baseline": 7,
+      "forbidden_after_drop": 5,
+      "oem_baseline": 2,
+      "oem_after_drop": 0,
+      "unbacked_baseline": 40,
+      "unbacked_after_drop": 39
+    },
+    {
+      "device": "husky",
+      "forbidden_baseline": 7,
+      "forbidden_after_drop": 5,
+      "oem_baseline": 2,
+      "oem_after_drop": 0,
+      "unbacked_baseline": 38,
+      "unbacked_after_drop": 37
+    },
+    {
+      "device": "komodo",
+      "forbidden_baseline": 7,
+      "forbidden_after_drop": 5,
+      "oem_baseline": 2,
+      "oem_after_drop": 0,
+      "unbacked_baseline": 39,
+      "unbacked_after_drop": 38
+    },
+    {
+      "device": "mustang",
+      "forbidden_baseline": 7,
+      "forbidden_after_drop": 5,
+      "oem_baseline": 2,
+      "oem_after_drop": 0,
+      "unbacked_baseline": 41,
+      "unbacked_after_drop": 40
+    },
+    {
+      "device": "rango",
+      "forbidden_baseline": 7,
+      "forbidden_after_drop": 5,
+      "oem_baseline": 2,
+      "oem_after_drop": 0,
+      "unbacked_baseline": 41,
+      "unbacked_after_drop": 40
+    },
+    {
+      "device": "shiba",
+      "forbidden_baseline": 7,
+      "forbidden_after_drop": 5,
+      "oem_baseline": 2,
+      "oem_after_drop": 0,
+      "unbacked_baseline": 37,
+      "unbacked_after_drop": 36
+    },
+    {
+      "device": "stallion",
+      "forbidden_baseline": 7,
+      "forbidden_after_drop": 5,
+      "oem_baseline": 2,
+      "oem_after_drop": 0,
+      "unbacked_baseline": 38,
+      "unbacked_after_drop": 37
+    },
+    {
+      "device": "tegu",
+      "forbidden_baseline": 7,
+      "forbidden_after_drop": 5,
+      "oem_baseline": 2,
+      "oem_after_drop": 0,
+      "unbacked_baseline": 38,
+      "unbacked_after_drop": 37
+    },
+    {
+      "device": "tokay",
+      "forbidden_baseline": 7,
+      "forbidden_after_drop": 5,
+      "oem_baseline": 2,
+      "oem_after_drop": 0,
+      "unbacked_baseline": 38,
+      "unbacked_after_drop": 37
+    }
+  ]
+}

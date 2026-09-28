@@ -12,6 +12,25 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 cd "$ROOT"
 
+# T-EXCISE-E20-SSR-MODEL-ADJUDICATE: non-vacuity control for the boot-safe SSR
+# model. Runs the model in vendor/guardtalk/docs/qa/lib/ssr_boot_safe_model.py
+# against the real SystemServiceRegistry.java and a set of derived mutants.
+# Exits 0 only if the real source passes AND every mutant bites. Does not run
+# any other check; the harness invokes this script without arguments.
+if [[ "${1:-}" == "--selftest-ssr-model" ]]; then
+  exec python3 - "$ROOT" <<'PY'
+import sys
+from pathlib import Path
+sys.dont_write_bytecode = True
+root = Path(sys.argv[1])
+sys.path.insert(0, str(root / "vendor" / "guardtalk" / "docs" / "qa" / "lib"))
+from ssr_boot_safe_model import selftest_ssr_model
+ssr = (root / "frameworks/base/core/java/android/app/SystemServiceRegistry.java").read_text(
+    encoding="utf-8", errors="replace")
+sys.exit(selftest_ssr_model(ssr))
+PY
+fi
+
 FAIL=0
 PASS_N=0
 HOLD_N=0
@@ -123,7 +142,7 @@ require_fixed "DeviceLockController \\" "$APPS" \
   "apps-excised drop list still contains DeviceLockController"
 require_fixed "GmsCompat \\" "$APPS" "apps-excised drop list still contains GmsCompat"
 require_fixed "DeviceLockFrameworkInitializer" "$SSR" \
-  "SystemServiceRegistry still hard-imports DeviceLockFrameworkInitializer"
+  "SystemServiceRegistry references DeviceLockFrameworkInitializer (boot-safe reflection contract)"
 require_fixed "com.android.devicelock:framework-devicelock" "$ART" \
   "default_art_config still lists framework-devicelock BCP"
 require_fixed "com.android.devicelock:service-devicelock" "$ART" \
@@ -149,6 +168,11 @@ python3 - "$ROOT" <<'PY'
 import re
 import sys
 from pathlib import Path
+
+sys.dont_write_bytecode = True
+# T-EXCISE-E20-SSR-MODEL-ADJUDICATE: boot-safe DeviceLock registration model.
+sys.path.insert(0, str(Path(sys.argv[1]) / "vendor" / "guardtalk" / "docs" / "qa" / "lib"))
+from ssr_boot_safe_model import check_ssr_boot_safe
 
 root = Path(sys.argv[1])
 fail = 0
@@ -269,15 +293,14 @@ if active_bcp:
 else:
     out("PASS", "apex-bcp-excised.mk has no active DeviceLock BCP strip")
 
-if "import android.devicelock.DeviceLockFrameworkInitializer;" in ssr:
-    out("HOLD", "SSR still hard-imports DeviceLockFrameworkInitializer (BCP required)")
-else:
-    out("FAIL", "SSR DeviceLockFrameworkInitializer import missing (BCP HOLD rationale gone)")
-
-if "DeviceLockFrameworkInitializer.registerServiceWrappers()" in ssr:
-    out("HOLD", "SSR still calls DeviceLockFrameworkInitializer.registerServiceWrappers()")
-else:
-    out("FAIL", "SSR DeviceLock registerServiceWrappers call missing")
+# T-EXCISE-E20-SSR-MODEL-ADJUDICATE: the prior model asserted a HARD import
+# (`import android.devicelock.DeviceLockFrameworkInitializer;`) as the "BCP
+# HOLD rationale". That premise is inverted — the hard import/static call is
+# exactly the CONSTANT_Class reference that boot-looped Zygote on
+# komodo-debug-20260918-180338. The boot-safe contract is a guarded reflective
+# lookup; see docs/qa/lib/ssr_boot_safe_model.py for the evidence and mutants.
+for kind, msg in check_ssr_boot_safe(ssr):
+    out(kind, msg)
 
 print(f"PY_COUNTS PASS_COUNT={pass_n} FAIL_COUNT={fail} HOLD_COUNT={hold_n}")
 sys.exit(1 if fail else 0)

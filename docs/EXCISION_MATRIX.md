@@ -3,11 +3,70 @@
 > **Card:** `T-PORT-EXCISION-MATRIX` (P0) — `DEC-PORT-GEN8910-001` / `DEC-PORT-GEN8910-002`
 > **Status:** implemented, static-verified (`vendor/guardtalk/docs/qa/verify_port_excision_matrix_static.sh`)
 > **Live device/flash evidence:** **none claimed** — `LIVE_FLASH_CLAIMED=false`
+> **Selection ≠ runtime excision.** See the ⚠ **Correction register (2026-09-25)** below — this file
+> describes which filters the core *selects*, not whether an excision took effect on a shipped image.
+> **Unreconciled residuals `D-07`/`D-08` remain `OPEN` (2026-09-26)** — see the ⚠ **Residual** block in
+> the correction register; they live in files this card does not own and are *not* resolved here.
 
 This document is the authoritative description of **how the shared excision core decides
 what to excise for a given Pixel codename**. It replaces the previous situation where
 `zuma` / `zumapro` / `laguna` differences were closed by hand-editing per-device filter
 logic — the approach that produced the silent no-op described at the end of this file.
+
+### ⚠ Correction register — 2026-09-25 (`T-EXCISE-MATRIX-DOC-REMEDIATE`)
+
+An earlier reading of this matrix — and the `Q-PORT-MATRIX-PREFLIGHT` approval note at
+`TASK_QUEUE.md:6387`, which claimed the QA escalations were *"accepted → docs corrected"* — implied a
+**clean, uniformly-applied** excision. The umbrella independent audit `A-EXCISE-AIRGAP-MATRIX`
+(`DEC-EXCISE-AIRGAP-001`) **falsified** that implication: the airgap verdict is **`FALSE`** on every
+service and every device, and the best honest reading is **`TRUE-WITH-DORMANT-RESIDUALS`** — never `TRUE`.
+Sources: `vendor/guardtalk/docs/qa/A-EXCISE-AIRGAP-MATRIX_AUDIT.md` and
+`vendor/guardtalk/docs/qa/AUDIT_RESULT_CONSOLIDATED_20260925.md` (36 residuals · 8 CRITICAL). Reachability
+and per-cell **Tier** live only in the residual register (`vendor/guardtalk/docs/EXCISION_LEDGER.md` +
+`docs/qa/excision_ledger.json`) — **never in this file**.
+
+The six `matrix-vs-EXCISE` disagreement surfaces raised by `A-PORT-MATRIX-R2` §8 (D-01…D-06) are
+reconciled **in place** below and recorded here as a dated note rather than deleted (Law 10 audit trail /
+Law 11 reversibility). The remaining two of the eight surfaces — **`D-07`** (the `PORT_MATRIX` /
+`KERNEL_MATRIX` docs) and **`D-08`** (the shipped `stallion` stamp README) — are carried as a dated
+**`OPEN`** residual block below, because they live in files outside this card's exclusive ownership and
+no resolution can be asserted from evidence. The D-01…D-06 reconciliation follows:
+
+| # | Cell | Corrected reading | EXCISE anchor |
+|---|---|---|---|
+| D-01 | §2.1 `zuma` row | `shannon` is the radio excision **set id**, not proof of "full modem/telephony excision" | radio = **FALSE**; modem transport Tier C 10/13 (`C-R1`); baseband 13/13 (`H-R1`); `dmd.xml` 13/13 (`H-R2`) |
+| D-02 | §2 / §2.1 radio column + §5 Step 2b | `RADIO_SET := shannon` is *selected* for all 13; **0/13 Tier A** on radio (per-device worst tier **C 9/13, B 4/13**) | `A-EXCISE-RADIO` |
+| D-03 | §2 `laguna_muzel` blocklist cell | canonical blocklist **selected**, but factory `vendor_dlkm` in the `frankel`/`blazer`/`mustang` hybrids **defeats** `blocklist nitrous` ⇒ `nitrous` Tier C | `C-B2`, `H-X1` |
+| D-04 | §2 `laguna_rango` blocklist cell | `rango-latest` is a hybrid ⇒ `nitrous` Tier C | `C-B2`, `H-X1` |
+| D-05 | §6 zero-regression | `androidboot.radio.disabled=1` is **unchanged at board level**, but the flag is **absent from 4/13 laguna stamps** | `D2`, `M-R3` |
+| D-06 | §2 blocklist columns | per-variant blocklists are **selected** uniformly, but BT/NFC GKI modules in `system_dlkm/modules.load` have **0 matching blocklist entries (13/13)** | `C-B1` |
+
+**Withdrawal of the unsubstantiated claim.** The `Q-PORT-MATRIX-PREFLIGHT` approval-note wording
+*"Escalations QA-W1/W2/I1 accepted → docs corrected"* at `TASK_QUEUE.md:6387` is **withdrawn as
+unsubstantiated** (`A-PORT-MATRIX-R2` F-001: the QA deliverable `PORT_MATRIX_GEN8910_PREFLIGHT.md`
+still hashes `e71d4006…`, byte-identical to the *pre*-remediation hash QA recorded, and
+`grep -cE 'QA-W|QI-1|16-QPR1|asymmetry'` on it = **0**). `QA-W1`/`QA-W2`/`QI-1` therefore stand
+**OPEN**, not closed. This dated note preserves the audit trail; the queue line itself is corrected
+by the Architect, who is the sole writer of `TASK_QUEUE.md` this wave.
+
+#### ⚠ Residual — `D-07` / `D-08` annotated **OPEN** (2026-09-26, `T-EXCISE-MATRIX-DOC-RESIDUAL`)
+
+`T-EXCISE-MATRIX-DOC-REMEDIATE` reconciled the six surfaces that live in **this** file (D-01…D-06).
+Two of the eight surfaces from `A-PORT-MATRIX-R2` §8 are **still unreconciled** because neither carrier
+is in this card's exclusive ownership. They are recorded here as **OPEN**, each with a date and a
+reason, rather than silently resolved or dropped (Law 7 — no unverified claim; Law 10 audit trail;
+Law 11 reversibility). **No prior text has been deleted.**
+
+| # | Carrier (file:line) | Disagreement — matrix says vs EXCISE says | Status | Reason it is NOT resolved here |
+|---|---|---|---|---|
+| **D-07** | `vendor/guardtalk/docs/PORT_MATRIX_GEN8910_PREFLIGHT.md:344` (wave-A entry prerequisite) + `vendor/guardtalk/docs/KERNEL_MATRIX.md` | `PORT_MATRIX` lists `T-PORT-EXCISION-MATRIX` **`APPROVED`** as a settled wave-A prerequisite, while the umbrella audit registers **8 CRITICALs** and a **`FALSE`** airgap verdict; `QA-W1` (stallion 16-QPR1 lag), `QA-W2` (`build_id` pin asymmetry + undocumented `tegu` pin) and `QI-1` are still unaddressed in both docs. | **OPEN** | Both carrier files are **outside this card's exclusive ownership** (`EXCISION_MATRIX.md` only), so remediation was **not performed**. Evidence the gap persists: `PORT_MATRIX_GEN8910_PREFLIGHT.md` sha256 `e71d40060cda8e44…` (**byte-identical** to QA's pre-remediation hash) and `KERNEL_MATRIX.md` sha256 `35355da1a72bfe18…`; a grep for the tokens `QA-W`, `QI-1`, `16-QPR1`, `asymmetry` returns **0** on both. **Do not read the wave plan as evidence that excision is clean.** |
+| **D-08** | `releases/desktop-flash/stallion-20260923-100618/README-FLASH-DESKTOP.md:10` (shipped stamp) | README advertises *"VINTF excised manifest (resolved in the built image): `vendor_manifest_no_radio_stallion.xml`"*, but the shipped `vendor.img` carries `/etc/vintf/manifest/dmd.xml`, which re-declares `vendor.samsung_slsi.telephony.hardware.oemservice` (`IOemService/dm0`, `dm1`) — the "no_radio" claim is **false as written on that stamp**. | **OPEN** | The shipped stamp README is **outside this card's exclusive ownership** (stamp README lane / `F-EXCISE-CLAIM-HONESTY`) and is immutable output of stamp `stallion-20260923-100618`; editing it would tamper with the stamp and re-stamping is out of scope. README sha256 `f2b9e01a217226c0…`; fragment `dmd.xml` sha256 `9909ea142376d376…`. **Do not cite the stamp README as a clean-basis artifact.** |
+
+**Hand-off (open items, 2026-09-26):** closing `D-07` requires the owners of
+`PORT_MATRIX_GEN8910_PREFLIGHT.md` / `KERNEL_MATRIX.md`; closing `D-08` requires the stamp/README lane.
+Both remain **unresolved**; this note asserts no resolution. No file outside this card's ownership was
+touched, and `TASK_QUEUE.md` was not edited (Architect-owned — see
+`.agent-comm/evidence/E-TASK-QUEUE-CONCURRENT-WRITER.md`).
 
 ---
 
@@ -66,12 +125,23 @@ see §3 for why.
 
 | SoC | Gen | Wi-Fi module | Touch driver | Fingerprint stack | Radio excision set |
 |---|---|---|---|---|---|
-| `zuma` | 8 | `bcmdhd4398` (`shusky`) / `bcmdhd4383` (`akita`) | `goodix_brl_touch` (+ `sec_touch` on `shusky`) | **Goodix** (both families) | `shannon` (full modem/telephony excision) |
+| `zuma` | 8 | `bcmdhd4398` (`shusky`) / `bcmdhd4383` (`akita`) | `goodix_brl_touch` (+ `sec_touch` on `shusky`) | **Goodix** (both families) | `shannon` — radio excision **set id only**; runtime radio verdict = **FALSE** (correction register D-01) |
 | `zumapro` | 9 | `bcmdhd4390` (`caimito`, `comet`) / `bcmdhd4383` (`tegu`, `stallion`) | `syna_touch`+`sec_touch` (`caimito`), `goodix_brl_touch`+`syna_touch`+`sec_touch` (`comet`), `syna_touch` (`tegu`), `focal_touch` (`stallion`) | **QFP** (`caimito`) / **Goodix** (`comet`, `tegu`, `stallion`) | `shannon` |
 | `laguna` | 10 | `bcmdhd4383` **and** `bcmdhd4390` (two-phase load) | `syna_touch`, `focal_touch`, `fst2` | **QFP** (`muzel`) / **Goodix** (`rango`) | `shannon` |
 
 > **Read the per-SoC row as a summary, never as the selector.** Every value that differs
 > *within* a SoC is a real, current difference between kernel families (§3).
+>
+> **Radio excision set (correction register D-01/D-02).** The value in this column is the
+> **provisioning set id** (`RADIO_SET := shannon`) that the excision core *selects*. It is **not** a
+> reachability verdict: EXCISE found radio **FALSE**, with **0/13 devices at Tier A** (per-device worst
+> tier **C 9/13, B 4/13**).
+>
+> **Canonical blocklist column (correction register D-03/D-04/D-06).** The path is the blocklist file the
+> build *selects*. It does **not** assert that every entry takes effect: on the `laguna` hybrids the
+> factory `vendor_dlkm` defeats `blocklist nitrous` (`nitrous` Tier C), and BT/NFC GKI modules in
+> `system_dlkm/modules.load` have **0 matching blocklist entries (13/13)**. Reachability/Tier lives only
+> in the residual register, never here.
 
 ---
 
@@ -236,7 +306,7 @@ Derive each column from evidence, not from the SoC:
 | `KERNEL_FAMILY` | `device/google/<family>-kernels/` tree the device's `TARGET_KERNEL_DIR` resolves into (see `KERNEL_MATRIX.md`) |
 | `WIFI_MODULES`, `TOUCH_MODULES` | the `blocklist …` lines in that tree's `vendor_dlkm.modules.blocklist` |
 | `FP_STACK` | `vendor/adevtool/vendor-skels/google_devices/<dev>/<dev>.mk` (Goodix vs QFP tokens) |
-| `RADIO_SET` | the device's modem/telephony stack; currently `shannon` for all 13 |
+| `RADIO_SET` | the device's modem/telephony stack; the **set id** `shannon` is selected for all 13 — *selection only*, not proof of effective excision (0/13 Tier A; correction register D-02) |
 | `BLOCKLIST` | the tree file above + GuardTalk additions |
 
 ### Step 3 — add the board hook
@@ -286,9 +356,14 @@ card. Verified by content rematch (this worktree is not a git repository):
 | `komodo` | `device/komodo/vendor_dlkm.modules.blocklist` | same path (registered pin, 14/14 tokens) | identical |
 | `rango` | `device/rango/vendor_dlkm.modules.blocklist` | same path (variant canonical) | identical |
 
-Also unchanged: `AB_OTA_PARTITIONS` modem filtering, `BOARD_KERNEL_CMDLINE +=
+Also unchanged at board level: `AB_OTA_PARTITIONS` modem filtering, `BOARD_KERNEL_CMDLINE +=
 androidboot.radio.disabled=1`, and the fingerprint drop set (13/13 tokens). No
 `releases/desktop-flash/*-latest` symlink was touched.
+
+> **Correction (correction register D-05) — "unchanged" is a board-level statement, not a stamp-level
+> one.** The `androidboot.radio.disabled=1` flag is **absent from 4/13 laguna stamps**
+> (`frankel`, `blazer`, `mustang`, `rango`) — a documented build/stamp skew (`D2`, `M-R3`). Do **not**
+> read this row as evidence that the mitigation is present in every shipped image.
 
 ---
 

@@ -2,6 +2,15 @@
 # AND full removal of FEATURE_LOCATION + FEATURE_LOCATION_NETWORK + the
 # NetworkLocation app.
 #
+# LAW 7 CORRECTION (T-EXCISE-CLAIM-HONESTY-RESIDUAL, 2026-09-26): the Layers
+# below were originally `gnss`-name-shaped only, so the blanket "GPS/GNSS HAL
+# excised" headline was FALSE for the two zuma_shusky trees (shiba/husky), which
+# ship a Broadcom-shaped location stack whose names contain no `gnss` substring.
+# Layer 1b (T-EXCISE-LOC-GPS-NAME-COVERAGE) now drops that class at source,
+# variant-scoped. On the shipped stamps it is still present (gpsd/lhd/scd
+# `class main`, no `disabled`; gps.default.so; /etc/gnss/*) — Tier C on
+# shiba/husky (C-L1; D3; E-9), fixed only at source, pending re-stamp.
+#
 # Scope: Samsung S5400 "Lassen" GNSS HAL (android.hardware.gnss-service +
 # android.hardware.gnss-service.pixel), its HIDL/NDK vendor stubs
 # (android.hardware.gnss-V3-ndk, .measurement_corrections@1.0/@1.1,
@@ -20,6 +29,13 @@
 # order-independent. Runs after all inherit-product merges (via
 # product-config-late.mk -> guardtalk-feature-excised.mk), so PRODUCT_PACKAGES
 # / PRODUCT_COPY_FILES are fully populated.
+#
+# T-EXCISE-LOC-GPS-NAME-COVERAGE (2026-09-25): in addition to the `gnss`-named
+# Lassen stack above, the two zuma_shusky trees (shiba, husky) ship a
+# Broadcom-shaped location stack under `gps`/`lhd`/`scd` names that the
+# `gnss`-shaped filter never matched. Layer 1b below loads a variant-scoped,
+# exact-name data set from variants/zuma_shusky/loc-excised-tokens.mk and drops
+# it. The other 11 variants load nothing, so their excision is unchanged.
 #
 # CRITICAL INVARIANT (T-LOC-FULL, reconciled): FEATURE_LOCATION is now FULLY
 # REMOVED, not just FEATURE_LOCATION_GPS. The two feature declarations in
@@ -141,13 +157,50 @@ GUARDTALK_LOC_PACKAGES := \
     bipchmgr \
     wfc-pkt-router
 
+# ---------------------------------------------------------------------------
+# Layer 1b — VARIANT-SCOPED location name set (T-EXCISE-LOC-GPS-NAME-COVERAGE).
+# ---------------------------------------------------------------------------
+# Every token in Layer 1 above is `gnss`-name-shaped (the Lassen stack shipped
+# by the tokay/zumapro trees). The two zuma_shusky trees (shiba, husky) instead
+# ship a Broadcom-shaped location userspace stack under `gps`/`lhd`/`scd` names
+# that contain no `gnss` substring, so Layer 1 never matched them and they
+# survived into the shipped vendor.img (Architect recon E-9 / A-EXCISE-LOC
+# F-001/F-006). This layer closes that gap.
+#
+# SCOPING IS DATA-DRIVEN AND VARIANT-BOUND — never a global name grab. The name
+# set lives in the resolved variant's own directory:
+#
+#   vendor/guardtalk/feature-excised/variants/$(GT_VARIANT)/loc-excised-tokens.mk
+#
+# and is loaded ONLY when that file exists. `GT_VARIANT` is exported by
+# feature-excised/excision-variant-select.mk, which guardtalk-feature-excised.mk
+# includes immediately BEFORE this file, so it is always set on the product path.
+# On the other 11 variants no file exists, the two variables stay empty, and the
+# extended filters below reduce EXACTLY to their previous behaviour (no
+# regression). When GT_VARIANT is empty (e.g. a standalone include in a test
+# harness) the variant hook is skipped for the same reason — it can never widen
+# to a global filter.
+#
+# The over-broad guard is EXACTNESS: packages match by exact Soong module name
+# (`$(filter ...)`), copy-files by exact destination-path substring. Non-location
+# `gps*`/`scd*`/`lhd*` artifacts (`libsitril-gps`, `libgps.utils`,
+# `cell_info_tdscdma`) are therefore impossible to match. See the variant data
+# file for the full negative-proof rationale and the source anchors.
+_gt_loc_variant_tokens := vendor/guardtalk/feature-excised/variants/$(GT_VARIANT)/loc-excised-tokens.mk
+ifneq ($(GT_VARIANT),)
+ifneq ($(wildcard $(_gt_loc_variant_tokens)),)
+include $(_gt_loc_variant_tokens)
+endif
+endif
+
 # Defence-in-depth: catch any other GNSS-named packages that a future adevtool
 # regen might slide into PRODUCT_PACKAGES. The wildcard match is scoped to
-# GNSS-only tokens + exact NetworkLocation / FusedLocation names + radio
-# leftover daemons. The bare `location` token is deliberately NOT matched
-# (would hit the CHRE nanoapp).
+# GNSS-only tokens + the variant-scoped exact location names from Layer 1b +
+# exact NetworkLocation / FusedLocation names + radio leftover daemons. The bare
+# `location` token is deliberately NOT matched (would hit the CHRE nanoapp).
 define _gt-loc-package-drop
 $(or \
+  $(filter $(GT_VARIANT_LOC_DROP_PACKAGES),$(1)), \
   $(findstring android.hardware.gnss,$(1)), \
   $(findstring android.hardware.location.gps,$(1)), \
   $(findstring adevtool_vintf_fragment_vendor_android.hardware.gnss,$(1)), \
@@ -177,7 +230,9 @@ PRODUCT_PACKAGES := $(strip $(_gt_filtered_product_packages))
 #   - vendor/etc/init/pixel-gnss-default.rc (the pixel.gnss-default service
 #     -> android.hardware.gnss-service.pixel)
 #   - vendor/etc/gnss/ca.pem, gps.cfg, hash.bin (Lassen GNSS cert + config +
-#     integrity hash; no consumer once the HAL is gone)
+#     integrity hash; no consumer once the *Lassen* GNSS HAL is gone — the
+#     zuma_shusky gps/lhd/scd class is dropped by variant-scoped Layer 1b, and
+#     on shipped stamps is still present — Tier C, C-L1/D3/E-9)
 # T-REMEDIATE-B2-EXCISE item 12: also drop radio leftover init that still
 # started after RIL excision (service absent, not disabled):
 #   - vendor/etc/init/pktrouter.rc  (IMS packet router; vendor.pktrouter=1)
@@ -185,8 +240,14 @@ PRODUCT_PACKAGES := $(strip $(_gt_filtered_product_packages))
 # Leaving them would be dead weight and could let a stale config revive HAL
 # assumptions after a future regen. The non-GNSS chre/location.napp_header
 # (tokay.mk:1611) is intentionally NOT matched (CHRE nanoapp, kept).
+#
+# T-EXCISE-LOC-GPS-NAME-COVERAGE: the variant-scoped destination paths from
+# Layer 1b (init.gps.rc + /etc/gnss/{gps.cer,gps.xml,lhd.conf,scd.conf}) are
+# folded in via $(GT_VARIANT_LOC_DROP_COPY_DESTS). That list is empty on the 11
+# non-zuma_shusky variants, so this filter is byte-for-byte unchanged there.
 define _gt-loc-copy-file-drop
 $(or \
+  $(strip $(foreach _gt_loc_dest,$(GT_VARIANT_LOC_DROP_COPY_DESTS),$(findstring $(_gt_loc_dest),$(1)))), \
   $(findstring /etc/init/init.gnss.rc,$(1)), \
   $(findstring /etc/init/pixel-gnss-default.rc,$(1)), \
   $(findstring /etc/gnss/ca.pem,$(1)), \
@@ -267,7 +328,14 @@ $(eval PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SYSTEM_SERVER_APPS := $(PRODUCT_SYST
 #     and `service slsi_gnss_service /vendor/bin/hw/android.hardware.gnss-service`
 #     plus GPS data-dir/permission setup. With this .rc filtered out (Layer 1
 #     copy-files filter above), init never loads the gnssd or
-#     slsi_gnss_service definitions and the daemons never start.
+#     slsi_gnss_service definitions — i.e. the Lassen HAL daemons do not start.
+#
+#     LAW 7 CORRECTION (T-EXCISE-CLAIM-HONESTY-RESIDUAL, 2026-09-26): the former
+#     blanket "... and the daemons never start" was scoped only to the `gnss`-
+#     named Lassen definitions. The zuma_shusky gpsd/lhd/scd daemons are defined
+#     in init.gps.rc (`class main`, no `disabled`), which Layer 1 never matched;
+#     variant-scoped Layer 1b now drops them at source, but on the shipped
+#     shiba/husky stamps they are still init-started — Tier C (C-L1/D3/E-9).
 #   - pixel-gnss-default.rc (tokay.mk:1731): defines
 #     `service pixel.gnss-default /vendor/bin/hw/android.hardware.gnss-service.pixel`
 #     (started on boot when persist.vendor.gps.hal.service.name=vendor). With

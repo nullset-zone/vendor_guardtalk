@@ -17,17 +17,37 @@
 # to guarantee the GuardTalk overlays are never accidentally stripped by a
 # later excision filter.
 #
+# ---------------------------------------------------------------------------
+# LAW 7 HONESTY POSTURE (F-EXCISE-CLAIM-HONESTY, 2026-09-26) — READ FIRST.
+# Every claim in this file and the files it includes is a BUILD-SOURCE claim
+# about what the late filter-outs drop from PRODUCT_PACKAGES /
+# PRODUCT_COPY_FILES. It is NOT a claim about the shipped image. At this
+# revision no lane has re-stamped or boot-verified (RESTAMP_PERFORMED=false,
+# BOOT_VERIFIED=false), and shipped stamps have been independently shown to
+# still carry artifacts (e.g. bluetooth_audio.xml present 13/13; the laguna
+# vendor_dlkm blocklists carry 0 `nitrous` lines). Per A-EXCISE-AIRGAP-MATRIX a
+# module present in a shipped `modules.load` and unmatched by
+# `modules.blocklist` LOADS AT BOOT (Tier C); the Tier A/B/C adjudication lives
+# in that audit, not here. Do not read any statement below as "removed from the
+# shipped image" — a source-level excision only becomes a shipped fact after a
+# re-stamp.
+# ---------------------------------------------------------------------------
+#
 # T-REMEDIATE-B1-USERBUILD: su / overlay_remounter late filter lives in
 # userbuild-excised.mk and is included from product-config-late.mk (after
 # this bridge) so PRODUCT_PACKAGES_DEBUG is fully merged.
 #
 # Self-set the flag here (mirrors guardtalk-radio-excised.mk:3 setting
-# GUARDTALK_RADIO_EXCISED := true). guardtalk-flags.mk is not yet wired into
-# the device makefile chain, so without this self-set the gate would always
-# be false and the entire Wave 2 excision (apps/nfc/fp/loc + overlays) would
-# be inert. This self-set is harmless: the bridge is only included for the
-# tokay product path (gated in product-config-late.mk), so the flag is
-# effectively tokay-scoped.
+# GUARDTALK_RADIO_EXCISED := true). NOTE (corrected 2026-09-26 by
+# F-EXCISE-CLAIM-HONESTY): guardtalk-flags.mk IS wired — guardtalk-radio-
+# excised.mk:15 `-include`s
+# vendor/guardtalk/device/$(PRODUCT_DEVICE)/guardtalk-flags.mk, which sets
+# GUARDTALK_FEATURE_EXCISED_WAVE2 := true for all 13 ports, and that runs
+# before this bridge from product-config-late.mk. The self-set below is a
+# harmless redundant no-op kept as a defensive default for any harness that
+# includes this file without the radio bridge. It is NOT tokay-scoped:
+# product-config-late.mk gates on GUARDTALK_RADIO_EXCISED (device-driven,
+# T-PORT-SHARED-CORE 2026-07-04) for every GuardTalkOS device.
 GUARDTALK_FEATURE_EXCISED_WAVE2 := true
 
 ifeq ($(GUARDTALK_FEATURE_EXCISED_WAVE2),true)
@@ -128,15 +148,20 @@ include vendor/guardtalk/radio-excised/telephony-features.mk
   # depend on AppSearch for search indexing; excising it risks breaking the
   # Settings search UI. Left in place pending a dedicated dependency audit.
   #
-  # T-APEX-BCP-WAVE (2026-07-02) — Cat 3 lockstep BCP excision. The 3 APEX
-  # above marked "feature-permission XML already absent" (adservices,
-  # healthfitness, ondevicepersonalization) are now FULLY excised, not just
-  # dormant: apex-bcp-excised.mk filters their framework-* / service-* jars
-  # out of PRODUCT_APEX_BOOT_JARS / PRODUCT_APEX_SYSTEM_SERVER_JARS in
-  # lockstep with the PRODUCT_PACKAGES filter-out, so the dexpreopt check no
-  # longer orphans a BCP entry. The feature-permission XML removal above is
-  # now defence-in-depth (the APEX itself is gone). See apex-bcp-excised.mk
-  # for the full rationale + the runtime smoke-test requirement (Q-APEX-BCP).
+  # T-APEX-BCP-WAVE (2026-07-02) — Cat 3 lockstep BCP excision was DESIGNED to
+  # drop the 3 APEX above (adservices, healthfitness,
+  # ondevicepersonalization), but it is DISABLED: the 2026-07-04 tokay
+  # userdebug Zygote NoClassDefFoundError boot loop forced a revert, and every
+  # stage in apex-bcp-excised.mk is marked [DISABLED — see note above].
+  # HONEST POSTURE (Law 7, corrected 2026-09-26 by F-EXCISE-CLAIM-HONESTY):
+  # these 3 APEX are feature-gated DORMANT, not removed — the APEX is present
+  # in the built/shipped image on 13/13 (umbrella §5 `apex_dormant_set` =
+  # Tier B; A-EXCISE-HONESTY F-1; pre-finding E-16). The feature-permission
+  # XML removal above is the dormancy mechanism, not defence-in-depth behind a
+  # deletion. See apex-bcp-excised.mk for the DISABLED rationale, the
+  # prerequisites to re-enable (SystemServiceRegistry optional imports), and
+  # the runtime smoke-test requirement (Q-APEX-BCP). Source-level only: no
+  # re-stamp, RESTAMP_PERFORMED=false, BOOT_VERIFIED=false (DEC-009).
   # =====================================================================
 
 # T-APEX-BCP-WAVE — Cat 3 mainline APEX lockstep BCP excision. MUST run

@@ -1,0 +1,59 @@
+# GuardTalkOS — laguna_rango (laguna / laguna-kernels) canonical vendor_dlkm blocklist.
+#
+# T-EXCISE-LAGUNA-BLOCKLIST-WIRING (P0): completes the feature-excised variant set
+# by adding the laguna_rango canonical file that E-10 recorded as ABSENT, so every
+# variant named in excision-variants.mk has a real file on disk.
+#
+# Derivation (mechanical, no invented entries):
+#   upstream device/google/laguna-kernels/6.6/grapheneos/rango/vendor_dlkm.modules.blocklist
+#   + GuardTalk BT-excision addition 'blocklist nitrous.ko' (T-BT-FULL FR-3, nitrous
+#     BCM BT power/rfkill driver, present in vendor_dlkm.modules.load)
+#   + T-EXCISE-MODEM-KERNEL additions 'blocklist cpif.ko / cpif_page.ko / shm_ipc.ko'.
+# Every upstream 'blocklist' line is preserved verbatim and in order.
+#
+# Token-identical to vendor/guardtalk/device/rango/vendor_dlkm.modules.blocklist,
+# which is the path the registry currently resolves GT_VARIANT_laguna_rango_BLOCKLIST
+# to (zero-regression: rango-latest is the MVP device). This file is the canonical
+# per-variant home and SHALL stay token-identical to that device copy; any future
+# registry repoint must be done together with the paired Q-* gate update.
+#
+# Devices mapped to this variant: see excision-variants.mk GT_DEVICE_VARIANT_*.
+# rango is laguna (kernel family laguna), NOT zumapro.
+#
+# Wi-Fi two-phase load (upstream: blocklist in the bulk pass, then re-modprobe
+# without -b in init.insmod.rango.cfg) is preserved verbatim. WiFi is NOT broken.
+
+blocklist bcmdhd4383.ko
+blocklist bcmdhd4390.ko
+blocklist cs40l26-i2c.ko
+blocklist g_serial.ko
+blocklist irq-gia-google-test.ko
+blocklist sscoredump_sample_test.ko
+blocklist sscoredump_test.ko
+blocklist syna_touch.ko
+blocklist focal_touch.ko
+blocklist fst2.ko
+blocklist trusty-test.ko
+blocklist google_gem_test.ko
+blocklist ebu-google.ko
+blocklist google-cpm-tracepoint.ko
+
+# Display
+blocklist gs-panel-common-test.ko
+
+# IOMMU
+blocklist iommu_map_benchmark.ko
+
+# T-BT-FULL (FR-3): Bluetooth power/rfkill — nitrous.ko on rango vendor_dlkm.
+blocklist nitrous.ko
+
+# T-EXCISE-MODEM-KERNEL (P0, CRIT R-2): baseband IPC transport modules — the
+# kernel half of the radio airgap. cpif is the Samsung Shannon CP interface;
+# cpif_page/shm_ipc are its shared-memory transport. Blocked here (honoured by
+# the bulk `modprobe -b` pass) AND removed from vendor_dlkm.modules.load on the
+# laguna kernels tree (grapheneos/rango) so they are neither loaded nor
+# installed. Nothing boot-critical depends on any of the three (modules.dep).
+# WiFi/BT unaffected (separate drivers).
+blocklist cpif.ko
+blocklist cpif_page.ko
+blocklist shm_ipc.ko

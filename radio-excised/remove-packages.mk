@@ -1,9 +1,15 @@
 # Remove cellular/RIL packages (must be included from tokay.mk, not inherit-product).
 #
 # T-PKG-EXCISE-WAVES P1 — IMS/IWLAN/CarrierConfig triad. With the radio/RIL
-# stack excised above, IMS, IWLAN, and CarrierConfig2 have no transport and
-# would only emit binders to a missing radio HAL. All three are removed
-# together (atomic dependency group). Names verified as Soong modules in
+# stack excised above, IMS, IWLAN, and CarrierConfig2 have no *userspace*
+# radio-HAL transport and would only emit binders to a missing radio HAL.
+#
+# LAW 7 CORRECTION (T-EXCISE-CLAIM-HONESTY-RESIDUAL, 2026-09-26): the kernel
+# modem transport is a separate matter — cpif/cpif_page/shm_ipc still load in
+# modules.load on 10/13 at source level (Tier C; C-R1). T-EXCISE-MODEM-KERNEL
+# removes them at source; pre-re-stamp only.
+#
+# All three are removed together (atomic dependency group). Names verified as Soong modules in
 # out/soong/late-tokay.mk and as PRODUCT_PACKAGES entries:
 #   Iwlan                -> vendor/google_devices/tokay/tokay.mk:117
 #   ImsServiceEntitlement -> build/make/target/product/telephony_product.mk:23
@@ -35,6 +41,16 @@
 # RRO overlay Telecom__tokay__auto_generated_rro_product also removed
 # (verified at out/soong/late-tokay.mk:262414). Reversible (filter-out
 # only; Law 11).
+#
+# T-EXCISE-RADIOEXT-HAL (2026-09-25): the `-V1-ndk` (AIDL NDK) variants of the
+# Samsung SLIS telephony HAL are DISTINCT Soong modules from the HIDL `@1.0`
+# variants already listed below. Only tegu/stallion/frankel/blazer/mustang/rango
+# list the NDK prebuilts in their device PRODUCT_PACKAGES (the other 7 devices
+# carry only the HIDL names), so the NDK `.so` files survived this drop list and
+# shipped in the PACKED vendor.img on exactly those 6 devices (A-EXCISE-RADIO
+# E-2). They are `soc_specific` cc_prebuilt_library_shared prebuilts with no
+# `required:` consumer, so listing them here removes
+# /vendor/lib64/<name>.so from vendor.img. Reversible (filter-out only; Law 11).
 GUARDTALK_RADIO_PACKAGES := \
     android.hardware.radio-V2-ndk.vendor \
     android.hardware.radio.config-V2-ndk.vendor \
@@ -102,9 +118,11 @@ GUARDTALK_RADIO_PACKAGES := \
     adevtool_vintf_fragment_vendor_liboemservice_proxy.xml \
     vendor.samsung_slsi.telephony.hardware.oemservice@1.0 \
     vendor.samsung_slsi.telephony.hardware.oemservice@1.0.system_ext \
+    vendor.samsung_slsi.telephony.hardware.oemservice-V1-ndk \
     vendor.samsung_slsi.telephony.hardware.radioExternal@1.0 \
     vendor.samsung_slsi.telephony.hardware.radioExternal@1.0.system_ext \
     vendor.samsung_slsi.telephony.hardware.radioExternal@1.1 \
+    vendor.samsung_slsi.telephony.hardware.radioExternal-V1-ndk \
     init.radio.sh \
     vendor.google.radio_ext-V1-ndk \
     vendor.google.radio_ext-service \
@@ -211,6 +229,8 @@ $(or \
   $(findstring Shannon,$(1)), \
   $(findstring OemRil,$(1)), \
   $(findstring liboemservice,$(1)), \
+  $(findstring radioExternal,$(1)), \
+  $(findstring hardware.oemservice,$(1)), \
   $(findstring lassen_dmd,$(1)), \
   $(findstring radio-library,$(1)), \
   $(findstring telephony-ext,$(1)), \

@@ -1,0 +1,6 @@
+{
+  "expect": 0,
+  "forbid": "bt",
+  "raw": false,
+  "why": "control: no BT HAL declaration in main or fragment"
+}

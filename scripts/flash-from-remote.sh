@@ -71,6 +71,18 @@
 #                          'hybrid' = laguna-only: keep the step-4 stock factory
 #                          rescue boot chain, SKIP the step-6 GT boot flash, keep
 #                          the step-7 vbmeta pass. Never auto-selected.
+#   RADIO_MODE=flash|erase  baseband-firmware step (T-EXCISE-FW-RADIO).
+#                          Default 'flash' = unchanged: install the shipped
+#                          radio.img into the `radio` partition (today's path).
+#                          'erase' = do NOT flash radio.img; instead
+#                          `fastboot erase radio` so baseband firmware is NOT
+#                          installed. Never auto-selected — operator opt-in.
+#   SKIP_BT_BLOCKLIST_GUARD=1
+#                          bypass the fail-closed laguna vendor_dlkm BT-blocklist
+#                          guard (T-EXCISE-MUSTANG-LATEST-OWNER / defect E-10).
+#                          Default OFF; never auto-selected. UNSAFE — an
+#                          unblocked nitrous.ko BCM4390 BT power/rfkill path can
+#                          then ship. Operator-only emergency override.
 #   CAPTURE_LOGS=1         opt-in post-flash debug capture (fastboot + adb).
 #                          DEFAULT OFF. Unset/0 leaves the flash path unchanged.
 #                          Writes a timestamped evidence dir and prints its path.
@@ -146,6 +158,15 @@ RESCUE_LOCAL=""
 # family, whose shipped fullgt boot chain was ABL-rejected on-device
 # (B-PORT-LAGUNA-STATE §3). Never auto-selected — the operator must opt in.
 GT_BOOT_CHAIN="${GT_BOOT_CHAIN:-gt}"
+
+# Baseband firmware mode (T-EXCISE-FW-RADIO).
+# 'flash' (default) = unchanged behaviour: install the shipped radio.img into
+# the `radio` partition at step 2. 'erase' = do NOT flash radio.img; instead
+# erase the `radio` partition so the baseband firmware is NOT installed.
+# The GuardTalk userspace radio stack is excised but the factory baseband blob
+# is not (A-EXCISE-RADIO E-1: shipped + flashed 13/13); this opt-in path is the
+# flash-lane half of the card's "unflashed/erased" choice. Never auto-selected.
+RADIO_MODE="${RADIO_MODE:-flash}"
 
 # -----------------------------------------------------------------------------
 # Images to download
@@ -427,6 +448,60 @@ apply_remote_paths() {
     fi
     ssh -o BatchMode=yes -o ConnectTimeout=10 "$REMOTE_HOST" "test -d '$REMOTE_BUILD_DIR' && test -f '$REMOTE_BUILD_DIR/bootloader.img'" \
         || die "remote missing $REMOTE_HOST:$REMOTE_BUILD_DIR/bootloader.img — fix REMOTE_BUILD_DIR (full path, not \$REMOTE_TREE on the same export line)"
+}
+
+# -----------------------------------------------------------------------------
+# Fail-closed bundle guard — a laguna vendor_dlkm must blocklist nitrous.ko (E-10)
+# -----------------------------------------------------------------------------
+# Defect E-10: the four laguna hybrid bundles ship a FACTORY vendor_dlkm.img
+# whose modules.blocklist OMITS `nitrous.ko` (the BCM4390 BT power/rfkill
+# driver) while nitrous.ko is present and listed in modules.load — so the BT
+# power path is LIVE and bt-excised.mk's invariant ("harmless without nitrous")
+# is false. `mustang-latest` auto-resolves exactly such a bundle: the bootable
+# hybrid lacks the blocklist, while the blocklist-correct artifact
+# (mustang-20260923-101119) is an ABL-rejected fullgt
+# (DEC-PORT-GEN8910-WAVE3-OPERATOR §D3) — this is the mustang-latest ownership
+# conflict. The bundle fix is owned by T-EXCISE-LAGUNA-STAGER-BLOCKLIST
+# (re-stamp + re-link <dev>-latest) — NOT by this script. This guard is the
+# flash-side half: it REFUSES to flash a laguna bundle whose vendor_dlkm does
+# not blocklist nitrous (Law 3 — fail loudly; never silently ship the unblocked
+# BT power path). The read runs on REMOTE_HOST (debugfs) so the script stays
+# runnable from the Operator's macOS laptop, which has no debugfs.
+# Override: SKIP_BT_BLOCKLIST_GUARD=1 (loud, operator-only, never auto-set).
+verify_bt_blocklist_guard() {
+    local codename="${1:-}"
+    is_laguna_device "$codename" || return 0
+    if [[ "${SKIP_BT_BLOCKLIST_GUARD:-0}" == "1" ]]; then
+        warn "SKIP_BT_BLOCKLIST_GUARD=1 — bypassing the laguna vendor_dlkm BT-blocklist guard for '$codename' (UNSAFE: an unblocked nitrous.ko BT power path can ship)"
+        return 0
+    fi
+    local img="$REMOTE_BUILD_DIR/vendor_dlkm.img"
+    local load blocklist
+    load="$(ssh -o BatchMode=yes -o ConnectTimeout=10 "$REMOTE_HOST" \
+        "debugfs -R 'cat /lib/modules/modules.load' '$img' 2>/dev/null" || true)"
+    if [[ -z "$load" ]]; then
+        die "REFUSING to flash $codename: could not read modules.load from $REMOTE_HOST:$img (missing image or no debugfs on the build host) — refusing rather than risk shipping the unblocked BCM4390 BT power path (E-10)"
+    fi
+    if ! grep -q 'nitrous\.ko' <<<"$load"; then
+        log "bundle guard: $codename vendor_dlkm does not load nitrous.ko — nothing to blocklist"
+        return 0
+    fi
+    blocklist="$(ssh -o BatchMode=yes -o ConnectTimeout=10 "$REMOTE_HOST" \
+        "debugfs -R 'cat /lib/modules/modules.blocklist' '$img' 2>/dev/null" || true)"
+    if [[ -z "$blocklist" ]]; then
+        die "REFUSING to flash $codename: could not read modules.blocklist from $REMOTE_HOST:$img — refusing rather than risk shipping the unblocked BCM4390 BT power path (E-10)"
+    fi
+    if grep -qE '^[[:space:]]*blocklist[[:space:]]+nitrous' <<<"$blocklist"; then
+        log "bundle guard: $codename vendor_dlkm blocklists nitrous.ko ✓"
+        return 0
+    fi
+    die "REFUSING to flash $codename: the resolved bundle's vendor_dlkm does NOT blocklist nitrous.ko.
+  Bundle: $REMOTE_HOST:$REMOTE_BUILD_DIR
+  nitrous.ko (BCM4390 BT power/rfkill driver) is present and in modules.load, so flashing this
+  bundle would ship the BT power path LIVE (defect E-10; falsifies the bt-excised.mk invariant).
+  Ownership: the bootable hybrid lacks the blocklist while the blocklist-correct artifact is an
+  ABL-rejected fullgt — the bundle fix is owned by T-EXCISE-LAGUNA-STAGER-BLOCKLIST (re-stamp +
+  re-link <dev>-latest), NOT by this script. No partition was flashed."
 }
 
 # Read product from fastboot (stderr: "product: tokay") or adb.
@@ -818,8 +893,22 @@ else
     log "boot chain: GT_BOOT_CHAIN=gt (default) — GuardTalk A/B boot chain is flashed at step 6 (unchanged)"
 fi
 
+# Validate RADIO_MODE now that the target device is known (T-EXCISE-FW-RADIO).
+case "$RADIO_MODE" in
+    flash|erase) : ;;
+    *) die "RADIO_MODE='$RADIO_MODE' is invalid (expected 'flash' (default) or 'erase')" ;;
+esac
+if [[ "$RADIO_MODE" == "erase" ]]; then
+    log "baseband: RADIO_MODE=erase — radio.img WILL NOT be flashed; the 'radio' partition is erased at step 2 (baseband firmware NOT installed)"
+else
+    log "baseband: RADIO_MODE=flash (default) — radio.img is flashed to the 'radio' partition at step 2 (unchanged)"
+fi
+
 apply_remote_paths "$FLASH_DEVICE"
 apply_device_extra_downloads
+# Fail closed BEFORE any download/flash: a laguna bundle whose vendor_dlkm does
+# not blocklist nitrous.ko (E-10 / mustang-latest ownership conflict) is refused.
+verify_bt_blocklist_guard "$FLASH_DEVICE"
 log "build dir: $REMOTE_BUILD_DIR"
 log "key dir:   $REMOTE_KEY_DIR"
 
@@ -933,13 +1022,27 @@ step "2/8  Flash bootloader (A/B) + radio + AVB key + firmware cleanup"
 # Dual-slot bootloader (GrapheneOS flash-all) — required for tokay/akita/rango.
 flash_bootloader_ab_both_slots
 
-log "Flashing radio..."
-"$FASTBOOT" flash radio "$LOCAL_WORK_DIR/radio.img" \
-    || die "failed to flash radio"
-log "Rebooting to fastboot after radio (GrapheneOS flash-all)..."
+# T-EXCISE-FW-RADIO: baseband firmware step. Default 'flash' is byte-identical
+# to the pre-card path; 'erase' skips radio.img and clears the `radio`
+# partition instead (baseband firmware NOT installed). The reboot + wait below
+# is unchanged in BOTH modes so the boot-chain sequence (G7) is preserved.
+case "$RADIO_MODE" in
+    flash)
+        log "Flashing radio..."
+        "$FASTBOOT" flash radio "$LOCAL_WORK_DIR/radio.img" \
+            || die "failed to flash radio"
+        ;;
+    erase)
+        log "RADIO_MODE=erase — NOT flashing radio.img; erasing baseband firmware (radio partition)..."
+        "$FASTBOOT" erase radio \
+            || die "failed to erase radio (RADIO_MODE=erase)"
+        log "radio partition erased ✓ (baseband firmware NOT installed)"
+        ;;
+esac
+log "Rebooting to fastboot after radio step (GrapheneOS flash-all)..."
 "$FASTBOOT" reboot-bootloader 2>/dev/null || true
 wait_for_fastboot "after radio" "$FASTBOOT_WAIT_SECS" \
-    || die "device lost after radio flash"
+    || die "device lost after radio step"
 
 # AVB custom key — official position: immediately after radio, BEFORE OS
 # images (generate-factory-images-common.sh: erase avb_custom_key → flash

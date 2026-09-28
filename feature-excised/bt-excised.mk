@@ -1,7 +1,9 @@
 # T-W2-I4-BT / T-BT-FULL — 5-layer graceful excision of the Bluetooth HAL.
 #
 # Scope: Broadcom BCM4390 Bluetooth HAL (android.hardware.bluetooth-service.bcmbtlinux),
-# the Bluetooth audio HAL (android.hardware.bluetooth.audio-impl + NDK/HIDL stubs),
+# the Bluetooth audio HAL (android.hardware.bluetooth.audio-impl + NDK/HIDL stubs;
+# transitively installed via the AOSP reference lib `libaudioserviceexampleimpl`,
+# which is itself dropped in Layer 1 — see the T-EXCISE-BT-AUDIO-HAL note there),
 # the BT finder/ranging stubs, the two feature-permission prebuilt XMLs
 # (android.hardware.bluetooth.prebuilt.xml + android.hardware.bluetooth_le.prebuilt.xml),
 # the Google BT extension NDK stubs (vendor.google.bluetooth_ext-V1/V4-ndk),
@@ -15,9 +17,18 @@
 # vendor_dlkm.modules.blocklist level — see
 # vendor/guardtalk/feature-excised/vendor_dlkm.modules.blocklist (which is wired
 # via BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE override set in
-# vendor/guardtalk/device/tokay/BoardConfig-excised-late.mk). The GKI
-# bluetooth.ko / hci_uart.ko / btbcm.ko remain in system_dlkm but are harmless
-# without nitrous (no rfkill power-on, no HCI transport).
+# vendor/guardtalk/device/tokay/BoardConfig-excised-late.mk).
+#
+# LAW 7 CORRECTION (T-EXCISE-CLAIM-HONESTY-RESIDUAL, 2026-09-26): the former
+# statement here — "the GKI bluetooth.ko / hci_uart.ko / btbcm.ko remain in
+# system_dlkm but are harmless without nitrous" — is NOT supported. The shipped
+# stamps carry 8 BT/NFC GKI modules (bluetooth.ko, hci_uart.ko, btbcm.ko,
+# btqca.ko, btsdio.ko, rfcomm.ko, hidp.ko, nfc.ko) in system_dlkm `modules.load`
+# with 0 matching `modules.blocklist` entries, so they LOAD AT BOOT — Tier C
+# 13/13 (C-B1; E-14; A-EXCISE-AIRGAP-MATRIX). The vendor_dlkm nitrous blocklist
+# does not cover system_dlkm. T-EXCISE-GKI-BT-MODULES has since added those 8
+# system_dlkm blocklist entries at source level (13/13), but no re-stamp has run:
+# the shipped `-latest` stamps are unchanged.
 #
 # Pattern: same late product-config filter-out as apps-excised.mk, nfc-excised.mk,
 # fp-excised.mk, and loc-excised.mk. Idempotent and order-independent. Runs after
@@ -65,8 +76,43 @@ GUARDTALK_BT_PACKAGES := \
     vendor.google.bluetooth_ext-V1-ndk \
     vendor.google.bluetooth_ext-V4-ndk \
     BluetoothMidiService \
-    libbluetooth_audio_session_aidl
+    libbluetooth_audio_session_aidl \
+    libaudioserviceexampleimpl
 
+# T-EXCISE-BT-AUDIO-HAL (A-EXCISE-BT F-003) — WHY `libaudioserviceexampleimpl`
+# IS IN THE DROP LIST.
+#
+# The 5 BT-audio artifacts below/above —
+#   android.hardware.bluetooth.audio-impl.so, -V5-ndk.so, @2.0.so, @2.1.so,
+#   libbluetooth_audio_session_aidl.so — and the `bluetooth_audio.xml` VINTF
+#   fragment survived on 13/13 even though every one of those module names was
+#   already in this drop list. Root cause: the names were being filtered out of
+#   PRODUCT_PACKAGES, but Soong still installs them *transitively*. The only
+#   installed module that links the BT-audio stack is the AOSP reference library
+#   `libaudioserviceexampleimpl`:
+#     hardware/interfaces/audio/aidl/default/Android.bp
+#       -> shared_libs: ["android.hardware.bluetooth.audio-impl",
+#                        "libbluetooth_audio_session_aidl", ...]
+#       -> defaults:   latest_android_hardware_bluetooth_audio_ndk_shared
+#     ... and `android.hardware.bluetooth.audio-impl` itself declares
+#       `vintf_fragments: ["bluetooth_audio.xml"]`, so the fragment installs as
+#       an install-dep of `-impl` (hence `bluetooth_audio.xml` leaked too).
+#
+# `libaudioserviceexampleimpl` is listed in PRODUCT_PACKAGES by every
+# vendor/google_devices/<codename>/<codename>.mk, and it has ZERO in-tree
+# consumers (verified against out/soong/installs-<dev>.mk 13/13: the only module
+# that referenced it was android.hardware.audio.service-aidl.example, which is
+# `installable: false` / APEX-only). The shipped vendor audio HAL is the
+# prebuilt `google_devices/.../android.hardware.audio.service-aidl.aoc`, which
+# does not link it. So filtering it out here is dead-weight removal that severs
+# the transitive install of the whole BT-audio subtree — the 5 .so files and the
+# VINTF fragment — in one reversible PRODUCT_PACKAGES filter-out.
+#
+# Scope note (Law 7): this removes the BT-audio libs + fragment from
+# vendor.img. The same modules also exist inside the mainline
+# `com.android.hardware.audio` APEX; that APEX half is out of scope here and is
+# tracked by the separate APEX-dormancy card, NOT by this file.
+#
 # Defence-in-depth: catch any other Bluetooth-named packages that a future
 # adevtool regen might slide into PRODUCT_PACKAGES. Scoped to BT-only tokens
 # so it cannot accidentally hit unrelated packages.
@@ -78,6 +124,7 @@ $(or \
   $(findstring bluetooth-service,$(1)), \
   $(findstring .bluetooth.prebuilt.xml,$(1)), \
   $(findstring BluetoothMidiService,$(1)), \
+  $(findstring libaudioserviceexampleimpl,$(1)), \
   $(findstring libbluetooth_audio,$(1)))
 endef
 
@@ -128,11 +175,21 @@ PRODUCT_COPY_FILES := $(strip $(_gt_bt_filtered_copy_files))
 # The Broadcom BT HAL declares android.hardware.bluetooth IBluetooth/default
 # to the vendor manifest via its VINTF fragment. The fragment is wired as
 # vintf_fragment_modules on the android.hardware.bluetooth-service.bcmbtlinux
-# package. Dropping that package (Layer 1 above) removes the HAL declaration
-# so libvintf compatibility checks no longer expect a Bluetooth HAL to be
-# running. No adevtool_vintf_fragment_vendor_*bluetooth* fragment exists in
-# vendor/google_devices/tokay/vintf/vendor/manifest/ (verified), so no
-# DEVICE_MANIFEST_FILE filter is required here.
+# package. Dropping that package (Layer 1 above) removes that *fragment*
+# declaration only.
+#
+# LAW 7 CORRECTION (T-EXCISE-CLAIM-HONESTY-RESIDUAL, 2026-09-26): the former
+# claim here — "Dropping that package … removes the HAL declaration so libvintf
+# compatibility checks no longer expect a Bluetooth HAL to be running … so no
+# DEVICE_MANIFEST_FILE filter is required" — was FALSE. The 4 BT HALs
+# (android.hardware.bluetooth IBluetoothHci/default, android.hardware.bluetooth.finder,
+# android.hardware.bluetooth.ranging, vendor.google.bluetooth_ext) were declared
+# INLINE in the shipped *main* vendor manifest on 13/13, not only via the package
+# fragment; dropping the package does not remove them (H-B1; D4; A-EXCISE-BT). A
+# DEVICE_MANIFEST_FILE swap IS required. `vintf/vendor_manifest_no_bt*.xml` was
+# unwired at the time; T-EXCISE-BT-VINTF-NOBT has since wired it via
+# radio-excised/vintf-excised.mk at source level, so a re-stamp would carry a
+# BT-free main manifest. Shipped stamps are unchanged (pre-re-stamp).
 
 # ---------------------------------------------------------------------------
 # Layer 4 — init .rc layer: remove Bluetooth service init lines.
@@ -164,12 +221,18 @@ PRODUCT_COPY_FILES := $(strip $(_gt_bt_filtered_copy_files))
 # vendor/adevtool/config/mk/google_devices/common/BoardConfig-common.mk:45
 # re-sets the makevar, so the override sticks).
 #
-# With nitrous blocked, the BT driver never loads in the common bulk modprobe
-# pass (init.common.cfg: `modprobe|vendor -b *` honors the blocklist). nitrous
-# is NOT in init.insmod.tokay.cfg, so the device-specific no-blocklist pass
-# never loads it either. The GKI bluetooth.ko / hci_uart.ko / btbcm.ko remain
-# in system_dlkm but are harmless without nitrous (no rfkill power-on, no HCI
-# transport, no UART device).
+# With nitrous blocked, the nitrous driver does not load in the common bulk
+# modprobe pass (init.common.cfg: `modprobe|vendor -b *` honors the blocklist),
+# and nitrous is NOT in init.insmod.tokay.cfg, so the device-specific
+# no-blocklist pass does not load it either.
+#
+# LAW 7 CORRECTION (T-EXCISE-CLAIM-HONESTY-RESIDUAL, 2026-09-26): blocking
+# nitrous does NOT make the GKI transport modules harmless. They live in
+# system_dlkm, a DIFFERENT blocklist file (SystemKernelBlocklistFile), which on
+# the shipped stamps carries 0/8 matching entries, so bluetooth.ko/hci_uart.ko/
+# btbcm.ko (+ btqca, btsdio, rfcomm, hidp, nfc) LOAD AT BOOT — Tier C 13/13
+# (C-B1; E-14). T-EXCISE-GKI-BT-MODULES adds the system_dlkm blocklist at source
+# level; pre-re-stamp only.
 #
 # No PRODUCT_PACKAGES / PRODUCT_COPY_FILES action is needed in this layer —
 # the blocklist file and its BoardConfig wiring are the mechanism. This

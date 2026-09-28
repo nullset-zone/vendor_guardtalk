@@ -320,6 +320,16 @@
 #   avbcontrol Fully-stock super + Flags:3 vbmeta (AVB path control).
 #              On-device PASS 2026-08-02 (stock AOSP boot). NEVER linked.
 #
+# T-EXCISE-STAGE-RANGO-BLOCKLIST (2026-09-26): every factory-donor
+# vendor_dlkm composition path (gtuserspace, hybrid, gtsystemonstock) now
+# grafts the registry-resolved GuardTalk `modules.blocklist` through the SAME
+# shared helper `stage-laguna-release.sh` uses (extracted byte-identically to
+# scripts/guardtalk-vendor-dlkm-blocklist.sh) — the verbatim factory donor is
+# no longer shipped at any mode. `--link-latest` additionally re-reads the
+# shipped image and refuses to promote an un-excised bundle, so `rango-latest`
+# can never become unblocklisted. `fullgt` (coherent GT OUT) and `avbcontrol`
+# (100% stock AVB control) are unchanged, matching the laguna stager.
+#
 # Usage:
 #   ./stage-rango-release.sh --link-latest          # MODE=gtuserspace (default)
 #   MODE=stockbootstrap ./stage-rango-release.sh   # keep virt (103641-class)
@@ -387,6 +397,26 @@ unsparse_if_needed() {
 }
 
 sz() { stat -c%s "$1"; }
+
+# ---------------------------------------------------------------------------
+# T-EXCISE-STAGE-RANGO-BLOCKLIST (2026-09-26) — vendor_dlkm blocklist graft.
+#
+# E-10 / FULL-ruling close-out for this sibling stager: the factory donor
+# vendor_dlkm.img used to be shipped verbatim at three sites. It now goes
+# through the SAME shared helper the laguna stager uses
+# (`stage_vendor_dlkm_with_blocklist` -> `graft_vendor_dlkm_blocklist`),
+# extracted byte-identically into a shared file so no second implementation
+# exists. The helper resolves the blocklist from the same single source of
+# truth the build uses (`feature-excised/excision-variants.mk`) and is
+# fail-closed (missing registry row / no `blocklist nitrous` / debugfs write
+# failure / read-back mismatch / e2fsck error all abort the stamp).
+# `DEV` is defined for the registry resolver (this stager is rango-only).
+# ---------------------------------------------------------------------------
+DEV="rango"
+GT_BLOCKLIST_LIB="$ROOT/vendor/guardtalk/scripts/guardtalk-vendor-dlkm-blocklist.sh"
+need "$GT_BLOCKLIST_LIB"
+# shellcheck source=guardtalk-vendor-dlkm-blocklist.sh
+. "$GT_BLOCKLIST_LIB"
 
 # ---------------------------------------------------------------------------
 # Gate: OUT sepolicy hashes MUST match before anything is staged/shipped.
@@ -2135,8 +2165,27 @@ write_sha256sums() {
   ( cd "$DEST" && sha256sum -- *.img *.bin 2>/dev/null > SHA256SUMS.tmp && mv SHA256SUMS.tmp SHA256SUMS ) || true
 }
 
+# T-EXCISE-STAGE-RANGO-BLOCKLIST defence-in-depth: never let `rango-latest`
+# point at a bundle whose shipped vendor_dlkm.img still carries the un-excised
+# donor modules.blocklist. The graft in stage_* are already fail-closed; this
+# guard re-reads the actual shipped artifact before the symlink moves so the
+# promotion can never outrun the graft (e.g. a future stage added without it).
+assert_shipped_vendor_dlkm_blocklisted() {
+  local img="$DEST/vendor_dlkm.img" bl
+  need "$img"
+  [ -x "$HOST_BIN/debugfs" ] || die "debugfs missing at $HOST_BIN/debugfs — cannot verify shipped vendor_dlkm before --link-latest"
+  bl="$(mktemp "/tmp/$STAMP.vdlkm.blocklist.XXXXXX")"
+  "$HOST_BIN/debugfs" -R "dump /lib/modules/modules.blocklist $bl" "$img" >/dev/null 2>&1 \
+    || { rm -f "$bl"; die "refusing --link-latest: cannot read /lib/modules/modules.blocklist from $img"; }
+  grep -qE '^[[:space:]]*blocklist[[:space:]]+nitrous' "$bl" \
+    || { rm -f "$bl"; die "refusing --link-latest: $img ships an UN-EXCISED modules.blocklist (no 'blocklist nitrous') — rango-latest must not become an unblocklisted bundle"; }
+  rm -f "$bl"
+  log "  shipped vendor_dlkm modules.blocklist carries 'blocklist nitrous' ✓ (allowlist for rango-latest promotion)"
+}
+
 link_latest_if_requested() {
   if [ "$LINK_LATEST" = "1" ]; then
+    assert_shipped_vendor_dlkm_blocklisted
     ln -sfn "$STAMP" "$ROOT/releases/desktop-flash/rango-latest"
     log "rango-latest -> $STAMP"
   else
@@ -2290,7 +2339,7 @@ stage_gtuserspace() {
   fi
   # Factory dlkm MUST match factory boot vermagic (GT dlkm is 6.6.139+RANDSTRUCT).
   unsparse_if_needed "$STOCK/system_dlkm.img" "$WORK/system_dlkm.img"
-  unsparse_if_needed "$STOCK/vendor_dlkm.img" "$WORK/vendor_dlkm.img"
+  stage_vendor_dlkm_with_blocklist "$WORK/vendor_dlkm.img"
 
   local sys_sz se_sz pr_sz ven_sz sdlkm_sz vdlkm_sz
   sys_sz=$(sz "$WORK/system.img"); se_sz=$(sz "$WORK/system_ext.img")
@@ -2344,7 +2393,7 @@ stage_gtuserspace() {
     cp -f "$OUT/vendor.img" "$DEST/vendor.img"
   fi
   cp -f "$STOCK/system_dlkm.img" "$DEST/system_dlkm.img"
-  cp -f "$STOCK/vendor_dlkm.img" "$DEST/vendor_dlkm.img"
+  cp -f "$WORK/vendor_dlkm.img" "$DEST/vendor_dlkm.img"
   if [ -f "$STOCK/super_empty.img" ]; then
     cp -f "$STOCK/super_empty.img" "$DEST/super_empty.img"
   elif [ -f "$STOCKCTL/super_empty.img" ]; then
@@ -2375,7 +2424,7 @@ stage_gtuserspace() {
 
   local mode_blurb virt_blurb apex_blurb apexd_blurb init_blurb initrc_blurb hwasan_blurb selinux_blurb vendor_blurb vendor_table_blurb composition_blurb
   mode_blurb="MODE=$MODE"
-  composition_blurb="Factory CP1A **boot + dlkm** + GuardTalkOS **system/system_ext/product/vendor** (same OUT)."
+  composition_blurb="Factory CP1A **boot + system_dlkm** + factory **vendor_dlkm** carrying the GuardTalk \`modules.blocklist\` graft + GuardTalkOS **system/system_ext/product/vendor** (same OUT)."
   apexd_blurb="GT /system/bin/apexd (not stock-grafted)"
   init_blurb="GT /system/bin/init (not stock-grafted)"
   initrc_blurb="GT /system/etc/init/hw/init.rc (restorecon patch only)"
@@ -2504,7 +2553,8 @@ the whole vendor partition byte-identical to factory — see vendor bullet).
 |-----------|--------|
 | bootloader / radio | Factory CP1A |
 | boot / init_boot / vendor_boot / vendor_kernel_boot / dtbo / pvmfw | Factory CP1A |
-| system_dlkm / vendor_dlkm | Factory CP1A (matches factory kernel 6.6.102) |
+| system_dlkm | Factory CP1A (matches factory kernel 6.6.102) |
+| vendor_dlkm | Factory CP1A + GuardTalk \`modules.blocklist\` graft — nitrous/cpif/cpif_page/shm_ipc blocked (T-EXCISE-STAGE-RANGO-BLOCKLIST) |
 | system / system_ext / product | GuardTalkOS OUT (patched system.img) |
 | vendor | ${vendor_table_blurb} |
 | vbmeta* | Flags:3 valid test-key |
@@ -2620,7 +2670,7 @@ stage_hybrid() {
   unsparse_if_needed "$OUT/system_ext.img" "$WORK/system_ext.img"
   unsparse_if_needed "$OUT/product.img" "$WORK/product.img"
   unsparse_if_needed "$STOCK/system_dlkm.img" "$WORK/system_dlkm.img"
-  unsparse_if_needed "$STOCK/vendor_dlkm.img" "$WORK/vendor_dlkm.img"
+  stage_vendor_dlkm_with_blocklist "$WORK/vendor_dlkm.img"
   cp -f "$WORK/vendor.img" "$WORK/vendor_raw.img"
 
   local sys_sz se_sz pr_sz sdlkm_sz ven_sz vdlkm_sz
@@ -2656,7 +2706,7 @@ stage_hybrid() {
   cp -f "$OUT/system_ext.img" "$DEST/system_ext.img"
   cp -f "$OUT/product.img" "$DEST/product.img"
   cp -f "$STOCK/system_dlkm.img" "$DEST/system_dlkm.img"
-  cp -f "$STOCK/vendor_dlkm.img" "$DEST/vendor_dlkm.img"
+  cp -f "$WORK/vendor_dlkm.img" "$DEST/vendor_dlkm.img"
   [ -f "$STOCK/super_empty.img" ] && cp -f "$STOCK/super_empty.img" "$DEST/super_empty.img"
   cp -f "$STOCKCTL/bootloader.img" "$DEST/bootloader.img"
   cp -f "$STOCKCTL/radio.img" "$DEST/radio.img"
@@ -2692,7 +2742,8 @@ interim direction). Produced by \`vendor/guardtalk/scripts/stage-rango-release.s
 | boot / init_boot / vendor_boot / vendor_kernel_boot / dtbo / pvmfw | Factory CP1A rescue boot (proven to reach fastbootd) |
 | system / system_ext / product | GuardTalkOS (current \`out/target/product/rango\`) |
 | vendor | Factory CP1A drivers + **GT precompiled_sepolicy** (hashes verified MATCH, hard gate) |
-| system_dlkm / vendor_dlkm | Factory CP1A |
+| system_dlkm | Factory CP1A |
+| vendor_dlkm | Factory CP1A + GuardTalk \`modules.blocklist\` graft (T-EXCISE-STAGE-RANGO-BLOCKLIST) |
 | vbmeta / vbmeta_system / vbmeta_vendor | Flags:3 valid test-key (\`vbmeta_valid_flags3.img\`) |
 | avb_custom_key | \`avb_pkmd.bin\` (public testkey pkmd; erase then flash) |
 | super | lpmake (this script) |
@@ -2967,7 +3018,7 @@ stage_gtsystemonstock() {
   unsparse_if_needed "$STOCK/product.img" "$WORK/product.img"
   unsparse_if_needed "$STOCK/vendor.img" "$WORK/vendor.img"
   unsparse_if_needed "$STOCK/system_dlkm.img" "$WORK/system_dlkm.img"
-  unsparse_if_needed "$STOCK/vendor_dlkm.img" "$WORK/vendor_dlkm.img"
+  stage_vendor_dlkm_with_blocklist "$WORK/vendor_dlkm.img"
 
   if [ "$MODE" = "gtsystemonstockselinux" ] || [ "$MODE" = "gtsystemonstockinitboot" ] \
      || [ "$MODE" = "gtsystemonstockinitlibs" ] || [ "$MODE" = "gtsystemonstocknovirt" ] \
@@ -3491,7 +3542,7 @@ stage_gtsystemonstock() {
   cp -f "$STOCK/product.img" "$DEST/product.img"
   cp -f "$STOCK/vendor.img" "$DEST/vendor.img"
   cp -f "$STOCK/system_dlkm.img" "$DEST/system_dlkm.img"
-  cp -f "$STOCK/vendor_dlkm.img" "$DEST/vendor_dlkm.img"
+  cp -f "$WORK/vendor_dlkm.img" "$DEST/vendor_dlkm.img"
   cp -f "$STOCKCTL/bootloader.img" "$DEST/bootloader.img"
   cp -f "$STOCKCTL/radio.img" "$DEST/radio.img"
   for img in boot.img init_boot.img vendor_boot.img vendor_kernel_boot.img dtbo.img pvmfw.img; do
@@ -3520,7 +3571,8 @@ replaces system.img with GuardTalkOS (plus mode-specific grafts).
 | Partition | Source |
 |-----------|--------|
 | system | GT OUT + factory-boot patch; selinux/initboot/initlibs add stock plat sepolicy; initboot+ add stock init/bootstrap; initlibs adds stock init NEEDED lib64 |
-| system_ext / product / vendor / dlkm | Factory CP1A (stock donor, sha256-gated) |
+| system_ext / product / vendor / system_dlkm | Factory CP1A (stock donor, sha256-gated) |
+| vendor_dlkm | Factory CP1A + GuardTalk \`modules.blocklist\` graft (T-EXCISE-STAGE-RANGO-BLOCKLIST) |
 | boot chain / bootloader / radio | Factory CP1A |
 | vbmeta* | Flags:3 test-key (same as avbcontrol) |
 

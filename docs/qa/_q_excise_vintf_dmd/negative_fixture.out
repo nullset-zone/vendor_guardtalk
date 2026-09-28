@@ -1,0 +1,61 @@
+--- clean-control: process_exit=0 G5.pass=True forbidden_refs=0 oemservice_hits=0 in_main=False in_fragment=False
+--- telephony-in-fragment: process_exit=1 G5.pass=False forbidden_refs=2 oemservice_hits=2 in_main=False in_fragment=True
+      oemservice via '^vendor\\.samsung_slsi\\.telephony'
+      oemservice via 'oemservice'
+--- telephony-in-main: process_exit=1 G5.pass=False forbidden_refs=2 oemservice_hits=2 in_main=True in_fragment=False
+      oemservice via '^vendor\\.samsung_slsi\\.telephony'
+      oemservice via 'oemservice'
+
+PROOF: oemservice exists ONLY in the fragment (main manifest clean) yet G5 still flags it -> the check MERGES fragments, it does not read the main manifest alone.
+
+{
+  "clean-control": {
+    "exit": 0,
+    "g5_pass": true,
+    "forbidden_refs": 0,
+    "oemservice_hits": [],
+    "oemservice_in_main": false,
+    "oemservice_in_fragment": false
+  },
+  "telephony-in-fragment": {
+    "exit": 1,
+    "g5_pass": false,
+    "forbidden_refs": 2,
+    "oemservice_hits": [
+      {
+        "name": "vendor.samsung_slsi.telephony.hardware.oemservice",
+        "pattern": "^vendor\\.samsung_slsi\\.telephony",
+        "reason": "dmd.xml telephony oemservice defeats vendor_manifest_no_radio*.xml (R-5)"
+      },
+      {
+        "name": "vendor.samsung_slsi.telephony.hardware.oemservice",
+        "pattern": "oemservice",
+        "reason": "radioExternal/oemservice HAL residue (A-EXCISE-RADIO)"
+      }
+    ],
+    "oemservice_in_main": false,
+    "oemservice_in_fragment": true
+  },
+  "telephony-in-main": {
+    "exit": 1,
+    "g5_pass": false,
+    "forbidden_refs": 2,
+    "oemservice_hits": [
+      {
+        "name": "vendor.samsung_slsi.telephony.hardware.oemservice",
+        "pattern": "^vendor\\.samsung_slsi\\.telephony",
+        "reason": "dmd.xml telephony oemservice defeats vendor_manifest_no_radio*.xml (R-5)"
+      },
+      {
+        "name": "vendor.samsung_slsi.telephony.hardware.oemservice",
+        "pattern": "oemservice",
+        "reason": "radioExternal/oemservice HAL residue (A-EXCISE-RADIO)"
+      }
+    ],
+    "oemservice_in_main": true,
+    "oemservice_in_fragment": false
+  }
+}
+
+NEGATIVE FIXTURE HARNESS: PASS — telephony-in-fragment detected by G5 with non-zero process exit; clean control exit 0
+exit 0

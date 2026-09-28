@@ -392,17 +392,39 @@ MODE="${MODE:-gtuserspace}"
 LINK_LATEST=0
 DEV=""
 OUT_OVERRIDE=""
+# T-EXCISE-STAMP-GATE diagnostic entry point (QA/ops only): run ONLY the stamp
+# mitigation gate against two vendor_boot images and exit with its verdict. It
+# never stages and is NOT a bypass — every staging path still runs the gate
+# unconditionally (see stamp_mitigation_gate below).
+GATE_MODE=0
+GATE_DEV=""
+GATE_OUT=""
+GATE_STAMP=""
+# T-EXCISE-STAMP-MITIGATION-GRAFT diagnostic entry point (QA/ops only): apply the
+# graft to a caller-supplied THROWAWAY vendor_boot and exit. Never stages and is
+# NOT a bypass — every staging path still applies the graft unconditionally.
+GRAFT_MODE=0
+GRAFT_DEV=""
+GRAFT_IN=""
+GRAFT_OUT=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     rango|frankel|blazer|mustang) DEV="$1" ;;
     --out) shift; [ "$#" -gt 0 ] || { echo "[stage] --out requires a DIR" >&2; exit 2; }; OUT_OVERRIDE="$1" ;;
     --out=*) OUT_OVERRIDE="${1#--out=}" ;;
     --link-latest) LINK_LATEST=1 ;;
+    --mitigation-gate)
+      [ "$#" -ge 4 ] || { echo "[stage] --mitigation-gate requires <dev> <out_vendor_boot.img> <stamp_vendor_boot.img>" >&2; exit 2; }
+      GATE_MODE=1; GATE_DEV="$2"; GATE_OUT="$3"; GATE_STAMP="$4"; shift 3 ;;
+    --mitigation-graft)
+      [ "$#" -ge 4 ] || { echo "[stage] --mitigation-graft requires <dev> <in_vendor_boot.img> <out_vendor_boot.img>" >&2; exit 2; }
+      GRAFT_MODE=1; GRAFT_DEV="$2"; GRAFT_IN="$3"; GRAFT_OUT="$4"; shift 3 ;;
     *) echo "[stage] unknown arg: $1" >&2; exit 2 ;;
   esac
   shift
 done
-[ -n "$DEV" ] || { echo "[stage] usage: stage-laguna-release.sh <rango|frankel|blazer|mustang> [--out DIR] [--link-latest]" >&2; exit 2; }
+[ -n "$DEV" ] || [ "$GATE_MODE" = "1" ] || [ "$GRAFT_MODE" = "1" ] \
+  || { echo "[stage] usage: stage-laguna-release.sh <rango|frankel|blazer|mustang> [--out DIR] [--link-latest]" >&2; exit 2; }
 if [ "$LINK_LATEST" = "1" ] && [ -n "$OUT_OVERRIDE" ]; then
   echo "[stage] --link-latest cannot be combined with --out (the link must point at a managed stamp)" >&2
   exit 2
@@ -2468,6 +2490,91 @@ link_latest_if_requested() {
 }
 
 # ===========================================================================
+# T-EXCISE-LAGUNA-STAGER-BLOCKLIST (P0, 2026-09-26) — hybrid vendor_dlkm
+# blocklist graft (shared by EVERY factory-vendor_dlkm composition path).
+#
+# Root cause (E-10 / B-EXCISE / Q-EXCISE-LAGUNA-BLOCKLIST-WIRING): the hybrid
+# composition paths below ship the *verbatim factory donor* vendor_dlkm.img.
+# That donor carries the upstream 16-line modules.blocklist with ZERO GuardTalk
+# excision directives, so `nitrous.ko` (BCM4390 BT power/rfkill) and the
+# Shannon baseband IPC modules (cpif/cpif_page/shm_ipc) stay loadable by the
+# bulk `modprobe -b` pass even though they are present in modules.load. The
+# shipped stamp is byte-identical to the factory donor. The BoardConfig /
+# variant wiring is already correct; the defect is that this stager BYPASSES
+# the build and copies the factory image.
+#
+# Fix: graft the device's registry-resolved canonical GuardTalk blocklist into
+# the factory vendor_dlkm ext2 image at /lib/modules/modules.blocklist, and do
+# it in ONE helper called by every stage that composes a factory vendor_dlkm
+# (MODE=gtuserspace, MODE=hybrid, MODE=gtsystemonstock + its family). The
+# excision is therefore inherited by every hybrid-composed device rather than
+# patched one stage/device at a time.
+#
+# The source is resolved from the SAME single source of truth the build uses
+# (excision-variants.mk: GT_DEVICE_BLOCKLIST_<dev> override, else
+# GT_VARIANT_<variant>_BLOCKLIST), mirroring excision-variant-select.mk:110-115,
+# so any future device registered there inherits this automatically.
+#
+# Fail-closed (Law 3 / Law 9): a missing registry row, a missing blocklist
+# file, a source without `blocklist nitrous`, a debugfs write failure, or a
+# read-back that does not byte-match the source aborts the stamp.
+# ===========================================================================
+gt_blocklist_registry() { echo "$ROOT/vendor/guardtalk/feature-excised/excision-variants.mk"; }
+
+gt_resolve_blocklist_source() {
+  # $1 = device codename. Echoes the absolute registry-resolved blocklist path.
+  local dev="$1" reg variant rel
+  reg="$(gt_blocklist_registry)"
+  need "$reg"
+  variant="$(sed -n "s/^GT_DEVICE_VARIANT_${dev}[[:space:]]*:=[[:space:]]*//p" "$reg" | tr -d '[:space:]')"
+  [ -n "$variant" ] \
+    || die "no GT_DEVICE_VARIANT_${dev} row in $reg — refusing to guess a blocklist (mirrors excision-variant-select.mk \$(error))"
+  rel="$(sed -n "s/^GT_DEVICE_BLOCKLIST_${dev}[[:space:]]*:=[[:space:]]*//p" "$reg" | tr -d '[:space:]')"
+  if [ -z "$rel" ]; then
+    rel="$(sed -n "s/^GT_VARIANT_${variant}_BLOCKLIST[[:space:]]*:=[[:space:]]*//p" "$reg" | tr -d '[:space:]')"
+  fi
+  [ -n "$rel" ] \
+    || die "variant '$variant' (device '$dev') has no ..._BLOCKLIST row in $reg"
+  echo "$ROOT/$rel"
+}
+
+graft_vendor_dlkm_blocklist() {
+  # $1 = raw vendor_dlkm ext2 image (already unsparsed), $2 = blocklist source.
+  # Replaces /lib/modules/modules.blocklist and verifies it byte-for-byte.
+  local img="$1" src="$2" dbg="$HOST_BIN/debugfs" rb rc=0
+  need "$img"; need "$src"
+  [ -x "$dbg" ] || die "debugfs missing at $dbg — required for the vendor_dlkm blocklist graft"
+  grep -qE '^[[:space:]]*blocklist[[:space:]]+nitrous' "$src" \
+    || die "blocklist source '$src' has no 'blocklist nitrous' directive — refusing to ship an un-excised vendor_dlkm"
+
+  "$dbg" -w -R "rm /lib/modules/modules.blocklist" "$img" >/dev/null 2>&1 || true
+  "$dbg" -w -R "write $src /lib/modules/modules.blocklist" "$img" >/dev/null \
+    || die "debugfs write of $src -> $img:/lib/modules/modules.blocklist failed"
+
+  rb="$(mktemp "/tmp/$(basename "$img").blocklist.XXXXXX")"
+  "$dbg" -R "dump /lib/modules/modules.blocklist $rb" "$img" >/dev/null 2>&1 \
+    || { rm -f "$rb"; die "debugfs read-back of the grafted blocklist failed for $img"; }
+  if ! cmp -s "$rb" "$src"; then
+    rm -f "$rb"
+    die "grafted modules.blocklist in $img does not byte-match '$src' — refusing to ship"
+  fi
+  rm -f "$rb"
+
+  if command -v e2fsck >/dev/null 2>&1; then
+    e2fsck -fn "$img" >/dev/null 2>&1 || rc=$?
+    [ "$rc" -le 2 ] || die "post-graft e2fsck FAILED (rc=$rc) on $img — filesystem left inconsistent"
+  fi
+  log "  vendor_dlkm blocklist grafted from $(basename "$src") ($(grep -cE '^[[:space:]]*blocklist' "$src" || true) directives, read-back byte-identical) ✓"
+}
+
+stage_vendor_dlkm_with_blocklist() {
+  # $1 = destination raw image path. Unsparses the factory donor into $1 and
+  # grafts the registry-resolved per-device blocklist.
+  unsparse_if_needed "$STOCK/vendor_dlkm.img" "$1"
+  graft_vendor_dlkm_blocklist "$1" "$(gt_resolve_blocklist_source "$DEV")"
+}
+
+# ===========================================================================
 # MODE: gtuserspace — factory boot + coherent GT logicals (preferred fix).
 # Only mode allowed to relink $DEV-latest (as of 2026-08-02).
 # ===========================================================================
@@ -2609,7 +2716,7 @@ stage_gtuserspace() {
   fi
   # Factory dlkm MUST match factory boot vermagic (GT dlkm is 6.6.139+RANDSTRUCT).
   unsparse_if_needed "$STOCK/system_dlkm.img" "$WORK/system_dlkm.img"
-  unsparse_if_needed "$STOCK/vendor_dlkm.img" "$WORK/vendor_dlkm.img"
+  stage_vendor_dlkm_with_blocklist "$WORK/vendor_dlkm.img"
 
   local sys_sz se_sz pr_sz ven_sz sdlkm_sz vdlkm_sz
   sys_sz=$(sz "$WORK/system.img"); se_sz=$(sz "$WORK/system_ext.img")
@@ -2663,7 +2770,9 @@ stage_gtuserspace() {
     cp -f "$OUT/vendor.img" "$DEST/vendor.img"
   fi
   cp -f "$STOCK/system_dlkm.img" "$DEST/system_dlkm.img"
-  cp -f "$STOCK/vendor_dlkm.img" "$DEST/vendor_dlkm.img"
+  # T-EXCISE-LAGUNA-STAGER-BLOCKLIST: ship the PATCHED vendor_dlkm (must match
+  # what was packed into super.img) — not the verbatim factory donor.
+  cp -f "$WORK/vendor_dlkm.img" "$DEST/vendor_dlkm.img"
   if [ -f "$STOCK/super_empty.img" ]; then
     cp -f "$STOCK/super_empty.img" "$DEST/super_empty.img"
   elif [ -f "$STOCKCTL/super_empty.img" ]; then
@@ -2675,6 +2784,9 @@ stage_gtuserspace() {
   for img in boot.img init_boot.img vendor_boot.img vendor_kernel_boot.img dtbo.img pvmfw.img; do
     cp -f "$boot_src/$img" "$DEST/$img"
   done
+  # T-EXCISE-STAMP-MITIGATION-GRAFT: the factory vendor_boot must carry the
+  # device's declared late-board mitigation flags (overwrites the verbatim copy).
+  stage_vendor_boot_with_mitigation_flags "$boot_src/vendor_boot.img" "$DEST/vendor_boot.img"
 
   cp -f "$vbmeta_flags3" "$DEST/vbmeta.img"
   cp -f "$vbmeta_flags3" "$DEST/vbmeta_system.img"
@@ -2700,7 +2812,7 @@ stage_gtuserspace() {
 
   local mode_blurb virt_blurb apex_blurb apexd_blurb init_blurb initrc_blurb hwasan_blurb selinux_blurb vendor_blurb vendor_table_blurb composition_blurb
   mode_blurb="MODE=$MODE"
-  composition_blurb="Factory $STOCK_ID **boot + dlkm** + GuardTalkOS **system/system_ext/product/vendor** (same OUT)."
+  composition_blurb="Factory $STOCK_ID **boot + dlkm** (vendor_dlkm: GT excised blocklist grafted) + GuardTalkOS **system/system_ext/product/vendor** (same OUT)."
   apexd_blurb="GT /system/bin/apexd (not stock-grafted)"
   init_blurb="GT /system/bin/init (not stock-grafted)"
   initrc_blurb="GT /system/etc/init/hw/init.rc (restorecon patch only)"
@@ -2807,6 +2919,7 @@ Staging patches:
 - hwasan native deps: ${hwasan_blurb}
 - SELinux early-apex: ${selinux_blurb}
 - vendor: ${vendor_blurb}
+- vendor_dlkm blocklist: GuardTalk excised \`/lib/modules/modules.blocklist\` grafted into the factory donor (nitrous + cpif/cpif_page/shm_ipc, registry-resolved; T-EXCISE-LAGUNA-STAGER-BLOCKLIST)
 
 **Failure classes (bound):**
 - \`0xfc\` / \`reboot bootloader\` (~18s): \`apexd-bootstrap\`
@@ -2829,7 +2942,8 @@ the whole vendor partition byte-identical to factory — see vendor bullet).
 |-----------|--------|
 | bootloader / radio | Factory $STOCK_ID |
 | boot / init_boot / vendor_boot / vendor_kernel_boot / dtbo / pvmfw | Factory $STOCK_ID |
-| system_dlkm / vendor_dlkm | Factory $STOCK_ID (matches factory kernel) |
+| system_dlkm | Factory $STOCK_ID (matches factory kernel) |
+| vendor_dlkm | Factory $STOCK_ID + **GuardTalk excised modules.blocklist grafted** (nitrous + cpif/cpif_page/shm_ipc; T-EXCISE-LAGUNA-STAGER-BLOCKLIST) |
 | system / system_ext / product | GuardTalkOS OUT (patched system.img) |
 | vendor | ${vendor_table_blurb} |
 | vbmeta* | Flags:3 valid test-key |
@@ -2923,6 +3037,8 @@ KLODREADME
     mv -f "$klog_readme.klogtmp" "$klog_readme"
   fi
 
+  # T-EXCISE-STAMP-GATE: fail-closed build-vs-stamp mitigation parity gate.
+  stamp_mitigation_gate "$DEV" "$OUT/vendor_boot.img" "$DEST/vendor_boot.img"
   write_sha256sums
   log "DONE ($MODE): $DEST"
 }
@@ -2999,7 +3115,7 @@ stage_hybrid() {
   unsparse_if_needed "$OUT/system_ext.img" "$WORK/system_ext.img"
   unsparse_if_needed "$OUT/product.img" "$WORK/product.img"
   unsparse_if_needed "$STOCK/system_dlkm.img" "$WORK/system_dlkm.img"
-  unsparse_if_needed "$STOCK/vendor_dlkm.img" "$WORK/vendor_dlkm.img"
+  stage_vendor_dlkm_with_blocklist "$WORK/vendor_dlkm.img"
   cp -f "$WORK/vendor.img" "$WORK/vendor_raw.img"
 
   local sys_sz se_sz pr_sz sdlkm_sz ven_sz vdlkm_sz
@@ -3035,7 +3151,9 @@ stage_hybrid() {
   cp -f "$OUT/system_ext.img" "$DEST/system_ext.img"
   cp -f "$OUT/product.img" "$DEST/product.img"
   cp -f "$STOCK/system_dlkm.img" "$DEST/system_dlkm.img"
-  cp -f "$STOCK/vendor_dlkm.img" "$DEST/vendor_dlkm.img"
+  # T-EXCISE-LAGUNA-STAGER-BLOCKLIST: ship the PATCHED vendor_dlkm (must match
+  # what was packed into super.img) — not the verbatim factory donor.
+  cp -f "$WORK/vendor_dlkm.img" "$DEST/vendor_dlkm.img"
   [ -f "$STOCK/super_empty.img" ] && cp -f "$STOCK/super_empty.img" "$DEST/super_empty.img"
   cp -f "$STOCKCTL/bootloader.img" "$DEST/bootloader.img"
   cp -f "$STOCKCTL/radio.img" "$DEST/radio.img"
@@ -3043,6 +3161,9 @@ stage_hybrid() {
   for img in boot.img init_boot.img vendor_boot.img vendor_kernel_boot.img dtbo.img pvmfw.img; do
     cp -f "$boot_src/$img" "$DEST/$img"
   done
+  # T-EXCISE-STAMP-MITIGATION-GRAFT: the factory vendor_boot must carry the
+  # device's declared late-board mitigation flags (overwrites the verbatim copy).
+  stage_vendor_boot_with_mitigation_flags "$boot_src/vendor_boot.img" "$DEST/vendor_boot.img"
   [ -f "$STOCKCTL/vendor_boot_diag.img" ] && cp -f "$STOCKCTL/vendor_boot_diag.img" "$DEST/vendor_boot_diag.img"
 
   cp -f "$vbmeta_flags3" "$DEST/vbmeta.img"
@@ -3071,7 +3192,8 @@ interim direction). Produced by \`vendor/guardtalk/scripts/stage-laguna-release.
 | boot / init_boot / vendor_boot / vendor_kernel_boot / dtbo / pvmfw | Factory CP1A rescue boot (proven to reach fastbootd) |
 | system / system_ext / product | GuardTalkOS (current \`out/target/product/$DEV\`) |
 | vendor | Factory CP1A drivers + **GT precompiled_sepolicy** (hashes verified MATCH, hard gate) |
-| system_dlkm / vendor_dlkm | Factory CP1A |
+| system_dlkm | Factory CP1A |
+| vendor_dlkm | Factory CP1A + **GuardTalk excised modules.blocklist grafted** (nitrous + cpif/cpif_page/shm_ipc; T-EXCISE-LAGUNA-STAGER-BLOCKLIST) |
 | vbmeta / vbmeta_system / vbmeta_vendor | Flags:3 valid test-key (\`vbmeta_valid_flags3.img\`) |
 | avb_custom_key | \`avb_pkmd.bin\` (public testkey pkmd; erase then flash) |
 | super | lpmake (this script) |
@@ -3102,6 +3224,8 @@ BUILD_ID: $STOCK_ID
 Staged (UTC): $(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
 
+  # T-EXCISE-STAMP-GATE: fail-closed build-vs-stamp mitigation parity gate.
+  stamp_mitigation_gate "$DEV" "$OUT/vendor_boot.img" "$DEST/vendor_boot.img"
   write_sha256sums
   log "DONE: $DEST"
 }
@@ -3162,6 +3286,11 @@ stage_fullgt() {
   for img in boot.img init_boot.img vendor_boot.img vendor_kernel_boot.img dtbo.img pvmfw.img; do
     cp -f "$OUT/$img" "$DEST/$img"
   done
+  # T-EXCISE-STAMP-MITIGATION-GRAFT: OUT vendor_boot is the build itself, so this
+  # is a byte-identical copy when the declared flags are already present (it only
+  # rewrites if the build's own image were non-compliant — which the gate then
+  # still refuses via its build-miss path).
+  stage_vendor_boot_with_mitigation_flags "$OUT/vendor_boot.img" "$DEST/vendor_boot.img"
   cp -f "$OUT/vbmeta.img" "$DEST/vbmeta.img" 2>/dev/null || true
   cp -f "$OUT/vbmeta_system.img" "$DEST/vbmeta_system.img" 2>/dev/null || true
   cp -f "$OUT/vbmeta_vendor.img" "$DEST/vbmeta_vendor.img" 2>/dev/null || true
@@ -3204,6 +3333,8 @@ DEVICE=$DEV bash scripts/flash-from-remote.sh
 Staged (UTC): $(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
 
+  # T-EXCISE-STAMP-GATE: fail-closed build-vs-stamp mitigation parity gate.
+  stamp_mitigation_gate "$DEV" "$OUT/vendor_boot.img" "$DEST/vendor_boot.img"
   write_sha256sums
   log "DONE (diagnostic only, not linked): $DEST"
 }
@@ -3295,6 +3426,10 @@ DEVICE=$DEV bash scripts/flash-from-remote.sh
 Staged (UTC): $(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
 
+  # T-EXCISE-STAMP-GATE intentionally NOT applied to this path: MODE=avbcontrol
+  # is the documented 100%-stock AVB control with ZERO GuardTalkOS content, so
+  # build-vs-stamp mitigation parity does not apply (same scoping precedent as
+  # the sepolicy_hash_gate/mte_strip_gate guards, which also skip this path).
   write_sha256sums
   log "DONE (diagnostic control only, not linked): $DEST"
 }
@@ -3346,7 +3481,7 @@ stage_gtsystemonstock() {
   unsparse_if_needed "$STOCK/product.img" "$WORK/product.img"
   unsparse_if_needed "$STOCK/vendor.img" "$WORK/vendor.img"
   unsparse_if_needed "$STOCK/system_dlkm.img" "$WORK/system_dlkm.img"
-  unsparse_if_needed "$STOCK/vendor_dlkm.img" "$WORK/vendor_dlkm.img"
+  stage_vendor_dlkm_with_blocklist "$WORK/vendor_dlkm.img"
 
   if [ "$MODE" = "gtsystemonstockselinux" ] || [ "$MODE" = "gtsystemonstockinitboot" ] \
      || [ "$MODE" = "gtsystemonstockinitlibs" ] || [ "$MODE" = "gtsystemonstocknovirt" ] \
@@ -3492,15 +3627,19 @@ stage_gtsystemonstock() {
 
   # Hard gates: stock partitions stay stock; system stays GT unless
   # initboot grafts stock init/bootstrap. selinux/initboot rewrite
-  # sepolicy via debugfs — skip byte-cmp on system_ext/product/vendor;
-  # dlkm is untouched either way.
+  # sepolicy via debugfs — skip byte-cmp on system_ext/product/vendor.
+  # T-EXCISE-LAGUNA-STAGER-BLOCKLIST: vendor_dlkm is also excluded — every
+  # factory-dlkm composition path now grafts the GuardTalk blocklist into
+  # /lib/modules/modules.blocklist, so it can no longer be byte-identical to
+  # the donor. Its integrity is asserted by graft_vendor_dlkm_blocklist
+  # (read-back byte-match against the registry-resolved source), not here.
   local h
-  local gate_imgs="system_ext product vendor system_dlkm vendor_dlkm"
+  local gate_imgs="system_ext product vendor system_dlkm"
   if [ "$MODE" = "gtsystemonstockselinux" ] || [ "$MODE" = "gtsystemonstockinitboot" ] \
      || [ "$MODE" = "gtsystemonstockinitlibs" ] || [ "$MODE" = "gtsystemonstocknovirt" ] \
      || [ "$MODE" = "gtsystemonstockbootapex" ] || [ "$MODE" = "gtsystemonstockapexd" ] || [ "$MODE" = "gtsystemonstockueventd" ] || [ "$MODE" = "gtsystemonstockapexset" ] || [ "$MODE" = "gtsystemonstockprop" ] || [ "$MODE" = "gtsystemonstockapexdlibs" ] || [ "$MODE" = "gtsystemonstockpctx" ] || [ "$MODE" = "gtsystemonstockinitrc" ] || [ "$MODE" = "gtsystemonstockplatctx" ] || [ "$MODE" = "gtsystemonstockearlyinit" ] || [ "$MODE" = "gtsystemonstockprotobuf" ] || [ "$MODE" = "gtsystemonstocklibcxx" ] || [ "$MODE" = "gtsystemonstockldandroid" ] || [ "$MODE" = "gtsystemonstockapexdetc" ] || [ "$MODE" = "gtsystemonstocktaskprof" ] || [ "$MODE" = "gtsystemonstockaconfig" ] || [ "$MODE" = "gtsystemonstockacflags" ] || [ "$MODE" = "gtsystemonstockbflags" ]; then
-    gate_imgs="system_dlkm vendor_dlkm"
-    log "  skipping system_ext/product/vendor byte-cmp (sepolicy graft rewrites fs)"
+    gate_imgs="system_dlkm"
+    log "  skipping system_ext/product/vendor/vendor_dlkm byte-cmp (sepolicy + blocklist grafts rewrite fs)"
   fi
   for img in $gate_imgs; do
     h="$(sha256sum "$STOCK/${img}.img" | awk '{print $1}')"
@@ -3870,12 +4009,17 @@ stage_gtsystemonstock() {
   cp -f "$STOCK/product.img" "$DEST/product.img"
   cp -f "$STOCK/vendor.img" "$DEST/vendor.img"
   cp -f "$STOCK/system_dlkm.img" "$DEST/system_dlkm.img"
-  cp -f "$STOCK/vendor_dlkm.img" "$DEST/vendor_dlkm.img"
+  # T-EXCISE-LAGUNA-STAGER-BLOCKLIST: ship the PATCHED vendor_dlkm (must match
+  # what was packed into super.img) — not the verbatim factory donor.
+  cp -f "$WORK/vendor_dlkm.img" "$DEST/vendor_dlkm.img"
   cp -f "$STOCKCTL/bootloader.img" "$DEST/bootloader.img"
   cp -f "$STOCKCTL/radio.img" "$DEST/radio.img"
   for img in boot.img init_boot.img vendor_boot.img vendor_kernel_boot.img dtbo.img pvmfw.img; do
     cp -f "$boot_src/$img" "$DEST/$img"
   done
+  # T-EXCISE-STAMP-MITIGATION-GRAFT: the factory vendor_boot must carry the
+  # device's declared late-board mitigation flags (overwrites the verbatim copy).
+  stage_vendor_boot_with_mitigation_flags "$boot_src/vendor_boot.img" "$DEST/vendor_boot.img"
   if [ -f "$STOCK/super_empty.img" ]; then
     cp -f "$STOCK/super_empty.img" "$DEST/super_empty.img"
   elif [ -f "$STOCKCTL/super_empty.img" ]; then
@@ -3899,7 +4043,9 @@ replaces system.img with GuardTalkOS (plus mode-specific grafts).
 | Partition | Source |
 |-----------|--------|
 | system | GT OUT + factory-boot patch; selinux/initboot/initlibs add stock plat sepolicy; initboot+ add stock init/bootstrap; initlibs adds stock init NEEDED lib64 |
-| system_ext / product / vendor / dlkm | Factory CP1A (stock donor, sha256-gated) |
+| system_ext / product / vendor | Factory CP1A (stock donor, sha256-gated) |
+| system_dlkm | Factory CP1A (stock donor, sha256-gated) |
+| vendor_dlkm | Factory CP1A stock donor + **GuardTalk excised modules.blocklist grafted** (T-EXCISE-LAGUNA-STAGER-BLOCKLIST; read-back byte-gated vs registry source, not donor-byte-identical) |
 | boot chain / bootloader / radio | Factory CP1A |
 | vbmeta* | Flags:3 test-key (same as avbcontrol) |
 
@@ -3960,9 +4106,304 @@ DEVICE=$DEV bash scripts/flash-from-remote.sh
 Staged (UTC): $(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
 
+  # T-EXCISE-STAMP-GATE: fail-closed build-vs-stamp mitigation parity gate.
+  stamp_mitigation_gate "$DEV" "$OUT/vendor_boot.img" "$DEST/vendor_boot.img"
   write_sha256sums
   log "DONE (inverted bisect, not linked): $DEST"
 }
+
+# ===========================================================================
+# T-EXCISE-STAMP-GATE (P0, 2026-09-26) — fail-closed mitigation-flag stamp gate.
+#
+# Defect (A-EXCISE-RADIO F-005): `androidboot.radio.disabled=1` is present in
+# the GuardTalk `out/target/product/<dev>/vendor_boot.img` build but ABSENT from
+# the flashable release stamps of frankel/blazer/mustang/rango — a build/stamp
+# skew. The hybrid/gtuserspace compositions take their boot chain from the
+# factory rescue donor, which does not carry the GuardTalk late-board
+# mitigations, and finalising never compared the two.
+#
+# This gate REFUSES TO FINALISE a stamp (die -> non-zero, no $DEV-latest move)
+# when any in-scope mitigation flag the build actually emitted is missing from
+# the composed stamp. It is fail-closed (Law 3 / Law 9): it aborts, it never
+# warns-and-continues.
+#
+# GENERALISATION (no device-name list). The in-scope set is DERIVED PER DEVICE
+# from the same overlay source that makes the build emit the flags — the
+# device's `vendor/guardtalk/device/$DEV/BoardConfig-excised-late.mk`, which
+# every GuardTalk device has — by parsing its `BOARD_KERNEL_CMDLINE +=` appends.
+# The comparison then iterates that flag SET; no device codename is named here,
+# so a newly registered device inherits the check with zero edits (exactly as
+# graft_vendor_dlkm_blocklist inherits from excision-variants.mk).
+#
+# NON-VACUITY (Law 7/16). The gate DIES — it does not pass — when the
+# derivation yields zero in-scope flags, when a declared flag is missing from
+# the build itself, or when a flag set cannot be extracted. An empty build set
+# therefore cannot silently turn the gate green.
+#
+# SCOPE. Applied to every GuardTalk-composition stamp path (gtuserspace + its
+# bisect siblings, hybrid, fullgt, the gtsystemonstock family). NOT applied to
+# MODE=avbcontrol — the documented 100%-stock AVB control with ZERO GuardTalk
+# content, matching the scoping precedent of sepolicy_hash_gate/mte_strip_gate.
+# ===========================================================================
+
+# Echo the device's GuardTalk late-board overlay (device-generic path).
+gt_mitigation_source() {
+  printf '%s\n' "$ROOT/vendor/guardtalk/device/$1/BoardConfig-excised-late.mk"
+}
+
+# Echo the device's in-scope mitigation flags (one `key=value` per line),
+# derived structurally from its BOARD_KERNEL_CMDLINE += appends. `:= $(filter-
+# out ...)` lines REMOVE flags and are deliberately not parsed (negated, not
+# declared). `\`-continued appends are FOLDED first (T-EXCISE-STAMP-MITIGATION-
+# GRAFT R3): a declared flag sitting on a continuation line must NOT escape the
+# checked set — under-declaration is the same fail-open family as a comment
+# bypass. Make-variable tokens are dropped PER TOKEN (not per line), so a
+# literal flag sharing a line with `$(...)` is still declared. $1 = device name.
+gt_declared_mitigation_flags() {
+  local dev="$1" src flags
+  src="$(gt_mitigation_source "$dev")"
+  need "$src"
+  flags="$(sed -e ':a' -e '/\\$/{N;s/\\\n/ /;ba}' "$src" \
+             | sed -n 's/^[[:space:]]*BOARD_KERNEL_CMDLINE[[:space:]]*+=[[:space:]]*//p' \
+             | tr ' ' '\n' \
+             | grep -v '\$(' \
+             | grep -E '^[A-Za-z0-9_.-]+=[^[:space:]]+$' | sort -u || true)"
+  [ -n "$flags" ] \
+    || die "no in-scope mitigation flags derived from $src — refusing to run a vacuous stamp gate"
+  printf '%s\n' "$flags"
+}
+
+# Echo every `key=value` token carried by a vendor_boot image, unioned from BOTH
+# the vendor command line (which carries the GuardTalk late-board cmdline flags)
+# and the vendor_bootconfig section. $1 = vendor_boot.img.
+#
+# T-EXCISE-STAMP-MITIGATION-GRAFT (P0, from Q-EXCISE-STAMP-GATE A1b): `#`
+# comment spans are STRIPPED before tokenising. bootconfig comments are inert at
+# boot, so a stamp carrying `# androidboot.radio.disabled=1` as dead comment text
+# must NOT be read as present. Stripping is applied to both sources and can only
+# ever over-refuse (never a bypass), preserving fail-closed semantics.
+gt_boot_mitigation_flags() {
+  local img="$1" ub="$HOST_BIN/unpack_bootimg" tmp tokens errmsg
+  need "$img"
+  [ -x "$ub" ] || die "unpack_bootimg missing at $ub — required for the stamp mitigation gate"
+  tmp="$(mktemp -d "/tmp/gt-stamp-gate.XXXXXX")"
+  if ! "$ub" --boot_img "$img" --out "$tmp" >"$tmp/info" 2>"$tmp/err"; then
+    errmsg="$(head -c 200 "$tmp/err" 2>/dev/null || true)"
+    rm -rf "$tmp"
+    die "unpack_bootimg failed on $img ($errmsg)"
+  fi
+  tokens="$( {
+      sed -n 's/^vendor command line args:[[:space:]]*//p' "$tmp/info"
+      if [ -f "$tmp/bootconfig" ]; then tr -d '\r' < "$tmp/bootconfig"; fi
+    } 2>/dev/null \
+    | sed -E 's/#.*$//' \
+    | tr '\n' ' ' | tr ' ' '\n' \
+    | grep -E '^[A-Za-z0-9_.-]+=[^[:space:]]+$' | sort -u || true )"
+  rm -rf "$tmp"
+  [ -n "$tokens" ] \
+    || die "no key=value tokens extracted from $img — refusing a vacuous stamp gate"
+  printf '%s\n' "$tokens"
+}
+
+# Fail-closed comparison. $1=dev, $2=out/ vendor_boot.img, $3=stamp vendor_boot.img.
+stamp_mitigation_gate() {
+  local dev="$1" outimg="$2" stampimg="$3"
+  local declared outflags stampflags flag missing="" buildmiss="" n=0
+  declared="$(gt_declared_mitigation_flags "$dev")"
+  outflags="$(gt_boot_mitigation_flags "$outimg")"
+  stampflags="$(gt_boot_mitigation_flags "$stampimg")"
+  while IFS= read -r flag; do
+    [ -n "$flag" ] || continue
+    n=$((n + 1))
+    if ! grep -qxF -- "$flag" <<<"$outflags"; then
+      buildmiss="${buildmiss}${buildmiss:+, }$flag"
+      continue
+    fi
+    if ! grep -qxF -- "$flag" <<<"$stampflags"; then
+      missing="${missing}${missing:+, }$flag"
+    fi
+  done <<<"$declared"
+  [ -z "$buildmiss" ] \
+    || die "build did not emit its own declared late-board mitigation flag(s) ($outimg): $buildmiss — refusing to finalise a stamp from a non-compliant build"
+  [ -z "$missing" ] \
+    || die "STAMP SKEW: in-scope mitigation flag(s) present in out/ but MISSING from the stamp ($stampimg): $missing — refusing to finalise $STAMP (Law 3/9)"
+  log "  stamp mitigation gate: $n in-scope flag(s) present in both out/ and stamp ✓"
+}
+
+# ===========================================================================
+# T-EXCISE-STAMP-MITIGATION-GRAFT (P0, 2026-09-26) — carry the build's declared
+# late-board mitigation flags into the factory vendor_boot the stager ships.
+#
+# Detection is not repair (T-EXCISE-STAMP-GATE): the factory rescue/stock boot
+# chain the hybrid compositions ship does NOT carry the GuardTalk late-board
+# mitigations, so `stamp_mitigation_gate` correctly REFUSED the four laguna
+# stamps (T-EXCISE-STAMP-GATE D2) — leaving them FLASH_READY=false.
+#
+# These helpers write exactly the flags `gt_declared_mitigation_flags` derives
+# from the device's BoardConfig-excised-late.mk (ONE source of truth, shared with
+# the gate) into the shipped vendor_boot's vendor command line, in place in the
+# fixed 2048-byte header field. The vendor ramdisk and vendor_bootconfig are
+# untouched. Because the header bytes lie inside the embedded AVB hash
+# descriptor's hashed region, the AVB hash footer is then RE-SIGNED in place with
+# the donor's own parameters (see gt_vendor_boot_resign_avb,
+# T-EXCISE-STAMP-AVB-INTEGRITY) so the shipped image still self-verifies. A
+# read-back through `gt_boot_mitigation_flags` (the gate's own extractor) is
+# mandatory and fail-closed.
+#
+# NOT a bypass: the gate's decision logic is unchanged and still runs after this.
+# The graft only makes the shipped image match what the build already emits; the
+# gate still refuses if the build itself did not emit a declared flag, and the
+# declared set is still the structural overlay derivation (never a device list).
+# ===========================================================================
+
+# Append space-separated flags to a vendor_boot image's vendor command line
+# IN PLACE (header cmdline field only). $1 = vendor_boot.img, $2 = flags string.
+gt_vendor_boot_append_cmdline() {
+  local img="$1" flags="$2"
+  need "$img"
+  [ -n "$flags" ] || die "gt_vendor_boot_append_cmdline called with no flags for $img"
+  python3 - "$img" "$flags" <<'PY' || die "vendor_boot cmdline graft failed for $img"
+import struct, sys
+
+path, add = sys.argv[1], sys.argv[2].split()
+if not add:
+    raise SystemExit("no flags to append")
+with open(path, "r+b") as fh:
+    hdr = fh.read(32)
+    if hdr[:8] != b"VNDRBOOT":
+        raise SystemExit("not a vendor_boot image (bad magic)")
+    version = struct.unpack_from("<I", hdr, 8)[0]
+    if version not in (3, 4):
+        raise SystemExit("unsupported vendor_boot header version %d" % version)
+    off, size = 28, 2048  # v3/v4 vendor cmdline field, null-padded
+    fh.seek(off)
+    cur = fh.read(size).split(b"\x00", 1)[0].decode("utf-8", "replace").strip()
+    new = (cur + " " + " ".join(add)).strip().encode("utf-8")
+    if len(new) >= size:
+        raise SystemExit("vendor cmdline overflow: %d >= %d" % (len(new), size))
+    fh.seek(off)
+    fh.write(new + b"\x00" + b"\x00" * (size - len(new) - 1))
+PY
+  log "  vendor_boot cmdline grafted in place: $flags"
+  # T-EXCISE-STAMP-AVB-INTEGRITY: the graft above mutated the embedded AVB hash
+  # descriptor's hashed region, so re-sign the AVB hash footer before returning.
+  gt_vendor_boot_resign_avb "$img"
+}
+
+# ===========================================================================
+# T-EXCISE-STAMP-AVB-INTEGRITY (P0, 2026-09-27) — restore AVB self-consistency
+# after the in-place cmdline graft.
+#
+# The graft writes bytes at vendor_boot header offset 28, which lie INSIDE the
+# embedded AVB hash descriptor's hashed region [0, ImageSize). The grafted image
+# therefore no longer self-verifies: `avbtool verify_image` -> rc=1 on all four
+# laguna factory rescue donors (raised from Q-EXCISE-STAMP-MITIGATION-GRAFT).
+#
+# Remedy (re-sign): re-add the AVB hash footer with the SAME parameters the
+# factory donor carried — partition size, hash algorithm, salt, rollback
+# index/location and props — so the shipped image is self-consistent again,
+# correct-by-construction for the artifact that actually ships. NO private key
+# is required: the factory rescue vendor_boot carries an UNSIGNED hash footer
+# (`Algorithm: NONE`), exactly as `add_hash_footer --algorithm NONE` reproduces.
+# If a donor ever carried a SIGNED footer, re-signing WOULD need the AVB private
+# key; we then refuse loudly rather than silently downgrading to NONE (Law 7/9).
+# A post-sign `avbtool verify_image` is mandatory and fail-closed.
+# ===========================================================================
+gt_vendor_boot_resign_avb() {
+  local img="$1" info alg psize hsh salt rbi rbil prop vdir vout
+  need "$img"
+  [ -x "$HOST_BIN/avbtool" ] \
+    || die "avbtool missing at $HOST_BIN/avbtool — required to re-sign the grafted vendor_boot"
+  info="$("$HOST_BIN/avbtool" info_image --image "$img" 2>/dev/null)" \
+    || die "avbtool info_image failed on $img — cannot re-sign the grafted image"
+  alg="$(sed -n 's/^Algorithm:[[:space:]]*//p' <<<"$info" | head -1)"
+  psize="$(sed -n 's/^Image size:[[:space:]]*\([0-9][0-9]*\) bytes.*/\1/p' <<<"$info" | head -1)"
+  hsh="$(sed -n 's/^[[:space:]]*Hash Algorithm:[[:space:]]*//p' <<<"$info" | head -1)"
+  salt="$(sed -n 's/^[[:space:]]*Salt:[[:space:]]*//p' <<<"$info" | head -1)"
+  rbi="$(sed -n 's/^Rollback Index:[[:space:]]*//p' <<<"$info" | head -1)"
+  rbil="$(sed -n 's/^Rollback Index Location:[[:space:]]*//p' <<<"$info" | head -1)"
+  [ "$alg" = "NONE" ] \
+    || die "vendor_boot $img carries a SIGNED AVB footer (Algorithm=$alg); re-signing the grafted image needs the AVB private key, which is unavailable in this tree — refusing to downgrade the footer (Law 7/9)"
+  if [ -z "$psize" ] || [ -z "$hsh" ] || [ -z "$salt" ]; then
+    die "could not derive AVB footer parameters (size='$psize' hash='$hsh' salt='$salt') from $img — refusing to re-sign blind"
+  fi
+  local -a prop_args=()
+  while IFS= read -r prop; do
+    if [ -n "$prop" ]; then
+      prop_args+=(--prop "$prop")
+    fi
+  done < <(sed -n "s/^[[:space:]]*Prop:[[:space:]]*\(.*\) -> '\(.*\)'\$/\1:\2/p" <<<"$info")
+  "$HOST_BIN/avbtool" erase_footer --image "$img" >/dev/null \
+    || die "avbtool erase_footer failed on $img — refusing to leave a stale descriptor"
+  "$HOST_BIN/avbtool" add_hash_footer --image "$img" \
+    --partition_name vendor_boot --partition_size "$psize" \
+    --hash_algorithm "$hsh" --salt "$salt" --algorithm NONE \
+    --rollback_index "${rbi:-0}" --rollback_index_location "${rbil:-0}" \
+    ${prop_args[@]+"${prop_args[@]}"} >/dev/null \
+    || die "avbtool add_hash_footer failed on $img — grafted vendor_boot left self-inconsistent"
+  # Fail-closed read-back. verify_image re-opens a sibling named
+  # <partition_name>.img, so verify a temp copy under that name (robust to the
+  # caller-supplied diagnostic output filename).
+  vdir="$(mktemp -d "/tmp/gt-avb-verify.XXXXXX")"
+  cp -f "$img" "$vdir/vendor_boot.img"
+  if vout="$("$HOST_BIN/avbtool" verify_image --image "$vdir/vendor_boot.img" 2>&1)"; then
+    rm -rf "$vdir"
+    log "  AVB hash footer re-signed (Algorithm=NONE; size/salt/rollback/props preserved) — verify_image rc=0 ✓"
+  else
+    rm -rf "$vdir"
+    printf '%s\n' "$vout" >&2
+    die "AVB re-sign FAILED: $img still does not self-verify after the mitigation graft"
+  fi
+}
+
+# Ship $1 (vendor_boot.img) to $2 with the device's declared late-board
+# mitigation flags present. When $1 already carries every declared flag the copy
+# is byte-identical (no rewrite); otherwise the missing flags are appended. A
+# read-back through the gate's own extractor is mandatory (fail-closed).
+stage_vendor_boot_with_mitigation_flags() {
+  local src="$1" dst="$2" declared have missing="" flag back
+  need "$src"
+  declared="$(gt_declared_mitigation_flags "$DEV")"
+  have="$(gt_boot_mitigation_flags "$src")"
+  while IFS= read -r flag; do
+    [ -n "$flag" ] || continue
+    grep -qxF -- "$flag" <<<"$have" || missing="${missing}${missing:+ }$flag"
+  done <<<"$declared"
+  if [ -z "$missing" ]; then
+    cp -f "$src" "$dst"
+    log "  vendor_boot carries all declared late-board mitigation flags (byte-identical copy) ✓"
+  else
+    cp -f "$src" "$dst"
+    gt_vendor_boot_append_cmdline "$dst" "$missing"
+  fi
+  back="$(gt_boot_mitigation_flags "$dst")"
+  while IFS= read -r flag; do
+    [ -n "$flag" ] || continue
+    grep -qxF -- "$flag" <<<"$back" \
+      || die "graft read-back FAILED: '$flag' not carried by shipped vendor_boot $dst — refusing"
+  done <<<"$declared"
+}
+
+# Diagnostic entry point (see --mitigation-gate): run ONLY the gate and exit.
+if [ "$GATE_MODE" = "1" ]; then
+  DEV="$GATE_DEV"
+  log "diagnostic: --mitigation-gate only (no staging, no writes)"
+  stamp_mitigation_gate "$GATE_DEV" "$GATE_OUT" "$GATE_STAMP"
+  echo "[stage:$GATE_DEV] mitigation gate PASS"
+  exit 0
+fi
+
+# Diagnostic entry point (see --mitigation-graft): apply ONLY the graft to a
+# caller-supplied THROWAWAY vendor_boot and exit. Never stages, never touches a
+# release bundle or a -latest link — it exists so Fix 1 can be proven on
+# throwaway inputs without performing a production re-stamp (operator-gated).
+if [ "$GRAFT_MODE" = "1" ]; then
+  DEV="$GRAFT_DEV"
+  log "diagnostic: --mitigation-graft only (throwaway input; no staging, no release writes)"
+  stage_vendor_boot_with_mitigation_flags "$GRAFT_IN" "$GRAFT_OUT"
+  echo "[stage:$GRAFT_DEV] mitigation graft PASS"
+  exit 0
+fi
 
 [ -d "$OUT" ] || die "no build found at $OUT — build '$DEV' first (this helper stages from out/, it never builds)"
 log "device=$DEV mode=$MODE"

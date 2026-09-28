@@ -4,7 +4,7 @@ Product deltas for the GrapheneOS fork under [nullset-zone](https://github.com/n
 
 ## Modem excision (`GUARDTALK_RADIO_EXCISED`)
 
-- **Profile:** `tokay-cur-user` with cellular stack removed (CPIF, modem firmware, RIL).
+- **Profile:** `tokay-cur-user` with the host RIL/telephony stack excised. **Law 7 correction (2026-09-26, `T-EXCISE-CLAIM-HONESTY-RESIDUAL`):** baseband firmware (`radio.img`/`modem.img`) still ships and is flashed — Tier B residual (`H-R1`); the kernel modem transport (`cpif`/`cpif_page`/`shm_ipc`) still loads on 10/13 at source level (Tier C, `C-R1`; source-removed by `T-EXCISE-MODEM-KERNEL`, pending re-stamp).
 - **Product base:** `device/tokay/product-common-excised.mk` skips `telephony_*.mk` inherits.
 - **Late filter:** `radio-excised/product-config-late.mk` hooked from `build/make/core/product_config.mk` (after inherit merge).
 - **Do not edit** `vendor/google_devices/tokay/tokay.mk` or `BoardConfig.mk` directly — re-apply hooks after `adevtool generate-all -d tokay` (see `device/tokay/REGEN_HOOKS.md`).

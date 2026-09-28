@@ -1,0 +1,6 @@
+{
+  "expect": 1,
+  "forbid": "bt",
+  "raw": false,
+  "why": "vendor.google.bluetooth_ext declared only in a fragment"
+}

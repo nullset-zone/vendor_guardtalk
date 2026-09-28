@@ -1,0 +1,7 @@
+{
+  "expect": 1,
+  "forbid": "bt",
+  "raw": true,
+  "raw_fails": true,
+  "why": "raw case-insensitive scan flags IModule/bluetooth (informational)"
+}

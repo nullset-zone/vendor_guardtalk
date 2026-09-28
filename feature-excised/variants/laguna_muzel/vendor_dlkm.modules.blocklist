@@ -35,3 +35,14 @@ blocklist iommu_map_benchmark.ko
 
 # T-BT-FULL (FR-3): Bluetooth power/rfkill driver — BCM BT on UART.
 blocklist nitrous.ko
+
+# T-EXCISE-MODEM-KERNEL (P0, CRIT R-2): baseband IPC transport modules — the
+# kernel half of the radio airgap. cpif is the Samsung Shannon CP interface;
+# cpif_page/shm_ipc are its shared-memory transport. Blocked here (honoured by
+# the bulk `modprobe -b` pass) AND removed from vendor_dlkm.modules.load on the
+# laguna kernels tree (grapheneos/muzel) so they are neither loaded nor
+# installed. Nothing boot-critical depends on any of the three (modules.dep).
+# WiFi/BT unaffected (separate drivers).
+blocklist cpif.ko
+blocklist cpif_page.ko
+blocklist shm_ipc.ko

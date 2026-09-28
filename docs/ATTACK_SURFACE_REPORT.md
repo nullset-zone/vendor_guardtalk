@@ -404,7 +404,7 @@ All three are mainline APEX modules documented as removable-in-principle but blo
 | 9 | **com.android.appsearch** (APEX) | APEX | App search. Settings/SystemUI search may depend on it. Removal may degrade Settings search. |
 | 10 | **com.android.configinfrastructure** (APEX) | APEX | Config infrastructure. Unclear dependencies. Needs audit. |
 | 11 | **com.android.crashrecovery** (APEX) | APEX | Crash recovery. Removing reduces boot resilience. Likely KEEP but operator call. |
-| 12 | **FusedLocation** | /system/app | loc-excised.mk:42–49 intentionally KEPT (delivered from handheld_system.mk, bare `location` token). Inert dead weight once FEATURE_LOCATION gone. Decision: remove for cleanliness (needs build/make edit) or keep as inert? |
+| 12 | **FusedLocation** | /system/app | **CORRECTED 2026-09-26 (`T-EXCISE-CLAIM-HONESTY-RESIDUAL`)**: now DROPPED by `loc-excised.mk` (exact name — `GUARDTALK_LOC_PACKAGES`, `_gt-loc-package-drop`, and the `PRODUCT_SYSTEM_SERVER_APPS` filter-out). The earlier "loc-excised.mk:42–49 intentionally KEPT" reading is stale. Present only in the 4 stale stamps (`M-L1`). Decision resolved: removed. |
 | 13 | **ANGLE** | /product/app | OpenGL ANGLE wrapper. Some apps may require ANGLE for compat. |
 | 14 | **SpeechServices** | /product/app | TTS/speech. TalkBack (Law 21) may depend on TTS. |
 | 15 | **talkback** | /product/app | Screen reader (Law 21). Almost certainly KEEP, but operator should affirmatively decide. |

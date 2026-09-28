@@ -1,0 +1,6 @@
+{
+  "expect": 1,
+  "forbid": "bt",
+  "raw": false,
+  "why": "android.hardware.bluetooth declared in the main manifest"
+}

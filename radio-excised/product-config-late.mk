@@ -27,6 +27,15 @@ ifneq ($(GUARDTALK_RADIO_EXCISED),)
   include vendor/guardtalk/feature-excised/guardtalk-feature-excised.mk
   # T-REMEDIATE-B1-USERBUILD: drop su / overlay_remounter on user variant.
   include vendor/guardtalk/feature-excised/userbuild-excised.mk
+  # T-EXCISE-INIT-RC-REWRITE: durable build-time init-rc REWRITE filter that
+  # drops the unshipped `service abox` block (+ seclabel) on the 13 program
+  # products and rango's unshipped `init_thermal_config` block (+ its 3
+  # debug-gated `start` actions) from the factory-derived vendor rc at build
+  # time, WITHOUT editing the regen-managed proprietary/** prebuilts. Not
+  # WAVE2-scoped: it is a source-excision filter like the radio/feature filters,
+  # so it is wired here (after all inherit merges, PRODUCT_COPY_FILES fully
+  # populated) rather than inside the WAVE2 bridge.
+  include vendor/guardtalk/feature-excised/init-rc-excised.mk
 
   # =====================================================================
   # Wave 0 blockers (T-HCH-WIRE + T-GTINFO-WIRE)

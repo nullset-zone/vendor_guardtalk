@@ -1,0 +1,6 @@
+{
+  "expect": 1,
+  "forbid": "bt+radio",
+  "raw": false,
+  "why": "dmd.xml-class fragment re-declares the telephony oemservice HAL"
+}

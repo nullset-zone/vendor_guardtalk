@@ -19,6 +19,20 @@ requirements (https://grapheneos.org/faq#future-devices), the Android CDD, and t
 Android Ready SE Alliance program, adapted for a **WiFi-only product with no cellular
 modem**.
 
+> **Current-build status (Law 7 correction, 2026-09-26, `T-EXCISE-CLAIM-HONESTY-RESIDUAL`).**
+> This document defines **target OEM requirements**, not a description of current GuardTalkOS
+> builds. Current builds do **not** yet meet the radio/BT/GNSS excision bar this spec assumes:
+> - **Cellular:** baseband firmware (`radio.img`/`modem.img`) still ships and is flashed on
+>   **13/13** (Tier B, `H-R1`); the kernel modem transport still loads on **10/13** (Tier C,
+>   `C-R1`). Only the host RIL/telephony stack is excised.
+> - **Bluetooth:** the shipped stamps load the BT/NFC GKI modules unblocklisted on **13/13**
+>   (Tier C, `C-B1`) and declare 4 BT HALs in the vendor VINTF manifest (`H-B1`).
+> - **GNSS:** the GNSS kernel modules load on **11/13**; the userspace HAL residue is Tier C on
+>   `shiba`/`husky` (see `A-EXCISE-LOC`).
+>
+> The residual fixes are **source-level only**; no re-stamp has been performed
+> (`BOOT_VERIFIED=false`).
+
 Devices that currently meet the full bar: Google Pixel 8/9/10 series only.
 Motorola is building to this bar for 2027. This document defines how a new OEM device
 can meet the same bar.
@@ -31,13 +45,14 @@ can meet the same bar.
 |---|---|
 | Product type | WiFi-only secure handheld or tablet |
 | Cellular modem | **None required** (no baseband, no SIM, no eSIM) |
-| Radios present | WiFi 6E/7 only. Bluetooth/NFC/GNSS optional (software-excised in current builds) |
+| Radios present | WiFi 6E/7 only. Bluetooth/NFC/GNSS optional — **target** requirement; software excision of these radios is **not yet complete in current builds** (see current-build status note in §1) |
 | OS | GuardTalkOS (AOSP/GrapheneOS-based), signed with GuardTalk or customer keys |
 | Boot state after sale | **Locked bootloader, customer/GuardTalk AVB root of trust** |
 
-**WiFi-only is a cost and security advantage for the OEM:** removing the modem eliminates
-baseband firmware cost, carrier certification, PTCRB/GCF, and the entire cellular attack
-surface and its isolation requirements.
+**WiFi-only is a cost and security advantage for the OEM:** on the *target* design, omitting
+the modem eliminates baseband firmware cost, carrier certification, PTCRB/GCF, and the entire
+cellular attack surface and its isolation requirements. (Current GuardTalkOS builds still carry
+and flash baseband firmware — see the current-build status note in §1.)
 
 ---
 

@@ -137,7 +137,7 @@ PRODUCT_PACKAGES += $(filter $(GUARDTALK_FP_KEEP),$(GUARDTALK_FP_PACKAGES))
 # ---------------------------------------------------------------------------
 # Layer 3 — VINTF fragment layer: remove fingerprint HAL from vendor manifest.
 # ---------------------------------------------------------------------------
-# Two fingerprint VINTF fragments exist across the supported Pixel family:
+# Three fingerprint VINTF fragments exist across the supported Pixel family:
 #   - QFP (tokay):     adevtool_vintf_fragment_vendor_qfp-daemon.xml
 #                      declares android.hardware.biometrics.fingerprint
 #                      IFingerprint/default AND vendor.qti.hardware.fingerprint
@@ -146,19 +146,29 @@ PRODUCT_PACKAGES += $(filter $(GUARDTALK_FP_KEEP),$(GUARDTALK_FP_PACKAGES))
 #     rango, tegu):   declares android.hardware.biometrics.fingerprint
 #                     IFingerprint/default AND vendor.goodix.hardware.
 #                     biometrics.fingerprint IGoodixFingerprintDaemon/default.
-# Dropping both fragment modules from PRODUCT_PACKAGES (Layer 1 above via the
-# wildcard, plus the explicit filter-out here) removes the HAL declaration so
-# libvintf compatibility checks no longer expect a fingerprint HAL to be running
-# on either QFP or Goodix devices. filter-out is idempotent: a fragment not
-# present on the building device is simply not matched.
+#   - FPC (comet):    adevtool_vintf_fragment_vendor_fingerprint-fpc42_fw49.xml
+#                     declares android.hardware.biometrics.fingerprint
+#                     IFingerprint/default. (T-EXCISE-VINTF-DMD fold-in: comet
+#                     packages the FPC42 HAL
+#                     `android.hardware.biometrics.fingerprint-service.fpc42_fw49`
+#                     which Layer 1's wildcard already drops, but its fragment
+#                     module name contains no `fingerprint`-token substring, so
+#                     it survived here — leaving a DANGLING / unbacked VINTF
+#                     declaration, G5-unbacked on comet.)
+# Dropping all three fragment modules from PRODUCT_PACKAGES (Layer 1 above via
+# the wildcard, plus the explicit filter-out here) removes the HAL declaration
+# so libvintf compatibility checks no longer expect a fingerprint HAL to be
+# running on QFP, Goodix or FPC devices. filter-out is idempotent: a fragment
+# not present on the building device is simply not matched.
 PRODUCT_PACKAGES := $(filter-out \
     adevtool_vintf_fragment_vendor_qfp-daemon.xml \
-    adevtool_vintf_fragment_vendor_fingerprint-goodix.xml,$(PRODUCT_PACKAGES))
+    adevtool_vintf_fragment_vendor_fingerprint-goodix.xml \
+    adevtool_vintf_fragment_vendor_fingerprint-fpc42_fw49.xml,$(PRODUCT_PACKAGES))
 
 # ---------------------------------------------------------------------------
 # Layer 4 — init .rc layer: remove fingerprint service init lines.
 # ---------------------------------------------------------------------------
-# Two fingerprint init .rc families exist across the supported Pixel family:
+# Three fingerprint init .rc families exist across the supported Pixel family:
 #   - QFP (tokay):   qfp-daemon.rc (service qfp-daemon /vendor/bin/hw/qfp-daemon,
 #                    interface aidl android.hardware.biometrics.fingerprint) and
 #                    init.fingerprint.dump.rc (creates /data/vendor/tombstones/
@@ -171,14 +181,23 @@ PRODUCT_PACKAGES := $(filter-out \
 #                    rango.mk:1730 (verified exact name — do NOT guess
 #                    init.goodix.fp.rc / init.fingerprint.goodix.rc; the actual
 #                    file is fingerprint-goodix.rc).
+#   - FPC (comet):   fingerprint-fpc42_fw49.rc (service fps_hal for
+#                    android.hardware.biometrics.fingerprint-service.fpc42_fw49).
+#                    Copied into vendor/etc/init via PRODUCT_COPY_FILES
+#                    comet.mk:1717. (T-EXCISE-VINTF-DMD fold-in: Layer 1 drops
+#                    the FPC service binary but NOT this .rc, so the shipped
+#                    stamp carried an orphaned `fps_hal` init service for an
+#                    absent binary — the G6 orphan the boot-safety gate flags on
+#                    comet. Dropping it completes the same graceful excision.)
 # Filter them out of PRODUCT_COPY_FILES so init never loads any fingerprint
-# service definitions on either QFP or Goodix devices. filter-out is idempotent
+# service definitions on QFP, Goodix or FPC devices. filter-out is idempotent
 # (an .rc not present on the building device is simply not matched).
 define _gt-fp-copy-file-drop
 $(or \
   $(findstring init.fingerprint.dump.rc,$(1)), \
   $(findstring qfp-daemon.rc,$(1)), \
-  $(findstring fingerprint-goodix.rc,$(1)))
+  $(findstring fingerprint-goodix.rc,$(1)), \
+  $(findstring fingerprint-fpc42_fw49.rc,$(1)))
 endef
 
 _gt_fp_filtered_copy_files :=

@@ -1,0 +1,8 @@
+<manifest version="9.0" type="device" target-level="8">
+    <hal format="aidl">
+        <name>vendor.google.bluetooth_ext</name>
+        <version>4</version>
+        <fqname>IBluetoothCcc/default</fqname>
+        <fqname>IBluetoothSar/default</fqname>
+    </hal>
+</manifest>
