@@ -1,0 +1,1 @@
+vendor/guardtalk/branding/bootanimation/bootanimation.zip:product/media/bootanimation.zip vendor/guardtalk/branding/wallpapers/wallpaper_guardtalk_default.png:system/etc/wallpaper_guardtalk_default.png vendor/guardtalk/feature-excised/handheld_core_hardware.prebuilt.xml:vendor/etc/permissions/handheld_core_hardware.prebuilt.xml

@@ -1,0 +1,3 @@
+- Radio is excised (`GUARDTALK_RADIO_EXCISED=true`, `modem` stripped from
+Radio/RIL fully excised; baseband radio.img fully removed.
+The modem is completely removed and telephony is gone.

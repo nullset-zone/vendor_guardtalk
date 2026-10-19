@@ -6,7 +6,8 @@
 #   1. Bundle releases/desktop-flash/akita-latest complete (18 imgs + avb + sums + README)
 #   2. sha256sum -c SHA256SUMS EXIT=0
 #   3. README Pixel 8a / REMOTE_BUILD_DIR=…/akita-latest paths
-#   4. Tokay releases/desktop-flash/latest still tokay + SHA256SUMS OK
+#   4. Tokay releases/desktop-flash/tokay-latest still tokay + SHA256SUMS OK
+#      (generic `latest` retired 2026-10-01, T-EXCISE-STAMP-TREE-QUARANTINE)
 #   5. SetupWizard2.apk (akita out/) has CommunityLock / device_password markers
 #   6. Akita GuardTalk layer + Goodix blocklist + VINTF akita excised manifest
 #   7. Host re-check vs FLASH BUILD_EXIT=0 (out/ sizes match bundle; adevtool pin)
@@ -59,7 +60,7 @@ forbid_rg() {
 }
 
 AKITA_BUNDLE="releases/desktop-flash/akita-latest"
-TOKAY_LATEST="releases/desktop-flash/latest"
+TOKAY_LATEST="releases/desktop-flash/tokay-latest"
 FLASH_REPORT=".agent-comm/inbox/TO_ARCHITECT_T-PORT-AKITA-FLASH.md"
 AKITA_OUT="out/target/product/akita"
 SUW_APK="$AKITA_OUT/system_ext/priv-app/SetupWizard2/SetupWizard2.apk"
@@ -145,7 +146,7 @@ require_rg 'REMOTE_KEY_DIR=.*/releases/desktop-flash/akita-latest' "$README" \
 require_rg 'akita-trunk_staging-userdebug' "$README" \
   "README cites akita-trunk_staging-userdebug"
 require_rg 'BUILD_EXIT=0' "$README" "README cites BUILD_EXIT=0"
-require_rg 'releases/desktop-flash/latest' "$README" \
+require_rg 'releases/desktop-flash/tokay-latest' "$README" \
   "README notes tokay latest path remains separate"
 
 echo "=== Q-PORT-AKITA case4: tokay latest non-regression ==="
@@ -158,7 +159,7 @@ if [[ -L "$TOKAY_LATEST" ]]; then
     fail "latest must remain tokay-* (got $ttarget)"
   fi
 else
-  fail "releases/desktop-flash/latest missing or not a symlink"
+  fail "releases/desktop-flash/tokay-latest missing or not a symlink"
 fi
 
 # akita publish must not have redirected latest

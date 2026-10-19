@@ -17,6 +17,7 @@ import { FastbootClient, type FlashOptions, type Progress, type Transport } from
 import { MAX_DOWNLOAD_SIZE_VAR, parseMaxDownloadSize } from "../../lib/fastboot/protocol.js";
 import { canFlash, type DeviceReadback, type ReleaseVerification, type VbmetaSigning } from "../../lib/install-state/index.js";
 import { STOP_REASONS } from "../../lib/install-state/stops.js";
+import { assertPlanImagesPresent, type PlanImage } from "../../src/plan.js";
 import { proveVbmetaUserSigned } from "../../lib/verify/user-anchor.js";
 import type { InstallState } from "../../lib/install-state/machine.js";
 import type { ConsoleLog } from "../../lib/types.js";
@@ -121,12 +122,42 @@ export class FlashGateError extends Error {
   }
 }
 
-function orderedFirmware(plan: FlashPlan): ReadonlyArray<FlashImage> {
-  return [...plan.firmware].sort((a, b) => rank(FIRMWARE_ORDER, a.partition) - rank(FIRMWARE_ORDER, b.partition));
+/**
+ * The two writable phases of a plan, in canonical order. Both the refusal
+ * below and the flash loop read the plan through this ONE accessor, so a plan
+ * cannot be refused as empty by one reading and consumed as non-empty by the
+ * other (T-WEBINSTALL-ORCHESTRATION-NO-IMAGE-GUARD DEC).
+ */
+function writablePhases(plan: FlashPlan): {
+  readonly firmware: ReadonlyArray<FlashImage>;
+  readonly os: ReadonlyArray<FlashImage>;
+} {
+  return {
+    firmware: [...plan.firmware].sort((a, b) => rank(FIRMWARE_ORDER, a.partition) - rank(FIRMWARE_ORDER, b.partition)),
+    os: [...plan.os].sort((a, b) => rank(OS_ORDER, a.partition) - rank(OS_ORDER, b.partition)),
+  };
 }
 
-function orderedOs(plan: FlashPlan): ReadonlyArray<FlashImage> {
-  return [...plan.os].sort((a, b) => rank(OS_ORDER, a.partition) - rank(OS_ORDER, b.partition));
+/**
+ * Refuse a plan with no writable partition image. A plan carrying only the
+ * enrolment key + vbmeta writes zero factory firmware and zero OS images yet
+ * answers OKAY to every command — the console reads as a successful flash
+ * (DEC-ARCH-027). Sharing `assertPlanImagesPresent` with `buildFlashPlan`
+ * keeps this rule in one place.
+ */
+function requireWritableImages(phases: {
+  readonly firmware: ReadonlyArray<PlanImage>;
+  readonly os: ReadonlyArray<PlanImage>;
+}): void {
+  try {
+    // Both keys are always supplied here: a plan's `firmware`/`os` are
+    // required arrays, so the rule sees "present and empty", never "absent".
+    assertPlanImagesPresent({ firmware: phases.firmware, os: phases.os });
+  } catch (error) {
+    throw new FlashGateError([
+      error instanceof Error ? error.message : "plan has no writable partition image",
+    ]);
+  }
 }
 
 function rank<const T extends readonly string[]>(order: T, partition: string): number {
@@ -171,6 +202,15 @@ async function flashOne(
  * continues past a failure, so later partitions stay untouched.
  */
 export async function runFlashPlan(deps: RunFlashPlanDeps): Promise<readonly PartitionResult[]> {
+  // No-image guard FIRST (T-WEBINSTALL-ORCHESTRATION-NO-IMAGE-GUARD): a plan
+  // with no firmware/os image would write only the enrolment key and the
+  // vbmeta anchor, answer OKAY for every command, and resolve — which the
+  // route then records as "flash done". Refuse before any command is sent and
+  // before any blocking read (gate, anchor, download budget): the refusal is
+  // about the plan, not the device.
+  const phases = writablePhases(deps.plan);
+  requireWritableImages(phases);
+
   const { gate } = deps;
   if (!canFlash(gate.state, gate.release, gate.device, gate.vbmeta)) {
     throw new FlashGateError(["flash gate unsatisfied"]);
@@ -207,11 +247,11 @@ export async function runFlashPlan(deps: RunFlashPlanDeps): Promise<readonly Par
     results.push(await flashOne(client, enrolImage, "enrol", deps, maxDownloadSize, cumulativeBytes));
     cumulativeBytes += enrolImage.data.length;
   }
-  for (const image of orderedFirmware(deps.plan)) {
+  for (const image of phases.firmware) {
     results.push(await flashOne(client, image, "firmware", deps, maxDownloadSize, cumulativeBytes));
     cumulativeBytes += image.data.length;
   }
-  for (const image of orderedOs(deps.plan)) {
+  for (const image of phases.os) {
     results.push(await flashOne(client, image, "os", deps, maxDownloadSize, cumulativeBytes));
     cumulativeBytes += image.data.length;
   }

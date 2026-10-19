@@ -80,14 +80,15 @@ declare -A ACCEPT_TOKENS=(
 )
 declare -A EXPECTED_STAMP=(
   [shiba]=shiba-20260923-094055 [husky]=husky-20260923-095309 [akita]=akita-20260725-101434
-  [tokay]=tokay-20260725-102506 [caiman]=caiman-20260922-090535 [komodo]=komodo-20260915-063833
+  [tokay]=tokay-20260928-084839 [caiman]=caiman-20260922-090535 [komodo]=komodo-20260915-063833
   [comet]=comet-20260922-160129 [tegu]=tegu-20260922-164700 [stallion]=stallion-20260923-100618
   [frankel]=frankel-20260923-094457 [blazer]=blazer-20260923-090842 [mustang]=mustang-20260923-094541
   [rango]=rango-20260802-130756
 )
-# tokay is the only device with NO <dev>-latest; its authoritative stamp is the global alias.
+# Every device (including tokay, after T-EXCISE-TOKAY-LATEST-REPOINT retired the
+# legacy generic `latest` alias) has its own <dev>-latest pointer.
 declare -A HAS_DEV_LATEST=(
-  [shiba]=yes [husky]=yes [akita]=yes [tokay]=NO [caiman]=yes [komodo]=yes
+  [shiba]=yes [husky]=yes [akita]=yes [tokay]=yes [caiman]=yes [komodo]=yes
   [comet]=yes [tegu]=yes [stallion]=yes [frankel]=yes [blazer]=yes [mustang]=yes [rango]=yes
 )
 

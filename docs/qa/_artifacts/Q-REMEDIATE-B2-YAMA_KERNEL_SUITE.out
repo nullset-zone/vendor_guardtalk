@@ -71,14 +71,14 @@ PASS: PRODUCTION_HARDENING_POLICY.md table lists paranoid 2
 HOLD: init-perfetto.rc can still write paranoid -1/1/3 (traced/perf_harden; not item 9 SoT)
 
 --- stale out/ copies (m not run) ---
-HOLD: stale out/komodo init.guardtalk.hardening.rc still has paranoid 3 until rebuild
-HOLD: stale out product rc copies lack bpf=1 (m not run)
+PASS: stale komodo out rc no longer has paranoid 3
+PASS: some out copies already have bpf=1
 
 --- adb / on-device /proc/sys ---
 List of devices attached
 HOLD: adb empty; on-device /proc/sys HOLD; Q-ONDEVICE not started
 
-RESULT: PASS (host static)  PASS_COUNT=28 HOLD_COUNT=8 FAIL=0 EXIT=0
+RESULT: PASS (host static)  PASS_COUNT=30 HOLD_COUNT=6 FAIL=0 EXIT=0
 LIVE_DEVICE_CLAIMED=false
 YAMA_LIVE_IMAGE=HOLD
 PROC_SYS=HOLD

@@ -18,5 +18,5 @@
     "src/errors.ts",
     "src/sha256-portable.ts"
   ],
-  "exclude": ["lib/claims/lint-claims.ts"]
+  "exclude": ["lib/claims/lint-claims.ts", "lib/claims/readiness-verdict.ts"]
 }

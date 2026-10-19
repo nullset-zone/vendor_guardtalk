@@ -7,7 +7,8 @@
 #   2. sha256sum -c SHA256SUMS (20/20)
 #   3. Required imgs + avb_pkmd.bin + init.insmod.komodo.cfg; super.img omitted OK
 #   4. No *.pem/*.pk8; no keys/komodo/; avb_pkmd.bin matches keys/tokay/
-#   5. tokay latest inode 193110379; akita-latest inode 193110357
+#   5. tokay tokay-latest inode 193110391; akita-latest inode 193110357
+#      (generic `latest` retired 2026-10-01 → tokay uses tokay-latest)
 #   6. both flash-from-remote.sh cmp equal; bash -n both
 #   7. DEVICE=komodo → komodo-latest; pretty Pixel 9 Pro XL; fips family; extras
 #   8. Negative: caiman not komodo; rango stays rango-latest; empty/unknown fail-closed
@@ -59,11 +60,11 @@ forbid_rg() {
 }
 
 KOMODO_BUNDLE="releases/desktop-flash/komodo-latest"
-TOKAY_LATEST="releases/desktop-flash/latest"
+TOKAY_LATEST="releases/desktop-flash/tokay-latest"
 AKITA_LATEST="releases/desktop-flash/akita-latest"
 RANGO_LATEST="releases/desktop-flash/rango-latest"
 EXPECTED_KOMODO_STAMP="komodo-20260915-063833"
-EXPECTED_TOKAY_INODE="193110379"
+EXPECTED_TOKAY_INODE="193110391"
 EXPECTED_AKITA_INODE="193110357"
 EXPECTED_AVB="7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
 FLASH_LOG="/tmp/t-port-komodo-flash-m-20260915T050731Z.log"

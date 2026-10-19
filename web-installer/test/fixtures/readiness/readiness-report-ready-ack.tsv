@@ -1,0 +1,3 @@
+tokay	Pixel 9	tokay-20260725-102506	READY-ACK	acknowledged NOT-STAMP-VERIFIED: host clauses PASS but readiness is NOT stamp-conferred; a VALID operator acknowledgement accepts the residual for this stamp (synthetic fixture, NOT a host run)	flash ONLY under the recorded acknowledgement; residual accepted, not proven
+rango	Pixel 10 Pro Fold	rango-20260928-081134	BUILD-OK	build-ok; never flashed on hardware	keep the rescue bundle; not boot-proven
+komodo	Pixel 9 Pro XL	komodo-20260928-052609	HOLD	host clauses PASS but NOT-STAMP-VERIFIED	do not treat as READY

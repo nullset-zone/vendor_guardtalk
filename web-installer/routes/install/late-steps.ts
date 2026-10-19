@@ -11,6 +11,7 @@
  */
 import { escapeHtml } from "../../lib/ui/escape.js";
 import { makeChip } from "../../lib/ui/chips.js";
+import { statusAnnouncementHtml, stopAnnouncementHtml } from "../../lib/ui/live-region.js";
 import { STOP_REASONS } from "../../lib/install-state/stops.js";
 import { consoleMarkup, type ConsoleLineKind } from "../../lib/ui/console.js";
 import { INSTALLER_CSP } from "../../lib/claims/csp.js";
@@ -225,9 +226,7 @@ export function connectStepHtml(view: ConnectStepViewInput): string {
   parts.push(`</details>`);
 
   if (view.stopped !== undefined) {
-    parts.push(
-      `<div class="hard-stop-banner" role="alert"><span class="tripwire-text mono">STOPPED:</span> <span>${escapeHtml(view.stopped)}</span></div>`,
-    );
+    parts.push(stopAnnouncementHtml(view.stopped, { id: "step5-stop-announcement" }));
   }
 
   parts.push(`</section>`);
@@ -256,7 +255,7 @@ export function flashStepHtml(view: FlashStepViewInput): string {
     `<p>Every fastboot command and every device response appears verbatim in the console below while flashing proceeds. If any write fails, the flow stops and the output stays on screen.</p>`,
   );
   if (view.started && view.currentPartition !== undefined && view.failed === undefined) {
-    parts.push(`<p class="flash-current mono" aria-live="polite">writing: ${escapeHtml(view.currentPartition)}</p>`);
+    parts.push(statusAnnouncementHtml(`writing: ${view.currentPartition}`, { className: "flash-current mono" }));
   }
   if (view.donePartitions.length > 0) {
     parts.push(`<ul class="flash-done-list mono">`);
@@ -266,9 +265,7 @@ export function flashStepHtml(view: FlashStepViewInput): string {
     parts.push(`</ul>`);
   }
   if (view.failed !== undefined) {
-    parts.push(
-      `<div class="hard-stop-banner" role="alert"><span class="tripwire-text mono">FASTBOOT_FAIL:</span> <span>${escapeHtml(STOP_REASONS.FASTBOOT_FAIL)}</span></div>`,
-    );
+    parts.push(stopAnnouncementHtml(STOP_REASONS.FASTBOOT_FAIL, { id: "step6-stop-announcement", prefix: "FASTBOOT_FAIL:" }));
     parts.push(`<p class="fail-reason mono">${escapeHtml(view.failed)}</p>`);
   }
   parts.push(consoleMarkup([]));
@@ -321,9 +318,7 @@ export function lockStepHtml(view: LockStepViewInput): string {
     parts.push(lockStateChip("locked"));
   }
   if (view.refused !== undefined) {
-    parts.push(
-      `<div class="hard-stop-banner" role="alert"><span class="tripwire-text mono">LOCK REFUSED:</span> <span>${escapeHtml(STOP_REASONS.FASTBOOT_FAIL)}</span></div>`,
-    );
+    parts.push(stopAnnouncementHtml(STOP_REASONS.FASTBOOT_FAIL, { id: "step7-stop-announcement", prefix: "LOCK REFUSED:" }));
     parts.push(`<p class="fail-reason mono">${escapeHtml(view.refused)}</p>`);
   }
   parts.push(
@@ -394,7 +389,7 @@ export function verifyStepHtml(view: VerifyStepViewInput): string {
 
   if (view.outcome === "mismatch") {
     parts.push(
-      `<div class="gl-alert gl-alert--danger verify-result hard-stop-banner" role="alert" data-outcome="mismatch">`,
+      `<div class="gl-alert gl-alert--danger verify-result hard-stop-banner" role="alert" aria-live="assertive" aria-atomic="true" data-outcome="mismatch">`,
       `<div class="gl-alert__body">`,
       makeChip("BOOT_FINGERPRINT_MISMATCH", "tripwire", { ariaLive: "assertive" }),
       `<p class="tripwire-text">${escapeHtml(BOOT_MISMATCH_SENTENCE)}</p>`,

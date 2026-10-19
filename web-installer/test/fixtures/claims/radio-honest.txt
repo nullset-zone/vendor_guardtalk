@@ -1,0 +1,4 @@
+Dead weight with the host-side RIL/telephony userspace excised; the runtime radio verdict remains FALSE (baseband radio.img 13/13 Tier B; modem kernel transport Tier C 10/13).
+Radio/RIL *userspace* is excised on the host; the baseband (radio.img) still ships as a Tier-B residual.
+"Radio is excised" here means the host radio/RIL userspace + telephony HAL is removed; it is not a baseband-free claim.
+A-EXCISE-RADIO_AUDIT: the modem surface is not fully excised.

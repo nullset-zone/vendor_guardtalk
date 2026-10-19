@@ -7,7 +7,8 @@
 #      (18 imgs + avb + sums + README; prefer init.insmod.rango.cfg)
 #   2. sha256sum -c SHA256SUMS EXIT=0
 #   3. No *.pem / *.pk8 in bundle
-#   4. Symlink isolation: rango-latest ≠ latest ≠ akita-latest;
+#   4. Symlink isolation: rango-latest ≠ tokay-latest ≠ akita-latest;
+#      (generic `latest` retired 2026-10-01 → tokay uses tokay-latest)
 #      tokay/akita stamps unchanged (or documented)
 #   5. README Pixel 10 Pro Fold + REMOTE_BUILD_DIR=…/rango-latest
 #   6. flash-from-remote both copies: rango → rango-latest; Pixel 10 Pro Fold
@@ -46,9 +47,9 @@ require_rg() {
 }
 
 RANGO_BUNDLE="releases/desktop-flash/rango-latest"
-TOKAY_LATEST="releases/desktop-flash/latest"
+TOKAY_LATEST="releases/desktop-flash/tokay-latest"
 AKITA_LATEST="releases/desktop-flash/akita-latest"
-EXPECTED_TOKAY_STAMP="tokay-20260725-102506"
+EXPECTED_TOKAY_STAMP="tokay-20260928-084839"
 EXPECTED_AKITA_STAMP="akita-20260725-101434"
 EXPECTED_RANGO_STAMP="rango-20260725-133716"
 FLASH_REPORT=".agent-comm/inbox/TO_ARCHITECT.md"
@@ -144,7 +145,7 @@ if [[ -L "$TOKAY_LATEST" ]]; then
     fail "tokay stamp changed: expected $EXPECTED_TOKAY_STAMP got $ttarget"
   fi
 else
-  fail "releases/desktop-flash/latest missing or not a symlink"
+  fail "releases/desktop-flash/tokay-latest missing or not a symlink"
 fi
 
 if [[ -L "$AKITA_LATEST" ]]; then
@@ -199,7 +200,7 @@ require_rg 'REMOTE_KEY_DIR=.*/releases/desktop-flash/rango-latest' "$README" \
 require_rg 'rango-trunk_staging-userdebug' "$README" \
   "README cites rango-trunk_staging-userdebug"
 require_rg 'BUILD_EXIT=0' "$README" "README cites BUILD_EXIT=0"
-require_rg 'releases/desktop-flash/latest' "$README" \
+require_rg 'releases/desktop-flash/tokay-latest' "$README" \
   "README notes tokay latest path remains separate"
 require_rg 'akita-latest' "$README" "README notes akita-latest remains distinct"
 

@@ -473,7 +473,10 @@ fi
 
 echo "=== T-PORT-EXCISION-MATRIX case8: Gen 6/7 codenames absent (out of program scope) ==="
 
-for forbidden in oriole raven bluejay panther cheetah lynx felix tangorpro; do
+# `tangorpro` is ADMITTED to the port programme by DEC-PORT-TANGORPRO-002 and is
+# deliberately NOT in this forbidden set. The other 7 Gen 6/7 codenames remain
+# guarded — do not remove them (non-vacuity is proven with a negative control).
+for forbidden in oriole raven bluejay panther cheetah lynx felix; do
   if rg -q "^GT_DEVICE_VARIANT_${forbidden}[[:space:]]*:=" "$REGISTRY"; then
     fail "Gen 6/7 codename '$forbidden' registered (out of scope, forbidden)"
   else

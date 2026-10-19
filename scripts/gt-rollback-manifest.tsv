@@ -1,0 +1,45 @@
+# gt-rollback-manifest.tsv — pinned rollback/restore-to-stock artifacts (T-EXCISE-FLASH-ROLLBACK)
+# columns: device<TAB>model<TAB>role<TAB>build<TAB>relpath<TAB>sha256<TAB>size (all non-empty)
+# layout: device-contiguous (stock-factory row, then unbrick-rescue rows for laguna); stock = official
+# Google CP1A.260505.005 factory zip shipped in-tree; rescue = laguna <dev>-rescue-boot stock chain
+shiba	Pixel 8	stock-factory	shiba-cp1a.260505.005	vendor/adevtool/dl/shiba-cp1a.260505.005-factory-3f3bd85e.zip	3f3bd85e3d8a80c93b69a2d53b8b11547e0aa0ef7d14e9428c6203e63ce03cf7	3781969513
+husky	Pixel 8 Pro	stock-factory	husky-cp1a.260505.005	vendor/adevtool/dl/husky-cp1a.260505.005-factory-fc517a67.zip	fc517a67a788c981c3e96f59b55771c105b219d740e1f4dcc90a944910c07a7e	3790300209
+akita	Pixel 8a	stock-factory	akita-cp1a.260505.005	vendor/adevtool/dl/akita-cp1a.260505.005-factory-4790ccab.zip	4790ccab36733ed5a934810fa4375749a1e29aeab56577e97c5477a5381a224c	3734331404
+tokay	Pixel 9	stock-factory	tokay-cp1a.260505.005	vendor/adevtool/dl/tokay-cp1a.260505.005-factory-fa47f3d5.zip	fa47f3d5595faf4b238f28de76f0aed73e43023cbae76ce0af10a24a70563e17	4063030560
+caiman	Pixel 9 Pro	stock-factory	caiman-cp1a.260505.005	vendor/adevtool/dl/caiman-cp1a.260505.005-factory-28248db3.zip	28248db36a623fc4713c2479e08f879be68fcf69e6d8bef3655caf6940c183d3	4068006550
+komodo	Pixel 9 Pro XL	stock-factory	komodo-cp1a.260505.005	vendor/adevtool/dl/komodo-cp1a.260505.005-factory-81a0252b.zip	81a0252b6e33bd10da2588f0149e7fff9e11f368df1f7081a9d76b4145843f83	4072360877
+tegu	Pixel 9a	stock-factory	tegu-cp1a.260505.005	vendor/adevtool/dl/tegu-cp1a.260505.005-factory-c9cf3a77.zip	c9cf3a7714e74502ead2503aa77ea4e987e6868922bc6a057c38e137c2033f4b	3963107280
+comet	Pixel 9 Pro Fold	stock-factory	comet-cp1a.260505.005	vendor/adevtool/dl/comet-cp1a.260505.005-factory-7c1d882d.zip	7c1d882d376c2d4623624fed017f16335107713c63142cb1c6e89063a44b30f4	3978173713
+frankel	Pixel 10	stock-factory	frankel-cp1a.260505.005	vendor/adevtool/dl/frankel-cp1a.260505.005-factory-7e12c860.zip	7e12c8607a7af176ec7233f4df4609f2f2eae53e0ae818547b9aade07255d1d3	10021261912
+frankel	Pixel 10	unbrick-rescue	rescue-chain	releases/desktop-flash/frankel-rescue-boot/boot.img	a759f6f94593e4973de55d60060ff3580756bee8c958f24ef41e66330ded1360	67108864
+frankel	Pixel 10	unbrick-rescue	rescue-chain	releases/desktop-flash/frankel-rescue-boot/init_boot.img	99c6088e008620ccb83ee4317e640be37901c15f3c9d26960e38e16be293e687	8388608
+frankel	Pixel 10	unbrick-rescue	rescue-chain	releases/desktop-flash/frankel-rescue-boot/vendor_boot.img	f750795f156d13db6c57ad0406449134d7bab246356040df75f4e0e315808d20	67108864
+frankel	Pixel 10	unbrick-rescue	rescue-chain	releases/desktop-flash/frankel-rescue-boot/vendor_kernel_boot.img	13d82e1a01b2b3bd2904ce9b098010875c760036c12ca4684751c199b0caabd0	67108864
+frankel	Pixel 10	unbrick-rescue	rescue-chain	releases/desktop-flash/frankel-rescue-boot/dtbo.img	4e265b4b751dd87f480dd53d6fc66512741c3eeb8e515f2fd8f3588f8932a16a	16777216
+frankel	Pixel 10	unbrick-rescue	rescue-chain	releases/desktop-flash/frankel-rescue-boot/pvmfw.img	08d7d926424b894990881647570925d0037adf9dfbb9920beb8a98a0c5f671f1	1048576
+frankel	Pixel 10	unbrick-rescue	rescue-chain	releases/desktop-flash/frankel-rescue-boot/vbmeta.img	d8b0f3895ceb5d695856d39d67141876183988903dcc90ae0eb100dc4234c7e9	16384
+blazer	Pixel 10 Pro	stock-factory	blazer-cp1a.260505.005	vendor/adevtool/dl/blazer-cp1a.260505.005-factory-2f7ef821.zip	2f7ef8217f03263881cb2362bb09697ff7de833f2ad6136c843b7cb9453d567d	10011326196
+blazer	Pixel 10 Pro	unbrick-rescue	rescue-chain	releases/desktop-flash/blazer-rescue-boot/boot.img	2921eddc40679ce1750169bb0caa685f5b6c8c9f0c7ef8fa00149eda9a56868d	67108864
+blazer	Pixel 10 Pro	unbrick-rescue	rescue-chain	releases/desktop-flash/blazer-rescue-boot/init_boot.img	d141d8019f976a704128af34f981ceca6b5cc59b01a271333c34971474be039a	8388608
+blazer	Pixel 10 Pro	unbrick-rescue	rescue-chain	releases/desktop-flash/blazer-rescue-boot/vendor_boot.img	198ba7c1494db11d8429606c23774be0e6d835774976590438c0e78569bb0458	67108864
+blazer	Pixel 10 Pro	unbrick-rescue	rescue-chain	releases/desktop-flash/blazer-rescue-boot/vendor_kernel_boot.img	17b1fa59ab7b4d3750778a5d07617d91dd042707cf88483e7dbe240468fb830e	67108864
+blazer	Pixel 10 Pro	unbrick-rescue	rescue-chain	releases/desktop-flash/blazer-rescue-boot/dtbo.img	611b3faf8aea5cd0be01b42c42baf2fb6dadfd8776599eadcc6030188b0d2ba2	16777216
+blazer	Pixel 10 Pro	unbrick-rescue	rescue-chain	releases/desktop-flash/blazer-rescue-boot/pvmfw.img	53e0b07ebfda44e83c5b6f8116e4321d7568761815455abf134b5d051bf6f8a2	1048576
+blazer	Pixel 10 Pro	unbrick-rescue	rescue-chain	releases/desktop-flash/blazer-rescue-boot/vbmeta.img	e21ba760411502c05cac78cb66643a7eb516f67a214646ebc700954732e58935	16384
+mustang	Pixel 10 Pro XL	stock-factory	mustang-cp1a.260505.005	vendor/adevtool/dl/mustang-cp1a.260505.005-factory-9f5c2c67.zip	9f5c2c67287830725f1e58126073cdf84946cc5a53c302f2199a742656ff9630	10014831456
+mustang	Pixel 10 Pro XL	unbrick-rescue	rescue-chain	releases/desktop-flash/mustang-rescue-boot/boot.img	2bb6a5d52d506678de51fbba5979af9ab4922b6a9b8d4293449f8114acaeae41	67108864
+mustang	Pixel 10 Pro XL	unbrick-rescue	rescue-chain	releases/desktop-flash/mustang-rescue-boot/init_boot.img	080f961cf0089a36586bcab7f9addfed1e0be258f7aa5b1a8d612c5493f3168f	8388608
+mustang	Pixel 10 Pro XL	unbrick-rescue	rescue-chain	releases/desktop-flash/mustang-rescue-boot/vendor_boot.img	83cc7ce84c5229ed3e5c8b617e1272962004ffe7d8f91086c15421c588532d72	67108864
+mustang	Pixel 10 Pro XL	unbrick-rescue	rescue-chain	releases/desktop-flash/mustang-rescue-boot/vendor_kernel_boot.img	fa3902a2e7066c2fee7c60a8a693f32f40af881bb3d6f8abb54e0cbfde19def6	67108864
+mustang	Pixel 10 Pro XL	unbrick-rescue	rescue-chain	releases/desktop-flash/mustang-rescue-boot/dtbo.img	cc5da56d5bbb904b387d0c1d5f6b58a7e88e81290e86286331d8c3be4041f37a	16777216
+mustang	Pixel 10 Pro XL	unbrick-rescue	rescue-chain	releases/desktop-flash/mustang-rescue-boot/pvmfw.img	ca3357dd2e2c7f68bb8c05d53b3f5111a066e1e2eaeef403252f5946976bbac3	1048576
+mustang	Pixel 10 Pro XL	unbrick-rescue	rescue-chain	releases/desktop-flash/mustang-rescue-boot/vbmeta.img	699ba2ed02cc5d9651e7a2c6d1f64e06421fd441972a9207c02934658cda88be	16384
+stallion	Pixel 10a	stock-factory	stallion-cp1a.260505.005	vendor/adevtool/dl/stallion-cp1a.260505.005-factory-bbf7096a.zip	bbf7096a916e34a53e226a90f10a37d84936e89ae7dd1d023a41b262f619a97f	4237951126
+rango	Pixel 10 Pro Fold	stock-factory	rango-cp1a.260505.005	vendor/adevtool/dl/rango-cp1a.260505.005-factory-18bf79d9.zip	18bf79d917dfc411a062ada4494c573cb26ca4bcbca7c3f6ea4576e4fc883b37	10033541417
+rango	Pixel 10 Pro Fold	unbrick-rescue	rescue-chain	releases/desktop-flash/rango-rescue-boot/boot.img	33e5b156a06bc7ee92a1211509d01453f260ed3e2e3478d59c5212a838128c5d	67108864
+rango	Pixel 10 Pro Fold	unbrick-rescue	rescue-chain	releases/desktop-flash/rango-rescue-boot/init_boot.img	6a49b7b1175e5971d41d580357e141c46b87af1834453826bf33c64478179769	8388608
+rango	Pixel 10 Pro Fold	unbrick-rescue	rescue-chain	releases/desktop-flash/rango-rescue-boot/vendor_boot.img	b2c736ca557e43eb6904a3ff93399475f288d74c6386dcc4400e2340e0349176	67108864
+rango	Pixel 10 Pro Fold	unbrick-rescue	rescue-chain	releases/desktop-flash/rango-rescue-boot/vendor_kernel_boot.img	208105b8e2ba80b76966d1c1d8e45b5bc344402acff00e2875e12ff20ff5b229	67108864
+rango	Pixel 10 Pro Fold	unbrick-rescue	rescue-chain	releases/desktop-flash/rango-rescue-boot/dtbo.img	1991f1b23964ad47f5562744f312604d6edef97bbf977da4e82de9ae24997380	16777216
+rango	Pixel 10 Pro Fold	unbrick-rescue	rescue-chain	releases/desktop-flash/rango-rescue-boot/pvmfw.img	dc0d3f24b9c8652e16eb2761d1fd8ab191798209020104e324a3f70ac4983034	1048576
+rango	Pixel 10 Pro Fold	unbrick-rescue	rescue-chain	releases/desktop-flash/rango-rescue-boot/vbmeta.img	c6dbf63204749b9354a1173a0571fcc25e43b38e98d192cd68e65ab22606b65e	16384

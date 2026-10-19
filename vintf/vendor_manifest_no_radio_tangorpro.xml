@@ -1,0 +1,152 @@
+<!--
+  GuardTalkOS — tangorpro (Pixel Tablet / gs201) vendor device manifest without
+  cellular-radio-adjacent HALs.
+
+  Derived from vendor/google_devices/tangorpro/vintf/vendor/manifest.xml
+  (T-PORT-TANGORPRO-VINTF-MANIFEST, P0). NOT copied from tokay: tangorpro is
+  gs201 / target-level 7 while tokay is gs101 / target-level 8, and the HAL
+  sets differ.
+
+  WHY THIS FILE EXISTS — the defect it fixes
+  ==========================================
+  (A rule of dashes is illegal inside an XML comment, so this header uses `=`.)
+  vintf-excised.mk had no `tangorpro` branch, so `gs201_tangorpro` fell through
+  to the generic tokay-derived vendor_manifest_no_radio.xml, which is
+  `target-level="8"` and declares tokay-only HALs (com.google.input.gia.core
+  IGiaService, com.google.input.algos.spd, com.google.input.twoshay
+  ITwoshayNotificationService, vendor.google.bluetooth_ext). Presenting that
+  manifest on a target-level-7 device declares HALs the device cannot provide,
+  so check_vintf fails. This file is the device's own manifest, target-level 7,
+  so the declared set and the level both match tangorpro.
+
+  REMOVED versus tangorpro's own manifest (exact, verified by the derivation
+  script below — nothing else is dropped):
+    - the HAL declared by the vendor fragment
+      vendor/google_devices/tangorpro/vintf/vendor/manifest/manifest_radioext.xml:
+        vendor.google.radioext  @1.5::IRadioExt/default   (HIDL)
+      The same fragment is already dropped from PRODUCT_PACKAGES
+      (adevtool_vintf_fragment_vendor_manifest_radioext.xml in
+      vendor/guardtalk/radio-excised/remove-packages.mk), so declaring it here
+      would promise a service the image no longer ships.
+
+  Deliberately KEPT: tangorpro's main manifest carries no cellular-radio / RIL /
+  oemservice / radioExternal declaration of its own — those exist only in the
+  per-device COMPATIBILITY matrix (vendor/google_devices/tangorpro/vintf/
+  product/compatibility_matrix.xml), which is the FCM side and is not touched
+  by this file. Derivation is therefore provably lossless apart from the one
+  radioext fragment declaration.
+
+  Also dropped with it: nothing else. The `sepolicy` element is PRESERVED
+  exactly as tangorpro declares it (`<sepolicy><version>202504</version>`),
+  matching every other per-device excised manifest here (akita, husky, rango,
+  shiba, stallion, laguna_muzel all carry their own manifest's 202504 pin). An
+  earlier draft of this file dropped it with the wrong rationale; corrected
+  before review. VINTF excision removes HAL declarations, not the sepolicy
+  version pin.
+
+  BLUETOOTH-FREE VARIANT: like every other per-device excised manifest here,
+  this file still declares the Bluetooth HALs of the source manifest
+  (android.hardware.bluetooth, hardware.google.bluetooth.sar). The WAVE-2
+  bridge in vintf-excised.mk derives the BT-free twin by substituting
+  `vendor_manifest_no_radio` -> `vendor_manifest_no_bt`, so a
+  vendor_manifest_no_bt_tangorpro.xml is REQUIRED or the build fails loudly
+  (Law 3). Do not delete this file while the WAVE-2 flag is on.
+
+  Selection: vendor/guardtalk/radio-excised/vintf-excised.mk, branch
+  `filter tangorpro,$(_gt_vintf_device)` (PRODUCT_DEVICE / TARGET_DEVICE /
+  TARGET_PRODUCT / INTERNAL_PRODUCT = tangorpro, which resolves from
+  GT_DEVICE_VARIANT_tangorpro := gs201_tangorpro in
+  vendor/guardtalk/feature-excised/excision-variants.mk).
+
+  Each <hal> below is declared by tangorpro's own main manifest (Instances
+  "main") or by a fragment that tangorpro actually packages (Instances
+  "fragment: <file>"). A fragment the radio-excised PRODUCT_PACKAGES filter
+  drops is marked "dropped by radio-excised" and is intentionally NOT merged
+  in here.
+-->
+<manifest version="9.0" type="device" target-level="7">
+    <!-- Instances: main -->
+    <hal format="hidl">
+        <name>android.hardware.audio</name>
+        <transport>hwbinder</transport>
+        <fqname>@7.1::IDevicesFactory/default</fqname>
+    </hal>
+    <!-- Instances: main -->
+    <hal format="hidl">
+        <name>android.hardware.audio.effect</name>
+        <transport>hwbinder</transport>
+        <fqname>@7.0::IEffectsFactory/default</fqname>
+    </hal>
+    <!-- Instances: main -->
+    <hal format="hidl">
+        <name>android.hardware.bluetooth</name>
+        <transport>hwbinder</transport>
+        <fqname>@1.1::IBluetoothHci/default</fqname>
+    </hal>
+    <!-- Instances: main -->
+    <hal format="aidl">
+        <name>android.hardware.boot</name>
+        <fqname>IBootControl/default</fqname>
+    </hal>
+    <!-- Instances: main -->
+    <hal format="aidl">
+        <name>android.hardware.media.c2</name>
+        <fqname>IComponentStore/default1</fqname>
+    </hal>
+    <!-- Instances: main -->
+    <hal format="aidl">
+        <name>android.hardware.media.c2</name>
+        <fqname>IComponentStore/default</fqname>
+    </hal>
+    <!-- Instances: main -->
+    <hal format="aidl">
+        <name>android.hardware.security.keymint</name>
+        <version>3</version>
+        <fqname>IRemotelyProvisionedComponent/strongbox</fqname>
+    </hal>
+    <!-- Instances: main -->
+    <hal format="hidl">
+        <name>android.hardware.soundtrigger</name>
+        <transport>hwbinder</transport>
+        <fqname>@2.3::ISoundTriggerHw/default</fqname>
+    </hal>
+    <!-- Instances: main -->
+    <hal format="aidl">
+        <name>com.google.input</name>
+        <version>6</version>
+        <fqname>ITouchContextService/default</fqname>
+    </hal>
+    <!-- Instances: main -->
+    <hal format="aidl">
+        <name>com.google.input</name>
+        <version>6</version>
+        <fqname>ITwoshayFileDumpService/touchflow_default</fqname>
+        <fqname>ITwoshayFileDumpService/twoshay</fqname>
+    </hal>
+    <!-- Instances: main -->
+    <hal format="hidl">
+        <name>hardware.google.bluetooth.sar</name>
+        <transport>hwbinder</transport>
+        <fqname>@1.1::IBluetoothSar/default</fqname>
+    </hal>
+    <!-- Instances: main -->
+    <hal format="hidl">
+        <name>vendor.google.audiometricext</name>
+        <transport>hwbinder</transport>
+        <fqname>@1.0::IAudioMetricExt/default</fqname>
+    </hal>
+    <!-- Instances: main -->
+    <hal format="hidl">
+        <name>vendor.google.whitechapel.audio.audioext</name>
+        <transport>hwbinder</transport>
+        <fqname>@4.0::IAudioExt/default</fqname>
+    </hal>
+    <!-- REMOVED here (documentation only, not a declaration):
+         vendor.google.radioext @1.5::IRadioExt/default, declared by the vendor
+         fragment vendor/manifest/manifest_radioext.xml, which is installed and
+         then dropped by radio-excised
+         (adevtool_vintf_fragment_vendor_manifest_radioext.xml). -->
+    <sepolicy>
+        <version>202504</version>
+    </sepolicy>
+</manifest>

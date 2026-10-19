@@ -19,7 +19,10 @@ pack_one() {
     echo "HOSTED_OK  ${product}  ${dest}"
 }
 
-pack_one tokay "${REPO_ROOT}/releases/desktop-flash/latest"
+# tokay repointed off the RETIRED generic `latest` (quarantined 2026-10-01,
+# T-EXCISE-STAMP-TREE-QUARANTINE) to the per-device `<codename>-latest` pointer.
+# The generic `latest` alias must never be re-introduced.
+pack_one tokay "${REPO_ROOT}/releases/desktop-flash/tokay-latest"
 pack_one akita "${REPO_ROOT}/releases/desktop-flash/akita-latest"
 pack_one komodo "${REPO_ROOT}/releases/desktop-flash/komodo-latest"
 pack_one rango "${REPO_ROOT}/releases/desktop-flash/rango-latest"

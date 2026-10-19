@@ -1,0 +1,41 @@
+{
+  "$comment": "Out-of-band AVB trust-anchor pins. DEV-CHANNEL: hash-anchored, not signed. Regenerate deliberately (node scripts/gen-expected-anchors.mjs --write) and review the diff; never automatically from the tree you are verifying.",
+  "schemaVersion": "expected-anchors/1",
+  "channel": "dev",
+  "provenance": {
+    "pinnedBy": "checked-in, review-gated constant. A change to these digests is a reviewable diff. Not a signed root; not GrapheneOS-equivalent (whose public keys live in signed release metadata).",
+    "generatedBy": "scripts/gen-expected-anchors.mjs (deliberate, human-run; never automatic)",
+    "whatItProves": "the shipped avb_pkmd.bin is byte-identical to a digest a human reviewed; it does not prove the images were signed with this key",
+    "sourceStampSha256": "digest of the same file inside the channel's manifest.sourceStamp release stamp — corroboration a reviewer can re-derive"
+  },
+  "anchors": {
+    "akita": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "akita-20260928-083403",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "komodo": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "komodo-20260928-052609",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "rango": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "rango-20260928-081134",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "tokay": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "tokay-20260928-084839",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    }
+  }
+}

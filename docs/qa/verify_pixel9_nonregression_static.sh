@@ -4,9 +4,15 @@
 # Does not relink latest stamps.
 #
 # Cases:
-#   1. tokay→latest (tokay-20260725-102506 inode 193110379)
+#   1. tokay→tokay-latest (tokay-20260928-084839 inode 193110391)
 #      akita→akita-latest (inode 193110357)
 #      komodo→komodo-latest (inode 193110380)
+#      NOTE: the generic `releases/desktop-flash/latest` alias was RETIRED
+#      (quarantined 2026-10-01, T-EXCISE-STAMP-TREE-QUARANTINE); tokay now uses
+#      the per-device `tokay-latest` pointer. Do NOT re-introduce generic `latest`.
+#      The akita/komodo/rango pins below are DELIBERATE non-regression guards and
+#      are intentionally NOT refreshed here (a separate stamp-rebind adjudication
+#      owns the 2026-09-28 re-stamp drift).
 #   2. KEEP both flash-from-remote.sh copies identical; bash -n 0
 #   3. DEVICE= mapping: tokay/akita/komodo → those stamps; no rescue dir
 #   4. firmware cleanup uart + erase fips + dpm for those three
@@ -29,12 +35,12 @@ hold() { echo "HOLD: $*"; HOLD_N=$((HOLD_N + 1)); }
 
 FLASH_ROOT="scripts/flash-from-remote.sh"
 FLASH_VENDOR="vendor/guardtalk/scripts/flash-from-remote.sh"
-TOKAY_LATEST="releases/desktop-flash/latest"
+TOKAY_LATEST="releases/desktop-flash/tokay-latest"
 AKITA_LATEST="releases/desktop-flash/akita-latest"
 KOMODO_LATEST="releases/desktop-flash/komodo-latest"
 RANGO_LATEST="releases/desktop-flash/rango-latest"
-EXPECTED_TOKAY_STAMP="tokay-20260725-102506"
-EXPECTED_TOKAY_INODE="193110379"
+EXPECTED_TOKAY_STAMP="tokay-20260928-084839"
+EXPECTED_TOKAY_INODE="193110391"
 EXPECTED_AKITA_INODE="193110357"
 EXPECTED_KOMODO_INODE="193110380"
 WI_TYPES="vendor/guardtalk/web-installer/src/types.ts"
@@ -179,6 +185,10 @@ else
 fi
 
 rango_tgt="$(readlink "$RANGO_LATEST" 2>/dev/null || true)"
+# DELIBERATE non-regression guard (rango-latest must NOT be retargeted off
+# rango-20260802-130756; WEB_INSTALLER_CHANNEL.md:38 "Do not retarget").
+# Intentionally NOT refreshed — the 2026-09-28 re-stamp drift is adjudicated
+# separately (a refresh here would weaken a deliberate guard).
 if [[ "$rango_tgt" == "rango-20260802-130756" ]]; then
   pass "rango-latest still $rango_tgt (Pixel 9 stamps not stolen)"
 else
@@ -215,6 +225,17 @@ else
   fail "bash -n $FLASH_VENDOR failed"
 fi
 
+# T-EXCISE-RETIRED-LATEST-CONSUMERS-REPIN: the divergent third copy
+# (gt-flash-blazer/flash-from-remote.sh) is RETIRED and must stay a fail-closed
+# guard with NO flash logic. Previously covered by no gate (latent divergence trap).
+GT_BLAZER="gt-flash-blazer/flash-from-remote.sh"
+if [[ -f "$GT_BLAZER" ]] && grep -q 'RETIRED' "$GT_BLAZER" \
+  && ! grep -q 'apply_remote_paths()' "$GT_BLAZER"; then
+  pass "gt-flash-blazer third copy is a retired fail-closed guard (no flash logic)"
+else
+  fail "gt-flash-blazer third flasher copy is NOT guarded (divergent flash logic present)"
+fi
+
 echo "=== Q-PIXEL9-NONREGRESSION case3: DEVICE= maps to latest stamps; no rescue dir ==="
 
 expect_map() {
@@ -244,7 +265,7 @@ expect_map() {
   fi
 }
 
-expect_map tokay latest
+expect_map tokay tokay-latest
 expect_map akita akita-latest
 expect_map komodo komodo-latest
 

@@ -58,8 +58,10 @@ DEVICES=(shiba husky akita tokay caiman komodo comet tegu stallion frankel blaze
 FLAG_DEVICES=(shiba husky akita tokay caiman komodo comet tegu)
 LITERAL_DEVICES=(stallion frankel blazer mustang rango)
 # The 8 resolved in-scope trees ONLY. device/google also carries Gen 6/7
-# (*-bluejay/felix/lynx/pantah/raviole/tangorpro-kernels) which are OUT OF SCOPE
-# and must never be counted here.
+# (*-bluejay/felix/lynx/pantah/raviole-kernels) which are OUT OF SCOPE
+# and must never be counted here. (*-tangorpro-kernels) was OUT OF SCOPE until
+# DEC-PORT-TANGORPRO-002 admitted it; it is now known-but-admitted and is still
+# NOT a resolved in-scope tree (it has no excision/wave entry yet).
 RESOLVED_TREES=(
   device/google/shusky-kernels/6.1/grapheneos
   device/google/akita-kernels/6.1/grapheneos
@@ -317,7 +319,9 @@ for tree in "${RESOLVED_TREES[@]}"; do
   fi
 done
 # Out-of-scope Gen 6/7 trees must NOT be counted as resolved in-scope trees.
-for fam in bluejay felix lynx pantah raviole tangorpro; do
+# `tangorpro` is ADMITTED by DEC-PORT-TANGORPRO-002 and is deliberately absent
+# here; the remaining families stay out of scope until separately admitted.
+for fam in bluejay felix lynx pantah raviole; do
   if compgen -G "device/google/$fam-kernels/*/grapheneos" >/dev/null; then
     pass "out of scope (Gen 6/7, NOT provisioned, NOT counted): device/google/$fam-kernels"
   fi

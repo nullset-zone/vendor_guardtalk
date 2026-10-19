@@ -1,0 +1,4 @@
+{
+  "gate": "PASS",
+  "$comment": "Test fixture (F-WEBINSTALL-FLASHALL-CLAIM-LINT): an explicit readiness-gate verdict. Never shipped; lives under test/fixtures."
+}

@@ -170,7 +170,13 @@ function itemHtml(view: RailStepView, tabindex: number): string {
   }
   parts.push(`</button>`);
   if (view.stopReason !== undefined) {
-    parts.push(`<span class="rail-stop-reason">${escapeHtml(view.stopReason)}</span>`);
+    // D-017: the verbatim STOP reason announces on its own too, not only the
+    // adjacent chip — a screen reader that has moved to the reason must still
+    // receive it. `role="status"`/`polite`: the assertive chip above already
+    // interrupted; this is the accompanying detail, not a second interruption.
+    parts.push(
+      `<span class="rail-stop-reason" role="status" aria-live="polite" aria-atomic="true">${escapeHtml(view.stopReason)}</span>`,
+    );
   }
   parts.push(`</li>`);
   return parts.join("");

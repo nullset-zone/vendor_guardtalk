@@ -301,6 +301,64 @@ pre.cmd-block {
   background: var(--gl-badge-neutral-bg);
 }
 
+/* BUILD-OK acknowledgement gate (F-EXCISE-WEBINSTALL-READINESS-GUARD). */
+.readiness-reason {
+  display: block;
+  margin-top: var(--gl-spacing-2);
+  color: var(--gl-text-color-subtle);
+  font-size: var(--gl-font-size-sm);
+}
+
+.readiness-gate {
+  display: grid;
+  gap: var(--gl-spacing-4);
+  border: 1px solid var(--gl-feedback-warning);
+  border-left: 4px solid var(--gl-feedback-warning);
+  border-radius: var(--gl-border-radius-base);
+  background: var(--gl-feedback-warning-bg);
+  padding: var(--gl-spacing-6);
+}
+
+.readiness-gate h3 {
+  margin: 0;
+  color: var(--gl-feedback-warning);
+  font-size: var(--gl-font-size-lg);
+}
+
+.readiness-gate__facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--gl-spacing-2) var(--gl-spacing-6);
+  margin: 0;
+}
+
+.readiness-gate__facts dt {
+  color: var(--gl-text-color-subtle);
+  font-weight: 600;
+}
+
+.readiness-gate__facts dd {
+  margin: 0;
+}
+
+.readiness-gate__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gl-spacing-4);
+}
+
+.readiness-gate input {
+  color: var(--gl-text-color-default);
+  background: var(--gl-control-background);
+  border: 1px solid var(--gl-control-border);
+  border-radius: var(--gl-border-radius-base);
+  min-height: 32px;
+  padding: 6px var(--gl-spacing-4);
+  font-family: var(--gl-font-family-mono);
+  font-size: var(--gl-font-size-base);
+  max-width: 24rem;
+}
+
 .sbs-row {
   border: 1px solid var(--gl-border-color-default);
   border-radius: var(--gl-border-radius-base);

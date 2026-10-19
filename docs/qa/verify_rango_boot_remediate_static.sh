@@ -4,7 +4,8 @@
 #
 # Cases:
 #   1. rango-latest → rango-20260802-130756 (not retargeted; not 145117)
-#   2. tokay/akita/komodo latest inodes unchanged
+#   2. tokay/akita/komodo latest inodes unchanged (tokay → tokay-latest;
+#      generic `latest` retired 2026-10-01, T-EXCISE-STAMP-TREE-QUARANTINE)
 #   3. SHA256SUMS OK on 130756 and 145117
 #   4. 145117 exists and is not linked as *-latest
 #   5. CLI DEVICE=rango maps to rango-latest (extracted helpers; no USB)
@@ -55,7 +56,7 @@ EXPECTED_RANGO_STAMP="rango-20260802-130756"
 CANDIDATE_STAMP="rango-20260803-145117"
 CANDIDATE_DIR="releases/desktop-flash/${CANDIDATE_STAMP}"
 EXPECTED_RANGO_INODE="193110354"
-EXPECTED_TOKAY_INODE="193110379"
+EXPECTED_TOKAY_INODE="193110391"
 EXPECTED_AKITA_INODE="193110357"
 EXPECTED_KOMODO_INODE="193110380"
 FLASH_ROOT="scripts/flash-from-remote.sh"
@@ -98,7 +99,7 @@ fi
 
 echo "=== Q-RANGO-BOOT-REMEDIATE case2: Pixel 9 latest inodes unchanged ==="
 
-tokay_inode="$(stat -c '%i' releases/desktop-flash/latest)"
+tokay_inode="$(stat -c '%i' releases/desktop-flash/tokay-latest)"
 akita_inode="$(stat -c '%i' releases/desktop-flash/akita-latest)"
 komodo_inode="$(stat -c '%i' releases/desktop-flash/komodo-latest)"
 if [[ "$tokay_inode" == "$EXPECTED_TOKAY_INODE" ]]; then
@@ -116,7 +117,7 @@ if [[ "$komodo_inode" == "$EXPECTED_KOMODO_INODE" ]]; then
 else
   fail "komodo-latest inode expected $EXPECTED_KOMODO_INODE got $komodo_inode"
 fi
-tokay_tgt="$(readlink releases/desktop-flash/latest)"
+tokay_tgt="$(readlink releases/desktop-flash/tokay-latest)"
 akita_tgt="$(readlink releases/desktop-flash/akita-latest)"
 komodo_tgt="$(readlink releases/desktop-flash/komodo-latest)"
 pass "tokay latest → $tokay_tgt"

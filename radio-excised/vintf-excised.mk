@@ -53,6 +53,17 @@ else ifneq ($(filter husky,$(_gt_vintf_device)),)
   # T-PORT-FINISH-WAVE: husky is Pixel 8 Pro / zuma. Same gia.core (@2)
   # incompatibility as shiba -> use a husky-derived manifest.
   GUARDTALK_VENDOR_MANIFEST_EXCISED := vendor/guardtalk/vintf/vendor_manifest_no_radio_husky.xml
+else ifneq ($(filter tangorpro,$(_gt_vintf_device)),)
+  # T-PORT-TANGORPRO-VINTF-MANIFEST (P0): tangorpro (Pixel Tablet) is gs201 and
+  # its own vendor manifest is target-level="7", not tokay's 8. Without this
+  # branch it fell through to the generic tokay-derived manifest, which is
+  # target-level 8 AND declares tokay-only HALs (com.google.input.gia.core
+  # IGiaService, com.google.input.algos.spd, ITwoshayNotificationService,
+  # vendor.google.bluetooth_ext) -> check_vintf incompatibility.
+  # Use the manifest derived from tangorpro's own manifest (same class as
+  # T-PORT-AKITA-FLASH); radio-ext fragment declaration removed, radioext
+  # fragment itself already dropped in remove-packages.mk.
+  GUARDTALK_VENDOR_MANIFEST_EXCISED := vendor/guardtalk/vintf/vendor_manifest_no_radio_tangorpro.xml
 else
   GUARDTALK_VENDOR_MANIFEST_EXCISED := vendor/guardtalk/vintf/vendor_manifest_no_radio.xml
 endif
@@ -101,6 +112,8 @@ DEVICE_MANIFEST_FILE := $(filter-out \
     vendor/google_devices/stallion/vintf/vendor/manifest.xml \
     vendor/google_devices/shiba/vintf/vendor/manifest.xml \
     vendor/google_devices/husky/vintf/vendor/manifest.xml \
+    vendor/google_devices/tangorpro/vintf/vendor/manifest.xml \
+    vendor/google_devices/tangorpro/vintf/vendor/manifest/manifest_radioext.xml \
     vendor/guardtalk/vintf/vendor_manifest_no_radio.xml \
     vendor/guardtalk/vintf/vendor_manifest_no_radio_akita.xml \
     vendor/guardtalk/vintf/vendor_manifest_no_radio_rango.xml \
@@ -108,6 +121,7 @@ DEVICE_MANIFEST_FILE := $(filter-out \
     vendor/guardtalk/vintf/vendor_manifest_no_radio_stallion.xml \
     vendor/guardtalk/vintf/vendor_manifest_no_radio_shiba.xml \
     vendor/guardtalk/vintf/vendor_manifest_no_radio_husky.xml \
+    vendor/guardtalk/vintf/vendor_manifest_no_radio_tangorpro.xml \
     vendor/guardtalk/vintf/vendor_manifest_no_bt.xml \
     vendor/guardtalk/vintf/vendor_manifest_no_bt_akita.xml \
     vendor/guardtalk/vintf/vendor_manifest_no_bt_rango.xml \
@@ -115,6 +129,7 @@ DEVICE_MANIFEST_FILE := $(filter-out \
     vendor/guardtalk/vintf/vendor_manifest_no_bt_stallion.xml \
     vendor/guardtalk/vintf/vendor_manifest_no_bt_shiba.xml \
     vendor/guardtalk/vintf/vendor_manifest_no_bt_husky.xml \
+    vendor/guardtalk/vintf/vendor_manifest_no_bt_tangorpro.xml \
     ,$(DEVICE_MANIFEST_FILE))
 DEVICE_MANIFEST_FILE += $(GUARDTALK_VENDOR_MANIFEST_EXCISED)
 

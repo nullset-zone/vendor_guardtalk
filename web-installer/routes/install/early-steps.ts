@@ -50,9 +50,67 @@ import {
   DEFAULT_OFFERED_PRODUCT,
   KOMODO_STAMP_HONESTY,
   WIZARD_DEVICES,
+  channelChipWord,
+  hasChannelAndAdvertised,
+  isOfferedDevice,
   parseOfferedDevice,
   statusChipWord,
+  statusJsonChipWord,
+  statusJsonFact,
+  type OfferedProduct,
 } from "../../lib/ui/offered-devices.js";
+import { hasPackedChannel } from "../../lib/ui/packed-channels.js";
+import {
+  BOOT_VERIFIED,
+  READINESS_PROVENANCE,
+  readinessChipWord,
+  readinessFor,
+  tierPolicy,
+  type ReadinessTier,
+} from "../../lib/ui/readiness.js";
+
+// ---------------------------------------------------------------------------
+// PICKER-TRUTH selectability — the two facts composed in ONE place
+// ---------------------------------------------------------------------------
+
+/**
+ * Selectable = advertised AND has a packed channel AND the host offers its
+ * readiness tier. F-WEBINSTALL-FLASHALL-PICKER-TRUTH acceptance (a) is the
+ * conjunction: a packed channel on a non-offerable tier is still a dead end, and
+ * an offerable tier with no channel has nothing to write. The channel half lives
+ * in `offered-devices.ts` (`hasChannelAndAdvertised`) because `readiness.js`
+ * imports that module and a back-import would cycle; the composition happens
+ * here, which already imports both.
+ */
+export function isSelectableProduct(product: string): boolean {
+  if (!isOfferedDevice(product)) {
+    return false;
+  }
+  return hasChannelAndAdvertised(product) && isOfferableInUi(readinessFor(product).tier);
+}
+
+function isOfferableInUi(tier: string): boolean {
+  return tierPolicy(tier)?.offerable === true;
+}
+
+/**
+ * Why a product cannot be selected, or `undefined` when it can. The refusal
+ * names the missing fact (no channel vs a non-offerable tier) rather than
+ * leaving a dead end.
+ */
+export function channelRefusal(product: string): string | undefined {
+  if (!isOfferedDevice(product)) {
+    return undefined;
+  }
+  if (!hasPackedChannel(product)) {
+    return `Device '${product}' is advertised but has no packed channel on this build, so it cannot be selected or flashed. Nothing is offered for it until a channel is packed.`;
+  }
+  if (!isOfferableInUi(readinessFor(product).tier)) {
+    const tier = readinessFor(product).tier;
+    return `Device '${product}' is packed but its readiness tier is ${tier} (${readinessChipWord(tier)}), which this installer does not offer for flashing.`;
+  }
+  return undefined;
+}
 
 // ---------------------------------------------------------------------------
 // Binding copy constants
@@ -74,14 +132,29 @@ export interface SupportedTarget {
   readonly codename: string;
   readonly deviceName: string;
   readonly status: "supported" | "experimental";
+  /** Host-reported readiness tier, derived into the manifest (never hand-written). */
+  readonly readiness: ReadinessTier;
+  readonly readinessReason: string;
+  readonly readinessRemedy: string;
+  readonly offerable: boolean;
+  /** True for acknowledgement-gated tiers (READY-ACK, BUILD-OK); drives the gate. */
+  readonly requiresAcknowledgement: boolean;
 }
 
 /** Advertised set from wizard/devices.ts (DEC-WEBINSTALL-015). Rango is experimental / boot HOLD. */
-export const SUPPORTED_TARGETS: readonly SupportedTarget[] = WIZARD_DEVICES.map((device) => ({
-  codename: device.id,
-  deviceName: device.deviceName,
-  status: device.status,
-}));
+export const SUPPORTED_TARGETS: readonly SupportedTarget[] = WIZARD_DEVICES.map((device) => {
+  const view = readinessFor(device.id);
+  return {
+    codename: device.id,
+    deviceName: device.deviceName,
+    status: device.status,
+    readiness: view.tier,
+    readinessReason: view.reason,
+    readinessRemedy: view.remedy,
+    offerable: view.offerable,
+    requiresAcknowledgement: view.requiresAcknowledgement,
+  };
+});
 
 export const ALPHA_POSTURE_FLAGS = {
   connectivity: POSTURE_CONNECTIVITY,
@@ -167,11 +240,27 @@ export const CUSTODY_SENTENCES: readonly string[] = [
 function targetPickerHtml(selected: string): string {
   const options = WIZARD_DEVICES.map((device) => {
     const isSelected = device.id === selected ? " selected" : "";
-    return `<option value="${escapeHtml(device.id)}" data-status="${device.status}"${isSelected}>${escapeHtml(device.label)}</option>`;
+    const view = readinessFor(device.id);
+    const requiresAck = view.requiresAcknowledgement ? "true" : "false";
+    const offerable = view.offerable ? "true" : "false";
+    const packed = hasPackedChannel(device.id);
+    const statusFact = statusJsonFact(device.id);
+    // The option text names BOTH facts that govern whether this device can be
+    // taken: the channel (acceptance (a)) and the tier gate. A device with no
+    // channel says so plainly rather than offering a dead end.
+    const suffix = !packed
+      ? ` — NO CHANNEL PACKED, not selectable`
+      : view.offerable
+        ? view.requiresAcknowledgement
+          ? ` — ${readinessChipWord(view.tier)}, selectable only with its typed codename`
+          : ""
+        : ` — ${readinessChipWord(view.tier)}, not offerable`;
+    return `<option value="${escapeHtml(device.id)}" data-status="${device.status}" data-status-json="${statusFact}" data-packed="${packed ? "true" : "false"}" data-selectable="${isSelectableProduct(device.id) ? "true" : "false"}" data-readiness="${view.tier}" data-requires-ack="${requiresAck}" data-offerable="${offerable}"${isSelected}>${escapeHtml(device.label + suffix)}</option>`;
   }).join("");
   return [
     `<label class="field" for="target-product">Selected device</label>`,
     `<select id="target-product" name="target-product" data-role="target-product">${options}</select>`,
+    `<p class="note">A device with no packed channel cannot be selected. A READY device selects normally; a READY-ACK or BUILD-OK device is not selected until you type its codename; a tier the host does not offer cannot be selected at all.</p>`,
   ].join("");
 }
 
@@ -183,18 +272,37 @@ function targetTableHtml(): string {
   const rows = SUPPORTED_TARGETS.map((target) => {
     const chipKind = target.status === "supported" ? "neutral" : "caution";
     const chip = makeChip(statusChipWord(target.status), chipKind);
+    const readinessKind = target.readiness === "READY" ? "neutral" : "caution";
+    const readinessChip = makeChip(readinessChipWord(target.readiness), readinessKind);
+    const requiresAck = target.requiresAcknowledgement ? "true" : "false";
+    const offerable = target.offerable ? "true" : "false";
+    // (c) the status.json fact is shown EXACTLY — including the honest
+    // "NOT IN status.json" for komodo, never an invented "supported".
+    const statusFact = statusJsonFact(target.codename);
+    const statusJsonChip = makeChip(
+      statusJsonChipWord(target.codename),
+      statusFact === "absent-from-status-json" ? "caution" : "neutral",
+    );
+    // (a) the packed-channel fact, and therefore selectability.
+    const packed = hasPackedChannel(target.codename);
+    const channelChip = makeChip(channelChipWord(target.codename), packed ? "neutral" : "caution");
     return [
-      `<tr data-codename="${escapeHtml(target.codename)}" data-status="${target.status}">`,
+      `<tr data-codename="${escapeHtml(target.codename)}" data-status="${target.status}" data-status-json="${statusFact}" data-packed="${packed ? "true" : "false"}" data-selectable="${isSelectableProduct(target.codename) ? "true" : "false"}" data-readiness="${target.readiness}" data-requires-ack="${requiresAck}" data-offerable="${offerable}">`,
       `<th scope="row">${escapeHtml(target.codename)}</th>`,
       `<td>${mono(target.deviceName)}</td>`,
-      `<td>${chip}</td></tr>`,
+      `<td>${chip}</td>`,
+      `<td>${statusJsonChip}</td>`,
+      `<td>${channelChip}</td>`,
+      `<td>${readinessChip}<span class="readiness-reason">${escapeHtml(target.readinessReason)}</span></td>`,
     ].join("");
   }).join("");
   return [
     `<table class="target-table"><caption>This installer writes these devices only</caption>`,
-    `<thead><tr><th scope="col">Codename</th><th scope="col">Device</th><th scope="col">Status</th></tr></thead>`,
+    `<thead><tr><th scope="col">Codename</th><th scope="col">Device</th><th scope="col">Status</th><th scope="col">status.json</th><th scope="col">Channel</th><th scope="col">Readiness</th></tr></thead>`,
     `<tbody>${rows}</tbody></table>`,
     `<p class="note">${escapeHtml(advertisedNote)}</p>`,
+    `<p class="note">The <strong>status.json</strong> column states the shipped product facts exactly; <code class="mono">komodo</code> is absent from those facts and is labelled as such rather than being called supported. The <strong>Channel</strong> column states what is actually packed: a device with no packed channel cannot be selected.</p>`,
+    `<p class="note">Readiness tiers are generated from <code class="mono">scripts/gt-ready-devices.sh</code> (${escapeHtml(READINESS_PROVENANCE.sourceScriptSha256.slice(0, 12))}…, ${escapeHtml(READINESS_PROVENANCE.generatedAt)}); packed channels from <code class="mono">scripts/gen-packed-channels.mjs</code>. No device is boot-verified: ${mono(`BOOT_VERIFIED=${String(BOOT_VERIFIED)}`)}.</p>`,
   ].join("");
 }
 
@@ -229,7 +337,83 @@ function flowCompareTableHtml(): string {
   ].join("");
 }
 
-export function renderStep0(selectedProduct: string = DEFAULT_OFFERED_PRODUCT): string {
+/**
+ * A target the user asked for that cannot be selected outright: a BUILD-OK
+ * device awaiting its typed codename, or a tier the host does not offer.
+ */
+export interface ReadinessGateView {
+  readonly product: OfferedProduct;
+  readonly deviceName: string;
+  readonly tier: ReadinessTier;
+  readonly reason: string;
+  readonly remedy: string;
+}
+
+/** Tier-specific copy for the acknowledgement gate. Unknown ack tiers fall back honestly. */
+const ACK_GATE_HEADING: Readonly<Partial<Record<ReadinessTier, string>>> = Object.freeze({
+  "BUILD-OK": "BUILD-OK — this build is not boot-verified.",
+  "READY-ACK": "READY-ACK — acknowledged, not stamp-proven.",
+});
+
+const ACK_GATE_LEDE: Readonly<Partial<Record<ReadinessTier, string>>> = Object.freeze({
+  "BUILD-OK":
+    "Every host check passed for this bundle, but no host check can prove that a phone boots. Boot is UNVERIFIED.",
+  "READY-ACK":
+    "The host clauses passed, but readiness for this exact stamp is NOT stamp-conferred. A recorded operator acknowledgement accepts that residual for this stamp only — it is not a proof and not boot evidence.",
+});
+
+/**
+ * Blocking panel for a target that cannot be selected yet — the web-installer
+ * parity with `gt-flash-wizard.sh:176-201`. Whether the codename must be typed
+ * is decided by the tier policy, NOT by a `=== "BUILD-OK"` literal: any
+ * acknowledgement-gated tier (READY-ACK, BUILD-OK) gets the typed gate, while
+ * HOLD/PENDING have no acknowledgement path at all. `BOOT_VERIFIED` stays
+ * false: nothing here implies a boot result.
+ */
+export function renderReadinessGate(view: ReadinessGateView): string {
+  const bootFlag = `BOOT_VERIFIED=${String(BOOT_VERIFIED)}`;
+  const acknowledgeable = tierPolicy(view.tier)?.requiresAcknowledgement === true;
+  const heading = acknowledgeable
+    ? ACK_GATE_HEADING[view.tier] ?? `${view.tier} — this build requires an acknowledgement.`
+    : `${view.tier} — this build is not offerable.`;
+  const lede = acknowledgeable
+    ? ACK_GATE_LEDE[view.tier] ??
+      "This tier requires its codename to be typed before it can be selected."
+    : "The host readiness report does not offer this stamp for flashing. It is not selected, and there is no acknowledgement that would select it.";
+  const ack = acknowledgeable
+    ? [
+        `<label for="readiness-ack">Type the device codename (${mono(view.product)}) to select this ${escapeHtml(view.tier)} build:</label>`,
+        `<input type="text" id="readiness-ack" name="readiness-ack" data-role="readiness-ack" autocomplete="off" spellcheck="false" />`,
+        `<div class="readiness-gate__actions">`,
+        `<button type="button" class="${GL_BTN_CONFIRM}" data-action="acknowledge-build-ok">Select ${escapeHtml(view.tier)} build</button>`,
+        `<button type="button" class="${GL_BTN_DEFAULT}" data-action="cancel-build-ok">Keep my current device</button>`,
+        `</div>`,
+      ]
+    : [
+        `<div class="readiness-gate__actions">`,
+        `<button type="button" class="${GL_BTN_DEFAULT}" data-action="cancel-build-ok">Keep my selected device</button>`,
+        `</div>`,
+      ];
+  return [
+    `<section class="readiness-gate" data-readiness-gate="${view.tier}" data-product="${escapeHtml(view.product)}" role="alert" aria-live="assertive" aria-atomic="true" aria-labelledby="readiness-gate-heading">`,
+    `<h3 id="readiness-gate-heading">${escapeHtml(heading)}</h3>`,
+    `<p class="readiness-gate__lede">${escapeHtml(lede)}</p>`,
+    `<dl class="readiness-gate__facts">`,
+    `<dt>Device</dt><dd>${escapeHtml(view.deviceName)} (${mono(view.product)})</dd>`,
+    `<dt>Tier</dt><dd>${escapeHtml(readinessChipWord(view.tier))}</dd>`,
+    `<dt>Reason</dt><dd>${escapeHtml(view.reason)}</dd>`,
+    `<dt>Remedy</dt><dd>${escapeHtml(view.remedy)}</dd>`,
+    `</dl>`,
+    `<p class="readiness-gate__flag">${mono(bootFlag)}</p>`,
+    ...ack,
+    `</section>`,
+  ].join("");
+}
+
+export function renderStep0(
+  selectedProduct: string = DEFAULT_OFFERED_PRODUCT,
+  pendingBuildOk?: ReadinessGateView,
+): string {
   const selected = parseOfferedDevice(selectedProduct) ?? DEFAULT_OFFERED_PRODUCT;
   const hardenings = [
     Hardening(
@@ -254,6 +438,7 @@ export function renderStep0(selectedProduct: string = DEFAULT_OFFERED_PRODUCT): 
     ).html,
   ].join("");
   const custodyList = CUSTODY_SENTENCES.map((s) => `<li>${escapeHtml(s)}</li>`).join("");
+  const gate = pendingBuildOk === undefined ? "" : renderReadinessGate(pendingBuildOk);
   return [
     headline(0, "Read this before you touch the phone."),
     `<p class="lede">This installer puts GuardTalkOS on your Pixel, locked to a key only you hold.</p>`,
@@ -261,6 +446,7 @@ export function renderStep0(selectedProduct: string = DEFAULT_OFFERED_PRODUCT): 
     hardenings,
     targetTableHtml(),
     targetPickerHtml(selected),
+    gate,
     limits,
     `<section aria-labelledby="custody-heading"><h3 id="custody-heading">Key custody, in six sentences</h3>`,
     `<ol class="custody-list">${custodyList}</ol></section>`,

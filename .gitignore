@@ -24,3 +24,7 @@
 
 # --- Stale snapshots (e.g. *.stale-<timestamp>/) at repository root only ---
 /*.stale-*/
+
+# Python bytecode (build residue, never commit)
+__pycache__/
+*.pyc

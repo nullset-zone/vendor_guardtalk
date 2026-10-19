@@ -52,12 +52,14 @@ GUARDTALK_EXCISION_VARIANTS := \
     zumapro_tegu \
     zumapro_stallion \
     laguna_muzel \
-    laguna_rango
+    laguna_rango \
+    gs201_tangorpro
 
 # ---------------------------------------------------------------------------
 # 2. Device -> variant map. Every in-program codename MUST have a row here or
 #    the resolver aborts the build. Gen 6/7 codenames are deliberately absent
-#    (out of program scope, DEC-PORT-GEN8910-001 §7).
+#    (out of program scope, DEC-PORT-GEN8910-001 §7), except `tangorpro`, which
+#    is admitted by DEC-PORT-TANGORPRO-002.
 # ---------------------------------------------------------------------------
 GT_DEVICE_VARIANT_shiba   := zuma_shusky
 GT_DEVICE_VARIANT_husky   := zuma_shusky
@@ -72,6 +74,7 @@ GT_DEVICE_VARIANT_frankel := laguna_muzel
 GT_DEVICE_VARIANT_blazer  := laguna_muzel
 GT_DEVICE_VARIANT_mustang := laguna_muzel
 GT_DEVICE_VARIANT_rango   := laguna_rango
+GT_DEVICE_VARIANT_tangorpro := gs201_tangorpro
 
 # ---------------------------------------------------------------------------
 # 3. Per-variant data. Columns requested by the card:
@@ -156,6 +159,58 @@ GT_VARIANT_laguna_rango_FP_STACK      := goodix
 GT_VARIANT_laguna_rango_RADIO_SET     := shannon
 GT_VARIANT_laguna_rango_BLOCKLIST     := vendor/guardtalk/device/rango/vendor_dlkm.modules.blocklist
 
+# --- gs201 / tangorpro (Google Pixel Tablet) ------------------------------
+# T-PORT-TANGORPRO-EXCISION-VARIANT (P1) — DEC-PORT-TANGORPRO-002 (admitted),
+# DEC-PORT-TANGORPRO-003 (no modem HARDWARE, but the RIL/radioext USERSPACE
+# ships). NOT copied from any phone variant. Evidence, re-derivable:
+#
+#   KERNEL_FAMILY  device/google/tangorpro-kernels/6.1/grapheneos/ (the only
+#                  tangorpro kernel tree; RELEASE_KERNEL_TANGORPRO_DIR ->
+#                  .../6.1/trunk-14096387 -> grapheneos).
+#   WIFI_MODULES   NONE. This tree's vendor_dlkm.modules.blocklist has 0 Wi-Fi
+#                  lines, and its vendor_dlkm.modules.load loads NO bcmdhd*.ko;
+#                  the Wi-Fi driver is synadhd.ko (wlan/dhd43752p), which is NOT
+#                  blocklisted. The 6 tokens in the upstream blocklist are listed
+#                  verbatim under BLOCKLIST below (rt4539_bl = backlight, never a
+#                  touch driver).
+#   TOUCH_MODULES  NONE blocklisted: the load list carries nvt_touch.ko, and no
+#                  *touch* module is blocklisted (the phones here blocklist
+#                  syna_touch / focal_touch / goodix_brl_touch / sec_touch).
+#   FP_STACK       goodix — adevtool vendor-skel tangorpro.mk ships
+#                  fps_touch_handler/goodixfp.ko (vendor_kernel_boot + vendor_dlkm
+#                  .modules.load) and `vendor.goodix.hardware.biometrics.fingerprint`.
+#                  NOTE: the tablet ALSO ships the FPC42 family (service.fpc42,
+#                  fingerprint-fpc42.rc, fpc42_suez, fpc_util). fp-excised.mk's
+#                  token union does not catch fpc42_suez/fpc_util, so those two
+#                  SURVIVE on tangorpro — the same pre-existing gap as on comet
+#                  (measured: comet leaks the same two). Deliberate, escalated
+#                  (Gate-5 F-1/F-2) — widening the union would change the frozen,
+#                  size-asserted 13-token contract that this card may not amend.
+#                  What IS covered for the FPC42 family here: the fingerprint
+#                  VINTF fragment and the `fingerprint-fpc42.rc` init file (see
+#                  GT_EXCISION_FP_TOKENS_COPY_FILES).
+#   RADIO_SET      shannon_ext — tangorpro has NO modem hardware (no radio.img,
+#                  no `require version-baseband=`), yet ships a Samsung SLIS
+#                  externals-only RIL: google-ril, libgril_oem-google,
+#                  vendor.google.radioext@1.0-service,
+#                  adevtool_vintf_fragment_vendor_manifest_radioext.xml,
+#                  modem{,_android_property_manager,_log_dumper}. The phones also
+#                  carry the internal Shannon IMS/CP stack (rild_exynos, cpif,
+#                  ShannonIms/ShannonRcs). Calling this `shannon` would over-claim
+#                  a CP stack the device does not have (Law 7).
+#   BLOCKLIST      upstream file verbatim (6 tokens) + 'blocklist nitrous': the
+#                  tree DOES load bluetooth/broadcom/nitrous.ko, and T-BT-FULL
+#                  FR-3 excises it. cpif/cpif_page/shm_ipc are deliberately NOT
+#                  added — none of them exists in this tree (adding them would be
+#                  inventing entries to imitate the phone rows).
+GT_VARIANT_gs201_tangorpro_SOC           := gs201
+GT_VARIANT_gs201_tangorpro_KERNEL_FAMILY := tangorpro
+GT_VARIANT_gs201_tangorpro_WIFI_MODULES  :=
+GT_VARIANT_gs201_tangorpro_TOUCH_MODULES :=
+GT_VARIANT_gs201_tangorpro_FP_STACK      := goodix
+GT_VARIANT_gs201_tangorpro_RADIO_SET     := shannon_ext
+GT_VARIANT_gs201_tangorpro_BLOCKLIST     := vendor/guardtalk/feature-excised/variants/gs201_tangorpro/vendor_dlkm.modules.blocklist
+
 # ---------------------------------------------------------------------------
 # 4. Per-device blocklist overrides.
 #    A device MAY pin its own blocklist file (legacy QA-anchored paths, or a
@@ -191,6 +246,19 @@ GT_EXCISION_FP_TOKENS_GOODIX := \
     goodixfingerprint \
     goodix_sfps \
     goodixbinderservice
+# Fingerprint init .rc basenames (the Layer-4 copy-file filter).
+# T-PORT-TANGORPRO-EXCISION-VARIANT: the FPC42 family has TWO .rc names
+# (tangorpro ships `fingerprint-fpc42.rc`, the phones ship `fingerprint-fpc42_fw49.rc`);
+# only the _fw49 one was hardcoded before, so tangorpro would have kept an init
+# service for a HAL binary that Layer 1 had already dropped (the G6 orphan class
+# flagged on comet). fp-excised.mk now consumes this list; its literal list is
+# kept only as the standalone-include fallback.
+GT_EXCISION_FP_TOKENS_COPY_FILES := \
+    init.fingerprint.dump.rc \
+    qfp-daemon.rc \
+    fingerprint-goodix.rc \
+    fingerprint-fpc42.rc \
+    fingerprint-fpc42_fw49.rc
 
 # Per-variant FP token selection (data).
 GT_VARIANT_zuma_shusky_FP_TOKENS       := $(GT_EXCISION_FP_TOKENS_GOODIX)
@@ -201,6 +269,15 @@ GT_VARIANT_zumapro_tegu_FP_TOKENS      := $(GT_EXCISION_FP_TOKENS_GOODIX)
 GT_VARIANT_zumapro_stallion_FP_TOKENS  := $(GT_EXCISION_FP_TOKENS_GOODIX)
 GT_VARIANT_laguna_muzel_FP_TOKENS      := $(GT_EXCISION_FP_TOKENS_QFP)
 GT_VARIANT_laguna_rango_FP_TOKENS      := $(GT_EXCISION_FP_TOKENS_GOODIX)
+GT_VARIANT_gs201_tangorpro_FP_TOKENS   := $(GT_EXCISION_FP_TOKENS_GOODIX)
+# `FPC` is documented here, deliberately WITHOUT feeding the drop union: that
+# union is a FROZEN, size-asserted contract (verify_port_excision_matrix_static.sh
+# case6 asserts exactly the 13 baseline tokens, gates_required: none for this card,
+# so the guard may not be amended). Widening it is escalated as Gate-5 F-1 below.
+# The separate FPC42 leak (fpc42_suez/fpc_util surviving on the FPC devices,
+# including comet — a PRE-EXISTING defect) is Gate-5 F-2 and is likewise not
+# fixed here.
+GT_VARIANT_gs201_tangorpro_FP_FAMILY    := goodix,fpc42
 
 # Derived union used by fp-excised.mk (deterministic; sorted).
 GT_EXCISION_FP_DROP_PATTERNS := $(sort \

@@ -4,7 +4,16 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-npx tsc -p tsconfig.routes.json
+# Resolve the TypeScript compiler without assuming `npx` is on PATH (it is
+# absent in some CI images and in this workspace). Prefer the local install.
+if [[ -x "$ROOT/node_modules/typescript/bin/tsc" ]] && [[ -n "${NODE:-$(command -v node || true)}" ]]; then
+  "${NODE:-node}" "$ROOT/node_modules/typescript/bin/tsc" -p tsconfig.routes.json
+elif command -v npx >/dev/null 2>&1; then
+  npx tsc -p tsconfig.routes.json
+else
+  echo "error: no TypeScript compiler available (need node + node_modules/typescript, or npx on PATH)" >&2
+  exit 1
+fi
 
 SITE="$ROOT/dist/site"
 rm -rf "$SITE"

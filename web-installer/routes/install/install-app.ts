@@ -18,6 +18,14 @@ import {
   type OfferedProduct,
 } from "../../lib/ui/offered-devices.js";
 import {
+  acknowledgementMatches,
+  canCommitSelection,
+  readinessFor,
+  requiresAcknowledgement,
+  selectionRefused,
+} from "../../lib/ui/readiness.js";
+import {
+  channelRefusal,
   filesReady,
   renderInstallerChrome,
   renderStep0,
@@ -34,11 +42,13 @@ import {
   step3Decide,
   verifyRelease,
   type FilePicks,
+  type ReadinessGateView,
   type SignViewModel,
 } from "./early-steps.js";
 import {
   connectStepHtml,
   flashStepHtml,
+  fingerprintsMatch,
   isSimMode,
   keepKeyStepHtml,
   lockStepHtml,
@@ -46,6 +56,7 @@ import {
   verifyStepHtml,
 } from "./late-steps.js";
 import { FIRMWARE_ORDER, OS_ORDER, runFlashPlan } from "./flash-runner.js";
+import { assertPlanImagesPresent } from "../../src/plan.js";
 import { GL_BTN_CONFIRM } from "../../lib/ui/pajamas.js";
 
 interface Session {
@@ -69,6 +80,14 @@ interface Session {
   transport?: (Transport & { close?: () => Promise<void> }) | undefined;
   notice?: string | undefined;
   selectedProduct: OfferedProduct;
+  /** BUILD-OK device awaiting the typed-codename acknowledgement (not yet selected). */
+  pendingBuildOk?: OfferedProduct | undefined;
+  /** The BUILD-OK device whose codename the user typed; the only committed BUILD-OK target. */
+  acknowledgedBuildOk?: OfferedProduct | undefined;
+  /** Step 8 boot-fingerprint comparison result (set by the compare action). */
+  verifyOutcome?: "pending" | "match" | "mismatch" | undefined;
+  /** The value the user typed at step 8, retained so a mismatch is not lost on re-render. */
+  verifyTyped?: string | undefined;
   images: Record<string, Uint8Array>;
 }
 
@@ -119,11 +138,81 @@ function root(): HTMLElement {
   return el;
 }
 
+/** Reason/remedy/name for the acknowledgement gate. */
+function readinessGateView(product: OfferedProduct): ReadinessGateView {
+  const info = readinessFor(product);
+  return {
+    product,
+    deviceName: info.model,
+    tier: info.tier,
+    reason: info.reason,
+    remedy: info.remedy,
+  };
+}
+
+/**
+ * Commit a picker selection. A product with **no packed channel** is refused
+ * outright (F-WEBINSTALL-FLASHALL-PICKER-TRUTH acceptance (a)) — the selection
+ * is never taken, and the refusal names the missing channel rather than leaving
+ * the user at a dead end. A tier the host does not offer is refused likewise;
+ * an acknowledgement-gated device (READY-ACK, BUILD-OK) is NOT selected here
+ * either — it is parked as `pendingBuildOk` and the typed-codename gate is
+ * rendered instead.
+ */
+function selectProduct(product: OfferedProduct): void {
+  // (a) Channel gate first: it is the most basic fact — no channel, no offer.
+  const noChannel = channelRefusal(product);
+  if (noChannel !== undefined) {
+    session.pendingBuildOk = undefined;
+    session.notice = noChannel;
+    render();
+    return;
+  }
+  if (!canCommitSelection(product, session.acknowledgedBuildOk)) {
+    session.pendingBuildOk = product;
+    session.notice = undefined;
+    render();
+    return;
+  }
+  session.pendingBuildOk = undefined;
+  session.selectedProduct = product;
+  if (!requiresAcknowledgement(product)) {
+    // Leaving an acknowledgement-gated target clears its acknowledgement;
+    // re-selecting it later must be re-confirmed, exactly as the bash wizard
+    // re-prompts.
+    session.acknowledgedBuildOk = undefined;
+  }
+  session.deviceProduct = undefined;
+  session.lockState = undefined;
+  render();
+}
+
+/** Guard: refuse to advance or flash a target that is unofferable, unacknowledged, or has no packed channel. */
+function refuseUnacknowledgedBuildOk(): boolean {
+  // (a) A product with no packed channel can never be flashed, whatever else
+  // was acknowledged — there is nothing on disk to write.
+  const noChannel = channelRefusal(session.selectedProduct);
+  if (noChannel !== undefined) {
+    session.notice = noChannel;
+    render();
+    return true;
+  }
+  const refusal = selectionRefused(session.selectedProduct, session.acknowledgedBuildOk);
+  if (refusal === undefined) {
+    return false;
+  }
+  session.notice = refusal;
+  render();
+  return true;
+}
+
 function stepHtml(): string {
   const step = session.state.currentStep;
   const notice = session.notice ? `<p class="note" role="status">${escapeHtml(session.notice)}</p>` : "";
   if (step === 0) {
-    return notice + renderStep0(session.selectedProduct);
+    const pending = session.pendingBuildOk;
+    const gate = pending === undefined ? undefined : readinessGateView(pending);
+    return notice + renderStep0(session.selectedProduct, gate);
   }
   if (step === 1) {
     return notice + renderStep1(session.picks);
@@ -201,7 +290,8 @@ function stepHtml(): string {
       verifyStepHtml({
         sim: sim(),
         enrolledFingerprint: session.fingerprintHex ?? "",
-        outcome: "pending",
+        ...(session.verifyTyped !== undefined ? { typed: session.verifyTyped } : {}),
+        outcome: session.verifyOutcome ?? "pending",
       })
     );
   }
@@ -241,6 +331,40 @@ async function onAction(action: string, target: HTMLElement): Promise<void> {
   }
   if (action === "acknowledge-intro") {
     dispatch({ type: "acknowledge-intro" });
+    return;
+  }
+  if (action === "acknowledge-build-ok") {
+    const pending = session.pendingBuildOk;
+    if (pending === undefined) {
+      session.notice = "No BUILD-OK device is waiting for confirmation.";
+      render();
+      return;
+    }
+    if (!requiresAcknowledgement(pending)) {
+      // Fail closed: only an acknowledgement-gated tier is acknowledgeable.
+      session.notice = `Device '${pending}' is ${readinessFor(pending).tier}; it is not offerable and cannot be acknowledged.`;
+      render();
+      return;
+    }
+    const typed = root().querySelector<HTMLInputElement>("[data-role='readiness-ack']")?.value ?? "";
+    if (!acknowledgementMatches(pending, typed)) {
+      session.notice = `Typed confirmation did not match '${pending}'. The ${readinessFor(pending).tier} build is not selected.`;
+      render();
+      return;
+    }
+    session.acknowledgedBuildOk = pending;
+    session.selectedProduct = pending;
+    session.pendingBuildOk = undefined;
+    session.deviceProduct = undefined;
+    session.lockState = undefined;
+    session.notice = `BUILD-OK build '${pending}' selected after typed confirmation. Boot remains UNVERIFIED.`;
+    render();
+    return;
+  }
+  if (action === "cancel-build-ok") {
+    session.pendingBuildOk = undefined;
+    session.notice = "BUILD-OK selection cancelled. The READY device stays selected.";
+    render();
     return;
   }
   if (action === "files-picked") {
@@ -320,6 +444,28 @@ async function onAction(action: string, target: HTMLElement): Promise<void> {
     render();
     return;
   }
+  if (action === "compare-fingerprint") {
+    // Step 8's explicit user action. Nothing advances until the user submits
+    // this comparison (D-018 AC (e)); a mismatch freezes the flow as a hard
+    // stop rather than silently continuing.
+    const typed =
+      root().querySelector<HTMLInputElement>("#boot-fingerprint-input")?.value ?? "";
+    session.verifyTyped = typed;
+    const enrolled = session.fingerprintHex ?? "";
+    if (enrolled === "") {
+      session.notice = "Enrol a key at step 3 before comparing the boot fingerprint.";
+      render();
+      return;
+    }
+    if (fingerprintsMatch(typed, enrolled)) {
+      session.verifyOutcome = "match";
+      dispatch({ type: "boot-fingerprint-typed", fingerprint: typed });
+      return;
+    }
+    session.verifyOutcome = "mismatch";
+    dispatch({ type: "stop", step: 8, condition: "boot-fingerprint-mismatch" });
+    return;
+  }
   if (action === "fingerprint-recorded") {
     if (!session.fingerprintHex || session.keyFlow === undefined) {
       return;
@@ -390,6 +536,9 @@ async function onAction(action: string, target: HTMLElement): Promise<void> {
     return;
   }
   if (action === "device-matched") {
+    if (refuseUnacknowledgedBuildOk()) {
+      return;
+    }
     if (!session.deviceProduct) {
       session.notice = "Pair a device before continuing.";
       render();
@@ -453,7 +602,56 @@ async function pairDevice(): Promise<void> {
   render();
 }
 
+/** The images step 6 asks the user to pick, in the order the step renders them. */
+function offeredImages(): { firmware: readonly string[]; os: readonly string[] } {
+  return { firmware: FIRMWARE_ORDER, os: OS_ORDER };
+}
+
+function pickedImages(): { firmware: string[]; os: string[] } {
+  const offered = offeredImages();
+  return {
+    firmware: offered.firmware.filter((name) => session.images[name] !== undefined),
+    os: offered.os.filter((name) => session.images[name] !== undefined),
+  };
+}
+
+/**
+ * Refuse step 6 when a writable phase has no image picked
+ * (T-WEBINSTALL-ORCHESTRATION-NO-IMAGE-GUARD). Without this, an empty pick
+ * set degenerates the plan to the enrolment key + user-signed vbmeta, the
+ * transcript is all `< OKAY`, and `flash-step-done` advances to step 7 as if
+ * an OS had been written. The RULE is `assertPlanImagesPresent` (src/plan.ts,
+ * shared with `buildFlashPlan`); this only renders the refusal by naming the
+ * images step 6 still needs.
+ */
+function refuseMissingImages(): boolean {
+  const picked = pickedImages();
+  const missing = {
+    firmware: offeredImages().firmware.filter((name) => !picked.firmware.includes(name)),
+    os: offeredImages().os.filter((name) => !picked.os.includes(name)),
+  };
+  try {
+    assertPlanImagesPresent({ firmware: picked.firmware, os: picked.os });
+  } catch (err: unknown) {
+    // Name the phase the shared rule refused. The rule runs firmware first, so
+    // `firmware` is the only other phase a refusal can be about.
+    const phase = err instanceof Error && err.message.startsWith("os ") ? "os" : "firmware";
+    const named = missing[phase];
+    const pickedCount = picked[phase].length;
+    session.notice =
+      `No ${phase} image is picked, so flashing would write no ${phase}. ` +
+      `${pickedCount === 0 ? "Pick every image first" : "Still to pick"}: ${named.join(", ")}. ` +
+      "Nothing was written and the flow stays at this step.";
+    render();
+    return true;
+  }
+  return false;
+}
+
 async function flashNow(): Promise<void> {
+  if (refuseUnacknowledgedBuildOk()) {
+    return;
+  }
   if (!session.transport || !session.pkmd || !session.signedVbmeta) {
     session.notice = "Pair the device and finish signing before flashing.";
     render();
@@ -464,17 +662,21 @@ async function flashNow(): Promise<void> {
     render();
     return;
   }
+  if (refuseMissingImages()) {
+    return;
+  }
   const log = collectingLog();
+  const picked = pickedImages();
   await runFlashPlan({
     transport: session.transport,
     consoleSink: log,
     plan: {
       avbCustomKey: session.pkmd,
-      firmware: FIRMWARE_ORDER.filter((name) => session.images[name] !== undefined).map((name) => ({
+      firmware: picked.firmware.map((name) => ({
         partition: name,
         data: session.images[name] as Uint8Array,
       })),
-      os: OS_ORDER.filter((name) => session.images[name] !== undefined).map((name) => ({
+      os: picked.os.map((name) => ({
         partition: name,
         data: session.images[name] as Uint8Array,
       })),
@@ -491,6 +693,28 @@ async function flashNow(): Promise<void> {
     },
   });
   dispatch({ type: "flash-step-done" });
+}
+
+function onSubmit(event: Event): void {
+  // D-018 (F-WEBINSTALL-FLASHALL-PROD-UI AC (a)): pressing Enter in a text
+  // input submits the enclosing form WITHOUT firing a click on the submit
+  // button. Without this handler the boot-fingerprint compare (step 8) and the
+  // keep-key acknowledgement (step 9) are unreachable by keyboard alone. The
+  // form's own submit button carries the `data-action`; we reuse it, and
+  // suppress the default navigation so the page never reloads (CSP + offline).
+  const form = event.target;
+  if (!(form instanceof HTMLFormElement)) {
+    return;
+  }
+  event.preventDefault();
+  const action = form.querySelector<HTMLElement>("[data-action]")?.getAttribute("data-action");
+  if (action === null || action === undefined) {
+    return;
+  }
+  void onAction(action, form).catch((err: unknown) => {
+    session.notice = err instanceof Error ? err.message : "action failed";
+    render();
+  });
 }
 
 function onClick(event: Event): void {
@@ -517,10 +741,7 @@ function onChange(event: Event): void {
   if (role === "target-product" && target instanceof HTMLSelectElement) {
     const parsed = parseOfferedDevice(target.value);
     if (parsed !== undefined) {
-      session.selectedProduct = parsed;
-      session.deviceProduct = undefined;
-      session.lockState = undefined;
-      render();
+      selectProduct(parsed);
     }
     return;
   }
@@ -566,10 +787,24 @@ function onChange(event: Event): void {
 }
 
 function boot(): void {
-  session.selectedProduct = deviceFromSearch(window.location.search);
+  const requested = deviceFromSearch(window.location.search);
+  // (a) A deep link cannot conjure a channel: a product with no packed channel
+  // is refused up front and the default (packed) device stays selected.
+  const noChannel = channelRefusal(requested);
+  if (noChannel !== undefined) {
+    session.notice = noChannel;
+  } else if (requiresAcknowledgement(requested)) {
+    // A deep link is not consent: park the acknowledgement-gated device behind
+    // the gate and keep the READY default until the codename is typed.
+    session.pendingBuildOk = requested;
+    session.notice = `Device '${requested}' (${readinessFor(requested).tier}) is not selected from a link alone — confirm it below.`;
+  } else {
+    session.selectedProduct = requested;
+  }
   onPageHide(cleanup);
   root().addEventListener("click", onClick);
   root().addEventListener("change", onChange);
+  root().addEventListener("submit", onSubmit);
   render();
 }
 

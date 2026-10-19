@@ -45,8 +45,13 @@ export function glAlertHtml(
     title === ""
       ? ""
       : `<div class="gl-alert__title">${escapeHtml(title)}</div>`;
+  // D-017: keep the `role="alert"` semantic every existing site relies on and
+  // STRENGTHEN it with an explicit, atomic live contract. A `danger` alert
+  // interrupts (assertive); other kinds announce calmly (polite) but still as
+  // one unit. Nothing about the existing markup is removed.
+  const politeness = kind === "danger" ? "assertive" : "polite";
   return [
-    `<div class="gl-alert gl-alert--${kind}${extra}" role="alert">`,
+    `<div class="gl-alert gl-alert--${kind}${extra}" role="alert" aria-live="${politeness}" aria-atomic="true">`,
     `<div class="gl-alert__body">`,
     titleHtml,
     bodyHtml,

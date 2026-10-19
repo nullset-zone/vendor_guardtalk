@@ -43,7 +43,7 @@ This runbook covers exactly the 13 devices in `scripts/gt-ready-devices.sh`
 | 1 | `shiba` | Pixel 8 | `shiba-latest` | standard | `GT_BOOT_CHAIN=gt` | uart + **fips** + dpm |
 | 2 | `husky` | Pixel 8 Pro | `husky-latest` | standard | `gt` | uart + **fips** + dpm |
 | 3 | `akita` | Pixel 8a | `akita-latest` | standard | `gt` | uart + **fips** + dpm |
-| 4 | `tokay` | Pixel 9 | `latest` | standard | `gt` | uart + **fips** + dpm |
+| 4 | `tokay` | Pixel 9 | `tokay-latest` | standard | `gt` | uart + **fips** + dpm |
 | 5 | `caiman` | Pixel 9 Pro | `caiman-latest` | standard | `gt` | uart + **fips** + dpm |
 | 6 | `komodo` | Pixel 9 Pro XL | `komodo-latest` | standard | `gt` | uart + **fips** + dpm |
 | 7 | `tegu` | Pixel 9a | `tegu-latest` | standard | `gt` | uart + **fips** + dpm |
@@ -131,7 +131,7 @@ runbook must not be executed yet.** The gate's own honesty header prints
 
 ```bash
 for d in shiba husky akita tokay caiman komodo tegu comet frankel blazer mustang stallion rango; do
-  if [ "$d" = tokay ]; then b=releases/desktop-flash/latest; else b=releases/desktop-flash/$d-latest; fi
+  b=releases/desktop-flash/$d-latest
   echo "== $d ($b) =="
   ( cd "$b" && sha256sum -c SHA256SUMS ) || echo "SHA MISMATCH: $d"
 done
@@ -300,7 +300,7 @@ DEVICE=akita bash ./flash-from-remote.sh
 
 - **Product base:** `tokay`. **Documented lunch:** `tokay-trunk_staging-userdebug`
   (stamp) / `tokay-cur-user` (`FLASH.md`, `vendor/guardtalk/README.md`).
-- **Bundle:** `releases/desktop-flash/latest` → `tokay-20260725-102506` (18 `.img`). **Note the legacy alias `latest`, not `tokay-latest`.**
+- **Bundle:** `releases/desktop-flash/tokay-latest` → `tokay-20260928-084839` (18 `.img`). **Same `<dev>-latest` convention as every other device** — the legacy generic `latest` alias is retired (`T-EXCISE-TOKAY-LATEST-REPOINT`).
 - **Group:** standard — `gt`; uart + **fips** + dpm. **No** `init.insmod` (tokay is the only device without one).
 
 ```bash
@@ -309,8 +309,11 @@ DEVICE=tokay bash ./flash-from-remote.sh
 ```
 
 **Pass criteria:** script exits `0`; §6 all green on `tokay`.
-**Caveat:** tokay keeps its legacy `latest` pointer by decree
-(`flash-from-remote.sh:22`, `apply_remote_paths:346-350`). Do not repoint it.
+**Caveat:** tokay resolves its own `tokay-latest` pointer, identical in form to the other
+12 devices. `T-EXCISE-TOKAY-LATEST-REPOINT` retired the legacy generic `latest` alias
+(`flash-from-remote.sh:22`, `apply_remote_paths` tokay arm), which
+`T-EXCISE-STAMP-TREE-QUARANTINE` had already renamed out of the resolution namespace.
+This changes no boot classification: `BOOT_VERIFIED=false`.
 
 ### 4.5 `caiman` — Pixel 9 Pro
 
@@ -741,21 +744,50 @@ path is UART (`fastboot oem uart enable` + USB-serial 115200 8N1).
 
 ---
 
-## 8. Rollback path
+## 8. Rollback path (per-device, hash-verified)
 
-1. **Soft rollback (recommended):** `fastboot set_active a` (or `b`) to return to the
-   previous slot, then reboot. The previous slot's boot chain is intact unless the
-   bootloader/radio step re-flashed both slots (it does — so this only helps if a
-   prior good system still exists on that slot).
-2. **Rescue rollback (laguna):** flash
-   `releases/desktop-flash/<codename>-rescue-boot/*.img` (stock factory
-   `BP4A.260205.001` boot chain) — the script does this automatically at step 4.
-3. **Factory rollback (all devices):** flash the matching Google factory image
-   (`vendor/adevtool/dl/<codename>-<build>-factory-*.zip`) via
-   `flash-all.sh`, or use the web installer. Keep the factory zip on hand before
-   the flash cycle.
-4. **Do not** attempt to "fix" a failed boot by flashing `fullgt` on laguna
-   (ABL-rejected).
+The executable rollback path is **`vendor/guardtalk/scripts/gt-rollback-to-stock.sh`**
+(manifest: `vendor/guardtalk/scripts/gt-rollback-manifest.tsv`). It resolves every
+stock artifact per device, verifies its pinned sha256, proves the factory zip's
+flash commands resolve to real members, and prints the exact fastboot commands —
+all with **no hardware**. It is **fail-closed**: a missing / tampered / unpinned /
+unresolvable artifact STOPS the run (`T-EXCISE-FLASH-ROLLBACK`).
+
+```bash
+TOOL=vendor/guardtalk/scripts/gt-rollback-to-stock.sh
+bash "$TOOL" list                       # 13 devices + rescue coverage
+bash "$TOOL" plan                       # resolve + hash-verify all 13 (no device)
+bash "$TOOL" plan --device blazer       # one device
+bash "$TOOL" attest                     # recompute + Google-sha8 cross-check
+bash "$TOOL" unbrick --device blazer    # Tier 0..3 ladder for one device
+```
+
+**Stock source.** All 13 devices roll back to the official Google factory image
+shipped in-tree: `vendor/adevtool/dl/<codename>-cp1a.260505.005-factory-<google-sha8>.zip`
+(CP1A.260505.005 — the generation the devices run; the filename's trailing 8 hex
+characters are Google's own sha256 prefix, which `attest` checks independently).
+
+**Unbrick ladder** (the explicit entry point):
+
+| Tier | When | Action |
+|------|------|--------|
+| 0 soft | device still flashes | `fastboot set_active a` (or `b`); `fastboot reboot` |
+| 1 rescue | laguna loops at the G logo before fastbootd (**frankel/blazer/mustang/rango only**) | `gt-rollback-to-stock.sh unbrick --device <dev>` → re-flash `<dev>-rescue-boot/*.img` (7 imgs; **no** bootloader/radio) to reach fastbootd |
+| 2 factory | any device, wrong/looping userspace | `unzip` the CP1A factory zip; `fastboot -w update image-<dev>-cp1a.260505.005.zip` (boot chain + logicals only). Add `--flash-firmware --allow-firmware-flash` to also flash bootloader/radio via `flash-all.sh` |
+| 3 terminal | bootloader not enumerating at all | **no host tool can recover** — Google official repair path (service centre). Not automated; recorded, never claimed |
+
+The 9 non-laguna devices ship **no** `<dev>-rescue-boot` chain; their unbrick is
+Tier 2 (factory restore). Tier 2 is destructive — `execute` requires **both**
+`--device <dev>` **and** `--i-understand-this-erases-the-device`, and re-verifies
+every hash before it touches a device. bootloader/radio are **not** flashed unless
+`--flash-firmware --allow-firmware-flash` are both given (the older-BP4A-bootloader
+anti-rollback-brick risk).
+
+**Do not** attempt to "fix" a failed boot by flashing `fullgt` on laguna
+(ABL-rejected).
+
+`BOOT_VERIFIED=false`: this path is prepared and proven **on the host** (artifact +
+hash + command resolution). It is **not** an executed rollback and proves no boot.
 
 ---
 
@@ -766,7 +798,7 @@ path is UART (`fastboot oem uart enable` + USB-serial 115200 8N1).
 | shiba | false | false | §4.1 |
 | husky | false | false | §4.2 |
 | akita | false | false | §4.3 |
-| tokay | false | false | §4.4 (legacy `latest` alias) |
+| tokay | false | false | §4.4 (tokay-latest) |
 | caiman | false | false | §4.5 |
 | komodo | false | false | §4.6 (debug sidecar separate) |
 | tegu | false | false | §4.7 |
@@ -794,6 +826,8 @@ path is UART (`fastboot oem uart enable` + USB-serial 115200 8N1).
 | `vendor/guardtalk/docs/qa/verify_*.sh` (64) | `bash -n` OK on all 64 |
 | 13 `-latest` bundles + `SHA256SUMS` | present (§2.4) |
 | 4 `<dev>-rescue-boot/` chains | present, 7 `.img` each |
+| `vendor/guardtalk/scripts/gt-rollback-to-stock.sh` | `bash -n` OK; fail-closed guards injected in `verify_rollback_to_stock_host.sh` |
+| `vendor/guardtalk/scripts/gt-rollback-manifest.tsv` | 13 `stock-factory` + 28 `unbrick-rescue` rows, all sha256 pinned (`T-EXCISE-FLASH-ROLLBACK`) |
 | `fastboot fetch` whitelist `vendor_boot[_a|_b]` | `system/core/fastboot/device/commands.cpp:896-901` |
 | `build/release/release_configs/{cur,trunk_staging,user,userdebug}.textproto` | present |
 | host tools `fastboot adb ssh scp debugfs python3 sha256sum` | present (build host) |

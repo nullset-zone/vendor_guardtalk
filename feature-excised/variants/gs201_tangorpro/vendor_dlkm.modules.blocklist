@@ -1,0 +1,34 @@
+# GuardTalkOS — gs201_tangorpro (gs201 / tangorpro-kernels 6.1) canonical vendor_dlkm blocklist.
+#
+# T-PORT-TANGORPRO-EXCISION-VARIANT (P1) — DEC-PORT-TANGORPRO-002 / -003.
+#
+# Derivation (mechanical, no invented entries — every upstream line verbatim and
+# in order, then ONE GuardTalk addition that is proven present on this device):
+#   upstream device/google/tangorpro-kernels/6.1/grapheneos/vendor_dlkm.modules.blocklist
+#   + 'blocklist nitrous' (T-BT-FULL FR-3): nitrous.ko IS loaded on this device —
+#     device/google/tangorpro-kernels/6.1/grapheneos/vendor_dlkm.modules.load
+#     contains extra/private/google-modules/bluetooth/broadcom/nitrous.ko
+#
+# Deliberately NOT present (do not "fix" by copying a phone row):
+#   * bcmdhd4383 / bcmdhd4390 / bcmdhd4398 — tangorpro loads NO bcmdhd*.ko. Its
+#     Wi-Fi driver is synadhd.ko (wlan/dhd43752p), which is NOT blocklisted.
+#   * syna_touch / focal_touch / goodix_brl_touch / sec_touch — tangorpro's load
+#     list carries nvt_touch.ko and blocks no touch driver.
+#   * cpif / cpif_page / shm_ipc — the baseband IPC transport does not exist on
+#     this device: there is no modem hardware (no radio.img, no
+#     `require version-baseband=` in firmware/android-info.txt). The RIL userspace
+#     (google-ril, radioext) is excised at the PACKAGE layer instead.
+#
+# Devices mapped to this variant: see excision-variants.mk GT_DEVICE_VARIANT_tangorpro.
+# Re-verify with the derivation commands in
+# .agent-comm/evidence/T-PORT-TANGORPRO-EXCISION-VARIANT/derive-row.sh
+
+blocklist aoc_unit_test_dev
+blocklist mali_kutf
+blocklist mali_kutf_clk_rate_trace_test_portal
+blocklist rt4539_bl
+blocklist sscoredump_sample_test.ko
+blocklist sscoredump_test.ko
+
+# T-BT-FULL (FR-3): Bluetooth power/rfkill driver — BCM BT on UART.
+blocklist nitrous

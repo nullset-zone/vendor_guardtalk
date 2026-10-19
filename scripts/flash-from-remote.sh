@@ -5,7 +5,7 @@
 #
 # Auto-detects the plugged device (fastboot `product` or adb `ro.product.device`)
 # and selects the matching desktop-flash bundle on the build host:
-#   tokay    (Pixel 9)           → releases/desktop-flash/latest
+#   tokay    (Pixel 9)           → releases/desktop-flash/tokay-latest
 #   akita    (Pixel 8a)          → releases/desktop-flash/akita-latest
 #   komodo   (Pixel 9 Pro XL)    → releases/desktop-flash/komodo-latest
 #   rango    (Pixel 10 Pro Fold) → releases/desktop-flash/rango-latest
@@ -20,8 +20,8 @@
 #   mustang  (Pixel 10 Pro XL)   → releases/desktop-flash/mustang-latest
 #
 # T-PORT-FLASH-CLI-9DEV (P0): the 9 devices above are the DEC-PORT-GEN8910 port
-# program. tokay keeps its legacy `latest` bundle alias; every other device uses
-# the `<codename>-latest` convention.
+# program. Every device, including tokay, uses the `<codename>-latest` convention
+# (T-EXCISE-TOKAY-LATEST-REPOINT retired the legacy generic `latest` alias).
 #
 # If the phone is booted into Android (adb state=device) — or recovery —
 # the script reboots it into the bootloader (fastboot) automatically.
@@ -345,8 +345,8 @@ apply_remote_paths() {
     local build_overridden=0
     case "$codename" in
         tokay)
-            auto_build="${REMOTE_TREE}/releases/desktop-flash/latest"
-            auto_key="${REMOTE_TREE}/releases/desktop-flash/latest"
+            auto_build="${REMOTE_TREE}/releases/desktop-flash/tokay-latest"
+            auto_key="${REMOTE_TREE}/releases/desktop-flash/tokay-latest"
             ;;
         akita)
             auto_build="${REMOTE_TREE}/releases/desktop-flash/akita-latest"

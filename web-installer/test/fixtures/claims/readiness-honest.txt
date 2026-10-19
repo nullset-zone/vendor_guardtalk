@@ -1,0 +1,2 @@
+BUILD-OK — this build is not boot-verified; boot is UNVERIFIED.
+READY means every host check passed and the family has booted before — it is not a device proof.

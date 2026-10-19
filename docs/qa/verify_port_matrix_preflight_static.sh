@@ -52,7 +52,18 @@ warn() { echo "WARN: $*"; WARN_N=$((WARN_N + 1)); }
 
 DEVICES=(shiba husky akita tokay caiman komodo comet tegu stallion frankel blazer mustang rango)
 EXPECTED_SET="shiba husky akita tokay caiman komodo comet tegu stallion frankel blazer mustang rango"
-GEN67=(oriole raven bluejay panther cheetah lynx felix tangorpro)
+# Gen 6/7 codenames split deliberately (DEC-PORT-TANGORPRO-002):
+#   GEN67_FORBIDDEN      — still out of scope; MUST stay in wave/verdict/advertise guard.
+#   GEN67_KNOWN_ADMITTED — `tangorpro` (Google Pixel Tablet) is ADMITTED to the port
+#                          programme. It is NOT forbidden, but it stays KNOWN so this
+#                          file never silently loses track of a Gen 7 codename.
+#                          Removed from the out-of-scope requirement ONLY; the advertise
+#                          guard below is token-anchored so it still covers it.
+# Do NOT empty GEN67_FORBIDDEN: an empty set makes the out-of-scope guard pass
+# vacuously (proven by negative control — see the card report for this edit).
+GEN67_FORBIDDEN=(oriole raven bluejay panther cheetah lynx felix)
+GEN67_KNOWN_ADMITTED=(tangorpro)
+GEN67=("${GEN67_FORBIDDEN[@]}")
 
 declare -A MODEL_EXPECT=(
   [shiba]="Pixel 8"       [husky]="Pixel 8 Pro"   [akita]="Pixel 8a"
@@ -337,13 +348,21 @@ for d in "${GEN67[@]}"; do
 done
 [[ "$LEAK" == "0" ]] && pass "attack6: no Gen 6/7 codename outside an explicit out-of-scope line"
 
-# advertise surfaces must not name Gen 6/7 at all
-ADV_LEAK="$(grep -rnE 'oriole|raven|bluejay|panther|cheetah|lynx|felix|tangorpro' \
-  vendor/guardtalk/web-installer/src vendor/guardtalk/scripts/pack-webinstall-channel.sh 2>/dev/null || true)"
-if [[ -z "$ADV_LEAK" ]]; then
-  pass "attack6: advertise surfaces name no Gen 6/7 codename"
+# advertise surfaces must not name a still-forbidden Gen 6/7 codename at all.
+# Token-anchored so a codename is matched as a whole word (never as a substring of
+# another token, e.g. `raven` must not match `Craven`). Built from GEN67_FORBIDDEN so
+# the set cannot go vacuously empty: an empty set is a hard fail, not a silent pass.
+if [[ "${#GEN67_FORBIDDEN[@]}" -eq 0 ]]; then
+  fail "attack6: GEN67_FORBIDDEN is empty — advertise guard would be vacuous"
 else
-  fail "attack6: Gen 6/7 codename in advertise surface: $ADV_LEAK"
+  ADV_RE="$(IFS='|'; printf '(^|[^[:alnum:]_])(%s)([^[:alnum:]_]|$)' "${GEN67_FORBIDDEN[*]}")"
+  ADV_LEAK="$(grep -rnE "$ADV_RE" \
+    vendor/guardtalk/web-installer/src vendor/guardtalk/scripts/pack-webinstall-channel.sh 2>/dev/null || true)"
+  if [[ -z "$ADV_LEAK" ]]; then
+    pass "attack6: advertise surfaces name no forbidden Gen 6/7 codename (${GEN67_FORBIDDEN[*]})"
+  else
+    fail "attack6: forbidden Gen 6/7 codename in advertise surface: $ADV_LEAK"
+  fi
 fi
 
 # advertise surface must be exactly the 4 stamped devices (unchanged by preflight)

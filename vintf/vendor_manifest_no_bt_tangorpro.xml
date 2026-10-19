@@ -1,0 +1,84 @@
+<!--
+  GuardTalkOS — tangorpro (Pixel Tablet / gs201) vendor device manifest without
+  cellular-radio-adjacent AND without Bluetooth HALs.
+
+  Mechanically derived from vendor/guardtalk/vintf/vendor_manifest_no_radio_tangorpro.xml
+  by removing EXACTLY the two Bluetooth HAL declarations it carries:
+    android.hardware.bluetooth      @1.1::IBluetoothHci/default     (HIDL)
+    hardware.google.bluetooth.sar   @1.1::IBluetoothSar/default     (HIDL)
+  This is the same class of removal applied to every other
+  vendor_manifest_no_bt[_<dev>].xml (T-EXCISE-BT-VINTF-NOBT); derivation and
+  proof: .agent-comm/evidence/T-EXCISE-BT-VINTF-NOBT/ and
+  .agent-comm/evidence/T-PORT-TANGORPRO-VINTF-MANIFEST/.
+
+  tangorpro's main manifest declares no AIDL BT HAL, so unlike the tokay-derived
+  variants there is no android.hardware.bluetooth.finder /
+  android.hardware.bluetooth.ranging / vendor.google.bluetooth_ext entry here.
+
+  Selected by vendor/guardtalk/radio-excised/vintf-excised.mk via the WAVE-2
+  substitution `vendor_manifest_no_radio` -> `vendor_manifest_no_bt` applied to
+  vendor_manifest_no_radio_tangorpro.xml when GUARDTALK_FEATURE_EXCISED_WAVE2
+  is true. The $(wildcard) guard there fails the build loudly if this file is
+  missing (Law 3).
+
+  <sepolicy> carries tangorpro's own upstream pin (202504), same as every other
+  per-device excised manifest here (T-PORT-TANGORPRO-VINTF-MANIFEST).
+-->
+<manifest version="9.0" type="device" target-level="7">
+    <hal format="hidl">
+        <name>android.hardware.audio</name>
+        <transport>hwbinder</transport>
+        <fqname>@7.1::IDevicesFactory/default</fqname>
+    </hal>
+    <hal format="hidl">
+        <name>android.hardware.audio.effect</name>
+        <transport>hwbinder</transport>
+        <fqname>@7.0::IEffectsFactory/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.boot</name>
+        <fqname>IBootControl/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.media.c2</name>
+        <fqname>IComponentStore/default1</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.media.c2</name>
+        <fqname>IComponentStore/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.security.keymint</name>
+        <version>3</version>
+        <fqname>IRemotelyProvisionedComponent/strongbox</fqname>
+    </hal>
+    <hal format="hidl">
+        <name>android.hardware.soundtrigger</name>
+        <transport>hwbinder</transport>
+        <fqname>@2.3::ISoundTriggerHw/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input</name>
+        <version>6</version>
+        <fqname>ITouchContextService/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>com.google.input</name>
+        <version>6</version>
+        <fqname>ITwoshayFileDumpService/touchflow_default</fqname>
+        <fqname>ITwoshayFileDumpService/twoshay</fqname>
+    </hal>
+    <hal format="hidl">
+        <name>vendor.google.audiometricext</name>
+        <transport>hwbinder</transport>
+        <fqname>@1.0::IAudioMetricExt/default</fqname>
+    </hal>
+    <hal format="hidl">
+        <name>vendor.google.whitechapel.audio.audioext</name>
+        <transport>hwbinder</transport>
+        <fqname>@4.0::IAudioExt/default</fqname>
+    </hal>
+    <sepolicy>
+        <version>202504</version>
+    </sepolicy>
+</manifest>

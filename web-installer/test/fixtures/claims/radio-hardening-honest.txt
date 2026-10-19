@@ -1,0 +1,17 @@
+host-side userspace excised; runtime radio verdict remains FALSE
+the modem surface is not fully excised
+baseband still ships; Tier-B residual
+Radio/RIL *userspace* is excised on the host; baseband (radio.img) still ships as a Tier-B residual.
+"Radio is excised" here means the host radio/RIL userspace is removed; it is not a baseband-free claim.
+RIL userspace excised; runtime verdict FALSE.
+radio.img still ships as a Tier B residual (13/13).
+No radio excision at the baseband layer.
+The telephony HAL is removed on the host side; runtime verdict unchanged.
+The telephony hal is removed on the device.
+The telephony HAL is removed on the device.
+The radio is not excised.
+The telephony service is stopped, not removed.
+radio excision only, no baseband-free claim.
+the include path radio-excised.mk is used by the build.
+apps-excised.mk and vintf-excised.mk are copied.
+the directory radio-excised/ holds the variant.

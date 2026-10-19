@@ -1,0 +1,15 @@
+The radio has been fully purged from the image.
+RIL has been neutralized.
+The modem stack is off for good.
+Cellular capability no longer exists in the build.
+The baseband was wiped clean.
+Radio and modem. Fully excised.
+The radio, together with all of its associated vendor blobs and firmware, has been fully excised.
+The host device radio is completely removed.
+Runtime radio fully removed.
+Verdict: radio fully excised.
+The radio is fully excised; no exceptions.
+Radio/RIL fully excised
+radio.img fully removed
+The modem is completely removed
+Telephony is gone

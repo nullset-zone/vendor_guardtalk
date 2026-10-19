@@ -10,6 +10,51 @@ import {
 
 const C_COLLATOR = new Intl.Collator("en", { sensitivity: "variant" });
 
+/**
+ * One writable image offered to a plan, before it is put in canonical order.
+ * The rule below only COUNTS a phase, so a plan that has resolved its images
+ * to artifact NAMES satisfies it as-is — no second mapping step to keep in
+ * sync.
+ */
+export type PlanImage = { readonly partition: string } | string;
+
+/** The image-bearing phases of a plan (avb_custom_key is the key enrolment). */
+export interface PlanImages {
+  readonly firmware: readonly PlanImage[];
+  readonly os: readonly PlanImage[];
+}
+
+/**
+ * Refuse a plan that carries no writable partition image. `firmware` and `os`
+ * are BOTH optional on the input — the rule asserts only the phases the caller
+ * actually supplies, so an appender that has not built the other phase yet
+ * (or the route's inline plan) is judged on the phase it owns. There is no way
+ * to express "present but empty" other than `[]`, which is refused.
+ *
+ * This is the single implementation of the empty-phase rule (TASK
+ * T-WEBINSTALL-ORCHESTRATION-NO-IMAGE-GUARD). It is driven by the
+ * `FLASH_ORDER` phases rather than by hand-picked fixed partitions, so
+ * `FIRMWARE_ORDER`/`OS_ORDER` in `routes/install/flash-runner.ts` stay a UI
+ * subset (ordering + which picks step 6 renders) and never a second, narrower
+ * authority on what "required" means.
+ */
+export function assertPlanImagesPresent(plan: {
+  readonly firmware?: readonly PlanImage[];
+  readonly os?: readonly PlanImage[];
+}): void {
+  for (const phase of FLASH_ORDER) {
+    if (phase === "avb_custom_key") {
+      // Key enrolment is verified separately (pkmd must match the vbmeta
+      // anchor); it is not a partition image and never satisfies this rule.
+      continue;
+    }
+    const images: readonly PlanImage[] | undefined = plan[phase];
+    if (images !== undefined && images.length === 0) {
+      throw new PlanError(`${phase} phase is empty`);
+    }
+  }
+}
+
 /** Build a deterministic plan: firmware → avb_custom_key → OS (DEC-006). */
 export function buildFlashPlan(channel: ChannelBundle): FlashPlan {
   const steps: PlanStep[] = [];
@@ -49,9 +94,7 @@ function namesForPhase(channel: ChannelBundle, phase: "firmware" | "avb" | "os")
 
 function appendFirmwareSteps(channel: ChannelBundle, steps: PlanStep[]): void {
   const names = namesForPhase(channel, "firmware");
-  if (names.length === 0) {
-    throw new PlanError("firmware phase is empty");
-  }
+  assertPlanImagesPresent({ firmware: names });
   for (const name of names) {
     steps.push({
       kind: "flash",
@@ -91,9 +134,7 @@ function appendPixelHousekeeping(steps: PlanStep[]): void {
 
 function appendOsSteps(channel: ChannelBundle, steps: PlanStep[]): void {
   const names = namesForPhase(channel, "os");
-  if (names.length === 0) {
-    throw new PlanError("os phase is empty");
-  }
+  assertPlanImagesPresent({ os: names });
   for (const name of names) {
     steps.push({
       kind: "flash",

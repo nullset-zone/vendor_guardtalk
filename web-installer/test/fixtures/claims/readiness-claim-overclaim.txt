@@ -1,0 +1,8 @@
+This installer is ready to flash every available image.
+GuardTalkOS is production ready.
+You can flash all images from this page.
+The web installer is ready.
+Every available image can now be flashed.
+The installer is ready for production.
+All images are flashable.
+This installer is ready to ship.

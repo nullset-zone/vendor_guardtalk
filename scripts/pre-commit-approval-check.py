@@ -8,18 +8,25 @@ Enforces the ``AGENTS.md`` "Git Rule":
 
 Which commits are checked
 -------------------------
-The task id(s) a commit claims to implement are resolved, in priority order, from:
+The task id(s) a commit claims to implement must be **explicitly declared**, from
+exactly two channels:
 
 1. ``AEGIS_TASK_ID`` — explicit, authoritative, comma/space separated, e.g.
    ``AEGIS_TASK_ID=T-EXAMPLE-001 git commit -m "..."``. If it is set it must
    name a real card, and that card must be ``APPROVED``.
 2. A ``Task: <ID>`` trailer in the commit message file ``$GIT_DIR/COMMIT_EDITMSG``
    (best effort — see the caveat below).
-3. Task ids that literally appear in the **staged diff** *and* resolve to a real
-   card in the authoritative queue. Tokens that do not resolve to a card are
-   ignored so prose, examples and regex literals cannot cause a false block.
 
-Every resolved task id that is not marked ``APPROVED`` blocks the commit
+Task ids that merely *appear* in the **staged diff** are detected for
+**diagnostics only** and **never authorise** a commit. A bare mention must not
+grant approval: the staged content is chosen by the committer, so treating a
+mention as authorisation is **fail-open** — a commit would be waved through under
+an APPROVED card id it merely quotes, while the actual staged change is the
+unreviewed work. Mentions are surfaced in the "no task id declared" block so the
+intent is visible, but the *resolution* set is limited to the two explicit
+channels above. (``T-EXCISE-COMMITGATE-STAGED-HEURISTIC``.)
+
+Every declared task id that is not marked ``APPROVED`` blocks the commit
 (exit code 1, git aborts the commit).
 
 Caveat on the commit message
@@ -28,6 +35,17 @@ Git runs ``pre-commit`` **before** it writes ``COMMIT_EDITMSG``, so for the
 common ``git commit -m "..."`` form the message is not yet on disk. The message
 channel is therefore best effort and guarded against staleness (a message file
 older than the index is ignored). The reliable channel is ``AEGIS_TASK_ID``.
+
+Queue authority (``T-EXCISE-COMMITGATE-QUEUE-OVERRIDE``)
+-------------------------------------------------------
+The authoritative queue is the workspace-root ``TASK_QUEUE.md`` (found relative
+to this script, then by walking up from the git toplevel). ``AEGIS_TASK_QUEUE``
+may point the gate at a different file, but a **non-authoritative** queue is
+never substituted silently: unless the override resolves to the authoritative
+queue itself, the commit is **refused** unless the operator explicitly
+acknowledges the substitution with ``AEGIS_TASK_QUEUE_ACK=1``, which prints a
+loud banner. A committer-authored queue that merely marks a task ``APPROVED``
+is therefore neither silent nor sufficient on its own.
 
 FAIL-CLOSED default (Operator ruling 2026-09-25)
 -----------------------------------------------
@@ -63,6 +81,7 @@ from pathlib import Path
 BYPASS_ENV = "AEGIS_SKIP_APPROVAL_CHECK"
 TASK_ID_ENV = "AEGIS_TASK_ID"
 QUEUE_ENV = "AEGIS_TASK_QUEUE"
+QUEUE_ACK_ENV = "AEGIS_TASK_QUEUE_ACK"
 
 # `T-`/`Q-`/`M-`/`P-`/`F-` prefixes are the documented AEGIS task prefixes.
 TASK_ID_RE = re.compile(r"\b(?:T|Q|M|P|F)-[A-Za-z0-9][A-Za-z0-9_-]*")
@@ -103,18 +122,13 @@ def get_staged_text() -> str:
     return _run_git("diff", "--cached", "-U0")
 
 
-def locate_task_queue(repo_root: Path) -> Path | None:
-    """Locate the authoritative TASK_QUEUE.md.
+def authoritative_task_queue(repo_root: Path) -> Path | None:
+    """Locate the authoritative TASK_QUEUE.md, ignoring the env override.
 
-    Resolution order: ``AEGIS_TASK_QUEUE`` override, then the workspace root
-    relative to this script (``<root>/scripts/pre-commit-approval-check.py``),
-    then a walk up from the git toplevel.
+    Resolution order: the workspace root relative to this script
+    (``<root>/scripts/pre-commit-approval-check.py``), then a walk up from the
+    git toplevel.
     """
-    override = os.environ.get(QUEUE_ENV)
-    if override:
-        candidate = Path(override)
-        return candidate if candidate.is_file() else None
-
     here = Path(__file__).resolve().parent.parent / "TASK_QUEUE.md"
     if here.is_file():
         return here
@@ -124,6 +138,14 @@ def locate_task_queue(repo_root: Path) -> Path | None:
         if candidate.is_file():
             return candidate
     return None
+
+
+def _same_file(a: Path, b: Path) -> bool:
+    """True when *a* and *b* resolve to the same file on disk."""
+    try:
+        return a.resolve() == b.resolve()
+    except OSError:
+        return False
 
 
 def normalize_status(raw: str) -> str:
@@ -187,7 +209,13 @@ def message_task_ids(gitdir: Path | None) -> list[str]:
 
 
 def content_task_ids(staged_text: str, known: set[str]) -> list[str]:
-    """Task ids in the staged diff that resolve to a real card."""
+    """Task ids in the staged diff that resolve to a real card.
+
+    DIAGNOSTIC ONLY — the return value is **never** an authorisation source. See
+    the module docstring and ``T-EXCISE-COMMITGATE-STAGED-HEURISTIC``: staged
+    content is controlled by the committer, so a content match cannot grant
+    approval without being fail-open.
+    """
     found = []
     for tid in TASK_ID_RE.findall(staged_text):
         if tid in known and tid not in found:
@@ -221,15 +249,31 @@ def _print_block(
     print()
 
 
-def _print_no_task_id_block() -> None:
+def _print_no_task_id_block(
+    mentions: list[str] | None = None,
+    statuses: dict[str, str] | None = None,
+) -> None:
+    """Print the fail-closed block for a commit that declares no task id.
+
+    ``mentions`` are task ids that appear in the staged diff. They are shown
+    only so the committer sees why a bare mention was not enough — they are
+    **not** an authorisation source (``T-EXCISE-COMMITGATE-STAGED-HEURISTIC``).
+    """
     print()
     print("=" * 70)
     print("  AEGIS GOVERNANCE: COMMIT BLOCKED - No Task Id Declared")
     print("=" * 70)
     print()
-    print("  FAIL-CLOSED: every commit must name a task that is APPROVED in")
-    print("  the authoritative TASK_QUEUE.md. No task id could be resolved")
-    print("  from AEGIS_TASK_ID, the commit message, or the staged diff.")
+    print("  FAIL-CLOSED: every commit must explicitly declare a task that is")
+    print("  APPROVED in the authoritative TASK_QUEUE.md. No task id was")
+    print("  declared via AEGIS_TASK_ID or a 'Task: <ID>' commit-message trailer.")
+    if mentions:
+        print()
+        print("  The staged diff MENTIONS these task ids, but a bare mention")
+        print("  does NOT authorise a commit (staged content is chosen by the")
+        print("  committer; accepting a mention would be fail-open):")
+        for tid in mentions:
+            print(f"    {tid}: {(statuses or {}).get(tid) or 'UNKNOWN'}")
     print()
     print("  Declare it at commit time, e.g.:")
     print(f"    {TASK_ID_ENV}=<TASK-ID> git commit -m \"...\"")
@@ -257,6 +301,64 @@ def _print_bypass_banner() -> None:
     print()
 
 
+def _print_queue_override_block(
+    override: Path, authoritative: Path | None
+) -> None:
+    """Refuse a non-authoritative ``AEGIS_TASK_QUEUE`` substitution, loudly."""
+    print()
+    print("=" * 70)
+    print("  AEGIS GOVERNANCE: COMMIT BLOCKED - Non-Authoritative Task Queue")
+    print("=" * 70)
+    print(f"  {QUEUE_ENV} points at a queue that is NOT the authoritative")
+    print("  TASK_QUEUE.md:")
+    print()
+    print(f"    override:       {override}")
+    print(
+        "    authoritative:  "
+        f"{authoritative if authoritative is not None else '(not found)'}"
+    )
+    print()
+    print("  Approval resolved from a substituted (or self-authored) queue is")
+    print("  fail-open: the queue file is chosen by the committer, so it cannot")
+    print("  authorise a commit. The authoritative queue cannot be silently")
+    print("  replaced. Refusing.")
+    print()
+    print("  To override DELIBERATELY (Architect/operator only), acknowledge the")
+    print("  substitution loudly:")
+    print(
+        f"    {QUEUE_ACK_ENV}=1 {QUEUE_ENV}=<path> "
+        f"{TASK_ID_ENV}=<TASK-ID> git commit ..."
+    )
+    print("=" * 70)
+    print()
+
+
+def _print_queue_override_banner(
+    override: Path, authoritative: Path | None
+) -> None:
+    """Warn loudly that a non-authoritative queue substitution was acknowledged."""
+    print()
+    print("=" * 70)
+    print("  AEGIS GOVERNANCE: NON-AUTHORITATIVE TASK QUEUE ACKNOWLEDGED")
+    print(f"  ({QUEUE_ACK_ENV}=1)")
+    print("=" * 70)
+    print(f"  {QUEUE_ENV} points at a queue that is NOT the authoritative")
+    print("  TASK_QUEUE.md:")
+    print()
+    print(f"    override:       {override}")
+    print(
+        "    authoritative:  "
+        f"{authoritative if authoritative is not None else '(not found)'}"
+    )
+    print()
+    print("  Approval for this commit resolves from the OVERRIDE queue, NOT from")
+    print("  the authoritative queue. Human Authority (Law 0) permits an explicit")
+    print("  override, but never a silent one. This substitution is recorded")
+    print("  loudly by design.")
+    print("=" * 70)
+    print()
+
+
 def main() -> int:
     """Pre-commit entry point. Returns 0 to allow, 1 to block."""
     if os.environ.get(BYPASS_ENV) == "1":
@@ -265,7 +367,30 @@ def main() -> int:
 
     repo_root = git_toplevel()
     repo_git_dir = git_dir()
-    queue_path = locate_task_queue(repo_root)
+
+    authoritative = authoritative_task_queue(repo_root)
+    override_raw = os.environ.get(QUEUE_ENV, "").strip()
+    queue_path: Path | None
+    if override_raw:
+        candidate = Path(override_raw)
+        if not candidate.is_file():
+            # An explicit override that cannot be read is never silently
+            # ignored: fall through to the fail-closed "queue unreadable" path.
+            queue_path = None
+        elif authoritative is not None and _same_file(candidate, authoritative):
+            # The override resolves to the authoritative queue itself; this is
+            # not a substitution, so honour it silently.
+            queue_path = candidate
+        elif os.environ.get(QUEUE_ACK_ENV) == "1":
+            # Deliberate, loud, human-only acknowledgement of the substitution.
+            _print_queue_override_banner(candidate, authoritative)
+            queue_path = candidate
+        else:
+            _print_queue_override_block(candidate, authoritative)
+            return 1
+    else:
+        queue_path = authoritative
+
     statuses = parse_statuses(queue_path) if queue_path else {}
 
     env_ids, malformed_env = env_task_ids()
@@ -277,12 +402,17 @@ def main() -> int:
         return 1
 
     declared = list(dict.fromkeys(env_ids + message_task_ids(repo_git_dir)))
-    heuristic = content_task_ids(get_staged_text(), set(statuses))
-    resolved = list(dict.fromkeys(declared + heuristic))
+    # T-EXCISE-COMMITGATE-STAGED-HEURISTIC: staged-diff mentions are DIAGNOSTIC
+    # ONLY. They must never authorise a commit — staged content is chosen by
+    # the committer, so a content match is fail-open by construction. Mentions
+    # are reported to make the refusal intelligible, nothing more.
+    mentions = content_task_ids(get_staged_text(), set(statuses))
 
-    if not resolved:
-        _print_no_task_id_block()
+    if not declared:
+        _print_no_task_id_block(mentions, statuses)
         return 1
+
+    resolved = declared
 
     if queue_path is None:
         print(

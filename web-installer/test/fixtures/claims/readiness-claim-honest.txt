@@ -1,0 +1,7 @@
+This installer is alpha software: 2 of 4 advertised devices have a packed channel today.
+The readiness gate does not report PASS, so this page carries no readiness claim.
+READY means every host check passed and the family has booted before — it is not a device proof.
+Boot remains UNVERIFIED; LIVE_FLASH_CLAIMED stays false until a human performs a real flash.
+Flash only the channels that exist; a device with no packed channel is not selectable.
+The device stays locked until you confirm on the phone itself.
+Production signing material is never shipped in this page.

@@ -197,7 +197,7 @@ export function flashBlockersOnVerifyDevice(): readonly string[] {
 
 export function renderHardStopBanner(): string {
   return [
-    `<div class="gl-alert gl-alert--danger hard-stop" data-hard-stop="true" data-stop-id="BOOT_FINGERPRINT_MISMATCH" role="alert">`,
+    `<div class="gl-alert gl-alert--danger hard-stop" data-hard-stop="true" data-stop-id="BOOT_FINGERPRINT_MISMATCH" role="alert" aria-live="assertive" aria-atomic="true">`,
     `<div class="gl-alert__body">`,
     `<div class="gl-alert__title">STOPPED</div>`,
     makeChip("STOPPED", "tripwire", { ariaLive: "assertive" }),

@@ -17,6 +17,7 @@
     "wizard:serve": "python3 -m http.server 4173 --bind 0.0.0.0",
     "channels:pack": "bash ../../scripts/pack-wizard-hosted-channels.sh",
     "routes:build": "bash scripts/build-site.sh",
+    "claims:lint": "node scripts/lint-claims-gate.mjs",
     "routes:serve": "python3 -m http.server 8080 --directory dist/site"
   },
   "exports": {

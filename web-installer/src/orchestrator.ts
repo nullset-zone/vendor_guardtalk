@@ -30,6 +30,11 @@ export class FlashOrchestrator {
   private readonly plan: FlashPlan;
   private connected = false;
   private planComplete = false;
+  /**
+   * Idempotent teardown of the transport, present only if the transport offers
+   * one (WebUSB does; the dry-run mock and the simulator do not).
+   */
+  private readonly teardown: (() => Promise<void>) | undefined;
 
   constructor(opts: {
     transport: FastbootTransport;
@@ -39,6 +44,9 @@ export class FlashOrchestrator {
     this.transport = opts.transport;
     this.channel = opts.channel;
     this.store = opts.store;
+    const close = (opts.transport as { close?: unknown }).close;
+    this.teardown =
+      typeof close === "function" ? () => (close.call(opts.transport) as Promise<void>) : undefined;
     this.plan = buildFlashPlan(opts.channel);
   }
 
@@ -54,10 +62,24 @@ export class FlashOrchestrator {
     return LIVE_FLASH_CLAIMED;
   }
 
+  /**
+   * Connect and PROVE the product before the session is usable
+   * (T-WEBINSTALL-ORCHESTRATOR-CONNECT-LEAK). `connected` is set only after
+   * `assertProduct()` resolves, so no interleaving leaves it true while the
+   * product assertion has not succeeded. A failed assertion tears the
+   * transport down (when it can be) rather than leaving a claimed device
+   * sitting in a session that refuses to use it.
+   */
   async connect(): Promise<void> {
     await this.transport.connect();
+    try {
+      await this.assertProduct();
+    } catch (error) {
+      this.connected = false;
+      await this.teardownAfterFailedConnect();
+      throw error;
+    }
     this.connected = true;
-    await this.assertProduct();
   }
 
   async unlock(): Promise<void> {
@@ -104,6 +126,23 @@ export class FlashOrchestrator {
   private requireConnected(): void {
     if (!this.connected) {
       throw new FastbootError("connect() before unlock, flash, or lock");
+    }
+  }
+
+  /**
+   * Best-effort teardown after a rejected product assertion. A transport
+   * without a close path is left as-is (no invented requirement); a close that
+   * itself fails must never mask the product error that caused the teardown.
+   */
+  private async teardownAfterFailedConnect(): Promise<void> {
+    if (this.teardown === undefined) {
+      return;
+    }
+    try {
+      await this.teardown();
+    } catch {
+      // Swallowed by design: the caller gets the product error, not a
+      // secondary USB error. `connected` is already false either way.
     }
   }
 

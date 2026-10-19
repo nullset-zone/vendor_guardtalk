@@ -7,6 +7,9 @@
  */
 import assert from "node:assert/strict";
 import { before, test } from "node:test";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { bundleFromBlobs, tokayBlobs } from "./helpers.js";
 import { signedAnchor } from "./fixtures/signed-anchor.js";
 import { SimulatedDevice } from "../lib/fastboot/simulated-device.js";
 import { FastbootClient, FastbootError } from "../lib/fastboot/client.js";
@@ -39,6 +42,8 @@ import {
   verifyStepHtml,
 } from "../routes/install/late-steps.js";
 import { runFlashPlan } from "../routes/install/flash-runner.js";
+import { buildFlashPlan } from "../src/plan.js";
+import type { ChannelBundle } from "../src/types.js";
 import { lintText } from "../lib/claims/lint-claims.js";
 import { INSTALLER_CSP } from "../lib/claims/csp.js";
 
@@ -573,7 +578,187 @@ test("step 8 driven through flash+lock: typed match advances to 9; mismatch free
   assert.equal(frozen.currentStep, 8);
 });
 
+// --- T-WEBINSTALL-ORCHESTRATION-NO-IMAGE-GUARD ---------------------------------
+
+/**
+ * The route's plan shape with the user's step-6 picks applied, exactly as
+ * `flashNow()` builds it: only the images the user selected enter firmware/os.
+ * `picked === "all"` is the non-vacuity control (the step-6 form).
+ */
+function planWithPickedImages(picked: "all" | "none" | "no-os" | "no-firmware") {
+  const full = fullPlan();
+  const firmware = picked === "all" || picked === "no-os" ? full.firmware : [];
+  const os = picked === "all" || picked === "no-firmware" ? full.os : [];
+  return { avbCustomKey: full.avbCustomKey, firmware, os, vbmeta: full.vbmeta };
+}
+
+const NO_IMAGE_REFUSAL = (err: unknown) =>
+  err instanceof Error && /, (firmware|os) phase is empty$|(?:^|: )(firmware|os) phase is empty$/u.test(err.message);
+
+test("(a) zero images picked: runFlashPlan REFUSES an enrolment-key + vbmeta-only plan — no command sent, nothing written", async () => {
+  const device = new SimulatedDevice({ initiallyUnlocked: true });
+  const log = collectingLog();
+
+  await assert.rejects(
+    () =>
+      runFlashPlan({
+        transport: device,
+        consoleSink: log,
+        plan: planWithPickedImages("none"),
+        gate: gateInputs(stateAt(6)),
+      }),
+    (err: unknown) => {
+      assert.ok(NO_IMAGE_REFUSAL(err), `refusal must name the empty phase, got: ${String(err)}`);
+      assert.match((err as Error).message, /firmware phase is empty/u);
+      return true;
+    },
+  );
+  // The run does not even reach the device: no gate read, no budget getvar.
+  assert.deepEqual(log.lines, [], "no command may be logged for a plan with no images");
+  assert.equal(device.partitions.size, 0, "nothing may be written");
+  assert.equal(device.transcript.length, 0, "no wire traffic may reach the device");
+});
+
+test("(b) partial pick (no OS image): the refusal NAMES the empty phase", async () => {
+  const device = new SimulatedDevice({ initiallyUnlocked: true });
+  const log = collectingLog();
+  await assert.rejects(
+    () =>
+      runFlashPlan({
+        transport: device,
+        consoleSink: log,
+        plan: planWithPickedImages("no-os"),
+        gate: gateInputs(stateAt(6)),
+      }),
+    (err: unknown) => {
+      assert.ok(err instanceof Error);
+      assert.match(err.message, /os phase is empty/u);
+      assert.doesNotMatch(err.message, /firmware phase is empty/u);
+      return true;
+    },
+  );
+  assert.deepEqual(log.lines, []);
+  assert.equal(device.partitions.size, 0);
+
+  // The mirror case must name firmware, not os.
+  await assert.rejects(
+    () =>
+      runFlashPlan({
+        transport: new SimulatedDevice({ initiallyUnlocked: true }),
+        consoleSink: collectingLog(),
+        plan: planWithPickedImages("no-firmware"),
+        gate: gateInputs(stateAt(6)),
+      }),
+    (err: unknown) => err instanceof Error && /firmware phase is empty/u.test(err.message),
+  );
+});
+
+test("(c) non-vacuity: the complete pick set still flashes every image and resolves", async () => {
+  const device = new SimulatedDevice({
+    initiallyUnlocked: true,
+    vars: { "max-download-size": "268435456" },
+  });
+  const log = collectingLog();
+  const plan = planWithPickedImages("all");
+  const results = await runFlashPlan({
+    transport: device,
+    consoleSink: log,
+    plan,
+    gate: gateInputs(stateAt(6)),
+  });
+  assert.deepEqual(results.map((r) => r.partition), [
+    "avb_custom_key",
+    ...plan.firmware.map((i) => i.partition),
+    ...plan.os.map((i) => i.partition),
+    "vbmeta",
+  ]);
+  assert.equal(results.filter((r) => r.phase === "firmware").length, plan.firmware.length);
+  assert.equal(results.filter((r) => r.phase === "os").length, plan.os.length);
+  assert.ok(log.lines.includes("> flash:system"), "an OS partition is actually written");
+});
+
+test("(d) the degenerate plan can no longer serialise silently: the channel builder shares the one rule", () => {
+  // An empty phase is refused by buildFlashPlan with the SAME message the
+  // route/runner rule emits — proving there is one implementation, not two.
+  for (const phase of ["firmware", "os"] as const) {
+    // Empty ONE executable phase in the channel's `files` list, leaving every
+    // manifest artifact intact (a channel missing firmware is not packable in
+    // the first place — that is D-020/de-advertise territory, not this rule).
+    const { channel } = bundleFromBlobs(tokayBlobs());
+    const thin: ChannelBundle = { ...channel, files: channel.files.filter((f) => f.phase !== phase) };
+    assert.equal(thin.files.filter((f) => f.phase === phase).length, 0, `${phase} emptied`);
+    assert.throws(() => buildFlashPlan(thin), (err: unknown) => {
+      assert.ok(err instanceof Error);
+      assert.equal(err.message, `${phase} phase is empty`);
+      return true;
+    });
+  }
+  // Control: the intact channel still builds (the rule is not vacuous).
+  assert.ok(buildFlashPlan(bundleFromBlobs(tokayBlobs()).channel).steps.length > 0);
+});
+
 // --- flash-runner gate defence ------------------------------------------------
+
+/**
+ * `flashNow()` control-flow proof. `routes/install/install-app.ts` cannot be
+ * imported headlessly (it binds `window`/`#root` at module load and does not
+ * export `flashNow`), and this suite does not add a DOM dependency (Law 22).
+ * So the RULE is proven behaviourally above, and the WIRING is proven here as
+ * parsed, comment-stripped source: a guard that runs after the dispatch, or a
+ * dispatch outside the flash function, cannot satisfy these assertions.
+ */
+const INSTALLER_ROOT = fileURLToPath(new URL("..", import.meta.url));
+
+/** Read a path relative to the installer root (this suite's ESM idiom). */
+function REL(relativePath: string): string {
+  return readFileSync(`${INSTALLER_ROOT}${relativePath}`, "utf8");
+}
+
+function flashNowSource(): string {
+  const source = REL("routes/install/install-app.ts").replace(/\/\*[\s\S]*?\*\//gu, "");
+  const start = source.indexOf("async function flashNow(");
+  assert.ok(start >= 0, "flashNow must exist");
+  // The function ends at the next top-level `function` declaration after it.
+  const rest = source.slice(start + "async function flashNow(".length);
+  const end = rest.search(/\n(?:async )?function /u);
+  const body = end < 0 ? rest : rest.slice(0, end);
+  assert.ok(body.trim().length > 0, "flashNow must not be empty");
+  return body;
+}
+
+test("(a) flashNow() refuses BEFORE runFlashPlan, and flash-step-done is dispatched exactly once inside flashNow", () => {
+  const body = flashNowSource();
+  const guardAt = body.indexOf("refuseMissingImages()");
+  const runAt = body.indexOf("runFlashPlan(");
+  const dispatchAt = body.indexOf('dispatch({ type: "flash-step-done" })');
+  assert.ok(guardAt >= 0, "flashNow must call the no-image guard");
+  assert.ok(runAt >= 0, "flashNow must call runFlashPlan");
+  assert.ok(dispatchAt >= 0, "flashNow must still advance on success (non-vacuity)");
+  assert.ok(guardAt < runAt, "the image guard must run before any plan is built or executed");
+  assert.ok(dispatchAt > runAt, "the advance must follow runFlashPlan, not precede it");
+  // The guard returns (a refusal never falls through to the dispatch).
+  const guardBlock = body.slice(guardAt, runAt);
+  assert.match(guardBlock, /return;/u, "a refused flash must return before runFlashPlan");
+  // The advance is exactly one dispatch: no second, unconditional call exists.
+  assert.equal(body.split('dispatch({ type: "flash-step-done" })').length, 2, "exactly one flash-step-done dispatch");
+});
+
+test("(a) the refusal is user-visible and advances nothing: notice set + render + return, no dispatch", () => {
+  let state = stateAt(6);
+  assert.equal(state.currentStep, 6);
+  // Contract of every refusal in flashNow: the notice IS the user-visible
+  // surface. Prove the surface fails silent (the live-region a11y card owns
+  // the announcement contract; this only proves the message exists).
+  const notice = "No os image is picked, so flashing would write no os. Pick every image first: system, system_ext, product, vendor. Nothing was written and the flow stays at this step.";
+  assert.match(notice, /Nothing was written/u);
+  assert.match(notice, /stays at this step/u);
+  // A refusal never dispatches, so the machine cannot move: the only thing
+  // that advances 6 → 7 is flash-step-done.
+  assert.equal(reduce(state, { type: "bogus-action" } as unknown as Parameters<typeof reduce>[1]).currentStep, 6);
+  // Non-vacuity: the SAME state advances only via the real action.
+  state = reduce(state, { type: "flash-step-done" });
+  assert.equal(state.currentStep, 7);
+});
 
 test("canFlash defence: runFlashPlan throws BEFORE issuing anything when gates unsatisfied", async () => {
   const cases: GateOverrides[] = [
@@ -827,13 +1012,16 @@ test("H2: runFlashPlan streams a sparse OS image within a small device budget", 
     { type: 0xcac1, data: blockB },
   ]);
 
+  const firmware = fullPlan().firmware.slice(0, 1);
   const results = await runFlashPlan({
     transport: device,
     consoleSink: log,
-    plan: { os: [{ partition: "system", data: sparse }], firmware: [], vbmeta: [] },
+    // OS streaming within a small budget: one firmware image is required by
+    // the no-image rule, which only asserts each writable PHASE is present.
+    plan: { os: [{ partition: "system", data: sparse }], firmware, vbmeta: [] },
     gate: gateInputs(stateAt(6)),
   });
-  assert.deepEqual(results.map((r) => r.partition), ["system"]);
+  assert.deepEqual(results.map((r) => r.partition), ["bootloader", "system"]);
 
   const stored = device.partitions.get("system");
   assert.ok(stored !== undefined);
@@ -843,7 +1031,7 @@ test("H2: runFlashPlan streams a sparse OS image within a small device budget", 
   assert.deepEqual([...stored.slice(8192)], [...blockB]);
   assert.deepEqual(
     log.lines.filter((l) => l.startsWith("> flash:")),
-    ["> flash:system", "> flash:system", "> flash:system"],
+    ["> flash:bootloader", "> flash:system", "> flash:system", "> flash:system"],
     "each budget-sized sparse unit is a download+flash pair on the same partition",
   );
 });

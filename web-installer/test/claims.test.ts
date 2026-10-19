@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { INSTALLER_CSP, cspMetaTag } from "../lib/claims/csp.js";
-import { formatHits, lintText, main } from "../lib/claims/lint-claims.js";
+import { formatHits, lintFiles, lintText, main } from "../lib/claims/lint-claims.js";
 
 test("forbidden OTA / push / remote-update phrases are caught", () => {
   const fixtures = [
@@ -83,4 +84,215 @@ test("CSP string matches D-006 exactly", () => {
 
 test("lint CLI exits non-zero on hits, zero when clean", () => {
   assert.equal(main([]), 2);
+});
+
+// ---------------------------------------------------------------------------
+// T-EXCISE-CLAIMS-LINTER-RADIO-FAMILY — radio/RIL/telephony-excision family
+// ---------------------------------------------------------------------------
+
+const RADIO_OVERCLAIM_FIXTURE = fileURLToPath(
+  new URL("./fixtures/claims/radio-overclaim.txt", import.meta.url),
+);
+const RADIO_HONEST_FIXTURE = fileURLToPath(
+  new URL("./fixtures/claims/radio-honest.txt", import.meta.url),
+);
+
+test("unqualified radio/RIL/telephony excision absolutes are caught", () => {
+  const unqualified = [
+    "- Radio is excised (`GUARDTALK_RADIO_EXCISED=true`, `modem` stripped from",
+    "Radio/RIL fully excised; baseband radio.img fully removed.",
+    "The modem is completely removed.",
+    "Telephony is gone.",
+    "radio.img fully removed.",
+  ];
+  for (const fixture of unqualified) {
+    const hits = lintText(fixture, "fixture.txt");
+    assert.ok(
+      hits.some((hit) => hit.rule === "no-radio-excision-overclaim"),
+      fixture,
+    );
+  }
+});
+
+test("qualified radio excision statements stay silent (host-side vs runtime verdict)", () => {
+  const qualified = [
+    "Dead weight with the host-side RIL/telephony userspace excised; the runtime radio verdict remains FALSE (Tier B).",
+    "Radio/RIL *userspace* is excised on the host; the baseband (radio.img) still ships as a Tier-B residual.",
+    "\"Radio is excised\" here means the host radio/RIL userspace is removed; it is not a baseband-free claim.",
+    "A-EXCISE-RADIO_AUDIT: the modem surface is not fully excised.",
+  ];
+  for (const fixture of qualified) {
+    const hits = lintText(fixture, "fixture.txt");
+    assert.deepEqual(
+      hits.filter((hit) => hit.rule === "no-radio-excision-overclaim"),
+      [],
+      fixture,
+    );
+  }
+});
+
+test("radio overclaim fixture BITES (CLI-facing lintFiles path)", () => {
+  assert.ok(
+    lintFiles([RADIO_OVERCLAIM_FIXTURE]).some((hit) => hit.rule === "no-radio-excision-overclaim"),
+  );
+});
+
+test("radio honest fixture is CLEAN (CLI-facing lintFiles path)", () => {
+  assert.deepEqual(
+    lintFiles([RADIO_HONEST_FIXTURE]).filter((hit) => hit.rule === "no-radio-excision-overclaim"),
+    [],
+  );
+});
+
+test("radio fixtures prove non-vacuity both ways through the CLI exit code", () => {
+  assert.equal(main([RADIO_OVERCLAIM_FIXTURE]), 1);
+  assert.equal(main([RADIO_HONEST_FIXTURE]), 0);
+});
+
+// ---------------------------------------------------------------------------
+// T-EXCISE-CLAIMS-LINTER-RADIO-HARDENING — close H1..H5
+// QA's 11 false negatives (C1-C11) and 7 false positives (D1-D6) must flip;
+// the attached-qualifier and non-functional-context allow-lists must not become
+// a new evasion surface.
+// ---------------------------------------------------------------------------
+
+const RADIO_HARDENING_OVERCLAIM_FIXTURE = fileURLToPath(
+  new URL("./fixtures/claims/radio-hardening-overclaim.txt", import.meta.url),
+);
+const RADIO_HARDENING_HONEST_FIXTURE = fileURLToPath(
+  new URL("./fixtures/claims/radio-hardening-honest.txt", import.meta.url),
+);
+const RADIO_HARDENING_CONTEXT_FIXTURE = fileURLToPath(
+  new URL("./fixtures/claims/radio-hardening-context.txt", import.meta.url),
+);
+
+test("H1-H3: absolute overclaims no longer disarm on a co-occurring scope word", () => {
+  const mustBite = [
+    // H2 — widened verb set
+    "The radio has been fully purged from the image.",
+    "RIL has been neutralized.",
+    "The modem stack is off for good.",
+    "Cellular capability no longer exists in the build.",
+    "The baseband was wiped clean.",
+    // H3 — sentence split / long gap
+    "Radio and modem. Fully excised.",
+    "The radio, together with all of its associated vendor blobs and firmware, has been fully excised.",
+    // H1 — honest scope vocabulary must not neuter an absolute claim
+    "The host device radio is completely removed.",
+    "Runtime radio fully removed.",
+    "Verdict: radio fully excised.",
+    "The radio is fully excised; no exceptions.",
+  ];
+  for (const fixture of mustBite) {
+    const hits = lintText(fixture, "fixture.txt");
+    assert.ok(
+      hits.some((hit) => hit.rule === "no-radio-excision-overclaim"),
+      fixture,
+    );
+  }
+});
+
+test("H1: attached qualifiers and residual markers still suppress", () => {
+  const mustStaySilent = [
+    "host-side userspace excised; runtime radio verdict remains FALSE",
+    "the modem surface is not fully excised",
+    "baseband still ships; Tier-B residual",
+    "Radio/RIL *userspace* is excised on the host; baseband (radio.img) still ships as a Tier-B residual.",
+    '"Radio is excised" here means the host radio/RIL userspace is removed; it is not a baseband-free claim.',
+    "RIL userspace excised; runtime verdict FALSE.",
+    "No radio excision at the baseband layer.",
+    "The telephony HAL is removed on the host side; runtime verdict unchanged.",
+    "The radio is not excised.",
+    "The telephony service is stopped, not removed.",
+    "radio excision only, no baseband-free claim.",
+  ];
+  for (const fixture of mustStaySilent) {
+    const hits = lintText(fixture, "fixture.txt");
+    assert.deepEqual(
+      hits.filter((hit) => hit.rule === "no-radio-excision-overclaim"),
+      [],
+      fixture,
+    );
+  }
+});
+
+test("H4: UI/build non-functional contexts stay silent without creating an evasion", () => {
+  const context = [
+    "Radio buttons are removed in the compact layout.",
+    "The cellular status icon is removed when the device is offline.",
+    "The radio.img partition is removed from the fastboot flash list.",
+    "Carrier radio calibration data is removed before flashing.",
+    "Radio firmware files are removed from the AOSP device tree by the excision pass.",
+    "Telephony permission requests are removed by the privacy overlay.",
+  ];
+  for (const fixture of context) {
+    const hits = lintText(fixture, "fixture.txt");
+    assert.deepEqual(
+      hits.filter((hit) => hit.rule === "no-radio-excision-overclaim"),
+      [],
+      fixture,
+    );
+  }
+  // Non-evasion: a bare overclaim still bites even when it names a token the
+  // allow-list keys on, because the allow-list requires the full context.
+  const stillBites = [
+    "The radio is fully removed.",
+    "The radio firmware is fully removed from the device.",
+  ];
+  for (const fixture of stillBites) {
+    const hits = lintText(fixture, "fixture.txt");
+    assert.ok(
+      hits.some((hit) => hit.rule === "no-radio-excision-overclaim"),
+      fixture,
+    );
+  }
+});
+
+test("H5: the HAL qualifier is case-insensitive", () => {
+  for (const fixture of [
+    "The telephony hal is removed on the device.",
+    "The telephony HAL is removed on the device.",
+  ]) {
+    const hits = lintText(fixture, "fixture.txt");
+    assert.deepEqual(
+      hits.filter((hit) => hit.rule === "no-radio-excision-overclaim"),
+      [],
+      fixture,
+    );
+  }
+});
+
+test("hyphenated labels and path tokens are not excision overclaims", () => {
+  for (const fixture of [
+    "the include path radio-excised.mk is used by the build.",
+    "apps-excised.mk and vintf-excised.mk are copied.",
+    "the directory radio-excised/ holds the variant.",
+  ]) {
+    const hits = lintText(fixture, "fixture.txt");
+    assert.deepEqual(
+      hits.filter((hit) => hit.rule === "no-radio-excision-overclaim"),
+      [],
+      fixture,
+    );
+  }
+});
+
+test("hardening fixtures: overclaim bites while honest + context stay clean", () => {
+  assert.ok(
+    lintFiles([RADIO_HARDENING_OVERCLAIM_FIXTURE]).some(
+      (hit) => hit.rule === "no-radio-excision-overclaim",
+    ),
+  );
+  assert.deepEqual(
+    lintFiles([RADIO_HARDENING_HONEST_FIXTURE, RADIO_HARDENING_CONTEXT_FIXTURE]).filter(
+      (hit) => hit.rule === "no-radio-excision-overclaim",
+    ),
+    [],
+  );
+});
+
+test("hardening fixtures prove non-vacuity both ways through the CLI exit code", () => {
+  assert.equal(main([RADIO_HARDENING_OVERCLAIM_FIXTURE]), 1);
+  assert.equal(main([RADIO_HARDENING_HONEST_FIXTURE]), 0);
+  assert.equal(main([RADIO_HARDENING_CONTEXT_FIXTURE]), 0);
 });

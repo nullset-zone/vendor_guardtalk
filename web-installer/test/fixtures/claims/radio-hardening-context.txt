@@ -1,0 +1,6 @@
+Radio buttons are removed in the compact layout.
+The cellular status icon is removed when the device is offline.
+The radio.img partition is removed from the fastboot flash list.
+Carrier radio calibration data is removed before flashing.
+Radio firmware files are removed from the AOSP device tree by the excision pass.
+Telephony permission requests are removed by the privacy overlay.

@@ -1,0 +1,139 @@
+# AEGIS commit-approval backstop - CI half.
+#
+# T-EXCISE-COMMITGATE-PUSH-BACKSTOP-ACTIVATE (activation of the predecessor
+# T-EXCISE-COMMITGATE-PUSH-BACKSTOP).
+#
+# WHAT THIS IS
+#   Re-runs the AEGIS approval gate over the PUSHED RANGE (base..head), inside
+#   the pushed repository, so that a commit created with
+#   `git commit --no-verify` or `git -c core.hooksPath=/dev/null commit`
+#   (no durable task declaration) is caught at PUSH/CI time even though the
+#   client-side pre-commit hook was skipped.
+#
+#   The gate itself is `scripts/pre-receive-approval-check.py` (repo-root
+#   relative) which IMPORTS the versioned sibling
+#   `scripts/pre-commit-approval-check.py`. The approval rule is therefore not
+#   forked: one source of truth for parsing/approval (see its module docstring).
+#
+# !!! WHERE THIS FILE MUST LIVE !!!
+#   GitHub Actions ONLY reads workflow files from `.github/workflows/` at the
+#   ROOT of the pushed repository. This file is committed at
+#   `vendor/guardtalk/.github/workflows/aegis-commit-approval.yml`, i.e. the
+#   root of the ONLY git repo in this workspace. It is therefore pushable.
+#   The workspace-root `.github/workflows/aegis-commit-approval.yml` is a
+#   pointer stub only and can never run (the workspace root is not a git repo).
+#
+# HONEST LIMIT (read the task report):
+#   A workflow file in the repo is COMMITTER-EDITABLE. On its own it is
+#   defeatable by the very actor it binds (neuter this workflow in the same PR).
+#   It only becomes a control once a repo admin makes this check REQUIRED via
+#   branch protection. Until then the `--no-verify` class remains OPEN. This is
+#   documented, not hidden; see
+#   `.agent-comm/inbox/TO_ARCHITECT_T-EXCISE-COMMITGATE-PUSH-BACKSTOP-ACTIVATE.md`.
+#
+# HONEST LIMIT - AUTHORITATIVE QUEUE AVAILABILITY
+#   The authoritative queue is the WORKSPACE-ROOT `TASK_QUEUE.md` (repo-relative
+#   `../TASK_QUEUE.md`). That file is NOT part of the pushed repository, so a
+#   GitHub-hosted runner cannot see it. This job therefore FAILS CLOSED unless
+#   the operator provisions the authoritative queue on the runner:
+#     (1) self-hosted runner with the workspace checked out (the live file), or
+#     (2) the base64 secret `AEGIS_TASK_QUEUE_B64` sourced from that file.
+#   Failing closed is deliberate: silently trusting a committer-authored queue
+#   would defeat the control (the gate also refuses a substituted
+#   `AEGIS_TASK_QUEUE` outright).
+
+name: AEGIS commit-approval gate (pushed range)
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  approval-gate:
+    name: AEGIS approval gate (pushed range)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out full history (needed for the pushed range)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the pushed range (base..head)
+        id: range
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            head="${{ github.event.pull_request.head.sha }}"
+          else
+            base="${{ github.event.before }}"
+            head="${{ github.sha }}"
+          fi
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+          # A new-branch push has an all-zero base. In a CI checkout the pushed
+          # ref already exists locally, so `rev-list <new> --not --all` would be
+          # EMPTY and pass vacuously; exclude the default branch instead. Fetch
+          # it explicitly so the base ref is guaranteed to resolve.
+          base_ref=""
+          if [ -z "${base//0/}" ]; then
+            default_branch="${{ github.event.repository.default_branch }}"
+            git fetch --no-tags --quiet origin "$default_branch" || true
+            base_ref="origin/$default_branch"
+          fi
+          echo "base_ref=$base_ref" >> "$GITHUB_OUTPUT"
+          echo "[aegis] pushed range: $base..$head (base_ref=${base_ref:-none})"
+
+      - name: Provision the AUTHORITATIVE queue (fail closed if absent)
+        id: queue
+        shell: bash
+        env:
+          AEGIS_TASK_QUEUE_B64: ${{ secrets.AEGIS_TASK_QUEUE_B64 }}
+        run: |
+          set -euo pipefail
+          queue=""
+          # (1) self-hosted runner / workspace checkout: the live root queue.
+          for cand in "$GITHUB_WORKSPACE/../TASK_QUEUE.md" \
+                      "$GITHUB_WORKSPACE/../../TASK_QUEUE.md"; do
+            if [ -f "$cand" ]; then queue="$cand"; break; fi
+          done
+          # (2) host-provisioned copy of the authoritative queue (base64 secret).
+          if [ -z "$queue" ] && [ -n "${AEGIS_TASK_QUEUE_B64:-}" ]; then
+            queue="$RUNNER_TEMP/AEGIS_TASK_QUEUE.md"
+            printf '%s' "$AEGIS_TASK_QUEUE_B64" | base64 -d > "$queue"
+          fi
+          if [ -z "$queue" ] || [ ! -s "$queue" ]; then
+            echo "::error::AUTHORITATIVE TASK_QUEUE.md is not provisioned on this runner."
+            echo "[aegis] FAIL-CLOSED: refusing to run the gate against an absent"
+            echo "        authoritative queue (a substituted/self-authored queue"
+            echo "        would be fail-open)."
+            exit 1
+          fi
+          echo "queue=$queue" >> "$GITHUB_OUTPUT"
+          echo "[aegis] authority queue: $queue"
+
+      - name: Re-run the approval gate over the pushed range
+        shell: bash
+        env:
+          # Server-side config only. The gate REFUSES a non-authoritative
+          # AEGIS_TASK_QUEUE and IGNORES the client bypass AEGIS_SKIP_APPROVAL_CHECK.
+          GATE: scripts/pre-receive-approval-check.py
+        run: |
+          set -euo pipefail
+          if [ ! -f "$GATE" ]; then
+            echo "::error::$GATE not found in the pushed repository."
+            echo "[aegis] FAIL-CLOSED: the gate script must ship with the repo."
+            exit 1
+          fi
+          args=(
+            --authoritative-queue "${{ steps.queue.outputs.queue }}"
+            --range "${{ steps.range.outputs.base }}..${{ steps.range.outputs.head }}"
+          )
+          if [ -n "${{ steps.range.outputs.base_ref }}" ]; then
+            args+=(--base-ref "${{ steps.range.outputs.base_ref }}")
+          fi
+          python3 "$GATE" "${args[@]}"

@@ -39,6 +39,9 @@ export function makeChip(word: string, kind: ChipKind, options: ChipOptions = {}
   ];
   if (options.ariaLive !== undefined) {
     attrs.push(`aria-live="${options.ariaLive}"`);
+    // D-017: a live chip announces as one unit — the status word plus its
+    // qualifier — so a screen reader never reads a fragment of the state.
+    attrs.push(`aria-atomic="true"`);
   }
   return `<span ${attrs.join(" ")}>${escapeHtml(text)}</span>`;
 }
