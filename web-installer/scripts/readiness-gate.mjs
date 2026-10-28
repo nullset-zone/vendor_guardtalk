@@ -87,7 +87,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { buildMatrix, INSTALLER_ROOT, REPO_ROOT, readAllowedProducts } from "./gen-flash-matrix.mjs";
+import { buildMatrix, INSTALLER_ROOT, RELEASES_ROOT, readAllowedProducts } from "./gen-flash-matrix.mjs";
 import { checkChannelFreshness, freshnessClause } from "./channel-freshness.mjs";
 import {
   ANCHOR_FILE,
@@ -107,7 +107,7 @@ import {
 
 const DEFAULT_MATRIX = join(INSTALLER_ROOT, "docs", "flash-matrix.json");
 const STATUS_PATH = join(INSTALLER_ROOT, "status.json");
-const DEFAULT_RELEASES_DIR = join(REPO_ROOT, "releases", "desktop-flash");
+const DEFAULT_RELEASES_DIR = RELEASES_ROOT;
 
 /** One clause's outcome. `ok:false` fails the whole gate. */
 function clause(id, description, ok, detail) {

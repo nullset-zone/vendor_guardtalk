@@ -33,6 +33,25 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 export const INSTALLER_ROOT = join(HERE, "..");
 export const REPO_ROOT = join(INSTALLER_ROOT, "..", "..", "..");
 
+/**
+ * Where the desktop-flash stamps live (the release store this installer packs
+ * channels from and re-checks freshness against).
+ *
+ * Historically this was hard-derived from `REPO_ROOT`, which pinned the
+ * installer to being a subdirectory of the Android `repo` checkout. It is now
+ * overridable so the installer can live in its own repository and still point
+ * at an external release store:
+ *
+ *   GUARDTALK_RELEASES_ROOT=/path/to/releases/desktop-flash
+ *
+ * Default preserves the in-tree behaviour exactly, so nothing that works today
+ * changes. Resolution order: explicit env var, then `<repo>/releases/desktop-flash`.
+ */
+export const RELEASES_ROOT =
+  process.env.GUARDTALK_RELEASES_ROOT !== undefined && process.env.GUARDTALK_RELEASES_ROOT !== ""
+    ? process.env.GUARDTALK_RELEASES_ROOT
+    : join(REPO_ROOT, "releases", "desktop-flash");
+
 // T-WEBINSTALL-READINESS-RULE-SINGLE-SOURCE: the freshness predicate lives in
 // exactly one place (scripts/channel-freshness.mjs). The gate imports it, and so
 // does this generator — an inlined copy here previously let the rule the gate
@@ -245,7 +264,7 @@ export function advertisedVsPacked({ allowed, status, channels, stamps, pointers
 export function buildMatrix({ generatedAt, generationCommand, revision }) {
   const allowed = readAllowedProducts();
   const status = readStatusTargets();
-  const releasesDir = join(REPO_ROOT, "releases", "desktop-flash");
+  const releasesDir = RELEASES_ROOT;
   const { stamps, pointers } = readStamps(releasesDir);
 
   const products = new Set([...allowed.products, ...status.targets, ...status.experimentalTargets]);

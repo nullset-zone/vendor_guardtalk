@@ -27,11 +27,11 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { INSTALLER_ROOT, REPO_ROOT } from "./gen-flash-matrix.mjs";
+import { INSTALLER_ROOT, RELEASES_ROOT } from "./gen-flash-matrix.mjs";
 import { ANCHOR_FILE, ANCHORS_SCHEMA } from "./trust-anchor.mjs";
 
 const CHANNELS_ROOT = join(INSTALLER_ROOT, "channels");
-const RELEASES = join(REPO_ROOT, "releases", "desktop-flash");
+const RELEASES = RELEASES_ROOT;
 const OUT_PATH = join(INSTALLER_ROOT, "docs", "expected-anchors.json");
 
 const $comment =
