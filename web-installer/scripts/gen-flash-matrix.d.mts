@@ -5,6 +5,12 @@
 
 export declare const INSTALLER_ROOT: string;
 export declare const REPO_ROOT: string;
+/**
+ * The desktop-flash release store. Honours `GUARDTALK_RELEASES_ROOT`; falls back
+ * to `<repo>/releases/desktop-flash`. Lets a standalone checkout point at an
+ * external store instead of deriving it from the Android repo layout.
+ */
+export declare const RELEASES_ROOT: string;
 export declare const FLASH_ORDER: readonly ["firmware", "avb_custom_key", "os"];
 export declare const ARTIFACT_PHASES: readonly ["firmware", "avb", "os"];
 export declare const FLASH_STEP: number;

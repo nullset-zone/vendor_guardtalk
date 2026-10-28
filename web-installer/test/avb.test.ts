@@ -39,13 +39,16 @@ import {
 } from "../lib/avb/descriptors.js";
 import { decodePkmd, encodePkmd, pkmdFingerprint } from "../lib/avb/pkmd.js";
 import { algorithmName, parseFooter, parseVbmeta } from "../lib/avb/parser.js";
+import { INSTALLER_ROOT } from "../scripts/gen-flash-matrix.mjs";
 import { resignVbmetaWithRelease, verifyVbmeta, verifyVbmetaAgainstKey } from "../lib/avb/signer.js";
 
 const execFileAsync = promisify(execFile);
 
 const WORKSPACE = resolve(import.meta.dirname, "../../../..");
 const AVBTOOL = join(WORKSPACE, "external/avb/avbtool.py");
-const CHANNEL = join(WORKSPACE, "vendor/guardtalk/web-installer/channels/tokay");
+// Resolve from the installer root, not the enclosing workspace: a standalone
+// checkout of this repo has no `vendor/guardtalk/` above it.
+const CHANNEL = join(INSTALLER_ROOT, "channels", "tokay");
 
 function readFixture(name: string): Uint8Array {
   return new Uint8Array(readFileSync(join(CHANNEL, name)));

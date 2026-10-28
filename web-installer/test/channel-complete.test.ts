@@ -24,11 +24,18 @@ import { execFileSync } from "node:child_process";
 import { ALLOWED_PRODUCTS, type ChannelManifest } from "../src/types.js";
 import { loadChannelFromTexts } from "../src/channel.js";
 import { loadChannelFromDir } from "../src/channel-fs.js";
-import { INSTALLER_ROOT, REPO_ROOT, readStamps } from "../scripts/gen-flash-matrix.mjs";
+import { INSTALLER_ROOT, RELEASES_ROOT, readStamps } from "../scripts/gen-flash-matrix.mjs";
 
 const CHANNELS_ROOT = join(INSTALLER_ROOT, "channels");
-const RELEASES = join(REPO_ROOT, "releases", "desktop-flash");
-const PACKER = join(REPO_ROOT, "vendor", "guardtalk", "scripts", "pack-webinstall-channel.sh");
+const RELEASES = RELEASES_ROOT;
+// The packer may live inside this repo (standalone checkout, scripts/) or beside
+// it in the parent product repo (vendor/guardtalk/scripts/). Resolve whichever
+// exists so the suite runs in both layouts.
+const PACKER_CANDIDATES = [
+  join(INSTALLER_ROOT, "scripts", "pack-webinstall-channel.sh"),
+  join(INSTALLER_ROOT, "..", "scripts", "pack-webinstall-channel.sh"),
+];
+const PACKER = PACKER_CANDIDATES.find((p) => existsSync(p)) ?? PACKER_CANDIDATES[0] as string;
 
 function packedProducts(): string[] {
   if (!existsSync(CHANNELS_ROOT)) return [];
