@@ -23,6 +23,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+# Release store: overridable so this script works from a standalone checkout of
+# the installer (GUARDTALK_RELEASES_ROOT, matching scripts/gen-flash-matrix.mjs).
+# Default preserves the in-tree layout exactly.
+RELEASES_ROOT="${GUARDTALK_RELEASES_ROOT:-${REPO_ROOT}/releases/desktop-flash}"
 
 readonly ADVERTISED_DEVICES=(tokay akita komodo rango)
 readonly CHANNEL_DEFAULT="dev"
@@ -490,7 +494,7 @@ self_test() {
 }
 
 main() {
-    local stamp="${REPO_ROOT}/releases/desktop-flash/latest"
+    local stamp="${RELEASES_ROOT}/latest"
     local out="" mode="pack"
     CHANNEL_TOKEN="${CHANNEL:-$CHANNEL_DEFAULT}"
     DRY_RUN=0
