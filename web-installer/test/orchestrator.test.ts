@@ -118,3 +118,57 @@ test("already-unlocked device does not send flashing unlock", async () => {
     false,
   );
 });
+
+/* ------------------------------------------------------------------ *
+ * T-WEBINSTALL-ORCHESTRATOR-CONNECT-LEAK — regression.
+ *
+ * The defect: `connected = true` was set BEFORE `await assertProduct()`, with
+ * no rollback. A rejected connect therefore left every `requireConnected()`
+ * guard satisfied, so the full plan would write every partition and run
+ * `flashing lock` with no successful product check in the session.
+ *
+ * This is the acceptance criterion that was previously unproven: after a
+ * rejected connect, unlock / executePlan / lock must ALL refuse and NOTHING
+ * may reach the transport. It fails if the flag ordering is reverted.
+ * ------------------------------------------------------------------ */
+
+const NO_CONNECT = /connect\(\) before unlock, flash, or lock/;
+
+test("a rejected connect() leaves every mutating entry point refusing, with zero writes", async () => {
+  const transport = new MockFastboot();
+  transport.product = "rango"; // does not match the tokay channel
+  const orch = makeOrch(transport);
+
+  await assert.rejects(() => orch.connect(), WrongProductError);
+
+  const afterConnect = transport.log.length;
+
+  await assert.rejects(() => orch.unlock(), NO_CONNECT);
+  await assert.rejects(() => orch.executePlan({ onReconnect: async () => {} }), NO_CONNECT);
+  await assert.rejects(() => orch.lock(), NO_CONNECT);
+
+  // Refused calls must not reach the transport at all — so no flash, no
+  // runCommand (erase / flashing lock travel through it), no reboot.
+  assert.equal(
+    transport.log.length,
+    afterConnect,
+    "refused calls must not reach the transport",
+  );
+  assert.deepEqual(
+    transport.log.filter((c) => c.type === "flash" || c.type === "runCommand"),
+    [],
+    "a rejected connect must leave zero writes",
+  );
+});
+
+test("a successful connect() still proceeds (non-vacuity for the connect-leak regression)", async () => {
+  const transport = new MockFastboot();
+  const orch = makeOrch(transport);
+  await orch.connect();
+  await orch.unlock();
+  // The guard is open after a PROVEN product: unlock must reach the transport.
+  assert.ok(
+    transport.log.some((c) => c.type === "runCommand" || c.type === "getVar"),
+    "a proven connect must leave the session usable",
+  );
+});

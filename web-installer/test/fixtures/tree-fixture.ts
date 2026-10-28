@@ -115,6 +115,17 @@ export interface PinDoc {
   >;
 }
 
+/** Per-device artifact-set pin (T-WEBINSTALL-RANGO-ARTIFACT-SHAPE-DIVERGENCE). */
+export interface ShapeDoc {
+  $comment?: string;
+  schemaVersion: string;
+  channel: string;
+  devices: Record<
+    string,
+    { sourceStamp: string | null; artifactCount: number; artifacts: string[] }
+  >;
+}
+
 /** Fixture anchor bytes for `product` packed from `stamp` (one place, so bites stay honest). */
 export function fixturePkmdBytes(product: string, stamp: string): string {
   return `fixture pkmd ${product}/${stamp}\n`;
@@ -169,6 +180,16 @@ export interface Writer {
   pins(products: readonly string[], channel?: string): PinDoc;
   /** Write an arbitrary pin document (or delete it with `null`). */
   writeAnchors(document: PinDoc | null): void;
+  /**
+   * Write `docs/expected-shape.json` pinning each channel's artifact set as it
+   * currently is (T-WEBINSTALL-RANGO-ARTIFACT-SHAPE-DIVERGENCE). A genuine tree
+   * calls this so the `channel-shape` clause has a per-device expectation; a
+   * drill that wants an "unasserted shape" tree skips it (the clause then fails
+   * closed, which is the intended behaviour).
+   */
+  shapes(products: readonly string[], channel?: string): ShapeDoc;
+  /** Write an arbitrary shape document (or delete it with `null`). */
+  writeShape(document: ShapeDoc | null): void;
   readonly root: string;
   readonly releasesDir: string;
   cleanup(): void;
@@ -300,6 +321,39 @@ export function makeFixtureTree(
       }
       writeFileSync(path, `${JSON.stringify(document, null, 2)}\n`);
     },
+    shapes(products, channel = "dev") {
+      const devices: ShapeDoc["devices"] = {};
+      for (const product of products) {
+        const manifestPath = join(root, "channels", product, "manifest.json");
+        if (!existsSync(manifestPath)) continue;
+        const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
+          artifacts?: { name?: string }[];
+          sourceStamp?: string;
+        };
+        const artifacts = (manifest.artifacts ?? [])
+          .map((a) => String(a?.name))
+          .sort();
+        devices[product] = {
+          sourceStamp: manifest.sourceStamp ?? null,
+          artifactCount: artifacts.length,
+          artifacts,
+        };
+      }
+      return {
+        $comment: "FIXTURE shape file (never shipped). Test-only per-device artifact-set pins.",
+        schemaVersion: "expected-shape/1",
+        channel,
+        devices,
+      };
+    },
+    writeShape(document) {
+      const path = join(root, "docs", "expected-shape.json");
+      if (document === null) {
+        rmSync(path, { force: true });
+        return;
+      }
+      writeFileSync(path, `${JSON.stringify(document, null, 2)}\n`);
+    },
     cleanup() {
       rmSync(root, { recursive: true, force: true });
     },
@@ -372,6 +426,7 @@ export function genuineTree(products: readonly string[]): {
   }
   const matrix = honestMatrix(products, stamps);
   writer.writeAnchors(writer.pins(products));
+  writer.writeShape(writer.shapes(products));
   writer.matrix(matrix);
   return { writer, root, releasesDir, matrix };
 }

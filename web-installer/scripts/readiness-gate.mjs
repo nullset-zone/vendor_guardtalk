@@ -515,6 +515,7 @@ export function evaluateGate(matrix, options = {}) {
   // not consulted: its digest is derived from the channel's own metadata (via
   // SHA256SUMS), which is exactly the evidence a forger can rewrite.
   clauses.push(trustAnchorClause(snap, installerRoot, options));
+  clauses.push(channelShapeClause(snap, installerRoot, options));
 
   return { pass: clauses.every((c) => c.ok), clauses };
 }
@@ -564,6 +565,82 @@ function trustAnchorClause(snap, installerRoot, options) {
 /** Keep multiline detail readable when many reconciliations fail at once. */
 function disagreedText(parts) {
   return parts.length <= 4 ? parts.join("; ") : `${parts.slice(0, 4).join("; ")} (+${String(parts.length - 4)} more)`;
+}
+
+/**
+ * Clause 13 — per-device channel SHAPE
+ * (T-WEBINSTALL-RANGO-ARTIFACT-SHAPE-DIVERGENCE).
+ *
+ * Sibling channels (tokay/akita/komodo) publish 19 artifacts and no `super.img`;
+ * rango publishes 21 including a populated `super.img` and a device-specific
+ * `vbmeta_valid_flags3.img`. That divergence is a REAL device difference, not
+ * padding — but "verifies green while bound to a structurally different artifact
+ * set" is how a wrong pack slips through. So the expected shape is pinned
+ * per device in `docs/expected-shape.json` and asserted here: a pack that gains,
+ * loses, or swaps an artifact FAILS rather than verifying green.
+ *
+ * Fail closed: a missing/unparseable pins file, or a product with no expectation,
+ * FAILS — an unasserted shape is not a verified shape.
+ */
+function channelShapeClause(snap, installerRoot, options) {
+  const id = "channel-shape";
+  const description = "every packed channel publishes exactly its per-device artifact set (docs/expected-shape.json)";
+  if (snap === null) {
+    return clause(id, description, false, "tree probing was skipped — channel shape cannot be verified (fail closed)");
+  }
+  const shapePath = options.shapePath ?? join(installerRoot, "docs", "expected-shape.json");
+  let pins = options.shapePins ?? null;
+  if (pins === null) {
+    if (!existsSync(shapePath)) {
+      return clause(id, description, false, `${shapePath} is absent — an unasserted shape is not a verified shape (fail closed)`);
+    }
+    try {
+      pins = JSON.parse(readFileSync(shapePath, "utf8"));
+    } catch {
+      return clause(id, description, false, `${shapePath} is unparseable — fail closed`);
+    }
+  }
+  const expectedDevices = pins?.devices;
+  if (expectedDevices === null || typeof expectedDevices !== "object") {
+    return clause(id, description, false, `${shapePath} has no devices map — fail closed`);
+  }
+
+  const problems = [];
+  for (const [product, probed] of snap.channels) {
+    if (probed?.packed !== true) continue;
+    const expected = expectedDevices[product];
+    if (expected === undefined) {
+      problems.push(`${product}: packed but has no pinned expected shape`);
+      continue;
+    }
+    const artifacts = probed.manifest?.artifacts;
+    if (!Array.isArray(artifacts)) {
+      problems.push(`${product}: manifest declares no artifacts array`);
+      continue;
+    }
+    const actual = artifacts.map((a) => String(a?.name)).sort();
+    const want = Array.isArray(expected.artifacts) ? [...expected.artifacts].map(String).sort() : null;
+    if (want === null) {
+      problems.push(`${product}: pinned shape lists no artifacts`);
+      continue;
+    }
+    const gained = actual.filter((n) => !want.includes(n));
+    const lost = want.filter((n) => !actual.includes(n));
+    if (gained.length > 0) problems.push(`${product}: unexpected artifact(s): ${gained.join(", ")}`);
+    if (lost.length > 0) problems.push(`${product}: missing pinned artifact(s): ${lost.join(", ")}`);
+    if (typeof expected.artifactCount === "number" && expected.artifactCount !== actual.length) {
+      problems.push(`${product}: artifactCount ${String(actual.length)} != pinned ${String(expected.artifactCount)}`);
+    }
+  }
+
+  return clause(
+    id,
+    description,
+    problems.length === 0,
+    problems.length === 0
+      ? `all ${String([...snap.channels.values()].filter((c) => c?.packed === true).length)} packed channel(s) match their pinned shape`
+      : disagreedText(problems),
+  );
 }
 
 /* ------------------------------------------------------------------ CLI --- */

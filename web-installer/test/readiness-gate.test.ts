@@ -638,3 +638,45 @@ test("READINESS-GATE/TREE: the gate is SIDE-EFFECT FREE and cwd-independent", ()
   assert.deepEqual(after, before, "the gate must not rewrite docs/flash-matrix.json");
   assert.equal(existsSync(join(INSTALLER_ROOT, "docs", "verdict.json")), false);
 });
+
+/* ------------------------------------------------------------------ *
+ * T-WEBINSTALL-RANGO-ARTIFACT-SHAPE-DIVERGENCE — per-device shape.
+ *
+ * rango genuinely publishes 21 artifacts (incl. a populated super.img and a
+ * device-specific vbmeta_valid_flags3.img) where its siblings publish 19. That
+ * divergence is real, but "verifies green while bound to a structurally
+ * different artifact set" is how a wrong pack slips through — so the expected
+ * shape is PINNED per device and asserted. These tests prove the clause bites.
+ * ------------------------------------------------------------------ */
+
+test("channel-shape: the live tree matches its pinned per-device shape", () => {
+  const result = evaluateGate(JSON.parse(readFileSync(join(INSTALLER_ROOT, "docs", "flash-matrix.json"), "utf8")));
+  const shape = result.clauses.find((c) => c.id === "channel-shape");
+  assert.ok(shape !== undefined, "the gate must expose a channel-shape clause");
+  assert.equal(shape.ok, true, `live shape must match its pin: ${shape.detail}`);
+});
+
+test("channel-shape BITES: an unexpected artifact fails the gate", () => {
+  const matrix = JSON.parse(readFileSync(join(INSTALLER_ROOT, "docs", "flash-matrix.json"), "utf8"));
+  const pins = JSON.parse(readFileSync(join(INSTALLER_ROOT, "docs", "expected-shape.json"), "utf8"));
+
+  // A forged pin set that omits rango's genuine extras, then a probe snapshot
+  // claiming tokay publishes an artifact no sibling has.
+  const sabotage = JSON.parse(JSON.stringify(pins));
+  sabotage.devices.tokay.artifacts = [...sabotage.devices.tokay.artifacts, "rogue_extra.img"];
+  sabotage.devices.tokay.artifactCount = sabotage.devices.tokay.artifacts.length;
+
+  const result = evaluateGate(matrix, { shapePins: sabotage });
+  const shape = result.clauses.find((c) => c.id === "channel-shape");
+  assert.ok(shape !== undefined);
+  assert.equal(shape.ok, false, "a shape that gains an artifact must FAIL, not verify green");
+  assert.match(shape.detail, /rogue_extra\.img/);
+});
+
+test("channel-shape FAILS CLOSED when the pins file is absent", () => {
+  const matrix = JSON.parse(readFileSync(join(INSTALLER_ROOT, "docs", "flash-matrix.json"), "utf8"));
+  const result = evaluateGate(matrix, { shapePath: join(INSTALLER_ROOT, "docs", "does-not-exist.json") });
+  const shape = result.clauses.find((c) => c.id === "channel-shape");
+  assert.ok(shape !== undefined);
+  assert.equal(shape.ok, false, "an unasserted shape is not a verified shape");
+});

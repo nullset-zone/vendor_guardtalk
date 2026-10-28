@@ -28,6 +28,10 @@ export declare function evaluateGate(
     pins?: unknown;
     /** Path to docs/expected-anchors.json. */
     anchorsPath?: string;
+    /** Parsed per-device shape pins (channel-shape clause injection point). */
+    shapePins?: unknown;
+    /** Path to docs/expected-shape.json. */
+    shapePath?: string;
   },
 ): GateResult;
 

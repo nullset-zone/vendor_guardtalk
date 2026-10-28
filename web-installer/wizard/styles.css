@@ -5,6 +5,15 @@
      wizard-gating still sees --line-strong → --gl-border-color-strong. */
   --gl-border-color-strong: var(--gl-color-neutral-500);
   --line-strong: var(--gl-border-color-strong);
+  /* T-WEBINSTALL-A11Y-FOCUS-CONTRAST: the published ring (--gl-color-brand-600)
+     measures 1.27–1.48:1 against the light surfaces — below the WCAG 2.2 AA
+     non-text minimum of 3:1. On a flow that ends in a destructive write that is
+     a safety-relevant affordance failure, not a cosmetic one. brand-800
+     measures 5.30–6.14:1. Remapped HERE, never in the vendored tokens.css
+     (sha256-pinned in design/pajamas/SOURCE.txt); regression-guarded by
+     test/pajamas-contrast.test.ts, which computes the ratios. */
+  --gl-focus-ring: var(--gl-color-brand-800);
+  --gl-border-color-focus: var(--gl-color-brand-800);
 }
 
 * {

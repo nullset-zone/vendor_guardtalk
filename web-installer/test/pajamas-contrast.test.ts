@@ -182,3 +182,84 @@ test("D-006 exact; dist/site has no remote design/font refs; LIVE_FLASH_CLAIMED 
   assert.equal(REMOTE_REF.test(css), false, "emitted CSS remote ref");
   assert.match(readRel("src/types.ts"), /export const LIVE_FLASH_CLAIMED = false;/);
 });
+
+/* ------------------------------------------------------------------ *
+ * T-WEBINSTALL-A11Y-FOCUS-CONTRAST — the keyboard focus ring must meet
+ * WCAG 2.2 AA non-text contrast (1.4.11: >=3:1) on every background it
+ * is actually drawn on. The original ring (#A6E83C) measured 1.27-1.48:1
+ * — a safety-relevant failure on a UI whose flow ends in a destructive
+ * write. This test RESOLVES the token chain and COMPUTES the ratio, so a
+ * future palette edit that silently reintroduces a low-contrast ring
+ * fails here rather than shipping.
+ * ------------------------------------------------------------------ */
+
+/**
+ * Resolve `--name` to a literal hex, honouring CASCADE ORDER: later declarations
+ * win. `css` must be the sheets concatenated in the order the browser loads them
+ * (vendor tokens first, installer overrides last).
+ */
+function resolveToken(css: string, token: string, seen: string[] = []): string | null {
+  if (seen.includes(token)) return null;
+  const re = new RegExp(`--${token}\\s*:\\s*([^;}]+)`, "g");
+  const values = [...css.matchAll(re)].map((m) => (m[1] ?? "").trim());
+  if (values.length === 0) return null;
+  const value = values[values.length - 1] ?? ""; // last declaration wins
+  const varRef = /^var\(\s*--([a-z0-9-]+)\s*\)$/i.exec(value);
+  if (varRef !== null) return resolveToken(css, varRef[1] ?? "", [...seen, token]);
+  const hex = /#[0-9A-Fa-f]{6}\b/.exec(value);
+  return hex === null ? null : (hex[0] ?? null);
+}
+
+/**
+ * The sheets as the browser sees them for the /install route, in cascade order.
+ * `build-site.sh` concatenates tokens → reset → templates → components →
+ * wizard/styles.css → routes/install/styles-route.css, so the installer's own
+ * sheets override the pinned vendor palette — the effective value is what a
+ * keyboard user's focus ring actually is.
+ */
+function installCascade(): string {
+  return [
+    "design/pajamas/tokens.css",
+    "wizard/styles.css",
+    "routes/install/styles-route.css",
+  ]
+    .map(readRel)
+    .join("\n");
+}
+
+test("focus ring meets WCAG 2.2 AA non-text contrast (>=3:1) on every light surface", () => {
+  const tokens = installCascade();
+  const ring = resolveToken(tokens, "gl-focus-ring");
+  assert.ok(ring !== null, "--gl-focus-ring must resolve to a literal hex through its var() chain");
+
+  // The light surfaces the ring is actually drawn against (default page,
+  // section/strong surfaces, and the subtle surface).
+  const surfaces: [string, string][] = [
+    ["--gl-background-color-default", "gl-background-color-default"],
+    ["--gl-background-color-subtle", "gl-background-color-subtle"],
+    ["--gl-background-color-section", "gl-background-color-section"],
+  ];
+  for (const [label, token] of surfaces) {
+    const bg = resolveToken(tokens, token);
+    assert.ok(bg !== null, `${label} must resolve to a literal hex`);
+    const ratio = contrastRatio(ring, bg);
+    assert.ok(
+      ratio >= 3.0,
+      `${label}: focus ring ${ring} on ${bg} is ${ratio.toFixed(2)}:1 — below the 3:1 AA minimum`,
+    );
+  }
+});
+
+test("focus ring is not the low-contrast brand-500/600/700 tier (regression guard)", () => {
+  const tokens = installCascade();
+  const ring = resolveToken(tokens, "gl-focus-ring");
+  assert.ok(ring !== null);
+  // The failure this test exists for: these measured 1.27-2.65:1 on light surfaces.
+  for (const bad of ["#C3FF61", "#A6E83C", "#7BAE26"]) {
+    for (const bgToken of ["gl-background-color-default", "gl-background-color-section"]) {
+      const bg = resolveToken(tokens, bgToken);
+      assert.ok(bg !== null);
+      assert.notEqual(ring.toUpperCase(), bad, `focus ring regressed to ${bad} (${contrastRatio(bad, bg).toFixed(2)}:1)`);
+    }
+  }
+});
