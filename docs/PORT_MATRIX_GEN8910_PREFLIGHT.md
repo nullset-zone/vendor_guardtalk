@@ -57,7 +57,7 @@ carries a path/host anchor so it can be independently re-run.
 | Upstream support | `https://grapheneos.org/faq` (Device support) + `https://releases.grapheneos.org/<dev>-stable` |
 | Factory image (stock) | `https://dl.google.com/dl/android/aosp/<dev>-<buildid>-factory-<hash8>.zip` (URL pattern per `vendor/adevtool/src/images/build-index.ts:31`) |
 | Factory image (GrapheneOS) | `https://releases.grapheneos.org/<dev>-install-<releaseid>.zip` |
-| Existing GuardTalk state | `vendor/google_devices/`, `vendor/guardtalk/device/`, `releases/desktop-flash/*-latest`, `vendor/guardtalk/web-installer/src/types.ts`, `vendor/guardtalk/scripts/pack-webinstall-channel.sh` |
+| Existing GuardTalk state | `vendor/google_devices/`, `vendor/guardtalk/device/`, `releases/desktop-flash/*-latest`, `vendor/guardtalk/web-installer/src/types.ts`, `vendor/guardtalk/web-installer/scripts/pack-webinstall-channel.sh` (canonical; `vendor/guardtalk/scripts/pack-webinstall-channel.sh` is a thin wrapper) |
 | Precedents | `vendor/guardtalk/docs/AKITA_PORT_PREFLIGHT.md`, `KOMODO_PORT_PREFLIGHT.md`, `RANGO_PORT_PREFLIGHT.md` |
 
 ## 2. Independently re-derived 13-device matrix
@@ -395,7 +395,7 @@ cross-cutting P0 foundation and gate every wave.
 Current advert surface (verified, unchanged by this task): `ALLOWED_PRODUCTS` =
 `["tokay","akita","komodo","rango"]` (`vendor/guardtalk/web-installer/src/types.ts:3`);
 packer `ADVERTISED_DEVICES=(tokay akita komodo rango)`
-(`vendor/guardtalk/scripts/pack-webinstall-channel.sh:27`). **This preflight does not grow it.**
+(`vendor/guardtalk/web-installer/scripts/pack-webinstall-channel.sh:42`). **This preflight does not grow it.**
 
 ## 13. Out of scope — explicit statement
 

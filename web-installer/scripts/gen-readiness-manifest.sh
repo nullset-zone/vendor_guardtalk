@@ -11,7 +11,13 @@
 # by hand.
 #
 # Source of truth (owned elsewhere; never edited here):
-#   <repo root>/scripts/gt-ready-devices.sh   STATUS column
+#   scripts/gt-ready-devices.sh   STATUS column
+#
+# That reporter is resolved at run time through an ORDERED CANDIDATE LIST
+# (in-repo, then the parent product-repo location, then a bounded upward probe),
+# so this generator works both inside the Android `repo` checkout and from a
+# standalone/submodule checkout of the installer. `--from-tsv` needs no reporter
+# at all. A missing reporter is an actionable ERROR (exit 2), never a silent skip.
 #
 # Usage:
 #   bash scripts/gen-readiness-manifest.sh                  # run the reporter
@@ -30,8 +36,24 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-REPORTER_REL="../../../scripts/gt-ready-devices.sh"
-REPORTER="$(cd "$ROOT" && cd "$(dirname "$REPORTER_REL")" && pwd)/$(basename "$REPORTER_REL")"
+# shellcheck source=lib/resolve.sh
+. "$ROOT/scripts/lib/resolve.sh"
+
+# T-WEBINSTALL-PATH-COUPLING-SWEEP: this used to be a hard parent-relative path
+# (three levels up to `scripts/gt-ready-devices.sh`), which resolves to nothing
+# once the installer is a submodule. Candidates, in order:
+#   1. a vendored copy inside the installer tree
+#   2. the parent product repo (a sibling `scripts/` directory)
+#   3. a bounded upward probe for `scripts/gt-ready-devices.sh` (Android checkout)
+PRODUCT_ROOT="$(dirname "$ROOT")"
+REPORTER_CANDIDATES=(
+    "$ROOT/scripts/gt-ready-devices.sh"
+    "$PRODUCT_ROOT/scripts/gt-ready-devices.sh"
+)
+REPORTER="$(gt_resolve_file gt-ready-devices.sh "${REPORTER_CANDIDATES[@]}" || true)"
+if [ -z "$REPORTER" ]; then
+    REPORTER="$(gt_find_up "scripts/gt-ready-devices.sh" "$ROOT" 6 || true)"
+fi
 DEFAULT_OUT="$ROOT/lib/ui/readiness-manifest.ts"
 # Overridable so a test can prove what the generator emits without touching the
 # committed file (and without hashing the live reporter).
@@ -54,7 +76,7 @@ while [ $# -gt 0 ]; do
             printf '%s\n' \
                 "usage: gen-readiness-manifest.sh [--from-tsv FILE] [--check]" \
                 "" \
-                "  (no args)               run $REPORTER_REL and generate $OUT" \
+                "  (no args)               run the readiness reporter and generate $OUT" \
                 "  --from-tsv FILE         generate from a captured TSV (deterministic)" \
                 "  --check                 do not write; exit 1 if $OUT would change" \
                 "  --from-tsv FILE --check deterministic drift check" \
@@ -86,7 +108,15 @@ if [ "$MODE" = "tsv" ]; then
         REPORTER_SHA="unrecorded"
     fi
 else
-    [ -f "$REPORTER" ] || { printf 'gen-readiness-manifest: reporter not found: %s\n' "$REPORTER" >&2; exit 2; }
+    if [ -z "$REPORTER" ] || [ ! -f "$REPORTER" ]; then
+        gt_missing_die \
+            "gen-readiness-manifest.sh" \
+            "the readiness reporter (scripts/gt-ready-devices.sh)" \
+            "check out the GuardTalk product repo next to this installer (so the reporter is at <product>/scripts/gt-ready-devices.sh), point the installer at an Android checkout that has it, or generate deterministically from a captured report: bash scripts/gen-readiness-manifest.sh --from-tsv <file>" \
+            "${REPORTER_CANDIDATES[@]}" \
+            "bounded upward probe from $ROOT for scripts/gt-ready-devices.sh (depth <= 6)"
+        exit 2
+    fi
     RAW="$(mktemp)"
     RAW_OWNED=1
     trap cleanup EXIT

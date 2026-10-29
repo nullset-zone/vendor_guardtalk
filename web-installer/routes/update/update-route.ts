@@ -31,6 +31,20 @@ import { makeChip } from "../../lib/ui/chips.js";
 import { consoleMarkup } from "../../lib/ui/console.js";
 import { escapeHtml } from "../../lib/ui/escape.js";
 import { POSTURE_CONNECTIVITY, POSTURE_CUSTODY, renderPosturePill } from "../../lib/ui/posture.js";
+import { DEFAULT_OFFERED_PRODUCT, parseOfferedDevice } from "../../lib/ui/offered-devices.js";
+import {
+  evaluatePosture,
+  postureRefusal,
+  renderPostureGate,
+  SHIPPED_POSTURE,
+  type PostureApproval,
+} from "../../lib/ui/posture-approval.js";
+import { readinessFor } from "../../lib/ui/readiness.js";
+import {
+  ONION_ADDRESS_FACT,
+  PARTITION_LAYOUT_FACT,
+  renderUnavailableFact,
+} from "../../lib/ui/unavailable.js";
 import { railStepViews, renderRail } from "../../lib/ui/rail.js";
 import { renderSideBySideRow } from "../../lib/ui/sidebyside.js";
 import { GL_BTN_CONFIRM, GL_BTN_DEFAULT, GL_BTN_LINK, glAlertHtml } from "../../lib/ui/pajamas.js";
@@ -44,10 +58,16 @@ export const GENERATE_HIDDEN_REASON =
 /** Closing screen sentence, verbatim from PLAN.md §1 step 9. */
 export const CLOSING_SENTENCE = "GuardTalk cannot update this phone. Only you can.";
 
-/** Q-08 sideload note: fastboot is the shipped path; sideload is unconfirmed. */
+/**
+ * Q-08 sideload note (D-041). Fastboot is the shipped path; the sideload
+ * variant has never been confirmed on hardware, so the page carries no
+ * instructions for one and says so — rather than shipping a pending token the
+ * user could read as an instruction.
+ */
 export const SIDELOAD_NOTE =
-  "// confirm: a recovery-sideload update path is pending human confirmation (Q-08); " +
-  "the fastboot path on this page is the shipped path.";
+  "A recovery-sideload update path is not offered here: it has not been confirmed " +
+  "on hardware, so no instructions for one appear on this page. The fastboot path " +
+  "on this page is the shipped path.";
 
 export const UPDATE_INTRO =
   "This is how every future release arrives: you download the release over Tor, " +
@@ -70,6 +90,12 @@ export interface UpdatePageModel {
   readonly deviceProduct?: string;
   /** Live lock readout from the paired device — never a historical claim. */
   readonly lockState?: "locked" | "unlocked";
+  /**
+   * The alpha-posture approval typed at step 6 (F-WEBINSTALL-POSTURE-APPROVAL-FLOW).
+   * Absent means no approval: the gate renders closed and `runUpdateFlow` refuses
+   * to write. Bound to `targetProduct` by `evaluatePosture`.
+   */
+  readonly postureApproval?: PostureApproval;
 }
 
 /* ------------------------------------------------------------------ */
@@ -141,8 +167,8 @@ function stopParagraph(state: InstallState, step: number): string {
 function step1Html(): string {
   return [
     `<h2>${escapeHtml(stepDefinition(1).title)}</h2>`,
-    `<p>Download all three files with Tor Browser from the release onion address:</p>`,
-    `<p class="mono confirm-marker">// confirm onion address (Q-05)</p>`,
+    `<p>Download all three files with Tor Browser, from the address you were given with the release announcement:</p>`,
+    renderUnavailableFact(ONION_ADDRESS_FACT),
     `<ol class="release-files">`,
     `<li><span class="mono">GuardTalkOS-&lt;release&gt;.zip</span> — the full release package</li>`,
     `<li><span class="mono">SHA256SUMS</span> — digests for every file in the bundle</li>`,
@@ -239,9 +265,7 @@ function step4Html(): string {
     `new vbmeta  digest appears here after signing</pre>`,
     `<p>Equivalent command from the CLI export path (same order, same args, same files):</p>`,
     `<pre class="mono" data-role="cli-equivalent">avbtool make_vbmeta_image --output vbmeta.img --algorithm SHA256_RSA4096 --key user.pem --padding_size 64</pre>`,
-    `<p class="confirm-marker">// confirm partition layout (Q-07): chained vbmeta_* descriptors `,
-    `are pending human confirmation; the flow stops with a stated reason when a chain is `,
-    `required but unknown.</p>`,
+    renderUnavailableFact(PARTITION_LAYOUT_FACT),
   ].join("\n");
 }
 
@@ -287,6 +311,21 @@ function step5Html(lockState?: "locked" | "unlocked"): string {
   ].join("");
 }
 
+/** The advertised product the route is pinned to; an unknown value keeps the default. */
+function offeredProduct(raw: string) {
+  return parseOfferedDevice(raw) ?? DEFAULT_OFFERED_PRODUCT;
+}
+
+/**
+ * The alpha-posture gate at the point of decision (F-WEBINSTALL-POSTURE-APPROVAL-FLOW).
+ * Rendered ABOVE the flash action so the posture is read before the commit, not after it.
+ */
+function postureGateHtml(model: UpdatePageModel): string {
+  const product = offeredProduct(model.targetProduct);
+  const verdict = evaluatePosture(SHIPPED_POSTURE, product, model.postureApproval);
+  return renderPostureGate({ verdict, product, deviceName: readinessFor(product).model });
+}
+
 function flashGateHtml(model: UpdatePageModel): string {
   const release = {
     hashesMatch: model.state.completedSteps.has(2),
@@ -294,8 +333,15 @@ function flashGateHtml(model: UpdatePageModel): string {
   };
   const device = { product: model.deviceProduct ?? "", releaseTargetProduct: model.targetProduct };
   const vbmeta = { signedWithUserKey: model.state.completedSteps.has(4) };
-  const blockers = flashBlockers(model.state, release, device, vbmeta);
-  const open = canFlash(model.state, release, device, vbmeta);
+  const gateBlockers = flashBlockers(model.state, release, device, vbmeta);
+  // The destructive action needs BOTH the flash gate and the posture approval.
+  // Composed here so the button and the blocker list cannot disagree.
+  const postureBlock = postureRefusal(
+    evaluatePosture(SHIPPED_POSTURE, offeredProduct(model.targetProduct), model.postureApproval),
+    offeredProduct(model.targetProduct),
+  );
+  const blockers = postureBlock === undefined ? gateBlockers : [...gateBlockers, postureBlock];
+  const open = canFlash(model.state, release, device, vbmeta) && postureBlock === undefined;
   const gate = open
     ? [
         makeChip("READY — YOUR SIGNATURE ANCHORS BOOT", "verified"),
@@ -324,6 +370,7 @@ function step6Html(model: UpdatePageModel): string {
   return [
     `<h2>${escapeHtml(stepDefinition(6).title)}</h2>`,
     `<ol class="flash-plan mono">${planRows}</ol>`,
+    postureGateHtml(model),
     flashGateHtml(model),
     `<div class="flash-progress" data-role="progress" aria-live="polite"></div>`,
     consoleMarkup([]),
@@ -521,6 +568,13 @@ export interface UpdateRunInput {
   readonly plan: UpdateFlashPlan;
   readonly keypath: UpdateKeypath;
   readonly device: UpdateDeviceLink;
+  /**
+   * The alpha-posture approval typed at the decision point. REQUIRED to write:
+   * without it the run performs the whole read-only preamble and then stops
+   * before the first device command that changes anything
+   * (F-WEBINSTALL-POSTURE-APPROVAL-FLOW acceptance (b)/(c)).
+   */
+  readonly postureApproval?: PostureApproval;
 }
 
 /**
@@ -528,6 +582,10 @@ export interface UpdateRunInput {
  * device. Verification failures stop at step 2, a product mismatch at step 5,
  * and a fingerprint mismatch at step 8 — each with the machine's verbatim
  * reason. No unlock command exists anywhere on this path.
+ *
+ * A missing (or wrong-product, or mistyped) posture approval stops the run at
+ * step 6 before the first erase/flash: the state simply never advances, so
+ * nothing is written and nothing later can read it as a completed flash.
  */
 export async function runUpdateFlow(input: UpdateRunInput): Promise<InstallState> {
   let state = initialInstallState("update");
@@ -584,6 +642,18 @@ export async function runUpdateFlow(input: UpdateRunInput): Promise<InstallState
     { signedWithUserKey: proof.ok },
   );
   if (!gateOpen) {
+    return state;
+  }
+
+  // The alpha posture must be approved for THIS product before the first write.
+  // Re-evaluated here rather than trusted from the caller: the DOM is not the
+  // authority, and a caller that skipped the gate does not get to flash.
+  const posture = evaluatePosture(
+    SHIPPED_POSTURE,
+    offeredProduct(input.plan.targetProduct),
+    input.postureApproval,
+  );
+  if (postureRefusal(posture, offeredProduct(input.plan.targetProduct)) !== undefined) {
     return state;
   }
 

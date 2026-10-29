@@ -41,7 +41,10 @@ Rango channel source stamp: `releases/desktop-flash/rango-latest` (130756).
 
 ## What the packer emits
 
-Script: `vendor/guardtalk/scripts/pack-webinstall-channel.sh`
+Script: `vendor/guardtalk/web-installer/scripts/pack-webinstall-channel.sh` (the
+**one** implementation, vendored so the installer is self-sufficient). The parent
+`vendor/guardtalk/scripts/pack-webinstall-channel.sh` is a thin `exec` wrapper
+kept for older callers; both paths run the same file.
 
 Default source: `releases/desktop-flash/latest` (must resolve to
 `tokay-YYYYMMDD-HHMMSS`). Komodo packs from `releases/desktop-flash/komodo-latest`.
@@ -126,6 +129,10 @@ products (shiba, husky, caiman, tegu, comet) stay out of the advertised enums.
 
 ## Commands (no phone)
 
+The packer is vendored, so from a standalone checkout run the same commands with
+`scripts/pack-webinstall-channel.sh` (relative to the installer). From the
+workspace root the parent path below is a thin wrapper onto that file.
+
 ```bash
 vendor/guardtalk/scripts/pack-webinstall-channel.sh --help
 vendor/guardtalk/scripts/pack-webinstall-channel.sh --self-test
@@ -145,9 +152,11 @@ vendor/guardtalk/scripts/pack-webinstall-channel.sh \
 ```
 
 `--self-test` uses a **synthetic** rango fixture (tiny `boot.img`). It does
-not USB-flash and does not claim boot-green. Hosted packer
-`pack-wizard-hosted-channels.sh` also has a rango line; do not run it against
-live multi-GiB stamps unless an operator asks.
+not USB-flash and does not claim boot-green. The hosted packer
+`pack-wizard-hosted-channels.sh` (vendored at
+`web-installer/scripts/pack-wizard-hosted-channels.sh`) also has a rango line
+and honours `GUARDTALK_RELEASES_ROOT`; do not run it against live multi-GiB
+stamps unless an operator asks.
 
 If `releases/desktop-flash/latest` is missing, treat live packing as **HOLD**.
 The script and schema remain the deliverable.

@@ -10,8 +10,11 @@
  * Copy contract (PLAN.md §5): headlines are sentences with a full stop,
  * protective verbs only, chips always carry their word, every limit links
  * /threat-model, signal green only for VERIFIED states, tripwire only for
- * failures. Values the project does not have ship as `// confirm` mono
- * placeholders (Q-04/Q-05/Q-06/Q-07) — never invented around.
+ * failures. A value the project does not have ships as an honest
+ * "unavailable — do not proceed" block (`lib/ui/unavailable.ts`): what is
+ * missing, where the absence is recorded, what the user must do, and what it
+ * blocks. Nothing is invented, and no pending-confirmation token is shipped
+ * (F-WEBINSTALL-PLACEHOLDER-RETIREMENT, D-041).
  *
  * Custody contract (PLAN.md §2, D-007): private material never enters any
  * emitted string; only fingerprints/hashes (public halves) are displayed.
@@ -27,6 +30,12 @@ import { renderKeyDiagram } from "../../lib/ui/key-diagram.js";
 import { renderSideBySideRow } from "../../lib/ui/sidebyside.js";
 import type { DialogOptions } from "../../lib/ui/dialog.js";
 import { Hardening, LineageNote, ProtectionLimit } from "../../lib/claims/components.js";
+import {
+  ONION_ADDRESS_FACT,
+  PARTITION_LAYOUT_FACT,
+  RELEASE_FINGERPRINT_FACT,
+  renderUnavailableFact,
+} from "../../lib/ui/unavailable.js";
 import {
   compareExact,
   compareHex,
@@ -119,14 +128,25 @@ export function channelRefusal(product: string): string | undefined {
 /** Step-0 CTA — exact label mandated by the build brief. */
 export const ACK_CTA_LABEL = "I understand — begin →";
 
-/** Q-05: releases onion address ships as a mono placeholder. */
-export const ONION_PLACEHOLDER = "// confirm onion address (Q-05)";
-/** Q-04: release-key fingerprint ships as a mono placeholder. */
-export const RELEASE_FINGERPRINT_PLACEHOLDER = "// confirm release-key fingerprint (Q-04)";
-/** Q-06: grounded as Pixel 10 Pro Fold (DEC-WEBINSTALL-015). Kept for historical honesty docs. */
-export const RANGO_NAME_PLACEHOLDER = "// confirm device name (Q-06)";
-/** Q-07: chained-partition layout confirmation placeholder (verbatim). */
-export const PARTITION_LAYOUT_CONFIRM = "// confirm partition layout (Q-07)";
+/**
+ * F-WEBINSTALL-PLACEHOLDER-RETIREMENT (D-041). The four pending-confirmation
+ * constants that used to live here are retired:
+ *
+ *   Q-05 release onion address      → UNAVAILABLE (`ONION_ADDRESS_FACT`)
+ *   Q-04 release-key fingerprint    → UNAVAILABLE (`RELEASE_FINGERPRINT_FACT`)
+ *   Q-07 chained partition layout   → UNAVAILABLE (`PARTITION_LAYOUT_FACT`)
+ *   Q-06 device name                → RESOLVED: the fact is `deviceName` in
+ *                                     `wizard/devices.ts` ("Pixel 10 Pro Fold",
+ *                                     DEC-WEBINSTALL-015). It renders in the
+ *                                     step-0 table and is pinned by
+ *                                     `test/wizard-gating.test.ts:34`, so the
+ *                                     constant had no consumer and is deleted
+ *                                     rather than kept as a second copy.
+ *
+ * No value replaced the three unavailable ones: each renders through
+ * `lib/ui/unavailable.ts`, which names what is missing, what to do instead,
+ * and what it blocks.
+ */
 
 export interface SupportedTarget {
   readonly codename: string;
@@ -173,10 +193,6 @@ function headline(step: number, sentence: string): string {
 
 function mono(value: string): string {
   return `<code class="mono">${escapeHtml(value)}</code>`;
-}
-
-function confirmPlaceholder(text: string): string {
-  return `<code class="confirm-placeholder mono">${escapeHtml(text)}</code>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -489,9 +505,9 @@ export function renderStep1(picks: FilePicks): string {
   return [
     headline(1, "Bring the three release files into this tab."),
     `<p class="lede">Fetch the bundle yourself over Tor Browser, then pick the files here:</p>`,
-    `<ul class="fetch-points mono">`,
-    `<li>onion address: ${confirmPlaceholder(ONION_PLACEHOLDER)}</li>`,
-    `<li>cross-check the release fingerprint: ${confirmPlaceholder(RELEASE_FINGERPRINT_PLACEHOLDER)}</li>`,
+    `<ul class="fetch-points">`,
+    `<li>${renderUnavailableFact(ONION_ADDRESS_FACT)}</li>`,
+    `<li>${renderUnavailableFact(RELEASE_FINGERPRINT_FACT)}</li>`,
     `</ul>`,
     Hardening(
       "No network request leaves this page — the files are hashed and checked offline in this tab.",
@@ -1157,7 +1173,7 @@ export function renderStep4(view: SignViewModel): string {
         `<p class="stop-detail">chained partitions detected: ${escapeHtml(view.chainPartitions.join(", "))}</p>`,
       );
     }
-    parts.push(`<p class="confirm-line mono">${escapeHtml(PARTITION_LAYOUT_CONFIRM)}</p>`);
+    parts.push(renderUnavailableFact(PARTITION_LAYOUT_FACT));
   }
   for (const row of view.rows) {
     parts.push(row.html);

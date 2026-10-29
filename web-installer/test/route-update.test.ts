@@ -413,10 +413,92 @@ async function driveHappyPath(): Promise<HappyResult> {
       enrolledFingerprint: "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12",
       typedFingerprint: "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12",
     },
+    // F-WEBINSTALL-POSTURE-APPROVAL-FLOW acceptance (b): the alpha posture must
+    // be approved for this device before the first write, so a happy path has
+    // to carry the typed approval.
+    postureApproval: { typedCodename: "tokay", forProduct: "tokay" },
     device: link,
   });
   return { finalStep: result.currentStep, transcript: logLines.join("\n") };
 }
+
+test("runUpdateFlow REFUSES to write without the alpha-posture approval (no command is sent)", async () => {
+  const device = new SimulatedDevice({ vars: { product: "tokay" }, initiallyUnlocked: true });
+  const link = linkSimulatedDevice(device);
+  const identity = await makeReleaseIdentity();
+  const packageName = "GuardTalkOS-tokay-update.zip";
+  const packageBytes = utf8("payload-no-approval");
+  const sumsText = `${await sha256HexOf(packageBytes)}  ${packageName}\n`;
+  const state = await runUpdateFlow({
+    release: {
+      packageName,
+      packageBytes,
+      sumsText,
+      sigBytes: await identity.sign(sumsText),
+      releaseKeyJwk: identity.jwk,
+    },
+    plan: {
+      targetProduct: "tokay",
+      pkmdBytes: (await signedAnchor()).pkmd,
+      firmwareImages: [{ partition: "boot", bytes: utf8("fw-boot") }],
+      osImages: [{ partition: "system", bytes: utf8("os-system") }],
+      vbmeta: { partition: "vbmeta", bytes: (await signedAnchor()).vbmeta },
+    },
+    keypath: {
+      enrolledFingerprint: "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12",
+      typedFingerprint: "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12",
+    },
+    device: link,
+  });
+  // The run does the whole read-only preamble and then stops at step 6.
+  assert.equal(state.currentStep, 6, "the flow must stop at the decision point");
+  assert.equal(state.completedSteps.has(6), false, "step 6 must not be recorded as done");
+  const transcript = device.transcript.join("\n");
+  assert.doesNotMatch(transcript, /> erase:/, "nothing may be erased without an approval");
+  assert.doesNotMatch(transcript, /> flash:/, "nothing may be written without an approval");
+  assert.match(transcript, /> getvar:product/, "the read-only preamble still runs");
+});
+
+test("runUpdateFlow refuses a mistyped or wrong-product approval too", async () => {
+  for (const approval of [
+    { typedCodename: "", forProduct: "tokay" as const },
+    { typedCodename: "tokay", forProduct: "rango" as const },
+    { typedCodename: "TOKAY", forProduct: "tokay" as const },
+    { typedCodename: "y", forProduct: "tokay" as const },
+  ]) {
+    const device = new SimulatedDevice({ vars: { product: "tokay" }, initiallyUnlocked: true });
+    const link = linkSimulatedDevice(device);
+    const identity = await makeReleaseIdentity();
+    const packageName = "GuardTalkOS-tokay-update.zip";
+    const packageBytes = utf8(`payload-${approval.typedCodename}-${approval.forProduct}`);
+    const sumsText = `${await sha256HexOf(packageBytes)}  ${packageName}\n`;
+    const state = await runUpdateFlow({
+      release: {
+        packageName,
+        packageBytes,
+        sumsText,
+        sigBytes: await identity.sign(sumsText),
+        releaseKeyJwk: identity.jwk,
+      },
+      plan: {
+        targetProduct: "tokay",
+        pkmdBytes: (await signedAnchor()).pkmd,
+        firmwareImages: [{ partition: "boot", bytes: utf8("fw-boot") }],
+        osImages: [{ partition: "system", bytes: utf8("os-system") }],
+        vbmeta: { partition: "vbmeta", bytes: (await signedAnchor()).vbmeta },
+      },
+      keypath: {
+        enrolledFingerprint: "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12",
+        typedFingerprint: "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12",
+      },
+      postureApproval: approval,
+      device: link,
+    });
+    assert.equal(state.currentStep, 6, `approval ${JSON.stringify(approval)} must not open the gate`);
+    const transcript = device.transcript.join("\n");
+    assert.doesNotMatch(transcript, /> flash:/, `approval ${JSON.stringify(approval)} must write nothing`);
+  }
+});
 
 test("runUpdateFlow refuses a vbmeta that is not signed with the enrolled key", async () => {
   const device = new SimulatedDevice({ vars: { product: "tokay" }, initiallyUnlocked: true });

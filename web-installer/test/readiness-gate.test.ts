@@ -42,6 +42,35 @@ function runGateCli(args: string[]): { code: number; stdout: string; stderr: str
   }
 }
 
+/**
+ * T-WEBINSTALL-DRILL-ROOT-SCOPING: a `--matrix=` that is NOT
+ * `<root>/docs/flash-matrix.json` carries no derivable probe root, so the gate
+ * now REFUSES it (exit 2) unless the tree is named explicitly. These drills are
+ * about matrix semantics on the LIVE tree, so they name that tree explicitly
+ * instead of relying on the pre-fix implicit default.
+ */
+function runMatrixOnly(args: string[]): { code: number; stdout: string; stderr: string } {
+  return runGateCli([...args, `--installer-root=${INSTALLER_ROOT}`]);
+}
+
+/** Run the gate CLI with an explicit environment (drill-root tests). */
+function runGateWithEnv(
+  args: string[],
+  env: NodeJS.ProcessEnv,
+): { code: number; stdout: string; stderr: string } {
+  try {
+    const stdout = execFileSync(process.execPath, [GATE, ...args], {
+      encoding: "utf8",
+      stdio: "pipe",
+      env,
+    });
+    return { code: 0, stdout, stderr: "" };
+  } catch (err) {
+    const e = err as { status?: number; stdout?: string; stderr?: string };
+    return { code: e.status ?? -1, stdout: String(e.stdout ?? ""), stderr: String(e.stderr ?? "") };
+  }
+}
+
 function withTempMatrix(mutate: (matrix: Record<string, unknown>) => void): {
   path: string;
   cleanup: () => void;
@@ -107,7 +136,7 @@ test("READINESS-GATE: (b)+(c) FAILS on a stale matrix, PASSES once the stamp is 
     for (const channel of tokay.channels) channel.sourceStamp = "tokay-20260725-102506";
   });
   try {
-    const failed = runGateCli(["--matrix=" + stale.path]);
+    const failed = runMatrixOnly(["--matrix=" + stale.path]);
     assert.equal(failed.code, 1, failed.stdout);
     assert.match(failed.stdout, /channel-freshness/);
     assert.match(failed.stdout, /tokay-20260725-102506/);
@@ -121,7 +150,7 @@ test("READINESS-GATE: (b)+(c) FAILS on a stale matrix, PASSES once the stamp is 
       for (const channel of tokay.channels) channel.sourceStamp = "tokay-20260928-084839";
     });
     try {
-      const passed = runGateCli(["--matrix=" + current.path]);
+      const passed = runMatrixOnly(["--matrix=" + current.path]);
       assert.equal(passed.code, 0, passed.stdout);
       assert.match(passed.stdout, /READINESS-GATE: PASS/);
     } finally {
@@ -138,7 +167,7 @@ test("READINESS-GATE: (d) a MISSING channel independently fails", () => {
     matrix.devices = devices.filter((d) => d.product !== "akita");
   });
   try {
-    const { code, stdout } = runGateCli(["--matrix=" + fixture.path]);
+    const { code, stdout } = runMatrixOnly(["--matrix=" + fixture.path]);
     assert.equal(code, 1);
     assert.match(stdout, /advertised-equals-packed/);
     assert.match(stdout, /akita/);
@@ -155,7 +184,7 @@ test("READINESS-GATE: (d) a STALE channel independently fails (isolated from oth
     for (const channel of rango.channels) channel.sourceStamp = "rango-20260725-133716";
   });
   try {
-    const { code, stdout } = runGateCli(["--matrix=" + fixture.path]);
+    const { code, stdout } = runMatrixOnly(["--matrix=" + fixture.path]);
     assert.equal(code, 1);
     assert.match(stdout, /channel-freshness/);
     assert.match(stdout, /rango-20260725-133716/);
@@ -178,7 +207,7 @@ test("READINESS-GATE: (d) a phase MISMATCH independently fails", () => {
     rango.channels[0]!.artifacts[0]!.phaseMatches = false;
   });
   try {
-    const { code, stdout } = runGateCli(["--matrix=" + fixture.path]);
+    const { code, stdout } = runMatrixOnly(["--matrix=" + fixture.path]);
     assert.equal(code, 1);
     assert.match(stdout, /channel-completeness/);
     assert.match(stdout, /phase or manifest mapping is inconsistent/);
@@ -188,9 +217,12 @@ test("READINESS-GATE: (d) a phase MISMATCH independently fails", () => {
 });
 
 test("READINESS-GATE: (d) an unusable/missing matrix is ERROR (exit 2), never a silent PASS", () => {
-  const { code, stdout } = runGateCli(["--matrix=/nonexistent/does-not-exist.json"]);
+  // A TREE-SHAPED matrix path (so a probe root IS derivable) whose file does not
+  // exist: the gate must fail closed on the unloadable input.
+  const { code, stdout } = runGateCli(["--matrix=/nonexistent/docs/flash-matrix.json"]);
   assert.equal(code, 2, stdout);
   assert.match(stdout, /READINESS-GATE: ERROR/);
+  assert.match(stdout, /matrix-loadable/);
   assert.doesNotMatch(stdout, /PASS/);
 });
 
@@ -202,7 +234,7 @@ test("READINESS-GATE: (d) a stub channel (no artifacts) fails", () => {
     komodo.channels[0]!.artifacts = [];
   });
   try {
-    const { code, stdout } = runGateCli(["--matrix=" + fixture.path]);
+    const { code, stdout } = runMatrixOnly(["--matrix=" + fixture.path]);
     assert.equal(code, 1);
     assert.match(stdout, /channel-completeness/);
     assert.match(stdout, /stub/);
@@ -258,7 +290,7 @@ test("READINESS-GATE: a FAIL verdict file is what the claims linter would refuse
   const dir = mkdtempSync(join(tmpdir(), "gt-verdict-fail-"));
   const out = join(dir, "verdict.json");
   try {
-    const { code } = runGateCli(["--matrix=" + fixture.path, "--verdict-out=" + out]);
+    const { code } = runMatrixOnly(["--matrix=" + fixture.path, "--verdict-out=" + out]);
     assert.equal(code, 1);
     const verdict = JSON.parse(readFileSync(out, "utf8")) as { gate: string; failedClauses: string[] };
     assert.equal(verdict.gate, "FAIL");
@@ -617,6 +649,106 @@ test("READINESS-GATE/TREE: a drill root NEVER reads the real repo's matrix", () 
     );
   } finally {
     tree.writer.cleanup();
+  }
+});
+
+/* ===========================================================================
+ * T-WEBINSTALL-DRILL-ROOT-SCOPING — the probe root follows `--matrix=`.
+ *
+ * INCIDENT 2026-10-18T12:13: `--matrix=/tmp/drill/docs/flash-matrix.json` run
+ * from the real tree redirected ONLY the matrix; the probe root still defaulted
+ * to the gate's own install location, so the gate silently probed the REAL
+ * channels, and a "drill" overwrote three real `avb_pkmd.bin` anchors.
+ *
+ * The tests below fail on the pre-fix code in BOTH directions: (a) the genuine
+ * drill tree only PASSES once the root is derived (before the fix it PASSED for
+ * the wrong reason — it read the real tree — and the post-deletion FAIL never
+ * came), and (b) the conflicting env exits 0 instead of 2.
+ * ======================================================================== */
+
+test("DRILL-ROOT: (a) --matrix=<drill>/docs/flash-matrix.json probes the DRILL tree with NO env var", () => {
+  const tree = genuineTree(FIXTURE_PRODUCTS);
+  try {
+    const env = { ...process.env };
+    delete env.GUARDTALK_INSTALLER_ROOT;
+    delete env.GUARDTALK_RELEASES_DIR;
+    const matrixArg = `--matrix=${join(tree.root, "docs", "flash-matrix.json")}`;
+
+    // (1) The GENUINE drill tree PASSES: the derived root really is the drill
+    // root (a real-tree probe would also pass, so the payload is asserted too).
+    const passed = runGateWithEnv(["--json", matrixArg], env);
+    const payload = assertSummaryIsExit(
+      { code: passed.code, payload: JSON.parse(passed.stdout) as GatePayload },
+      "(a) genuine drill tree",
+    );
+    assert.equal(passed.code, 0, `a genuine drill tree must PASS:\n${passed.stdout}`);
+    const where = payload as GatePayload & { installerRoot: string; releasesDir: string };
+    assert.equal(where.installerRoot, tree.root, "the probe root must be DERIVED from the matrix path");
+    assert.equal(
+      where.releasesDir,
+      tree.releasesDir,
+      "the release store must follow the drill root, not the repo's",
+    );
+
+    // (2) Delete ONLY the drill's channels/. Every matrix claim is unchanged.
+    // FAIL — never a PASS delivered by probing the real tree.
+    for (const product of FIXTURE_PRODUCTS) tree.writer.dropChannel(product);
+    const failed = runGateWithEnv(["--json", matrixArg], env);
+    assert.equal(failed.code, 1, `a drill with no channels must FAIL:\n${failed.stdout}`);
+    const failedPayload = JSON.parse(failed.stdout) as GatePayload;
+    assert.equal(failedPayload.gate, "FAIL");
+    assert.ok(
+      failingIds(failedPayload).includes("channels-on-disk"),
+      `expected channels-on-disk to fail, got ${failingIds(failedPayload).join(", ")}`,
+    );
+  } finally {
+    tree.writer.cleanup();
+  }
+});
+
+test("DRILL-ROOT: (b) a GUARDTALK_INSTALLER_ROOT that CONFLICTS with --matrix= is ERROR (exit 2)", () => {
+  const tree = genuineTree(FIXTURE_PRODUCTS);
+  try {
+    const matrixArg = `--matrix=${join(tree.root, "docs", "flash-matrix.json")}`;
+
+    // The matrix names the drill tree; the env names the LIVE tree. Before the
+    // fix this silently probed the live channels and printed a verdict about
+    // them. It must now REFUSE, naming both trees.
+    const conflicting = { ...process.env, GUARDTALK_INSTALLER_ROOT: INSTALLER_ROOT };
+    const refused = runGateWithEnv(["--json", matrixArg], conflicting);
+    assert.equal(refused.code, 2, `a conflicting root must be ERROR, got ${refused.code}:\n${refused.stdout}`);
+    const payload = JSON.parse(refused.stdout) as GatePayload & { error: string | null };
+    assert.equal(payload.gate, "ERROR");
+    assert.equal(payload.exitCode, 2);
+    assert.ok(payload.error !== null, "the payload must carry the reason");
+    assert.match(String(payload.error), /refusing/);
+    assert.ok(String(payload.error).includes(tree.root), "the message must name the matrix's tree");
+    assert.ok(String(payload.error).includes(INSTALLER_ROOT), "the message must name the conflicting root");
+    assert.match(refused.stderr, /\[readiness-gate\] ERROR/);
+    assert.doesNotMatch(refused.stdout, /READINESS-GATE: PASS/);
+
+    // Non-vacuity: the SAME matrix with an AGREEING root still gates the drill
+    // tree — the refusal is about the conflict, not about --matrix=.
+    const agreeing = { ...process.env, GUARDTALK_INSTALLER_ROOT: tree.root };
+    const ok = runGateWithEnv(["--json", matrixArg], agreeing);
+    assert.equal(ok.code, 0, `an agreeing root must still gate the drill tree:\n${ok.stdout}`);
+  } finally {
+    tree.writer.cleanup();
+  }
+});
+
+test("DRILL-ROOT: a --matrix= that names no tree is refused, never guessed", () => {
+  // `<tmp>/matrix.json` is not `<root>/docs/flash-matrix.json`, so no probe root
+  // can be derived. Guessing one is how the incident happened; naming one is
+  // required. (The matrix-only drills above name the live root explicitly.)
+  const fixture = withTempMatrix(() => {});
+  try {
+    const refused = runGateCli(["--matrix=" + fixture.path]);
+    assert.equal(refused.code, 2, `an unshaped --matrix= must be ERROR:\n${refused.stdout}`);
+    assert.match(refused.stderr, /not a tree matrix/);
+    assert.match(refused.stderr, /--installer-root/);
+  } finally {
+    fixture.cleanup();
   }
 });
 

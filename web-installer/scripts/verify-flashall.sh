@@ -12,14 +12,66 @@
 #
 # No USB. No live flash. No boot-green claim. Never invents a channel.
 #
-# Usage (from GrapheneOS-worktree root):
+# Runs from any cwd, inside the Android `repo` checkout or a standalone/submodule
+# checkout (T-WEBINSTALL-PATH-COUPLING-SWEEP: no parent-relative rooting; every
+# dependency is resolved through an ordered candidate list and fails with an
+# actionable message when absent).
+#
+# Usage (any cwd):
 #   bash vendor/guardtalk/web-installer/scripts/verify-flashall.sh
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
-WI="${ROOT}/vendor/guardtalk/web-installer"
-NODE_BIN="${GT_NODE_BIN:-/home/oss-c1/.cursor-server/bin/linux-x64/2d29876d567da1607532b23bbf2cd5ddbca496f0/node}"
-FLASH_DIR="${ROOT}/releases/desktop-flash"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+WI="$(dirname "$HERE")"
+PRODUCT_ROOT="$(dirname "$WI")"
+
+# shellcheck source=lib/resolve.sh
+. "$HERE/lib/resolve.sh"
+
+# Node.js: GT_NODE_BIN is authoritative when set (fail closed if it is not a
+# runnable Node.js >= 20); otherwise the first runnable interpreter from an
+# ordered candidate list. Never a hardcoded build directory hash.
+if ! NODE_BIN="$(gt_resolve_node)"; then
+  exit 2
+fi
+
+# Release store: GUARDTALK_RELEASES_ROOT, then in-repo, then the parent product
+# repo, then a bounded upward probe (Android checkout). Exported so the whole
+# chain - gen-flash-matrix, readiness-gate, freshness, trust anchors - reads the
+# SAME store.
+FLASH_CANDIDATES=(
+  "${GUARDTALK_RELEASES_ROOT:-}"
+  "${WI}/releases/desktop-flash"
+  "${PRODUCT_ROOT}/releases/desktop-flash"
+)
+FLASH_DIR="$(gt_resolve_dir desktop-flash "${FLASH_CANDIDATES[@]}" || true)"
+if [[ -z "$FLASH_DIR" ]]; then
+  FLASH_DIR="$(gt_find_up "releases/desktop-flash" "$WI" 6 || true)"
+fi
+if [[ -z "$FLASH_DIR" ]]; then
+  gt_missing_die \
+    "verify-flashall.sh" \
+    "the desktop-flash release store (releases/desktop-flash)" \
+    "export GUARDTALK_RELEASES_ROOT=/absolute/path/to/releases/desktop-flash" \
+    "${FLASH_CANDIDATES[@]}" \
+    "bounded upward probe from ${WI} for releases/desktop-flash (depth <= 6)"
+  exit 2
+fi
+export GUARDTALK_RELEASES_ROOT="$FLASH_DIR"
+
+# Packer: in-repo first, then the parent product repo (vendor/guardtalk/scripts).
+PACKER_CANDIDATES=(
+  "${WI}/scripts/pack-webinstall-channel.sh"
+  "${PRODUCT_ROOT}/scripts/pack-webinstall-channel.sh"
+)
+if ! PACKER="$(gt_resolve_file pack-webinstall-channel.sh "${PACKER_CANDIDATES[@]}")"; then
+    gt_missing_die \
+        "verify-flashall.sh" \
+        "the channel packer (pack-webinstall-channel.sh)" \
+        "restore the vendored packer at <installer>/scripts/pack-webinstall-channel.sh (single source of truth; the product-repo path is only a thin wrapper)" \
+        "${PACKER_CANDIDATES[@]}"
+  exit 2
+fi
 
 FAIL=0
 PASS_N=0
@@ -28,10 +80,10 @@ pass() { echo "PASS: $*"; PASS_N=$((PASS_N + 1)); }
 fail() { echo "FAIL: $*"; FAIL=1; }
 hold() { echo "HOLD: $*"; HOLD_N=$((HOLD_N + 1)); }
 
-if [[ ! -x "$NODE_BIN" ]]; then
-  echo "FAIL: node not found at GT_NODE_BIN=$NODE_BIN" >&2
-  exit 1
-fi
+echo "=== FLASHALL toolchain: node + release store resolved ==="
+pass "node: $NODE_BIN ($("$NODE_BIN" --version))"
+pass "release store: $FLASH_DIR"
+pass "packer: $PACKER"
 
 echo "=== FLASHALL case1: generated inventory matrix is up to date (derived) ==="
 if "$NODE_BIN" "$WI/scripts/gen-flash-matrix.mjs" --check >/tmp/flashall-matrix.log 2>&1; then
@@ -77,7 +129,11 @@ else
 fi
 
 echo "=== FLASHALL case3: freshness invariant is wired into the gate ==="
-if "$NODE_BIN" "$WI/scripts/readiness-gate.mjs" | grep -q '\[ok\] channel-freshness:'; then
+# Reuse case2's captured output instead of piping the gate into `grep -q`: with
+# `pipefail`, grep closing the pipe after its first match can kill the producer
+# with EPIPE and turn a PRESENT clause into a false FAIL. One gate run, one
+# captured transcript.
+if printf '%s\n' "$gate_out" | grep -q '\[ok\] channel-freshness:'; then
   pass "gate exposes a channel-freshness clause"
 else
   fail "gate has no channel-freshness clause"
@@ -133,7 +189,7 @@ else
 fi
 
 echo "=== FLASHALL case6: packer fail-closed paths intact ==="
-if bash "$ROOT/vendor/guardtalk/scripts/pack-webinstall-channel.sh" --self-test 2>&1 | grep -q 'SELF_TEST_OK'; then
+if bash "$PACKER" --self-test 2>&1 | grep -q 'SELF_TEST_OK'; then
   pass "packer --self-test SELF_TEST_OK"
 else
   fail "packer --self-test did not report SELF_TEST_OK"

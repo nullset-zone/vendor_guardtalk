@@ -237,7 +237,72 @@ pre.cmd-block {
 .fetch-points {
   margin: 0;
   padding-left: var(--gl-spacing-7);
-  font-family: var(--gl-font-family-mono);
+  display: grid;
+  gap: var(--gl-spacing-5);
+}
+
+/* Unavailable-fact block (F-WEBINSTALL-PLACEHOLDER-RETIREMENT, D-041).
+   Prose, not mono: the block states what is missing and what to do, so it must
+   read as words rather than as a code token. */
+.unavailable-fact {
+  display: grid;
+  gap: var(--gl-spacing-3);
+  font-family: var(--gl-font-family-base);
+}
+
+.unavailable-fact__missing {
+  margin: 0;
+}
+
+.unavailable-fact__facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--gl-spacing-2) var(--gl-spacing-5);
+}
+
+.unavailable-fact__facts dt {
+  color: var(--gl-text-color-subtle);
+  font-weight: 600;
+}
+
+.unavailable-fact__facts dd {
+  margin: 0;
+}
+
+/* Posture approval gate (F-WEBINSTALL-POSTURE-APPROVAL-FLOW, D-042). The
+   border uses the existing strong token so the block reads as a boundary, not
+   as decoration — colour is never the only signal (the chip carries a word). */
+.posture-gate {
+  display: grid;
+  gap: var(--gl-spacing-4);
+  border: 2px solid var(--gl-border-color-strong);
+  border-radius: var(--gl-border-radius-base);
+  background: var(--gl-background-color-section);
+  padding: var(--gl-spacing-6);
+  margin-block: var(--gl-spacing-6);
+}
+
+.posture-gate__requirements,
+.posture-gate__blockers {
+  margin: 0;
+  padding-left: var(--gl-spacing-7);
+  display: grid;
+  gap: var(--gl-spacing-2);
+}
+
+.posture-gate__pill,
+.posture-gate__flag,
+.posture-gate__device {
+  margin: 0;
+}
+
+.posture-gate__flag {
+  color: var(--gl-text-color-subtle);
+}
+
+.posture-gate input {
+  max-width: 24ch;
 }
 
 .file-slots {

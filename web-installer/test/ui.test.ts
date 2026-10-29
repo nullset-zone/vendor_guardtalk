@@ -5,7 +5,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { Hardening, LineageNote, ProtectionLimit } from "../lib/claims/components.js";
+import { COUNSEL_REVIEW_MARKER, Hardening, LineageNote, ProtectionLimit } from "../lib/claims/components.js";
 import { makeChip } from "../lib/ui/chips.js";
 import { consoleMarkup } from "../lib/ui/console.js";
 import { renderKeyDiagram } from "../lib/ui/key-diagram.js";
@@ -332,10 +332,14 @@ test("ProtectionLimit links every limit to the threat model", () => {
   assertCspSafe(claim.html);
 });
 
-test("LineageNote carries the confirm-with-counsel marker", () => {
+test("LineageNote carries a visible counsel-review marker and no pending token", () => {
   const claim = LineageNote("Attribution draft: practice follows upstream GrapheneOS installation discipline.");
-  assert.ok(claim.html.includes("// confirm with counsel"));
-  assert.ok(claim.text.includes("// confirm with counsel"));
+  // D-041: the marker is a review LABEL, not a placeholder awaiting a value.
+  assert.ok(claim.html.includes(COUNSEL_REVIEW_MARKER));
+  assert.ok(claim.text.includes(COUNSEL_REVIEW_MARKER));
+  assert.match(claim.html, /data-confirm="with counsel"/);
+  assert.doesNotMatch(claim.html, /\/\/ confirm/);
+  assert.doesNotMatch(claim.text, /\/\/ confirm/);
 });
 
 /* ------------------------------------------------------------------ */

@@ -32,8 +32,14 @@ export PATH="${NODE_BIN}:${PATH}"
 
 FLASH_DIR="releases/desktop-flash"
 WI="vendor/guardtalk/web-installer"
-PACKER="vendor/guardtalk/scripts/pack-webinstall-channel.sh"
-HOSTED="vendor/guardtalk/scripts/pack-wizard-hosted-channels.sh"
+# T-WEBINSTALL-PACKER-VENDOR: the canonical packers are VENDORED in the
+# installer, so this gate inspects the ONE implementation. The parent
+# product-repo paths are thin `exec` wrappers; the delegation check below keeps
+# them honest instead of letting this gate inspect a wrapper and go vacuous.
+PACKER="${WI}/scripts/pack-webinstall-channel.sh"
+HOSTED="${WI}/scripts/pack-wizard-hosted-channels.sh"
+PACKER_WRAPPER="vendor/guardtalk/scripts/pack-webinstall-channel.sh"
+HOSTED_WRAPPER="vendor/guardtalk/scripts/pack-wizard-hosted-channels.sh"
 TYPES="${WI}/src/types.ts"
 ALLOW="${WI}/src/allowlist.ts"
 ERRS="${WI}/src/errors.ts"
@@ -239,6 +245,25 @@ if bash -n "$HOSTED"; then
 else
   fail "bash -n pack-wizard-hosted-channels.sh"
 fi
+
+# Exactly ONE implementation: each parent path must be a thin `exec` wrapper
+# (no device list, no pack loop) pointed at the vendored copy.
+for pair in "${PACKER_WRAPPER}:${PACKER}" "${HOSTED_WRAPPER}:${HOSTED}"; do
+  wrapper="${pair%%:*}"
+  impl="${pair#*:}"
+  if [[ -f "$wrapper" ]] \
+    && grep -q 'exec bash "\$TARGET" "\$@"' "$wrapper" \
+    && ! grep -qE 'ADVERTISED_DEVICES|pack_one' "$wrapper"; then
+    pass "parent path delegates to the vendored copy: $wrapper -> $impl"
+  else
+    fail "parent path is not a thin delegation wrapper: $wrapper"
+  fi
+  if bash -n "$wrapper"; then
+    pass "bash -n $(basename "$wrapper") (wrapper)"
+  else
+    fail "bash -n $(basename "$wrapper") (wrapper)"
+  fi
+done
 
 packer_log="$(mktemp)"
 if bash "$PACKER" --self-test >"$packer_log" 2>&1; then

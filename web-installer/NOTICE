@@ -10,16 +10,32 @@ Test/build tools (devDependencies, pinned in package.json):
   tsx 4.19.3           MIT          https://github.com/privatenumber/tsx
   @types/node 22.10.5  MIT          https://github.com/DefinitelyTyped/DefinitelyTyped
 
-Intended browser WebUSB transport (not installed this wave; no factory zip):
+Runtime dependency — WebUSB fastboot transport (declared + exactly pinned in
+`package.json` `dependencies`, so a clean `npm install` / `npm ci` resolves it;
+T-WEBINSTALL-WEBUSB-TRANSPORT-BUNDLE, D-043):
 
   android-fastboot (kdrag0n/fastboot.js)  MIT
-    pin ≥ commit ffe7e270061b95fe0f0f3abd1aa7d3c28999d1d9
-  @zip.js/zip.js                          BSD-3-Clause
-  pako                                    MIT
+    pinned to commit ffe7e270061b95fe0f0f3abd1aa7d3c28999d1d9
+    git+https://github.com/kdrag0n/fastboot.js.git#<that commit>
+  @zip.js/zip.js 2.24.0                   BSD-3-Clause  (lockfile-pinned transitive)
+  pako 2.2.0                              MIT AND Zlib  (lockfile-pinned transitive)
 
-F-WEBINSTALL-WIZARD did **not** add android-fastboot. The wizard calls
-`adaptAndroidFastboot` only when a `FastbootDevice` is supplied at runtime
-(`window.FastbootDevice`). Dry-run / plan preview do not need WebUSB.
+The published npm version 1.1.3 (2023-01-19) PREDATES that commit (2024-08-06),
+so the pin is a commit, not a semver range: an exact-version pin could not
+satisfy the "pin ≥ ffe7e270" requirement. The upstream package declares its own
+transitives as ranges (`^2.7.6`, `^2.1.0`); the resolved versions above are
+pinned in `package-lock.json`. npm records an integrity hash for the git
+dependency but does **not** verify it on install (npm warns "skipping integrity
+check for git dependency"), so the trust anchor is the commit SHA.
+
+`connectAndroidFastboot()` is the real adapter (loads the pinned package
+lazily, connects, wraps the device in the existing `FastbootTransport`). The
+wizard does **not** call it yet: `wizard/main.ts` still uses
+`readOptionalFastbootDevice()` + `adaptAndroidFastboot` with a runtime-supplied
+`FastbootDevice`, the dry-run transport remains the default, and DEC-009 keeps
+live `executePlan`/`lock` on HOLD. The static wizard build has no bundler step,
+so a bare `android-fastboot` ESM specifier would not resolve in the browser
+until a separate bundling card lands. Dry-run / plan preview never load it.
 
 Wizard UI (`wizard/index.html`, `wizard/styles.css`, `wizard/main.ts`) is
 original GuardTalkOS work. It does not copy GrapheneOS HTML, CSS, JavaScript,

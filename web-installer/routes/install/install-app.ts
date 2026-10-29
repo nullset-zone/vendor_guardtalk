@@ -8,6 +8,13 @@ import { armoredPemToJwk, type RsaPublicJwk } from "../../lib/verify/detached-si
 import { SimulatedDevice } from "../../lib/fastboot/simulated-device.js";
 import { FastbootClient, type Transport } from "../../lib/fastboot/client.js";
 import { browserUsbPicker, webUsbTransport } from "../../lib/fastboot/usb.js";
+import {
+  classifyLiveTransportError,
+  liveFlashRefusal,
+  renderLiveTransportState,
+  type LiveTransportState,
+} from "../../lib/ui/live-transport.js";
+import { LIVE_FLASH_CLAIMED } from "../../src/types.js";
 import { collectingLog } from "../../lib/types.js";
 import { escapeHtml } from "../../lib/ui/escape.js";
 import type { KeyMaterial } from "../../lib/avb/signer.js";
@@ -24,6 +31,14 @@ import {
   requiresAcknowledgement,
   selectionRefused,
 } from "../../lib/ui/readiness.js";
+import {
+  evaluatePosture,
+  postureOpen,
+  postureRefusal,
+  renderPostureGate,
+  SHIPPED_POSTURE,
+  type PostureApproval,
+} from "../../lib/ui/posture-approval.js";
 import {
   channelRefusal,
   filesReady,
@@ -79,6 +94,12 @@ interface Session {
   lockState?: "locked" | "unlocked" | "unknown" | undefined;
   transport?: (Transport & { close?: () => Promise<void> }) | undefined;
   notice?: string | undefined;
+  /**
+   * The real transport's current state (F-WEBINSTALL-LIVE-TRANSPORT-UX). One
+   * value from `lib/ui/live-transport.ts`, rendered through that module's
+   * announcing region — never a second status mechanism, and never an advance.
+   */
+  transportState?: LiveTransportState | undefined;
   selectedProduct: OfferedProduct;
   /** BUILD-OK device awaiting the typed-codename acknowledgement (not yet selected). */
   pendingBuildOk?: OfferedProduct | undefined;
@@ -88,6 +109,12 @@ interface Session {
   verifyOutcome?: "pending" | "match" | "mismatch" | undefined;
   /** The value the user typed at step 8, retained so a mismatch is not lost on re-render. */
   verifyTyped?: string | undefined;
+  /**
+   * The alpha-posture approval typed at step 6. Held as TYPED; whether it counts
+   * is `evaluatePosture`'s decision, and it is bound to the product it was typed
+   * for, so switching device invalidates it.
+   */
+  postureApproval?: PostureApproval | undefined;
   images: Record<string, Uint8Array>;
 }
 
@@ -206,9 +233,21 @@ function refuseUnacknowledgedBuildOk(): boolean {
   return true;
 }
 
+/**
+ * Everything that must precede the step body: the shared refusal notice and,
+ * when the real transport is in one of its five states, that state's announced
+ * region (`lib/ui/live-transport.ts` — the single announcement mechanism).
+ */
+function noticeBlock(): string {
+  const notice = session.notice ? `<p class="note" role="status">${escapeHtml(session.notice)}</p>` : "";
+  const transport =
+    session.transportState === undefined ? "" : renderLiveTransportState(session.transportState);
+  return notice + transport;
+}
+
 function stepHtml(): string {
   const step = session.state.currentStep;
-  const notice = session.notice ? `<p class="note" role="status">${escapeHtml(session.notice)}</p>` : "";
+  const notice = noticeBlock();
   if (step === 0) {
     const pending = session.pendingBuildOk;
     const gate = pending === undefined ? undefined : readinessGateView(pending);
@@ -263,6 +302,16 @@ function stepHtml(): string {
     );
   }
   if (step === 6) {
+    const posture = evaluatePosture(SHIPPED_POSTURE, session.selectedProduct, session.postureApproval);
+    const open = postureOpen(posture);
+    const postureGate = renderPostureGate({
+      verdict: posture,
+      product: session.selectedProduct,
+      deviceName: readinessFor(session.selectedProduct).model,
+      ...(session.postureApproval !== undefined
+        ? { typedCodename: session.postureApproval.typedCodename }
+        : {}),
+    });
     return (
       notice +
       flashStepHtml({ sim: sim(), started: false, donePartitions: [] }) +
@@ -274,7 +323,11 @@ function stepHtml(): string {
         })
         .join("") +
       `</section>` +
-      `<button type="button" class="${GL_BTN_CONFIRM}" data-action="flash">Flash enrolment, images, then user-signed vbmeta</button>`
+      postureGate +
+      `<button type="button" class="${GL_BTN_CONFIRM}" data-action="flash"${open ? "" : ` disabled aria-disabled="true"`}>Flash enrolment, images, then user-signed vbmeta</button>` +
+      (open
+        ? ""
+        : `<p class="note">The flash action stays unavailable until the posture above is approved for this device.</p>`)
     );
   }
   if (step === 7) {
@@ -325,6 +378,10 @@ async function readText(input: HTMLInputElement): Promise<string | undefined> {
 
 async function onAction(action: string, target: HTMLElement): Promise<void> {
   session.notice = undefined;
+  // A transport state describes the operation that just ran, so every new user
+  // action starts from "no state" — a stale refusal can never be re-announced
+  // (or mistaken for the current one) after the user tries again.
+  session.transportState = undefined;
   if (action === "back") {
     dispatch({ type: "back" });
     return;
@@ -531,6 +588,15 @@ async function onAction(action: string, target: HTMLElement): Promise<void> {
     await pairDevice();
     return;
   }
+  if (action === "approve-posture") {
+    // Record exactly what was typed — including an empty or wrong value — so the
+    // gate can name the mismatch. The verdict decides; this line does not.
+    const typed =
+      root().querySelector<HTMLInputElement>("[data-role='posture-approval']")?.value ?? "";
+    session.postureApproval = { typedCodename: typed, forProduct: session.selectedProduct };
+    render();
+    return;
+  }
   if (action === "oem-unlock-acked") {
     dispatch({ type: "oem-unlock-acked" });
     return;
@@ -545,6 +611,14 @@ async function onAction(action: string, target: HTMLElement): Promise<void> {
       return;
     }
     if (session.deviceProduct !== session.selectedProduct) {
+      // (3) product mismatch. The state is set BEFORE the stop dispatch so the
+      // re-render carries the announcement; the guard below in `flashNow()`
+      // repeats the comparison, so no write can be reached by this step alone.
+      session.transportState = {
+        kind: "product-mismatch",
+        expected: session.selectedProduct,
+        actual: session.deviceProduct,
+      };
       dispatch({ type: "stop", step: 5, condition: "product-mismatch" });
       return;
     }
@@ -579,11 +653,28 @@ async function pairDevice(): Promise<void> {
   } else {
     const picker = browserUsbPicker();
     if (picker === null) {
-      session.notice = "WebUSB is not available. Use the CLI export path.";
+      // (4) WebUSB absent (non-Chromium, or not an HTTPS origin). The state's
+      // headline IS the existing first-class notice, kept verbatim.
+      session.transport = undefined;
+      session.transportState = { kind: "webusb-absent" };
       render();
       return;
     }
-    session.transport = await webUsbTransport(picker);
+    try {
+      session.transport = await webUsbTransport(picker);
+    } catch (err: unknown) {
+      // (1) the user cancelled the picker, or the browser refused access. Any
+      // other failure (e.g. the interface could not be claimed) is not one of
+      // the five states, so it keeps the pre-existing handling: rethrow.
+      const refusal = classifyLiveTransportError(err);
+      if (refusal === undefined) {
+        throw err;
+      }
+      session.transport = undefined;
+      session.transportState = refusal;
+      render();
+      return;
+    }
     session.notice = "USB device claimed. Product was read; nothing was written.";
   }
   if (session.transport === undefined) {
@@ -596,6 +687,15 @@ async function pairDevice(): Promise<void> {
     session.deviceProduct = await client.getvar("product");
   } catch (err: unknown) {
     session.deviceProduct = undefined;
+    // (2) the phone dropped while the product was being read. A state is used
+    // ONLY when the error is a transport state; a plain read failure keeps the
+    // verbatim message it always had.
+    const disconnected = classifyLiveTransportError(err);
+    if (disconnected !== undefined) {
+      session.transportState = disconnected;
+      render();
+      return;
+    }
     session.notice =
       err instanceof Error ? err.message : "USB device claimed. Product could not be read.";
   }
@@ -652,13 +752,43 @@ async function flashNow(): Promise<void> {
   if (refuseUnacknowledgedBuildOk()) {
     return;
   }
+  // (5) The build-level gate, before any other prompt: while this build does not
+  // claim a live flash (LIVE_FLASH_CLAIMED === false) a REAL transport cannot
+  // write at all. Presenting that as a build posture here — rather than letting
+  // the plan run and translating a failure afterwards — means the user is never
+  // asked to approve a posture for an operation this build refuses to perform.
+  // A simulated session writes to SimulatedDevice and is unaffected (D-011).
+  const liveRefusal = liveFlashRefusal({ sim: sim(), liveFlashClaimed: LIVE_FLASH_CLAIMED });
+  if (liveRefusal !== undefined) {
+    session.transportState = liveRefusal;
+    render();
+    return;
+  }
+  // The alpha posture must be approved for THIS device before the first write.
+  // Re-evaluated here rather than read from the DOM: the disabled button is a
+  // courtesy, this is the refusal. Nothing below runs while it is closed.
+  const postureBlock = postureRefusal(
+    evaluatePosture(SHIPPED_POSTURE, session.selectedProduct, session.postureApproval),
+    session.selectedProduct,
+  );
+  if (postureBlock !== undefined) {
+    session.notice = postureBlock;
+    render();
+    return;
+  }
   if (!session.transport || !session.pkmd || !session.signedVbmeta) {
     session.notice = "Pair the device and finish signing before flashing.";
     render();
     return;
   }
   if (session.deviceProduct !== session.selectedProduct) {
-    session.notice = "Device product does not match the selected channel. Flash stopped before any write.";
+    // (3) the same guard the connect step uses, repeated immediately before the
+    // plan is built: the mismatch is announced as a state and no plan is built.
+    session.transportState = {
+      kind: "product-mismatch",
+      expected: session.selectedProduct,
+      actual: session.deviceProduct ?? "",
+    };
     render();
     return;
   }
@@ -667,31 +797,45 @@ async function flashNow(): Promise<void> {
   }
   const log = collectingLog();
   const picked = pickedImages();
-  await runFlashPlan({
-    transport: session.transport,
-    consoleSink: log,
-    plan: {
-      avbCustomKey: session.pkmd,
-      firmware: picked.firmware.map((name) => ({
-        partition: name,
-        data: session.images[name] as Uint8Array,
-      })),
-      os: picked.os.map((name) => ({
-        partition: name,
-        data: session.images[name] as Uint8Array,
-      })),
-      vbmeta: [{ partition: "vbmeta", data: session.signedVbmeta }],
-    },
-    gate: {
-      state: session.state,
-      release: { hashesMatch: true, signatureValid: true },
-      device: {
-        product: session.deviceProduct,
-        releaseTargetProduct: session.selectedProduct,
+  try {
+    await runFlashPlan({
+      transport: session.transport,
+      consoleSink: log,
+      plan: {
+        avbCustomKey: session.pkmd,
+        firmware: picked.firmware.map((name) => ({
+          partition: name,
+          data: session.images[name] as Uint8Array,
+        })),
+        os: picked.os.map((name) => ({
+          partition: name,
+          data: session.images[name] as Uint8Array,
+        })),
+        vbmeta: [{ partition: "vbmeta", data: session.signedVbmeta }],
       },
-      vbmeta: { signedWithUserKey: true },
-    },
-  });
+      gate: {
+        state: session.state,
+        release: { hashesMatch: true, signatureValid: true },
+        device: {
+          product: session.deviceProduct,
+          releaseTargetProduct: session.selectedProduct,
+        },
+        vbmeta: { signedWithUserKey: true },
+      },
+    });
+  } catch (err: unknown) {
+    // (2) mid-flow disconnect, or (5) a live-path HOLD thrown by the backend
+    // orchestrator. Either way the flow STOPS: the advance below is inside no
+    // catch, so no failure can reach it. Any other error (a bootloader FAIL) is
+    // not a transport state and keeps its pre-existing handling.
+    const halted = classifyLiveTransportError(err);
+    if (halted === undefined) {
+      throw err;
+    }
+    session.transportState = halted;
+    render();
+    return;
+  }
   dispatch({ type: "flash-step-done" });
 }
 

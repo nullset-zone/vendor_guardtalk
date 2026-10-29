@@ -1,9 +1,9 @@
 /**
  * Encrypted key export/import (opt-in persistence path).
  *
- * // confirm KDF availability; PBKDF2 fallback per Q-09 — Argon2id is not
- * available via WebCrypto natively; PBKDF2-SHA256 with >=600_000 iterations
- * ships instead and is labelled as such in the UI.
+ * KDF availability: PBKDF2 fallback per Q-09 — Argon2id is not available via
+ * WebCrypto natively; PBKDF2-SHA256 with >=600_000 iterations ships instead
+ * and is labelled as such in the UI.
  *
  * Format (armored PEM-like, no network ever sees this — D-007):
  *   -----BEGIN GUARDTALK ENCRYPTED KEY-----

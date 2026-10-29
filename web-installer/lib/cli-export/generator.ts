@@ -10,9 +10,17 @@
  * Guarantees:
  * - pure: no clock, no randomness, no I/O; same plan ⇒ byte-identical script
  * - offline: the generated script never names curl/wget/http/ssh/scp
- * - honest: values the project does not have ship as `// confirm` mono
- *   placeholders (Q-04 release fingerprint, Q-05 onion address), never invented
+ * - honest: a value the project does not have is never invented and never
+ *   shipped as a pending-confirmation token. The release provenance values
+ *   (Q-04 fingerprint, Q-05 onion address) do not exist in this build, so the
+ *   script says so and REQUIRES the user to supply them before anything is
+ *   unlocked or written (`lib/ui/unavailable.ts`, D-041)
  */
+import {
+  ONION_ADDRESS_FACT,
+  RELEASE_FINGERPRINT_FACT,
+  unavailableFactLines,
+} from "../ui/unavailable.js";
 
 /** Key custody flows of browser step 3 (PLAN.md §1). */
 export type CliKeyFlow = "bring-your-own" | "sign-elsewhere" | "generate-here";
@@ -54,9 +62,6 @@ export interface CliExportStep {
 
 const ALGORITHM_FLAG = "--algorithm SHA256_RSA4096";
 const PADDING_FLAG = "--padding_size 64";
-
-const ONION_PLACEHOLDER = "// confirm onion address (Q-05)";
-const FINGERPRINT_PLACEHOLDER = "// confirm release-key fingerprint (Q-04)";
 
 function shq(s: string): string {
   return `'${s.replace(/'/g, `'\\''`)}'`;
@@ -121,12 +126,8 @@ function headerLines(plan: CliExportPlan): string[] {
     "#     boot refuses what you did not sign — that is the contract working,",
     "#     but you will need to reflash to recover.",
     "#",
-    `# Release over Tor: download the bundle from ${ONION_PLACEHOLDER}`,
-    "#   using Tor Browser. This script performs NO network access of any kind;",
-    "#   every file it operates on must already be on this machine.",
-    "#",
-    "# Release-key fingerprint (cross-check where you obtained the bundle):",
-    `#   ${FINGERPRINT_PLACEHOLDER}`,
+    ...unavailableFactLines(ONION_ADDRESS_FACT).map((line) => `# ${line}`),
+    ...unavailableFactLines(RELEASE_FINGERPRINT_FACT).map((line) => `# ${line}`),
     "#",
     `# Target product: ${plan.targetProduct}`,
     "#   Verified against 'fastboot getvar product' BEFORE ANY write; the",
@@ -148,12 +149,19 @@ function headerLines(plan: CliExportPlan): string[] {
     "# --- user configuration -----------------------------------------------------",
     "# Directory holding the downloaded bundle (package, SHA256SUMS, .sig).",
     "RELEASE_DIR='.'",
-    "# GuardTalk release PUBLIC key PEM for step-2 signature verification.",
-    "RELEASE_KEY_PEM='// confirm path to the GuardTalk release public key PEM'",
+    "# GuardTalk release PUBLIC key PEM for step-2 signature verification. This",
+    "# build publishes no fingerprint for it, so name the file YOU obtained with",
+    "# the bundle; the run aborts while this is empty or missing.",
+    "RELEASE_KEY_PEM=''",
     "# Detached signature of SHA256SUMS from the same release key.",
     "SHA256SUMS_SIG='SHA256SUMS.sig'",
     "# Your own AVB private key (RSA-4096 PEM). It never leaves this machine.",
     "USER_KEY_PEM='user.pem'",
+    "# Release provenance. The address is advisory: this script makes NO network",
+    "# request. The fingerprint is REQUIRED: it is the value you obtained out of",
+    "# band, and nothing is unlocked or written while it is empty.",
+    "RELEASE_BUNDLE_SOURCE=''",
+    "RELEASE_PROVENANCE_FINGERPRINT=''",
     "",
   ];
 }
@@ -188,10 +196,21 @@ function verifySection(plan: CliExportPlan, out: Emitter): void {
     '(cd "$RELEASE_DIR" && sha256sum -c SHA256SUMS)',
   );
   out.comment("detached signature check against the GuardTalk release key:");
+  out.comment("this build publishes no fingerprint, so the value below is the one YOU");
+  out.comment("obtained out of band. Compare it with what this run prints, not with");
+  out.comment("anything on this page.");
   out.cmd(
     2,
-    "cross-check the release fingerprint against the value published where you got the bundle",
-    `echo ${shq(FINGERPRINT_PLACEHOLDER)}`,
+    "the release public key you obtained with the bundle is named and present",
+    '[ -n "$RELEASE_KEY_PEM" ] && [ -f "$RELEASE_KEY_PEM" ] \\',
+  );
+  out.lines.push(
+    '  || abort "RELEASE_KEY_PEM is empty or missing: name the GuardTalk release PUBLIC key PEM you obtained with the bundle — nothing is verified without it"',
+  );
+  out.cmd(
+    2,
+    "print the release fingerprint of the key you hold, for your own comparison",
+    'openssl pkey -in "$RELEASE_KEY_PEM" -pubout -outform DER | openssl dgst -sha256',
   );
   out.cmd(
     2,
@@ -300,6 +319,20 @@ function flashSection(plan: CliExportPlan, out: Emitter): void {
 
   // --- step 5: connect device, canFlash gate, unlock -------------------------
   out.step(5);
+  // Release provenance FIRST: it is the one check this build cannot perform for
+  // the user. Nothing is unlocked and nothing is written while it is empty.
+  out.comment("release provenance — the check this build cannot do for you:");
+  out.comment("no onion address and no fingerprint are published, so the value above");
+  out.comment("is the one you took from the release announcement. An empty value");
+  out.comment("stops the run here, before the unlock that wipes the device.");
+  out.cmd(
+    5,
+    "release provenance fingerprint was taken from your release announcement",
+    '[ -n "$RELEASE_PROVENANCE_FINGERPRINT" ] \\',
+  );
+  out.lines.push(
+    '  || abort "RELEASE_PROVENANCE_FINGERPRINT is empty: this build publishes no fingerprint, so take it from your release announcement — refusing to unlock or write anything"',
+  );
   out.comment("product gate — the CLI twin of the browser canFlash check.");
   out.comment("NOTHING is written before this passes; mismatch aborts cold.");
   out.cmd(

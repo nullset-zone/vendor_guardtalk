@@ -356,8 +356,19 @@ if [[ "${#GEN67_FORBIDDEN[@]}" -eq 0 ]]; then
   fail "attack6: GEN67_FORBIDDEN is empty — advertise guard would be vacuous"
 else
   ADV_RE="$(IFS='|'; printf '(^|[^[:alnum:]_])(%s)([^[:alnum:]_]|$)' "${GEN67_FORBIDDEN[*]}")"
+  # T-WEBINSTALL-PACKER-VENDOR: the ONE packer implementation is the vendored
+  # copy; the parent path is a thin exec wrapper with no device list, so scanning
+  # only that path would make this advertise-surface check vacuous. Scan both and
+  # require the canonical copy to exist.
+  if [[ -f vendor/guardtalk/web-installer/scripts/pack-webinstall-channel.sh ]]; then
+    pass "attack6: vendored packer present (advertise surface is non-vacuous)"
+  else
+    fail "attack6: vendored packer missing — advertise surface check would be vacuous"
+  fi
   ADV_LEAK="$(grep -rnE "$ADV_RE" \
-    vendor/guardtalk/web-installer/src vendor/guardtalk/scripts/pack-webinstall-channel.sh 2>/dev/null || true)"
+    vendor/guardtalk/web-installer/src \
+    vendor/guardtalk/web-installer/scripts/pack-webinstall-channel.sh \
+    vendor/guardtalk/scripts/pack-webinstall-channel.sh 2>/dev/null || true)"
   if [[ -z "$ADV_LEAK" ]]; then
     pass "attack6: advertise surfaces name no forbidden Gen 6/7 codename (${GEN67_FORBIDDEN[*]})"
   else

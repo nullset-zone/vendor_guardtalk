@@ -13,6 +13,11 @@
  *   node scripts/readiness-gate.mjs --matrix=PATH      # gate a given matrix
  *   node scripts/readiness-gate.mjs --json             # machine-readable output
  *   node scripts/readiness-gate.mjs --verdict-out=PATH # write {gate:PASS|FAIL}
+ *   node scripts/readiness-gate.mjs --require-signed-root
+ *                                                      # a mode that DEMANDS a
+ *                                                      # signed channel root
+ *   node scripts/readiness-gate.mjs --allowed-signers=PATH
+ *                                                      # explicit trust list
  *
  * EXIT CODES
  *   0  PASS  — every gate clause held
@@ -45,6 +50,33 @@
  * stdout (`READINESS-GATE: PASS|FAIL`) and the exit code are computed from the
  * SAME `clauses` array in one expression. There is no second code path that
  * could print PASS while exiting non-zero, or vice versa.
+ *
+ * ANCHOR MODE (T-WEBINSTALL-SIGNED-ROOT-MODE-SURFACE): the summary line, the
+ * `trust-anchor` clause detail, `--json` and `--verdict-out` all name the
+ * authentication mechanism ACTUALLY IN FORCE — derived by
+ * `scripts/anchor-mode.mjs` from what this gate validated, never hardcoded:
+ *   anchor-mode=review-gated-pins (unsigned, channel=dev — not GrapheneOS-equivalent)
+ * A reader can no longer mistake the dev channel's review-gated pins for a
+ * production signed root. `unverified` is reported when nothing validated.
+ *
+ * SIGNED CHANNEL ROOT (T-WEBINSTALL-SIGNED-CHANNEL-ROOT): a mode that REQUIRES
+ * a signature (`--require-signed-root`, `GUARDTALK_REQUIRE_SIGNED_ROOT=1`, or a
+ * packed manifest declaring `signature.required:true`) evaluates the
+ * `signed-channel-root` clause, and FAILS CLOSED when no channel root verifies.
+ * The verification itself is `scripts/channel-signature.mjs` — the packer's own
+ * `ssh-keygen -Y verify` scheme (principal `guardtalk-channel`, namespace
+ * `factory images`) over a canonical statement binding `manifest.json` +
+ * `SHA256SUMS`, re-derived from the bytes on disk and checked against an
+ * OUT-OF-BAND trust list (`docs/expected-allowed-signers`).
+ *
+ * `authenticity` is the structured record of that check (status, required,
+ * trustSource, signer, per-channel verdicts) and is emitted in `--json` and
+ * `--verdict-out` alongside `anchorMode`. `anchorMode` remains the ONE legible
+ * label; `authenticity` is what a consumer machines over.
+ *
+ * The clause is CONDITIONAL: it is only added when the mode demands a signature
+ * or when signing material is present, so the dev channel keeps its exact
+ * 14-clause contract and its behaviour.
  *
  * CLAUSES (each independently fails)
  *   1. matrix present + schemaVersion 1
@@ -79,14 +111,23 @@
  * SIDE-EFFECT FREE by default: the only write is `--verdict-out`. The gate can
  * be run from any cwd — `INSTALLER_ROOT` is derived from `import.meta.url`.
  *
+ * DRILL ROOT SCOPING (T-WEBINSTALL-DRILL-ROOT-SCOPING, D-035 incident):
+ * `--matrix=<root>/docs/flash-matrix.json` DERIVES the probe root from the
+ * matrix path, so gating a /tmp matrix probes the /tmp tree and never the real
+ * one. An explicit root (`--installer-root=` > `GUARDTALK_INSTALLER_ROOT`) that
+ * names a DIFFERENT tree is an ERROR (exit 2), as is a `--matrix=` that is not
+ * a tree matrix with no root named — the gate refuses to guess rather than
+ * probe the live channels. Without `--matrix=` nothing changes: plain
+ * `node scripts/readiness-gate.mjs` gates the live tree from any cwd.
+ *
  * HONESTY: BOOT_VERIFIED=false. A PASS means "advertised ⟺ packed and fresh
  * ON DISK AND IN THE MATRIX", never "these images boot". It does not touch
  * LIVE_FLASH_CLAIMED.
  */
 
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
 import { buildMatrix, INSTALLER_ROOT, RELEASES_ROOT, readAllowedProducts } from "./gen-flash-matrix.mjs";
 import { checkChannelFreshness, freshnessClause } from "./channel-freshness.mjs";
 import {
@@ -94,6 +135,8 @@ import {
   checkTrustAnchors,
   loadAnchorPinsFromText,
 } from "./trust-anchor.mjs";
+import { deriveAnchorMode } from "./anchor-mode.mjs";
+import { SIGNATURE_STATUS, verifyChannelSignatures } from "./channel-signature.mjs";
 import {
   fileIdentity,
   listChannelDirs,
@@ -179,8 +222,20 @@ export function evaluateGate(matrix, options = {}) {
     ),
   );
   if (!wellFormed) {
-    // Fail closed: with no matrix we cannot check anything else.
-    return { pass: false, clauses };
+    // Fail closed: with no matrix we cannot check anything else. No anchor
+    // mechanism ran, so the mode is `unverified` — never an integrity claim.
+    // No channel root was verified either, and saying so is not the same as
+    // saying it failed: `status` is `unavailable`, the check could not run.
+    const mode = deriveAnchorMode({});
+    return {
+      pass: false,
+      clauses,
+      anchorMode: mode,
+      authenticity: unverifiedAuthenticity(
+        mode,
+        "the gate could not probe the tree, so no channel root was verified",
+      ),
+    };
   }
 
   const devices = matrix.devices;
@@ -514,25 +569,167 @@ export function evaluateGate(matrix, options = {}) {
   // every packed channel and compares it to the checked-in pin. The matrix is
   // not consulted: its digest is derived from the channel's own metadata (via
   // SHA256SUMS), which is exactly the evidence a forger can rewrite.
-  clauses.push(trustAnchorClause(snap, installerRoot, options));
+  // --- Clause 12: the AVB trust anchor, AND the mode it validated under ----
+  // T-WEBINSTALL-SIGNED-ROOT-MODE-SURFACE: the mode is DERIVED from what this
+  // clause actually validated (see scripts/anchor-mode.mjs), never hardcoded.
+  // It is exposed on the clause detail AND on the returned `anchorMode`, which
+  // the CLI prints in the human summary and emits in `--json` / `--verdict-out`.
+  //
+  // T-WEBINSTALL-SIGNED-CHANNEL-ROOT: the signed-root check runs FIRST so its
+  // verdict (a real signature verification, or a fail-closed refusal) is the
+  // evidence the mode derivation consumes. A mode can only reach `signed-root`
+  // when `channel-signature.mjs` actually verified a signature.
+  const signedRoot = evaluateSignedRoot(snap, installerRoot, options);
+  const anchor = evaluateTrustAnchor(snap, installerRoot, {
+    ...options,
+    signatureVerification: signedRoot.verification,
+  });
+  clauses.push(anchor.clause);
   clauses.push(channelShapeClause(snap, installerRoot, options));
 
-  return { pass: clauses.every((c) => c.ok), clauses };
+  // Clause 14 is CONDITIONAL, and that is deliberate: it appears only when the
+  // mode demands a signature (`--require-signed-root`, or a manifest that
+  // declares `signature.required:true`) or when signing material is present at
+  // all. The dev channel therefore keeps its exact 14-clause contract, while a
+  // channel that ships a (bad) signature can never be silently ignored.
+  if (signedRoot.required || signedRoot.anyMaterial) clauses.push(signedRoot.clause);
+
+  return {
+    pass: clauses.every((c) => c.ok),
+    clauses,
+    anchorMode: anchor.mode,
+    authenticity: {
+      ...signedRoot.authenticity,
+      // Mirrors the anchor mode so a consumer can join the two records without
+      // re-deriving anything. `anchorMode` stays the ONE legible label.
+      mode: anchor.mode.id,
+      mechanism: anchor.mode.mechanism,
+      label: anchor.mode.label,
+      signed: anchor.mode.signed,
+    },
+  };
+}
+
+/**
+ * The signed-channel-root evaluation (T-WEBINSTALL-SIGNED-CHANNEL-ROOT).
+ *
+ * WHY IT IS NOT ITS OWN MODULE IN THE GATE: the verification itself lives in
+ * `scripts/channel-signature.mjs` (one implementation, shared with anything
+ * that needs to check a signature). This function only decides WHAT THE MODE
+ * DEMANDS and turns the verifier's structured result into a clause + the
+ * `authenticity` record.
+ *
+ * A signature is REQUIRED when the caller's mode says so — the
+ * `--require-signed-root` flag, `GUARDTALK_REQUIRE_SIGNED_ROOT`, or a packed
+ * manifest that declares `signature.required: true`. It is never inferred from
+ * a document merely claiming to be signed.
+ */
+function evaluateSignedRoot(snap, installerRoot, options) {
+  const requiredByCaller = options.requireSignedRoot === true;
+  const requiredByManifest =
+    snap !== null &&
+    [...snap.channels.values()].some(
+      (probed) => probed?.packed === true && probed?.manifest?.signature?.required === true,
+    );
+  const required = requiredByCaller || requiredByManifest;
+  const description =
+    "every packed channel's channel root (manifest.json + SHA256SUMS) is signed and verifies against the out-of-band trust list";
+
+  if (snap === null) {
+    const detail = "tree probing was skipped — no channel root could be verified (fail closed)";
+    return {
+      required,
+      anyMaterial: false,
+      verification: { mechanism: "signed-root", verified: false },
+      authenticity: {
+        required,
+        status: SIGNATURE_STATUS.unavailable,
+        verified: false,
+        trustSource: null,
+        signer: null,
+        namespace: null,
+        detail,
+        channels: [],
+      },
+      clause: clause("signed-channel-root", description, false, detail),
+    };
+  }
+
+  const result = verifyChannelSignatures({
+    channels: snap.channels,
+    channelsRoot: snap.roots.channelsRoot,
+    installerRoot,
+    required,
+    allowedSignersPath: options.allowedSignersPath ?? null,
+    run: options.signatureRun,
+  });
+
+  return {
+    required,
+    anyMaterial: result.anyMaterial || required,
+    verification: result.verification,
+    authenticity: {
+      required,
+      status: result.status,
+      verified: result.verified,
+      trustSource: result.trustSource,
+      signer: result.signer,
+      namespace: result.namespace,
+      detail: result.detail,
+      channels: result.channels,
+    },
+    clause: clause("signed-channel-root", description, result.verified, result.detail),
+  };
+}
+
+/** The `authenticity` record for a gate that could not evaluate at all. */
+function unverifiedAuthenticity(mode, detail) {
+  return {
+    mode: mode.id,
+    mechanism: mode.mechanism,
+    label: mode.label,
+    required: false,
+    signed: false,
+    status: SIGNATURE_STATUS.unavailable,
+    verified: false,
+    trustSource: null,
+    signer: null,
+    namespace: null,
+    detail,
+    channels: [],
+  };
 }
 
 /**
  * Clause 12. Fails closed when the pin file is missing/unparseable, when a
  * packed channel has no pin, or when any digest/size differs. `options.pins`
  * (parsed) and `options.anchorsPath` let the tests inject a fixture.
+ *
+ * Returns the clause AND the anchor mode derived from the evidence this
+ * evaluation produced: which mechanism ran, and whether it validated.
+ * `options.signatureVerification` is the (currently unimplemented) signed-root
+ * seam — nothing in this tree produces such a result, so the live gate reports
+ * the review-gated pin mechanism truthfully rather than inventing a signed one.
  */
-function trustAnchorClause(snap, installerRoot, options) {
+function evaluateTrustAnchor(snap, installerRoot, options) {
+  const modeEvidence = (anchorResult, pins) =>
+    deriveAnchorMode({
+      anchorResult,
+      pins,
+      signatureVerification: options.signatureVerification ?? null,
+    });
+
   if (snap === null) {
-    return clause(
-      "trust-anchor",
-      "every packed channel's avb_pkmd.bin matches the out-of-band pin",
-      false,
-      "tree probing was skipped — the AVB trust anchor cannot be verified (fail closed)",
-    );
+    const mode = modeEvidence(null, options.pins ?? null);
+    return {
+      clause: clause(
+        "trust-anchor",
+        "every packed channel's avb_pkmd.bin matches the out-of-band pin",
+        false,
+        `tree probing was skipped — the AVB trust anchor cannot be verified (fail closed) · anchor-mode: ${mode.label}`,
+      ),
+      mode,
+    };
   }
   const anchorsPath = options.anchorsPath ?? join(installerRoot, "docs", "expected-anchors.json");
   const pins =
@@ -554,12 +751,16 @@ function trustAnchorClause(snap, installerRoot, options) {
     observed.set(product, { sha256: digest, size });
   }
   const result = checkTrustAnchors(observed, pins);
-  return clause(
-    "trust-anchor",
-    "every packed channel's avb_pkmd.bin matches the out-of-band pin in docs/expected-anchors.json",
-    result.ok,
-    result.detail,
-  );
+  const mode = modeEvidence(result, pins);
+  return {
+    clause: clause(
+      "trust-anchor",
+      "every packed channel's avb_pkmd.bin matches the out-of-band pin in docs/expected-anchors.json",
+      result.ok,
+      `${result.detail} · anchor-mode: ${mode.label}`,
+    ),
+    mode,
+  };
 }
 
 /** Keep multiline detail readable when many reconciliations fail at once. */
@@ -654,13 +855,72 @@ function loadMatrix(path) {
   }
 }
 
-function summarize(matrix) {
-  if (matrix === null) return "no matrix";
+/**
+ * The installer root a `--matrix=` path belongs to, or `null` when the path is
+ * not a tree matrix (T-WEBINSTALL-DRILL-ROOT-SCOPING).
+ *
+ * A tree's matrix lives at `<root>/docs/flash-matrix.json` — the shape
+ * `gen-flash-matrix.mjs` writes. Only that shape carries a tree, so only that
+ * shape may have its probe root INFERRED. Any other path is a standalone
+ * document: the caller must name the tree explicitly (`--installer-root=`), or
+ * the gate refuses. Guessing a root here is exactly the 2026-10-18 incident.
+ */
+function deriveRootFromMatrix(matrixPath) {
+  const matrix = resolve(matrixPath);
+  const docsDir = dirname(matrix);
+  if (basename(matrix) !== "flash-matrix.json") return null;
+  if (basename(docsDir) !== "docs") return null;
+  return dirname(docsDir);
+}
+
+/**
+ * True when two paths name the same directory. Symlinks are resolved when the
+ * path exists, so `/tmp/x` and `/private/tmp/x` (or a symlinked release root)
+ * are not reported as a conflict; a path that does not exist yet is compared
+ * lexically.
+ */
+function sameDirectory(a, b) {
+  const canonical = (path) => {
+    const absolute = resolve(path);
+    try {
+      return realpathSync(absolute);
+    } catch {
+      return absolute;
+    }
+  };
+  return canonical(a) === canonical(b);
+}
+
+function summarize(matrix, anchorMode) {
+  const modePart =
+    anchorMode === null || anchorMode === undefined
+      ? "anchor-mode=unverified"
+      : `anchor-mode=${anchorMode.label}`;
+  if (matrix === null) return `no matrix · ${modePart}`;
   const stale = (matrix.summary ?? {}).staleChannels ?? [];
   const notPacked = (matrix.summary ?? {}).advertisedNotPacked ?? [];
   return `packed=${String(matrix.counts?.packedChannels ?? "?")} advertised-not-packed=${String(
     notPacked.length,
-  )} stale=${String(stale.length)}`;
+  )} stale=${String(stale.length)} · ${modePart}`;
+}
+
+/**
+ * Does `GUARDTALK_REQUIRE_SIGNED_ROOT` demand a signature?
+ *
+ * Fail closed: only the explicit off-values (`0`/`false`/`no`) disable the
+ * requirement. An unrecognised value (`yes please`, `TURE`, a stray space) is
+ * REQUIRED — a mode whose demand a typo can silently switch off is not a mode.
+ *
+ * @param {Record<string, string|undefined>} env
+ * @returns {boolean}
+ */
+function envRequiresSignedRoot(env) {
+  const raw = env.GUARDTALK_REQUIRE_SIGNED_ROOT;
+  if (raw === undefined) return false;
+  const value = String(raw).trim().toLowerCase();
+  if (value === "") return false;
+  if (value === "0" || value === "false" || value === "no") return false;
+  return true;
 }
 
 export function runGate(argv) {
@@ -668,43 +928,111 @@ export function runGate(argv) {
   const verdictArg = argv.find((a) => a.startsWith("--verdict-out="));
   const installArg = argv.find((a) => a.startsWith("--installer-root="));
   const releasesArg = argv.find((a) => a.startsWith("--releases-dir="));
+  const signersArg = argv.find((a) => a.startsWith("--allowed-signers="));
   const json = argv.includes("--json");
+  // T-WEBINSTALL-SIGNED-CHANNEL-ROOT: the mode that DEMANDS a signature.
+  // `--require-signed-root` and `GUARDTALK_REQUIRE_SIGNED_ROOT` are both
+  // fail-closed: an unrecognised env value means REQUIRED, never "off".
+  const requireSignedRoot = argv.includes("--require-signed-root") || envRequiresSignedRoot(process.env);
+  const allowedSignersPath =
+    signersArg === undefined ? null : signersArg.slice("--allowed-signers=".length);
 
-  // DRILL SUPPORT (tests + /tmp reproduction): point the tree probe at another
-  // installer root / releases dir. Precedence: CLI flag > env var > derived
-  // default (INSTALLER_ROOT from import.meta.url, so any cwd works). A real
-  // repo never sets either.
-  const installerRoot =
+  // DRILL ROOT SCOPING (T-WEBINSTALL-DRILL-ROOT-SCOPING).
+  //
+  // INCIDENT 2026-10-18T12:13 (D-035): a lane ran
+  //   --matrix=/tmp/drill/docs/flash-matrix.json
+  // from the real tree. Only the matrix was redirected; the probe root defaulted
+  // to this module's own install location, so the gate silently probed the REAL
+  // channels — and the "drill" overwrote three real avb_pkmd.bin anchors.
+  //
+  // The rules now, all fail closed:
+  //   1. `--matrix=<root>/docs/flash-matrix.json` DERIVES the probe root from
+  //      the matrix path. The tree being gated is the tree the matrix names.
+  //   2. an explicit root (`--installer-root=` > `GUARDTALK_INSTALLER_ROOT`)
+  //      that names a DIFFERENT tree is an ERROR (exit 2) — never a silent
+  //      mismatch between the matrix and the tree probed.
+  //   3. a `--matrix=` that is not a tree matrix has no derivable root, so it is
+  //      an ERROR (exit 2) unless a root is named explicitly.
+  //   4. no `--matrix=` → unchanged: the explicit root, else the gate's own
+  //      install location. Plain `node scripts/readiness-gate.mjs` still gates
+  //      the LIVE tree, from any cwd.
+  const matrixPathArg = matrixArg === undefined ? null : matrixArg.slice("--matrix=".length);
+  const explicitRoot =
     installArg !== undefined
       ? installArg.slice("--installer-root=".length)
-      : (process.env.GUARDTALK_INSTALLER_ROOT ?? INSTALLER_ROOT);
-  const releasesDir =
+      : (process.env.GUARDTALK_INSTALLER_ROOT ?? "");
+  const namedRoot = explicitRoot === "" ? null : explicitRoot;
+  const derivedRoot = matrixPathArg === null ? null : deriveRootFromMatrix(matrixPathArg);
+
+  let installerRoot = null;
+  let configError = null;
+  if (matrixPathArg !== null) {
+    if (derivedRoot === null) {
+      if (namedRoot === null) {
+        configError =
+          `--matrix=${matrixPathArg} is not a tree matrix (expected <root>/docs/flash-matrix.json), ` +
+          `so the probe root cannot be derived from it; pass --installer-root=<root> to name the tree to gate`;
+      } else {
+        installerRoot = namedRoot;
+      }
+    } else if (namedRoot !== null && !sameDirectory(namedRoot, derivedRoot)) {
+      configError =
+        `--matrix=${matrixPathArg} belongs to the tree at ${derivedRoot}, but ` +
+        `${installArg !== undefined ? "--installer-root" : "GUARDTALK_INSTALLER_ROOT"} names ${namedRoot}; ` +
+        `refusing to gate one tree's matrix while probing another tree (exit 2)`;
+    } else {
+      installerRoot = derivedRoot;
+    }
+  } else {
+    installerRoot = namedRoot ?? INSTALLER_ROOT;
+  }
+
+  // The release store follows the EFFECTIVE root for a drill, so a /tmp tree
+  // keeps its own `releases/desktop-flash`: reading the REAL release store while
+  // gating a drill tree is the same bleed class as reading the real matrix. The
+  // live installer is not its own release store, so it keeps RELEASES_ROOT.
+  const explicitReleases =
     releasesArg !== undefined
       ? releasesArg.slice("--releases-dir=".length)
-      : (process.env.GUARDTALK_RELEASES_DIR ?? DEFAULT_RELEASES_DIR);
+      : (process.env.GUARDTALK_RELEASES_DIR ?? "");
+  const releasesDir =
+    explicitReleases !== ""
+      ? explicitReleases
+      : installerRoot === null || sameDirectory(installerRoot, INSTALLER_ROOT)
+        ? DEFAULT_RELEASES_DIR
+        : join(installerRoot, "releases", "desktop-flash");
 
   // The matrix default follows the EFFECTIVE root, never the gate's own install
   // path. Resolving it against INSTALLER_ROOT while probing a drill root would
   // read the REAL repo's matrix and print PASS for a tree with no channels —
   // the exact vacuity this gate exists to catch (INCIDENT 2026-10-18T12:13).
   const matrixPath =
-    matrixArg !== undefined
-      ? matrixArg.slice("--matrix=".length)
-      : join(installerRoot, "docs", "flash-matrix.json");
+    matrixPathArg ?? join(installerRoot ?? INSTALLER_ROOT, "docs", "flash-matrix.json");
 
-  const matrix = loadMatrix(matrixPath);
+  const matrix = configError === null ? loadMatrix(matrixPath) : null;
   // ERROR (exit 2) when the input cannot be evaluated — fail closed.
-  const errored = matrix === null;
+  const errored = configError !== null || matrix === null;
   const result = errored
-    ? { pass: false, clauses: [] }
-    : evaluateGate(matrix, { installerRoot, releasesDir });
+    ? {
+        pass: false,
+        clauses: [],
+        anchorMode: deriveAnchorMode({}),
+        authenticity: unverifiedAuthenticity(
+          deriveAnchorMode({}),
+          "the gate could not load its input, so no channel root was verified",
+        ),
+      }
+    : evaluateGate(matrix, { installerRoot, releasesDir, requireSignedRoot, allowedSignersPath });
   // ONE expression drives BOTH the exit code and the printed word.
   const pass = !errored && result.pass;
   const exitCode = errored ? 2 : pass ? 0 : 1;
   const word = errored ? "ERROR" : pass ? "PASS" : "FAIL";
 
   const failed = result.clauses.filter((c) => !c.ok).map((c) => c.id);
-  const summary = summarize(matrix);
+  // T-WEBINSTALL-SIGNED-ROOT-MODE-SURFACE: the summary line NAMES the anchor
+  // mode in force, so "PASS" can never be misread as "signed/PASS".
+  const anchorMode = result.anchorMode ?? deriveAnchorMode({});
+  const summary = summarize(matrix, anchorMode);
 
   if (json) {
     process.stdout.write(
@@ -716,6 +1044,9 @@ export function runGate(argv) {
           installerRoot,
           releasesDir,
           summary,
+          anchorMode,
+          authenticity: result.authenticity ?? unverifiedAuthenticity(anchorMode, "no channel root was verified"),
+          error: configError,
           clauses: result.clauses,
         },
         null,
@@ -726,12 +1057,21 @@ export function runGate(argv) {
     for (const c of result.clauses) {
       process.stdout.write(`  [${c.ok ? "ok" : "NO"}] ${c.id}: ${c.detail}\n`);
     }
-    if (errored) {
+    if (configError !== null) {
+      process.stdout.write(`  [NO] drill-root: ${configError}\n`);
+    } else if (errored) {
       process.stdout.write(`  [NO] matrix-loadable: cannot read ${matrixPath} — fail closed\n`);
     }
     process.stdout.write(
       `READINESS-GATE: ${word} (exit ${String(exitCode)}) · ${summary} · ${matrixPath}\n`,
     );
+  }
+
+  // A configuration error is not a verdict about the tree, so it is announced on
+  // stderr as well: the operator must be able to see WHY the gate refused
+  // without parsing stdout.
+  if (configError !== null) {
+    process.stderr.write(`[readiness-gate] ERROR: ${configError}\n`);
   }
 
   // The linter's transport (D-015): a { gate: PASS|FAIL } file. Written only
@@ -748,6 +1088,9 @@ export function runGate(argv) {
           matrix: matrixPath,
           installerRoot,
           summary,
+          anchorMode,
+          authenticity: result.authenticity ?? unverifiedAuthenticity(anchorMode, "no channel root was verified"),
+          error: configError,
           failedClauses: failed,
         },
         null,

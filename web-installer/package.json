@@ -15,7 +15,7 @@
     "plan": "tsx src/cli.ts",
     "wizard:build": "tsc -p tsconfig.wizard.json",
     "wizard:serve": "python3 -m http.server 4173 --bind 0.0.0.0",
-    "channels:pack": "bash ../../scripts/pack-wizard-hosted-channels.sh",
+    "channels:pack": "bash scripts/pack-channels.sh",
     "routes:build": "bash scripts/build-site.sh",
     "claims:lint": "node scripts/lint-claims-gate.mjs",
     "routes:serve": "python3 -m http.server 8080 --directory dist/site"
@@ -27,5 +27,8 @@
     "@types/node": "22.10.5",
     "tsx": "4.19.3",
     "typescript": "5.7.3"
+  },
+  "dependencies": {
+    "android-fastboot": "git+https://github.com/kdrag0n/fastboot.js.git#ffe7e270061b95fe0f0f3abd1aa7d3c28999d1d9"
   }
 }

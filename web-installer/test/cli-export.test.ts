@@ -177,26 +177,44 @@ test("offline guarantee: zero curl/wget/http anywhere in the script", () => {
   }
 });
 
-test("placeholders: '// confirm' present for onion address + release fingerprint; nothing invented", () => {
-  for (const plan of ALL_PLANS) {
+test("provenance: no pending token ships; the values this build lacks are named and required", () => {
+  for (const plan of ALL_PLANS.concat(generateHereNoExportPlan())) {
     const script = generateCliExport(plan);
-    assert.ok(script.includes("// confirm onion address"), "onion address placeholder missing");
-    assert.ok(
-      script.includes("// confirm release-key fingerprint"),
-      "release-key fingerprint placeholder missing",
-    );
-    assert.match(script, /Q-05/, "onion placeholder should cite its question id");
-    assert.match(script, /Q-04/, "fingerprint placeholder should cite its question id");
+    // D-041 (a): the emitted script must carry no // confirm token at all.
+    assert.doesNotMatch(script, /\/\/ confirm/, "a pending-confirmation token leaked into the script");
+    // (c) nothing fabricated: no onion host, and the ONLY long hex literals are
+    // exactly the planned release digests.
     assert.doesNotMatch(script, /\.onion/i, "an onion host value was invented");
-    // The ONLY long hex literals allowed are exactly the planned release digests.
     const hexes = [...(script.match(/[A-Fa-f0-9]{64}/g) ?? [])].sort();
     assert.deepEqual(
       hexes,
       [...plan.releaseFiles.map((f) => f.sha256.toLowerCase())].sort(),
       "unexpected invented hex value in script",
     );
-    // Release key path is itself a confirm placeholder, not an invented path.
-    assert.match(script, /RELEASE_KEY_PEM='\/\/ confirm /);
+    // (b)+(d): the two facts the project does not have are stated, cite their
+    // question ids, and the values are REQUIRED rather than pre-filled.
+    assert.ok(script.includes("UNAVAILABLE IN THIS BUILD"), "unavailable provenance not stated");
+    assert.match(script, /Q-05/, "history: the onion absence should cite its question id");
+    assert.match(script, /Q-04/, "history: the fingerprint absence should cite its question id");
+    assert.match(script, /^RELEASE_KEY_PEM=''$/m, "release key path must not be pre-filled");
+    assert.match(
+      script,
+      /^RELEASE_PROVENANCE_FINGERPRINT=''$/m,
+      "provenance fingerprint must start empty so the user must supply it",
+    );
+    // The guard that blocks any write while it is empty, and the block itself.
+    const guardIdx = script.indexOf('[ -n "$RELEASE_PROVENANCE_FINGERPRINT" ]');
+    const eraseIdx = script.indexOf("fastboot erase avb_custom_key");
+    // The EXECUTABLE unlock, not the header warning that also names the command.
+    const unlockIdx = script.indexOf("&& fastboot flashing unlock");
+    assert.ok(guardIdx >= 0, "provenance guard missing");
+    assert.ok(unlockIdx >= 0, "the executable unlock must still be present");
+    assert.ok(guardIdx < unlockIdx, "provenance must be checked before the unlock that wipes");
+    assert.ok(guardIdx < eraseIdx, "provenance must be checked before the first write");
+    assert.match(script, /refusing to unlock or write anything/);
+    // The release public key is likewise required, not guessed.
+    assert.match(script, /\[ -n "\$RELEASE_KEY_PEM" \] && \[ -f "\$RELEASE_KEY_PEM" \]/);
+    assert.match(script, /RELEASE_KEY_PEM is empty or missing/);
   }
 });
 

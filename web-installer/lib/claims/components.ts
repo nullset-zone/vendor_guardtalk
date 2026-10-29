@@ -1,15 +1,25 @@
 /**
  * Claims components (PLAN.md §5, QUESTIONS Q-12): Hardening sentences carry
  * the mechanism that backs them; every ProtectionLimit links to the threat
- * model; LineageNote ships draft attribution wording carrying the
- * `// confirm with counsel` marker. Copy uses protective verbs only.
+ * model; LineageNote ships draft attribution wording carrying a visible
+ * PENDING-COUNSEL-REVIEW marker.
+ *
+ * The marker is a REVIEW label, not a value waiting to be filled in. It used to
+ * render as a pending-confirmation token, which shipped a placeholder into the
+ * production page (F-WEBINSTALL-PLACEHOLDER-RETIREMENT, D-041); the label now
+ * states the review state in words a reader can act on, and the
+ * `data-confirm="with counsel"` attribute stays so the review tooling still
+ * finds it.
  */
 import { escapeHtml } from "../ui/escape.js";
 
 export const THREAT_MODEL_HREF = "/threat-model" as const;
 
-/** Default mechanism link target for hardening sentences (`// confirm`). */
+/** Default mechanism link target for hardening sentences. */
 export const MECHANISM_DEFAULT_HREF = "/install#verify-release" as const;
+
+/** The visible review state of draft attribution wording (Q-12). */
+export const COUNSEL_REVIEW_MARKER = "PENDING COUNSEL REVIEW" as const;
 
 export interface LinkOptions {
   readonly href?: string;
@@ -28,7 +38,7 @@ function linkHtml(href: string, label: string): string {
 /**
  * Hardening sentence: what the installer enforces, with the mechanism named.
  * The optional link points at the enforcing step; when omitted the default
- * verify anchor is used and marked `// confirm`.
+ * verify anchor is used.
  */
 export function Hardening(text: string, mechanismLink?: LinkOptions): RenderedClaim {
   if (text.trim().length === 0) {
@@ -65,9 +75,9 @@ export function ProtectionLimit(text: string, threatModelLink?: LinkOptions): Re
 }
 
 /**
- * Attribution note crediting upstream practice (Q-12). Ships draft wording
- * with the binding marker `// confirm with counsel` — rendered visibly so
- * the marker survives into review builds.
+ * Attribution note crediting upstream practice (Q-12). Ships draft wording with
+ * the visible review marker rendered so the review state survives into review
+ * builds — as a label, never as a token a reader might treat as an instruction.
  */
 export function LineageNote(draftText: string): RenderedClaim {
   if (draftText.trim().length === 0) {
@@ -76,8 +86,8 @@ export function LineageNote(draftText: string): RenderedClaim {
   const html = [
     `<p class="claim claim-lineage" data-confirm="with counsel">`,
     escapeHtml(draftText),
-    `<span class="confirm-marker">// confirm with counsel</span>`,
+    `<span class="confirm-marker">${COUNSEL_REVIEW_MARKER}</span>`,
     `</p>`,
   ].join("");
-  return { html, text: `${draftText} // confirm with counsel` };
+  return { html, text: `${draftText} ${COUNSEL_REVIEW_MARKER}` };
 }

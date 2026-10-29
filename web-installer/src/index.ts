@@ -1,4 +1,12 @@
-export { adaptAndroidFastboot, type AndroidFastbootDevice } from "./transport.js";
+export {
+  adaptAndroidFastboot,
+  ANDROID_FASTBOOT_SPECIFIER,
+  connectAndroidFastboot,
+  importAndroidFastboot,
+  type AndroidFastbootConnectOptions,
+  type AndroidFastbootDevice,
+  type AndroidFastbootModule,
+} from "./transport.js";
 export {
   ALLOWED_PRODUCT,
   ALLOWED_PRODUCTS,

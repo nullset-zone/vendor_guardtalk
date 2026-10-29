@@ -1,29 +1,27 @@
 #!/usr/bin/env bash
-# Pack tokay + akita + komodo + rango desktop-flash stamps into
-# web-installer/channels/{product}/ for the hosted wizard.
-# Images are symlinked (no multi-GiB copies).
-# Rango source stamp: releases/desktop-flash/rango-latest (experimental / boot HOLD).
+# pack-wizard-hosted-channels.sh - THIN DELEGATION WRAPPER (parent layout only).
+#
+# The ONE implementation of the hosted-channel packing logic lives in the
+# installer it belongs to:
+#   <product>/web-installer/scripts/pack-wizard-hosted-channels.sh
+#
+# This path is kept so every pre-existing caller keeps working (docs,
+# docs/qa verify gates, `npm run channels:pack` fallback). It contains NO
+# packing logic: it `exec`s the in-repo copy, so the two paths cannot drift into
+# divergent implementations. T-WEBINSTALL-PACKER-VENDOR.
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
-PACK="${SCRIPT_DIR}/pack-webinstall-channel.sh"
-OUT_ROOT="${REPO_ROOT}/vendor/guardtalk/web-installer/channels"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NAME="$(basename "${BASH_SOURCE[0]}")"
+TARGET="${HERE}/../web-installer/scripts/${NAME}"
 
-pack_one() {
-    local product="$1" stamp="$2"
-    local dest="${OUT_ROOT}/${product}"
-    rm -rf "$dest"
-    mkdir -p "$dest"
-    "$PACK" --stamp "$stamp" --out "$dest" --copy-images
-    echo "HOSTED_OK  ${product}  ${dest}"
-}
+if [ ! -f "$TARGET" ]; then
+    {
+        echo "ERROR: ${NAME}: this is a thin wrapper, but its implementation is missing"
+        echo "       target: ${TARGET}"
+        echo "       fix: restore <product>/web-installer/scripts/${NAME} (single source of truth)"
+    } >&2
+    exit 2
+fi
 
-# tokay repointed off the RETIRED generic `latest` (quarantined 2026-10-01,
-# T-EXCISE-STAMP-TREE-QUARANTINE) to the per-device `<codename>-latest` pointer.
-# The generic `latest` alias must never be re-introduced.
-pack_one tokay "${REPO_ROOT}/releases/desktop-flash/tokay-latest"
-pack_one akita "${REPO_ROOT}/releases/desktop-flash/akita-latest"
-pack_one komodo "${REPO_ROOT}/releases/desktop-flash/komodo-latest"
-pack_one rango "${REPO_ROOT}/releases/desktop-flash/rango-latest"
-echo "HOSTED_CHANNELS_OK  ${OUT_ROOT}"
+exec bash "$TARGET" "$@"

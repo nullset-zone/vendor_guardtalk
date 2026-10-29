@@ -32,7 +32,8 @@ cp -a dist/routes-js/src/. "$SITE/src/"
 cp dist/routes-js/routes/install/*.js "$SITE/install/"
 cp routes/install/page.html "$SITE/install/index.html"
 
-# Sibling routes keep ../../lib from their source depth.
+# Sibling routes import lib two levels up from their own source depth, so their
+# compiled modules must sit one directory below lib/ in the emitted site.
 cp dist/routes-js/routes/update/*.js "$SITE/install/update/"
 cp routes/update/page.html "$SITE/install/update/index.html"
 

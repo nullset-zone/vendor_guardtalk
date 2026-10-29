@@ -30,9 +30,6 @@ import {
   ALPHA_POSTURE_FLAGS,
   CUSTODY_SENTENCES,
   KEY_FLOW_CARDS,
-  ONION_PLACEHOLDER,
-  PARTITION_LAYOUT_CONFIRM,
-  RELEASE_FINGERPRINT_PLACEHOLDER,
   STEP4_ALGORITHM,
   SUPPORTED_TARGETS,
   cliSigningCommands,
@@ -67,6 +64,12 @@ import { parseVbmeta, algorithmName } from "../lib/avb/parser.js";
 import { DESCRIPTOR_TAG_CHAIN, DESCRIPTOR_TAG_HASH } from "../lib/avb/descriptors.js";
 import { lintText } from "../lib/claims/lint-claims.js";
 import { INSTALLER_CSP } from "../lib/claims/csp.js";
+import {
+  ONION_ADDRESS_FACT,
+  PARTITION_LAYOUT_FACT,
+  RELEASE_FINGERPRINT_FACT,
+  UNAVAILABLE_CHIP_WORD,
+} from "../lib/ui/unavailable.js";
 
 // ---------------------------------------------------------------------------
 // Small binary helpers (test-local wire builders)
@@ -568,13 +571,22 @@ test("posture pill text matches PLAN.md §5 exactly", () => {
 // Step 1
 // ---------------------------------------------------------------------------
 
-test("step 1 shows three inputs, confirm placeholders, offline promise, gate", () => {
+test("step 1 renders honest unavailable facts for the onion address and release fingerprint", () => {
   const empty = renderStep1({ package: false, sums: false, sig: false });
   assert.match(empty, /data-role="package"/);
   assert.match(empty, /data-role="sums"/);
   assert.match(empty, /data-role="sig"/);
-  assert.ok(empty.includes(ONION_PLACEHOLDER));
-  assert.ok(empty.includes(RELEASE_FINGERPRINT_PLACEHOLDER));
+  // F-WEBINSTALL-PLACEHOLDER-RETIREMENT (D-041): the two facts the project does
+  // not have render as "unavailable — do not proceed", never as a token.
+  assert.ok(empty.includes(`data-unavailable="${ONION_ADDRESS_FACT.id}"`));
+  assert.ok(empty.includes(`data-unavailable="${RELEASE_FINGERPRINT_FACT.id}"`));
+  assert.equal((empty.match(new RegExp(UNAVAILABLE_CHIP_WORD, "g")) ?? []).length, 2);
+  assert.doesNotMatch(empty, /\/\/ confirm/, "no pending-confirmation token may ship");
+  // Actionable: what to do instead is stated for each fact.
+  assert.ok(empty.includes("release announcement"));
+  assert.ok(empty.includes("step 2"));
+  // Blocking: each fact names what it gates.
+  assert.ok(empty.includes("step 6"));
   assert.match(empty, /No network request leaves this page/);
   assert.match(empty, /data-action="files-picked"[^>]*disabled/);
 
@@ -788,7 +800,7 @@ test("step 3: sign-elsewhere flow fingerprints the public half from SPKI PEM", a
 // Step 4 — chain stop + real resign roundtrip
 // ---------------------------------------------------------------------------
 
-test("step 4: chain descriptor fixture ⇒ PARTITION_LAYOUT_UNKNOWN stop + Q-07 placeholder", async () => {
+test("step 4: chain descriptor fixture ⇒ PARTITION_LAYOUT_UNKNOWN stop + Q-07 unavailable fact", async () => {
   const fixture = await vbmetaFixture();
   const parsed = parseVbmeta(fixture.img);
   const auxStart = 256 + parsed.header.authenticationDataBlockSize;
@@ -827,8 +839,13 @@ test("step 4: chain descriptor fixture ⇒ PARTITION_LAYOUT_UNKNOWN stop + Q-07 
   assert.ok(outcome.view.chainPartitions?.includes("vbmeta_system"));
   const html = renderStep4(outcome.view);
   assert.ok(html.includes(STOP_REASONS.PARTITION_LAYOUT_UNKNOWN));
-  assert.ok(html.includes("// confirm partition layout"));
-  assert.ok(html.includes(PARTITION_LAYOUT_CONFIRM));
+  // D-041: the Q-07 explanation is an actionable unavailable fact, not a token,
+  // and it names the step it blocks.
+  assert.doesNotMatch(html, /\/\/ confirm/, "no pending-confirmation token may ship");
+  assert.ok(html.includes(`data-unavailable="${PARTITION_LAYOUT_FACT.id}"`));
+  assert.ok(html.includes(UNAVAILABLE_CHIP_WORD));
+  assert.ok(html.includes("avbtool info_image"), "the remedy must name a real tool");
+  assert.ok(html.includes("step 4"), "the fact must name what it blocks");
   assert.doesNotMatch(html, /data-action="vbmeta-signed"/);
   // The machine mirrors the hard stop at step 4.
   const machineStopped = reduce(driveTo(4), {
