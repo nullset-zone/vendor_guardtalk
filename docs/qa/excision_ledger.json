@@ -1188,6 +1188,8 @@
           "path": "releases/desktop-flash/akita-20260928-083403/vendor_dlkm.img",
           "inner": "/lib/modules/modules.load + vendor_kernel_boot ramdisk",
           "tier": "C",
+          "tier_label": "tier-unproven",
+          "tier_unproven_reason": "tier-unproven: recorded tier rests only on un-pinned vendor_kernel_boot.img (VNDRBOOT). The tier letter is unchanged. No hash pin was computed for that image.",
           "bytes": 31084544,
           "evidence_kind": "stamp-image",
           "image_sha256": "46938d46145f1eee9fae35abe43725331feb1962b96a9e5891fe09b43e9489e5",
@@ -1609,6 +1611,8 @@
           "path": "releases/desktop-flash/tokay-20260928-084839/vendor_dlkm.img",
           "inner": "/lib/modules/modules.load + vendor_kernel_boot ramdisk",
           "tier": "C",
+          "tier_label": "tier-unproven",
+          "tier_unproven_reason": "tier-unproven: recorded tier rests only on un-pinned vendor_kernel_boot.img (VNDRBOOT). The tier letter is unchanged. No hash pin was computed for that image.",
           "bytes": 32174080,
           "evidence_kind": "stamp-image",
           "image_sha256": "f4f8d3195b5c55a4c666fb19cf036130552da6fdc535d5c06515702d10971346",
@@ -2044,6 +2048,8 @@
           "path": "releases/desktop-flash/caiman-20260928-052519/vendor_dlkm.img",
           "inner": "/lib/modules/modules.load + vendor_kernel_boot ramdisk",
           "tier": "C",
+          "tier_label": "tier-unproven",
+          "tier_unproven_reason": "tier-unproven: recorded tier rests only on un-pinned vendor_kernel_boot.img (VNDRBOOT). The tier letter is unchanged. No hash pin was computed for that image.",
           "bytes": 32141312,
           "evidence_kind": "stamp-image",
           "image_sha256": "a3be54f60eb1f7189473eb0afab6958e00caa96eb7c5c34e0f6c2eb832168370",
@@ -2484,6 +2490,8 @@
           "path": "releases/desktop-flash/komodo-20260928-052609/vendor_dlkm.img",
           "inner": "/lib/modules/modules.load + vendor_kernel_boot ramdisk",
           "tier": "C",
+          "tier_label": "tier-unproven",
+          "tier_unproven_reason": "tier-unproven: recorded tier rests only on un-pinned vendor_kernel_boot.img (VNDRBOOT). The tier letter is unchanged. No hash pin was computed for that image.",
           "bytes": 32141312,
           "evidence_kind": "stamp-image",
           "image_sha256": "57616f0c0200db956ac07d8e9ebf66ab3efef944935302143eb54fbbe20e00f1",
@@ -2924,6 +2932,8 @@
           "path": "releases/desktop-flash/comet-20260928-050352/vendor_dlkm.img",
           "inner": "/lib/modules/modules.load + vendor_kernel_boot ramdisk",
           "tier": "C",
+          "tier_label": "tier-unproven",
+          "tier_unproven_reason": "tier-unproven: recorded tier rests only on un-pinned vendor_kernel_boot.img (VNDRBOOT). The tier letter is unchanged. No hash pin was computed for that image.",
           "bytes": 32530432,
           "evidence_kind": "stamp-image",
           "image_sha256": "f8e1cd001cd2e7d2e742b4ffe17a93bd735acb633da06fa1759823da2717d810",
@@ -3363,6 +3373,8 @@
           "path": "releases/desktop-flash/tegu-20260928-051613/vendor_dlkm.img",
           "inner": "/lib/modules/modules.load + vendor_kernel_boot ramdisk",
           "tier": "C",
+          "tier_label": "tier-unproven",
+          "tier_unproven_reason": "tier-unproven: recorded tier rests only on un-pinned vendor_kernel_boot.img (VNDRBOOT). The tier letter is unchanged. No hash pin was computed for that image.",
           "bytes": 30908416,
           "evidence_kind": "stamp-image",
           "image_sha256": "7a7da4b8fe78d11b8736f018376bc3fcc3c5c9d84578cd1264d2efab24a5b1da",
@@ -3785,6 +3797,8 @@
           "path": "releases/desktop-flash/stallion-20260928-052826/vendor_dlkm.img",
           "inner": "/lib/modules/modules.load + vendor_kernel_boot ramdisk",
           "tier": "C",
+          "tier_label": "tier-unproven",
+          "tier_unproven_reason": "tier-unproven: recorded tier rests only on un-pinned vendor_kernel_boot.img (VNDRBOOT). The tier letter is unchanged. No hash pin was computed for that image.",
           "bytes": 30900224,
           "evidence_kind": "stamp-image",
           "image_sha256": "424e71520baeab1b5d649ac9ca54899d3c83890ed712c5187c6bb6ac40850517",
@@ -4240,6 +4254,8 @@
           "path": "releases/desktop-flash/frankel-20260928-055107/vendor_dlkm.img",
           "inner": "/lib/modules/modules.load + vendor_kernel_boot ramdisk",
           "tier": "C",
+          "tier_label": "tier-unproven",
+          "tier_unproven_reason": "tier-unproven: recorded tier rests only on un-pinned vendor_kernel_boot.img (VNDRBOOT). The tier letter is unchanged. No hash pin was computed for that image.",
           "bytes": 37572608,
           "evidence_kind": "stamp-image",
           "image_sha256": "1f85966e31f8157f8916d93c34aed8b4b398cc31b3efe860ed9533f7a8683eda",
@@ -4748,6 +4764,8 @@
           "path": "releases/desktop-flash/blazer-20260928-060401/vendor_dlkm.img",
           "inner": "/lib/modules/modules.load + vendor_kernel_boot ramdisk",
           "tier": "C",
+          "tier_label": "tier-unproven",
+          "tier_unproven_reason": "tier-unproven: recorded tier rests only on un-pinned vendor_kernel_boot.img (VNDRBOOT). The tier letter is unchanged. No hash pin was computed for that image.",
           "bytes": 37572608,
           "evidence_kind": "stamp-image",
           "image_sha256": "9bbc4452ac5ca5a29ce1a84cb1bc6ca39ff0bbcab05d4fbc0bcea6913141469e",
@@ -5261,6 +5279,8 @@
           "path": "releases/desktop-flash/mustang-20260928-061721/vendor_dlkm.img",
           "inner": "/lib/modules/modules.load + vendor_kernel_boot ramdisk",
           "tier": "C",
+          "tier_label": "tier-unproven",
+          "tier_unproven_reason": "tier-unproven: recorded tier rests only on un-pinned vendor_kernel_boot.img (VNDRBOOT). The tier letter is unchanged. No hash pin was computed for that image.",
           "bytes": 37572608,
           "evidence_kind": "stamp-image",
           "image_sha256": "ecd21c1afe8337394b8eeb9d1b21965fd999fdc913ca42582eb1eb2588046a94",
@@ -5774,6 +5794,8 @@
           "path": "releases/desktop-flash/rango-20260928-081134/vendor_dlkm.img",
           "inner": "/lib/modules/modules.load + vendor_kernel_boot ramdisk",
           "tier": "C",
+          "tier_label": "tier-unproven",
+          "tier_unproven_reason": "tier-unproven: recorded tier rests only on un-pinned vendor_kernel_boot.img (VNDRBOOT). The tier letter is unchanged. No hash pin was computed for that image.",
           "bytes": 37666816,
           "evidence_kind": "stamp-image",
           "image_sha256": "581d61b7ffa0d9fb4c3137a05d5c330cc9c1df18256faafab141261787336bf6",
@@ -6492,7 +6514,66 @@
       "not_pinned": [
         "vendor_kernel_boot.img"
       ],
-      "impact": "vendor_kernel_boot.img is a VNDRBOOT (non-ext4) container and is therefore NOT covered by the sha256 manifest. The first-stage ramdisk modules.load / modules.blocklist it supplies are tier-bearing for the kernel rows (artifacts[].detail records 'vkb ramdisk load=...'). Those tiers are reproducible from the named releases/desktop-flash/<stamp>/vendor_kernel_boot.img but are not byte-pinned by the manifest."
+      "impact": "vendor_kernel_boot.img is a VNDRBOOT (non-ext4) container and is therefore NOT covered by the sha256 manifest. The first-stage ramdisk modules.load / modules.blocklist it supplies are tier-bearing for the kernel rows (artifacts[].detail records 'vkb ramdisk load=...'). Those tiers are reproducible from the named releases/desktop-flash/<stamp>/vendor_kernel_boot.img but are not byte-pinned by the manifest.",
+      "tier_unproven_label": "tier-unproven",
+      "tier_unproven_cells": [
+        {
+          "device": "akita",
+          "service": "location_gnss_kernel",
+          "tier_letter_unchanged": true
+        },
+        {
+          "device": "tokay",
+          "service": "location_gnss_kernel",
+          "tier_letter_unchanged": true
+        },
+        {
+          "device": "caiman",
+          "service": "location_gnss_kernel",
+          "tier_letter_unchanged": true
+        },
+        {
+          "device": "komodo",
+          "service": "location_gnss_kernel",
+          "tier_letter_unchanged": true
+        },
+        {
+          "device": "comet",
+          "service": "location_gnss_kernel",
+          "tier_letter_unchanged": true
+        },
+        {
+          "device": "tegu",
+          "service": "location_gnss_kernel",
+          "tier_letter_unchanged": true
+        },
+        {
+          "device": "stallion",
+          "service": "location_gnss_kernel",
+          "tier_letter_unchanged": true
+        },
+        {
+          "device": "frankel",
+          "service": "uwb_kernel",
+          "tier_letter_unchanged": true
+        },
+        {
+          "device": "blazer",
+          "service": "uwb_kernel",
+          "tier_letter_unchanged": true
+        },
+        {
+          "device": "mustang",
+          "service": "uwb_kernel",
+          "tier_letter_unchanged": true
+        },
+        {
+          "device": "rango",
+          "service": "uwb_kernel",
+          "tier_letter_unchanged": true
+        }
+      ],
+      "tier_unproven_note": "Eleven kernel cells keep their recorded tier letter and are labelled tier-unproven. Each verdict rests only on un-pinned vendor_kernel_boot.img. This card did not compute a hash pin for that image and did not invent one."
     }
   },
   "tier_legend": {

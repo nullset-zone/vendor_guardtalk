@@ -14,10 +14,13 @@
 #      devices are documented as such and `stallion` has NO flag in ANY channel
 #   2. `cur` (the FLASH channel): all 13 resolve, dir exists, modules.load
 #      present and non-empty, and NO path component is a symlink
-#   3. `trunk_staging`: classification only. ABSENT_DIR set is EXACTLY
-#      {shiba, husky, comet, tegu} — a LAYER prerequisite, NOT a NO-GO — and
-#      none of those is UNRESOLVED. This card DOCUMENTS the LAYER remedy; it does
-#      not apply it (that is why the 4 stay unpinned).
+#   3. `trunk_staging`: the 4-absence claim was re-derived
+#      (T-DEVICE-ALIGN-KERNEL-SYMLINK-REDS, measured 2026-10-30). shiba/husky
+#      (shared shusky), comet, and tegu are required trunk-14096387 -> grapheneos
+#      symlinks, the same class as the akita/caimito precedent. ABSENT_DIR on the
+#      live tree is now unexpected and FAILs. A missing required pin FAILs. An
+#      unexpected extra trunk-* inside the in-scope families FAILs. The resolver's
+#      ABSENT_DIR mode is still exercised synthetically in case 4.
 #   4. The resolver really distinguishes the modes (synthetic harness):
 #      UNRESOLVED -> hard error; ABSENT_DIR -> warning, exit 0
 #   5. STUB (dir present, modules.load missing) -> hard error
@@ -169,10 +172,21 @@ else
 fi
 
 echo "=== T-PORT-KERNEL-MATRIX case3: trunk_staging classification (two modes kept apart) ==="
+# 4-absence re-derived 2026-10-30 (T-DEVICE-ALIGN-KERNEL-SYMLINK-REDS).
+# Measured: shusky/comet/tegu trunk-14096387 are symbolic links -> grapheneos,
+# the same single-component relative pin the preflight already requires for
+# akita and caimito (mtime 2026-09-22 15:11:59Z). Live ABSENT_DIR is a FAIL.
+# Case 4 still proves the resolver emits ABSENT_DIR for a missing path; that
+# synthetic mode is not the live classification of these four devices.
 
+if [[ "${#DEVICES[@]}" -ne 13 ]]; then
+  fail "trunk_staging: DEVICES has ${#DEVICES[@]} entries, expected 13 (classification would be vacuous)"
+fi
 absent_set=""
 ok_set=""
+seen=0
 for dev in "${DEVICES[@]}"; do
+  seen=$((seen + 1))
   dir="$(resolved_target_kernel_dir "$dev" trunk_staging)"
   if [[ -z "$dir" ]]; then
     fail "trunk_staging: $dev UNRESOLVED — variable has no value; that would be a NO-GO"
@@ -183,28 +197,29 @@ for dev in "${DEVICES[@]}"; do
     pass "trunk_staging: $dev -> $dir (OK, exists)"
   else
     absent_set="$absent_set $dev"
-    pass "trunk_staging: $dev -> $dir ABSENT_DIR (LAYER prerequisite, NOT a NO-GO, NOT UNRESOLVED)"
+    fail "trunk_staging: $dev -> $dir ABSENT_DIR — unexpected after the 4-absence re-derivation (a missing required path still FAILs)"
   fi
 done
-absent_set="$(echo $absent_set | tr ' ' '\n' | sort | tr '\n' ' ' | sed 's/ $//')"
-want_absent="comet husky shiba tegu"
-if [[ "$absent_set" == "$want_absent" ]]; then
-  pass "trunk_staging ABSENT_DIR set is EXACTLY [$want_absent] (matches the gate/preflight finding)"
+if [[ "$seen" -ne 13 ]]; then
+  fail "trunk_staging classification visited $seen devices, expected 13"
 else
-  fail "trunk_staging ABSENT_DIR set is [$absent_set], expected [$want_absent]"
+  pass "trunk_staging classification visited all 13 devices"
 fi
-want_ok="akita blazer caiman frankel komodo mustang rango stallion tokay"
+absent_set="$(echo $absent_set | tr ' ' '\n' | sort | tr '\n' ' ' | sed 's/ $//')"
+want_ok="akita blazer caiman comet frankel husky komodo mustang rango shiba stallion tegu tokay"
 got_ok="$(echo $ok_set | tr ' ' '\n' | sort | tr '\n' ' ' | sed 's/ $//')"
 if [[ "$got_ok" == "$want_ok" ]]; then
-  pass "trunk_staging resolves directly for the other 9: [$want_ok]"
+  pass "trunk_staging resolves for all 13: [$want_ok]"
 else
   fail "trunk_staging resolved set is [$got_ok], expected [$want_ok]"
 fi
-# The distinction the Architect refined: absence is NOT a variable problem.
-if [[ "$absent_set" == *comet* && "$absent_set" == *shiba* ]]; then
-  pass "the 4 absent devices have a DEFINED variable — classified ABSENT_DIR, NOT UNRESOLVED (modes not conflated)"
+if [[ -z "$absent_set" && "$got_ok" == "$want_ok" ]]; then
+  pass "trunk_staging ABSENT_DIR set is empty (4-absence re-derived; a new absence still fails)"
+else
+  fail "trunk_staging ABSENT_DIR set is [$absent_set], expected empty (4-absence re-derived — shiba/husky/comet/tegu are required symlinks)"
 fi
-# The LAYER remedy must be named in the doc for exactly these 4 devices.
+# Defined variable AND symlink shape. UNRESOLVED (empty) stays a separate FAIL
+# above, so a present symlink is not confused with a missing variable.
 for pair in \
   "shiba:device/google/shusky-kernels/6.1/trunk-14096387" \
   "husky:device/google/shusky-kernels/6.1/trunk-14096387" \
@@ -212,24 +227,63 @@ for pair in \
   "tegu:device/google/tegu-kernels/6.1/trunk-14096387"; do
   dev="${pair%%:*}"; want="${pair##*:}"
   got="$(resolved_target_kernel_dir "$dev" trunk_staging)"
-  if [[ "$got" == "$want" ]]; then
-    pass "LAYER remedy path for $dev is $want (named in KERNEL_MATRIX.md §4)"
+  if [[ "$got" != "$want" ]]; then
+    fail "required trunk path for $dev: got '$got', expected '$want'"
+    continue
+  fi
+  if [[ ! -L "$want" ]]; then
+    fail "required trunk symlink missing or not a symlink: $want"
+  elif [[ "$(readlink -- "$want")" != "grapheneos" ]]; then
+    fail "required trunk symlink $want -> $(readlink -- "$want"), expected grapheneos"
+  elif [[ ! -s "$want/vendor_kernel_boot.modules.load" ]]; then
+    fail "required trunk symlink $want has no vendor_kernel_boot.modules.load"
   else
-    fail "LAYER remedy path for $dev: got '$got', expected '$want'"
+    pass "required trunk symlink for $dev: $want -> grapheneos (path still named in KERNEL_MATRIX.md §4)"
   fi
 done
-# Provisioning is a LAYER act, not this card's act: the 4 must remain unpinned so
-# the preflight's 4-absence invariant stays true and the classification stays
-# observable.
-for p in device/google/shusky-kernels/6.1/trunk-14096387 \
-         device/google/comet-kernels/6.1/trunk-14096387 \
-         device/google/tegu-kernels/6.1/trunk-14096387; do
-  if [[ -e "$p" || -L "$p" ]]; then
-    fail "$p exists — this card documents the LAYER remedy, it does not apply it (see KERNEL_MATRIX.md §4)"
-  else
-    pass "correctly UNPINNED by this card: $p (LAYER owns provisioning)"
-  fi
+# Closed set: 3 precedent pins + the 3 reclassified pins. shiba/husky share
+# shusky, so the count is 6. tangorpro-kernels is outside this 13-device matrix
+# and is not scanned. Any other trunk-* under these families is an unexpected
+# extra and FAILs. stallion must contribute zero.
+REQUIRED_TRUNK=(
+  device/google/akita-kernels/6.1/trunk-14096387
+  device/google/caimito-kernels/6.1/trunk-14096387
+  device/google/laguna-kernels/6.6/trunk-14072179
+  device/google/shusky-kernels/6.1/trunk-14096387
+  device/google/comet-kernels/6.1/trunk-14096387
+  device/google/tegu-kernels/6.1/trunk-14096387
+)
+if [[ "${#REQUIRED_TRUNK[@]}" -ne 6 ]]; then
+  fail "required trunk set has ${#REQUIRED_TRUNK[@]} entries, expected 6 (check would be vacuous)"
+fi
+declare -A REQUIRED_TRUNK_SET=()
+for sl in "${REQUIRED_TRUNK[@]}"; do
+  REQUIRED_TRUNK_SET["$sl"]=1
 done
+IN_SCOPE_KERNEL_FAMS=(akita caimito comet laguna shusky stallion tegu)
+if [[ "${#IN_SCOPE_KERNEL_FAMS[@]}" -ne 7 ]]; then
+  fail "in-scope family list has ${#IN_SCOPE_KERNEL_FAMS[@]} entries, expected 7 (scan would be vacuous)"
+fi
+scanned=0
+for fam in "${IN_SCOPE_KERNEL_FAMS[@]}"; do
+  root="device/google/${fam}-kernels"
+  if [[ ! -d "$root" ]]; then
+    fail "in-scope kernel family missing: $root (extra-path scan would be vacuous)"
+    continue
+  fi
+  while IFS= read -r hit; do
+    [[ -z "$hit" ]] && continue
+    scanned=$((scanned + 1))
+    if [[ -z "${REQUIRED_TRUNK_SET[$hit]:-}" ]]; then
+      fail "unexpected extra trunk path: $hit"
+    fi
+  done < <(find "$root" -maxdepth 3 -name 'trunk-*' -print | sort)
+done
+if [[ "$scanned" -ne 6 ]]; then
+  fail "in-scope trunk-* count is $scanned, expected exactly 6"
+else
+  pass "in-scope trunk-* count is exactly 6 (no unexpected extra)"
+fi
 if [[ "$ok_set" == *akita* && "$ok_set" == *komodo* && "$ok_set" == *tokay* && "$ok_set" == *rango* ]]; then
   pass "trunk_staging: the 4 in-force devices (tokay/akita/komodo/rango) all resolve"
 else
@@ -379,12 +433,17 @@ for link in "${!LATEST_EXPECT[@]}"; do
   fi
 done
 hold "rango-latest -> rango-20260802-130756 as observed at card start (unmoved). NB: the Q-PORT-RANGO script bakes the older stamp rango-20260725-133716, so that script still reports its pre-existing size/README/stamp failures — NOT introduced by this card; see report"
-# Pre-existing kernel pins must stay intact and unmoved — they are load-bearing
-# for the trunk_staging lunches that already work.
+# Kernel pins must stay intact and unmoved — they are load-bearing for the
+# trunk_staging lunches that already work. The shusky/comet/tegu pins joined
+# this set on 2026-09-22 (T-DEVICE-ALIGN-KERNEL-SYMLINK-REDS); a missing pin or
+# a retarget away from grapheneos is a FAIL, same as the older three.
 for pair in \
   "device/google/akita-kernels/6.1/trunk-14096387:grapheneos" \
   "device/google/caimito-kernels/6.1/trunk-14096387:grapheneos" \
-  "device/google/laguna-kernels/6.6/trunk-14072179:grapheneos"; do
+  "device/google/laguna-kernels/6.6/trunk-14072179:grapheneos" \
+  "device/google/shusky-kernels/6.1/trunk-14096387:grapheneos" \
+  "device/google/comet-kernels/6.1/trunk-14096387:grapheneos" \
+  "device/google/tegu-kernels/6.1/trunk-14096387:grapheneos"; do
   l="${pair%%:*}"; want="${pair##*:}"
   if [[ -L "$l" ]]; then
     if [[ "$(readlink "$l")" == "$want" ]]; then

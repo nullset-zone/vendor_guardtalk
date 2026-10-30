@@ -23,7 +23,15 @@ GUARDTALK_RADIO_EXCISED := true
 # shared resolver once it grows its own re-include guard.)
 GUARDTALK_DEVICE := frankel
 GUARDTALK_FEATURE_EXCISED_WAVE2 := true
-GUARDTALK_VOICE_FILTER := true
+# T-DEVICE-ALIGN-VOICE-FLAG-TRUTH: this device ships no guardtalk-audio.mk, and the
+# bridge (feature-excised/guardtalk-feature-excised.mk:144-148) only includes an audio
+# overlay when the file exists (`ifneq ($(wildcard $(_gt_audio_mk)),)`), so the voice
+# filter is NOT built into this image. Setting `true` asserted a privacy feature the
+# image does not contain, so the claim is dropped (DEC-DEVICE-ALIGN-002: widening the
+# feature set -- adding an overlay -- is reserved to the OPERATOR). Empty, NOT "false":
+# the gate is `ifneq ($(GUARDTALK_VOICE_FILTER),)`, so any non-empty value enables.
+# Re-enabling is a one-file change: land guardtalk-audio.mk and set this back.
+GUARDTALK_VOICE_FILTER :=
 # Face filter OFF by default (same rationale as tokay T-CAM-EXT-FIX): empty
 # disables guardtalk-camera.mk (gate is `ifneq ($(GUARDTALK_FACE_FILTER),)`).
 GUARDTALK_FACE_FILTER :=

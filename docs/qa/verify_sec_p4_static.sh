@@ -6,6 +6,7 @@
 # and vendor prop presence where regenerable. (no device required).
 # Usage: from GrapheneOS-worktree root:
 #   bash vendor/guardtalk/docs/qa/verify_sec_p4_static.sh
+#   bash vendor/guardtalk/docs/qa/verify_sec_p4_static.sh --self-test
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 cd "$ROOT"
@@ -41,6 +42,86 @@ require_bool() {
   fi
 }
 
+# Q-DEVICE-ALIGN-TOKAY-PINS: same contract as verify_sec_p5_static.sh.
+# Discover device/*/guardtalk-product-props.mk one level deep. Fail unless
+# the count is exactly 1. Count 2 must not keep reading tokay. Count 0 fails.
+# GT_PROPS_SCAN_ROOT overrides the scan for a sandbox injection; it must not
+# point at the live device tree during that injection.
+PROPS_MK=""
+resolve_props_mk() {
+  local scan_root="$1"
+  local nullglob_was=0
+  local -a found=()
+  if shopt -q nullglob; then
+    nullglob_was=1
+  fi
+  shopt -s nullglob
+  found=( "$scan_root"/*/guardtalk-product-props.mk )
+  if [[ "$nullglob_was" -eq 0 ]]; then
+    shopt -u nullglob
+  fi
+  if [[ ${#found[@]} -gt 1 ]]; then
+    local -a sorted=()
+    local f
+    while IFS= read -r f; do
+      sorted+=("$f")
+    done < <(printf '%s\n' "${found[@]}" | LC_ALL=C sort)
+    found=( "${sorted[@]}" )
+  fi
+  if [[ ${#found[@]} -ne 1 ]]; then
+    fail "guardtalk-product-props.mk cardinality is ${#found[@]} under ${scan_root} (expected exactly 1). Count 0 means the tokay fallback target is gone. Count greater than 1 means another device file is selected instead of tokay, and this gate must not stay green on tokay alone. Found: ${found[*]:-<none>}"
+    PROPS_MK=""
+    return
+  fi
+  PROPS_MK="${found[0]}"
+  pass "exactly one guardtalk-product-props.mk: ${PROPS_MK}"
+}
+
+self_test_props_cardinality() {
+  local sb one_fail one_mk two_fail two_mk zero_fail
+  sb="$(mktemp -d)"
+  mkdir -p "$sb/tokay" "$sb/caiman"
+  printf '%s\n' 'PRODUCT_SYSTEM_PROPERTIES += ro.guardtalk.files_policy=1' \
+    > "$sb/tokay/guardtalk-product-props.mk"
+
+  FAIL=0
+  PASS_N=0
+  resolve_props_mk "$sb"
+  one_fail=$FAIL
+  one_mk=$PROPS_MK
+
+  printf '%s\n' 'PRODUCT_SYSTEM_PROPERTIES += ro.guardtalk.files_policy=1' \
+    > "$sb/caiman/guardtalk-product-props.mk"
+  FAIL=0
+  PASS_N=0
+  resolve_props_mk "$sb"
+  two_fail=$FAIL
+  two_mk=$PROPS_MK
+
+  rm -f "$sb/tokay/guardtalk-product-props.mk" "$sb/caiman/guardtalk-product-props.mk"
+  FAIL=0
+  PASS_N=0
+  resolve_props_mk "$sb"
+  zero_fail=$FAIL
+  rm -rf "$sb"
+
+  if [[ "$one_fail" -eq 0 \
+        && "$one_mk" == "$sb/tokay/guardtalk-product-props.mk" \
+        && "$two_fail" -eq 1 && -z "$two_mk" \
+        && "$zero_fail" -eq 1 \
+        && ! -e "$sb" ]]; then
+    echo "SELF-TEST PASSED: cardinality 1 uses the single file; cardinality 2 fails closed (does not keep tokay); cardinality 0 fails closed; sandbox ${sb} removed"
+    return 0
+  fi
+  echo "SELF-TEST FAILED: one_fail=${one_fail} one_mk=${one_mk} two_fail=${two_fail} two_mk=${two_mk} zero_fail=${zero_fail} sandbox_left=$([[ -e "$sb" ]] && echo yes || echo no)"
+  return 1
+}
+
+if [[ "${1:-}" == "--self-test" ]]; then
+  self_test_props_cardinality
+  exit $?
+fi
+
 # --- Paths ---
 PERM_POL="frameworks/base/core/java/android/guardtalk/GuardTalkPermissionDefaultsPolicy.java"
 DPGP="frameworks/base/services/core/java/com/android/server/pm/permission/DefaultPermissionGrantPolicy.java"
@@ -65,7 +146,6 @@ OV="vendor/guardtalk/overlays/GuardTalkSettingsOverlay/res/values/config.xml"
 DASH_XML="packages/apps/Settings/res/xml/guardtalk_security_dashboard.xml"
 DASH_FRAG="packages/apps/Settings/src/com/android/settings/security/guardtalk/GuardTalkSecurityDashboardFragment.java"
 
-PROPS_MK="vendor/guardtalk/device/tokay/guardtalk-product-props.mk"
 TOKAY_MK="vendor/guardtalk/device/tokay/guardtalk-tokay.mk"
 VENDOR_BP="out/target/product/tokay/vendor/build.prop"
 
@@ -75,6 +155,9 @@ DOC_FILES="vendor/guardtalk/docs/FILES_HANDLERS_POLICY.md"
 DOC_FILES_UI="vendor/guardtalk/docs/FILES_UI_NOTES.md"
 DOC_VIS="vendor/guardtalk/docs/SETTINGS_VISIBILITY_POLICY.md"
 DOC_GATE="vendor/guardtalk/docs/GT_CONFIG_PASSWORD_GATE_API.md"
+
+echo "=== Q-DEVICE-ALIGN-TOKAY-PINS: product-props cardinality ==="
+resolve_props_mk "${GT_PROPS_SCAN_ROOT:-vendor/guardtalk/device}"
 
 echo "=== Q-SEC-P4-PRIVACY: policy docs ==="
 

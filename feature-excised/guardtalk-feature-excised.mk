@@ -111,6 +111,47 @@ include vendor/guardtalk/radio-excised/telephony-features.mk
     include $(_gt_theme_mk)
   endif
 
+  # T-DEVICE-ALIGN-VOICE-BRIDGE (P0) — DEC-DEVICE-ALIGN-009. The mic DSP voice
+  # filter (device/<codename>/guardtalk-audio.mk) and the face-persona camera
+  # extension (device/<codename>/guardtalk-camera.mk) were reached ONLY from
+  # device/tokay/guardtalk-tokay.mk (a file that is never in the inherit chain)
+  # and from the emulator layer (device/emu64a/guardtalk-emu-layer.mk). No
+  # phone product built them, even though many devices declare
+  # GUARDTALK_VOICE_FILTER := true and advertise the feature. This is that live
+  # path: same PRODUCT_DEVICE parameterisation and same $(wildcard) guard shape
+  # as the theme bridge immediately above.
+  #
+  # NO FALLBACK FILE: unlike theme, there is no shared `branding/guardtalk-*`
+  # equivalent for audio/camera, so a $(wildcard) miss means "this device ships
+  # no audio/camera overlay" and NOTHING is included. A device without the file
+  # resolves to exactly the same PRODUCT_* values as before this bridge existed.
+  #
+  # UNSET-FLAG BEHAVIOUR: `tangorpro` has no guardtalk-flags.mk at all, so
+  # GUARDTALK_VOICE_FILTER / GUARDTALK_FACE_FILTER are UNSET (empty) there. It
+  # also has neither overlay, so this bridge never even resolves to a file for
+  # it — no implicit enable is possible from the include side. More generally,
+  # every per-device audio/camera overlay is SELF-GATED on
+  # `ifneq ($(GUARDTALK_*_FILTER),)`, so holding the file while not declaring
+  # the flag is a no-op (empty PRODUCT_* delta). That is why no second, literal
+  # `ifeq (...,true)` gate is added here: the fleet's documented contract is
+  # "any non-empty value enables" (see device/tokay/guardtalk-flags.mk:20-23 for
+  # the face gate), and a `true`-only gate would be a narrower, divergent
+  # contract that could silently drop a legitimate declared value.
+  #
+  # FOLLOW-UP (not done here — device/** is another lane's scope): the dead
+  # references at device/tokay/guardtalk-tokay.mk:48-49 are left untouched and
+  # are now redundant; they should be removed or annotated by the device lane.
+  _gt_audio_mk := vendor/guardtalk/device/$(PRODUCT_DEVICE)/guardtalk-audio.mk
+  ifneq ($(wildcard $(_gt_audio_mk)),)
+    include $(_gt_audio_mk)
+  endif
+  _gt_audio_mk :=
+  _gt_camera_mk := vendor/guardtalk/device/$(PRODUCT_DEVICE)/guardtalk-camera.mk
+  ifneq ($(wildcard $(_gt_camera_mk)),)
+    include $(_gt_camera_mk)
+  endif
+  _gt_camera_mk :=
+
 
   # T-SEC-P4-PRIVACY / T-SEC-P4-PERMS — packages that lived only in
   # guardtalk-tokay.mk (never inherited). Wire through this live bridge so they

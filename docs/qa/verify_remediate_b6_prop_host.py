@@ -44,18 +44,26 @@ def hold(msg):
     print(f"HOLD: {msg}")
 
 
-ROOT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else ".")
-os.chdir(ROOT)
+_SELF_TEST = "--self-test" in sys.argv[1:]
+_ARGS = [a for a in sys.argv[1:] if a != "--self-test"]
+ROOT = os.path.abspath(_ARGS[0] if _ARGS else ".")
+if not _SELF_TEST:
+    os.chdir(ROOT)
 
 STAMP = os.environ.get("STAMP", "releases/desktop-flash/komodo-debug-20260919-080101")
 CONTRACT = "vendor/guardtalk/docs/qa/prop-denials.txt"
-WIRED = [
-    "vendor/guardtalk/device/tokay/guardtalk-product-props.mk",
+# Komodo-specific makefiles stay listed. The product-props path is NOT pinned
+# to tokay: radio-excised.mk selects device/$(PRODUCT_DEVICE)/... and falls
+# back to tokay only when that file is absent. Exactly one device-level props
+# file is the contract (Q-DEVICE-ALIGN-SHARED-CORE). A second file must fail
+# this gate instead of leaving it green on tokay's copy.
+WIRED_REST = [
     "vendor/guardtalk/device/komodo/guardtalk-production-hardening.mk",
     "vendor/guardtalk/device/komodo/guardtalk-telemetry.mk",
     "vendor/guardtalk/device/komodo/guardtalk-messenger.mk",
     "vendor/guardtalk/device/komodo/guardtalk-wifi-gateway.mk",
 ]
+PROPS_SCAN = os.environ.get("GT_PROPS_SCAN_ROOT", "vendor/guardtalk/device")
 # Declared only on TARGET_BUILD_VARIANT=user (production_profile marker). The
 # debug stamp is userdebug, so it is not in the 35-key baseline. It is still a
 # policy flag that must reach system/build.prop on a user build.
@@ -141,6 +149,90 @@ def parse_mk(path):
     return found
 
 
+def discover_product_props(scan_root):
+    """Return device/*/guardtalk-product-props.mk, one directory level deep.
+
+    That is the path radio-excised.mk wildcards. A deeper copy is not selected
+    by the product include and must not change this count.
+    """
+    found = []
+    if not os.path.isdir(scan_root):
+        return found
+    for name in sorted(os.listdir(scan_root)):
+        cand = os.path.join(scan_root, name, "guardtalk-product-props.mk")
+        if os.path.isfile(cand):
+            found.append(cand)
+    return found
+
+
+def wired_makefiles(scan_root):
+    """Props files first (discovered), then the komodo-specific rest.
+
+    Does not substitute a hardcoded tokay path when the count is not 1.
+    """
+    props = discover_product_props(scan_root)
+    return props, list(props) + list(WIRED_REST)
+
+
+def run_props_self_test():
+    """Sandbox proof. The temp dir is not under the live device tree."""
+    import tempfile
+
+    failures = []
+    sandbox = tempfile.mkdtemp(prefix="q-props-cardinality-")
+    print(f"SANDBOX={sandbox}")
+    try:
+        tokay = os.path.join(sandbox, "tokay", "guardtalk-product-props.mk")
+        caiman = os.path.join(sandbox, "caiman", "guardtalk-product-props.mk")
+        os.makedirs(os.path.dirname(tokay))
+        os.makedirs(os.path.dirname(caiman))
+        with open(tokay, "w", encoding="utf-8") as fh:
+            fh.write("PRODUCT_SYSTEM_PROPERTIES += ro.guardtalk.files_policy=1\n")
+        props, wired = wired_makefiles(sandbox)
+        if props != [tokay]:
+            failures.append(f"one-file discover got {props}")
+        if not wired or wired[0] != tokay:
+            failures.append(f"one-file wired did not use the discovered file: {wired[:1]}")
+
+        with open(caiman, "w", encoding="utf-8") as fh:
+            fh.write("PRODUCT_SYSTEM_PROPERTIES += ro.guardtalk.files_policy=1\n")
+        props, wired = wired_makefiles(sandbox)
+        if len(props) != 2:
+            failures.append(f"two-file count is {len(props)}")
+        if props == [tokay]:
+            failures.append("two-file collapsed to tokay (false green)")
+        if tokay not in wired or caiman not in wired:
+            failures.append(f"two-file wired dropped a props file: {wired}")
+
+        os.remove(tokay)
+        os.remove(caiman)
+        props, wired = wired_makefiles(sandbox)
+        if props:
+            failures.append(f"zero-file discover got {props}")
+        if any(p.endswith("guardtalk-product-props.mk") for p in wired):
+            failures.append(f"zero-file still wired a props path: {wired}")
+    finally:
+        import shutil
+        shutil.rmtree(sandbox, ignore_errors=True)
+
+    if os.path.exists(sandbox):
+        failures.append(f"sandbox left behind: {sandbox}")
+    if failures:
+        for item in failures:
+            print(f"SELF-TEST FAIL: {item}")
+        return 1
+    print(
+        "SELF-TEST PASSED: cardinality 1 uses the discovered file; "
+        "cardinality 2 does not collapse to tokay; cardinality 0 wires no "
+        "props path; sandbox removed"
+    )
+    return 0
+
+
+if _SELF_TEST:
+    sys.exit(run_props_self_test())
+
+
 # --- 1. pre-fix baseline (immutable stamp) ---------------------------------
 print(f"--- pre-fix baseline on {STAMP} ---")
 ven = debugfs_count(f"{STAMP}/vendor.img", r"^ro\.guardtalk\.")
@@ -183,6 +275,17 @@ c_kv = sorted(
 
 # --- 3. make routing (post-fix source) -------------------------------------
 print("--- mk routing (post-fix source) ---")
+props_found, WIRED = wired_makefiles(PROPS_SCAN)
+if len(props_found) != 1:
+    bad(
+        "guardtalk-product-props.mk cardinality is "
+        f"{len(props_found)} under {PROPS_SCAN} (expected exactly 1). "
+        "Count 0 means the tokay fallback target is gone. Count greater "
+        "than 1 means another device file is selected instead of tokay, "
+        f"and this gate must not stay green on tokay alone. Found: {props_found}"
+    )
+else:
+    ok(f"exactly one guardtalk-product-props.mk: {props_found[0]}")
 declared = set()
 for path in WIRED:
     if not os.path.isfile(path):

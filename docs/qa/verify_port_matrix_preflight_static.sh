@@ -17,7 +17,12 @@
 #   5. claimed-PASS w/o obtainable stock factory (HEAD dl.google.com)
 #   6. Gen 6/7 codename leakage into wave/verdict/advertise (P0 hard-fail)
 #   7. stallion PASS that ignores its 5-entry index / stale pin
-#   (a) the four absorbed trunk_staging NO-GO triggers vs the LAYER precedent
+#   (a) trunk_staging pins. The 4-absence claim was re-derived
+#       (T-DEVICE-ALIGN-KERNEL-SYMLINK-REDS, measured 2026-10-30): shiba/husky
+#       (shared shusky), comet, and tegu are required
+#       trunk-14096387 -> grapheneos symlinks, the same class as the
+#       akita/caimito/laguna precedent. A missing required pin FAILs. An
+#       unexpected extra trunk-* inside the in-scope families FAILs.
 #   (b) build_id pin asymmetry (only stallion/tegu/rango pin)
 #   (c) stallion 16-QPR1 platform lag (not merely a thin index)
 #   (d) adevtool show-status cross-check (authoritative ground truth)
@@ -98,8 +103,6 @@ declare -A KERNELDIR_EXPECT=(
 )
 # Mutually independent: the flag-driven devices under the cur lunch channel.
 FLAG_DEVICES=(shiba husky akita tokay caiman komodo comet tegu)
-# The four devices whose trunk_staging resolved dir is absent (vector a).
-TRUNK_ABSENT=(shiba husky comet tegu)
 # Devices that pin an explicit build_id (vector b).
 PIN_DEVICES=(stallion tegu rango)
 
@@ -395,11 +398,58 @@ grep -qiE 'stale|oldest|withdrawn|re-check|recheck' "$MATRIX_DOC" || { fail "att
 [[ "$s7_ok" == "1" ]] && pass "attack7: stallion 5-entry index + stale-pin risk engaged (§5/§9/§12)"
 
 # =============================================================================
-# VECTOR (a) — the four absorbed NO-GO triggers vs the LAYER precedent
+# VECTOR (a) — required trunk pins (4-absence claim re-derived)
 # =============================================================================
-echo "--- vector a: trunk_staging dir absence classification ---"
-for d in "${TRUNK_ABSENT[@]}"; do
+# Re-derived 2026-10-30 (T-DEVICE-ALIGN-KERNEL-SYMLINK-REDS), measured on this
+# tree: shiba and husky share shusky-kernels/6.1/trunk-14096387, and comet and
+# tegu each have trunk-14096387. All three are symbolic links whose target is
+# the single relative component "grapheneos" (identical 10-byte link text to
+# the akita, caimito, and laguna precedent pins), mtime 2026-09-22 15:11:59Z.
+# The old 4-absence claim (those dirs must be missing) is withdrawn. Absence of
+# a required pin is a FAIL. An extra trunk-* inside the in-scope families is a
+# FAIL. tangorpro-kernels is outside this 13-device matrix and is not scanned.
+echo "--- vector a: required trunk_staging symlinks (4-absence re-derived) ---"
+# 3 precedent pins + 3 reclassified pins. shiba/husky share shusky, so 4 devices
+# are 3 links, and the closed set is 6 not 7. An empty or short list is a FAIL
+# (the loop must not pass vacuously).
+REQUIRED_TRUNK=(
+  device/google/akita-kernels/6.1/trunk-14096387
+  device/google/caimito-kernels/6.1/trunk-14096387
+  device/google/laguna-kernels/6.6/trunk-14072179
+  device/google/shusky-kernels/6.1/trunk-14096387
+  device/google/comet-kernels/6.1/trunk-14096387
+  device/google/tegu-kernels/6.1/trunk-14096387
+)
+if [[ "${#REQUIRED_TRUNK[@]}" -ne 6 ]]; then
+  fail "vectorA: required trunk set has ${#REQUIRED_TRUNK[@]} entries, expected 6 (check would be vacuous)"
+fi
+declare -A REQUIRED_TRUNK_SET=()
+for sl in "${REQUIRED_TRUNK[@]}"; do
+  REQUIRED_TRUNK_SET["$sl"]=1
+  if [[ ! -L "$sl" ]]; then
+    fail "vectorA: required trunk symlink missing or not a symlink: $sl"
+  elif [[ "$(readlink -- "$sl")" != "grapheneos" ]]; then
+    fail "vectorA: required trunk symlink $sl -> $(readlink -- "$sl"), expected grapheneos"
+  else
+    pass "vectorA: required trunk symlink present: $sl -> grapheneos"
+  fi
+done
+# shiba/husky share one pin. The flag must name that pin, and the 6.1 pins must
+# expose a non-empty modules.load the way the caimito precedent pin does.
+# laguna is link-shape only: its 6.6 modules.load is not at the symlink root.
+declare -A TRUNK_FLAG_EXPECT=(
+  [shiba]="device/google/shusky-kernels/6.1/trunk-14096387"
+  [husky]="device/google/shusky-kernels/6.1/trunk-14096387"
+  [comet]="device/google/comet-kernels/6.1/trunk-14096387"
+  [tegu]="device/google/tegu-kernels/6.1/trunk-14096387"
+)
+TRUNK_SYMLINK_DEVICES=(shiba husky comet tegu)
+if [[ "${#TRUNK_SYMLINK_DEVICES[@]}" -ne 4 ]]; then
+  fail "vectorA: TRUNK_SYMLINK_DEVICES has ${#TRUNK_SYMLINK_DEVICES[@]} entries, expected 4 (check would be vacuous)"
+fi
+for d in "${TRUNK_SYMLINK_DEVICES[@]}"; do
   flag="build/release/flag_values/trunk_staging/RELEASE_KERNEL_$(echo "$d" | tr a-z A-Z)_DIR.textproto"
+  want="${TRUNK_FLAG_EXPECT[$d]}"
   if [[ ! -f "$flag" ]]; then
     fail "vectorA: $d has no trunk_staging _DIR flag (would be 'variable unresolved' = NO-GO)"
     continue
@@ -407,19 +457,45 @@ for d in "${TRUNK_ABSENT[@]}"; do
   val="$(sed -nE 's/.*string_value: "([^"]+)".*/\1/p' "$flag")"
   if [[ -z "$val" ]]; then
     fail "vectorA: $d trunk_staging _DIR flag defined but empty (variable unresolved)"
-  elif [[ -d "$val" ]]; then
-    fail "vectorA: $d trunk_staging dir unexpectedly PRESENT ($val) — re-derive the 4-absence claim"
+  elif [[ "$val" != "$want" ]]; then
+    fail "vectorA: $d trunk_staging flag '$val' != required path '$want'"
+  elif [[ ! -L "$val" ]]; then
+    fail "vectorA: $d required trunk symlink missing or not a symlink: $val"
+  elif [[ "$(readlink -- "$val")" != "grapheneos" ]]; then
+    fail "vectorA: $d trunk symlink $val -> $(readlink -- "$val"), expected grapheneos"
+  elif [[ ! -s "$val/vendor_kernel_boot.modules.load" ]]; then
+    fail "vectorA: $d trunk symlink has no vendor_kernel_boot.modules.load: $val"
   else
-    pass "vectorA: $d trunk_staging flag DEFINED ('$val') but dir absent -> LAYER prerequisite, not NO-GO"
+    pass "vectorA: $d trunk_staging flag names required symlink $val -> grapheneos"
   fi
 done
-# the precedent symlinks must exist (akita + caimito + laguna)
-for sl in device/google/akita-kernels/6.1/trunk-14096387 \
-          device/google/caimito-kernels/6.1/trunk-14096387 \
-          device/google/laguna-kernels/6.6/trunk-14072179; do
-  if [[ -L "$sl" ]]; then pass "vectorA: precedent symlink present: $sl -> $(readlink "$sl")"
-  else fail "vectorA: precedent symlink missing: $sl"; fi
+# Unexpected extra: any trunk-* under the in-scope families that is not one of
+# the 6 required pins. stallion is in-scope and must contribute zero. A family
+# directory that is missing fails closed, so the scan cannot shrink itself.
+IN_SCOPE_KERNEL_FAMS=(akita caimito comet laguna shusky stallion tegu)
+if [[ "${#IN_SCOPE_KERNEL_FAMS[@]}" -ne 7 ]]; then
+  fail "vectorA: in-scope family list has ${#IN_SCOPE_KERNEL_FAMS[@]} entries, expected 7 (scan would be vacuous)"
+fi
+scanned=0
+for fam in "${IN_SCOPE_KERNEL_FAMS[@]}"; do
+  root="device/google/${fam}-kernels"
+  if [[ ! -d "$root" ]]; then
+    fail "vectorA: in-scope kernel family missing: $root (extra-path scan would be vacuous)"
+    continue
+  fi
+  while IFS= read -r hit; do
+    [[ -z "$hit" ]] && continue
+    scanned=$((scanned + 1))
+    if [[ -z "${REQUIRED_TRUNK_SET[$hit]:-}" ]]; then
+      fail "vectorA: unexpected extra trunk path: $hit"
+    fi
+  done < <(find "$root" -maxdepth 3 -name 'trunk-*' -print | sort)
 done
+if [[ "$scanned" -ne 6 ]]; then
+  fail "vectorA: in-scope trunk-* count is $scanned, expected exactly 6"
+else
+  pass "vectorA: in-scope trunk-* count is exactly 6 (no unexpected extra)"
+fi
 # cur must resolve for ALL 13 (the property that makes the GO safe)
 CUR_OK=1
 for d in "${DEVICES[@]}"; do
@@ -435,7 +511,9 @@ for d in "${DEVICES[@]}"; do
   fi
 done
 [[ "$CUR_OK" == "1" ]] && pass "vectorA: cur channel resolves for all 13 (GO is safe under the production lunch)"
-grep -qE 'LAYER prerequisite' "$MATRIX_DOC" && pass "vectorA: deliverable classifies the absences as a LAYER prerequisite" \
+# The deliverable still records the LAYER-prerequisite vocabulary. That sentence
+# is the historical recipe, not a live claim that the four pins are absent.
+grep -qE 'LAYER prerequisite' "$MATRIX_DOC" && pass "vectorA: deliverable still names the LAYER-prerequisite vocabulary" \
   || fail "vectorA: deliverable does not state the LAYER-prerequisite classification"
 
 # =============================================================================

@@ -1,0 +1,599 @@
+{
+  "schema": "guardtalk.device-alignment-matrix/v1",
+  "task_id": "T-DEVICE-ALIGN-MATRIX-JSON",
+  "advertised_extraction": {
+    "source": "vendor/guardtalk/web-installer/lib/ui/offered-devices.ts",
+    "scope": "export const WIZARD_DEVICES array literal only (NOT the whole file; WITHHELD_REASONS lists all 14 codenames)",
+    "array_start_line": 42,
+    "ids": [
+      "akita",
+      "komodo",
+      "rango",
+      "tokay"
+    ]
+  },
+  "advertised_devices": [
+    "akita",
+    "komodo",
+    "rango",
+    "tokay"
+  ],
+  "advertised_count": 4,
+  "device_count": 15,
+  "overlay_files_tracked": [
+    "BoardConfig-excised-late.mk",
+    "guardtalk-flags.mk",
+    "guardtalk-insmod.mk",
+    "guardtalk-product-props.mk",
+    "guardtalk-production-hardening.mk",
+    "guardtalk-theme.mk",
+    "guardtalk-audio.mk",
+    "guardtalk-camera.mk"
+  ],
+  "devices": [
+    {
+      "device": "akita",
+      "shape": "phone",
+      "boardconfig_hooked": true,
+      "boardconfig_include": "vendor/guardtalk/device/akita/BoardConfig-excised-late.mk",
+      "dev_mk_path": "vendor/google_devices/akita/akita.mk",
+      "dev_mk_includes": [
+        "vendor/guardtalk/device/akita/guardtalk-insmod.mk",
+        "vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
+      ],
+      "dev_mk_includes_missing": [],
+      "registry_variant": "zuma_akita",
+      "variant_canonical_blocklist_path": "vendor/guardtalk/device/akita/vendor_dlkm.modules.blocklist",
+      "variant_canonical_blocklist_exists": true,
+      "variant_canonical_blocklist_convention": "device-local",
+      "device_pin": null,
+      "variant_blocklist_path": "vendor/guardtalk/device/akita/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_exists": true,
+      "variant_blocklist_convention": "device-local",
+      "presence": {
+        "BoardConfig-excised-late.mk": true,
+        "guardtalk-flags.mk": true,
+        "guardtalk-insmod.mk": true,
+        "guardtalk-product-props.mk": false,
+        "guardtalk-production-hardening.mk": false,
+        "guardtalk-theme.mk": true,
+        "guardtalk-audio.mk": true,
+        "guardtalk-camera.mk": true
+      },
+      "advertised": true,
+      "voice_flag": "true",
+      "voice_flag_raw": "true"
+    },
+    {
+      "device": "blazer",
+      "shape": "phone",
+      "boardconfig_hooked": true,
+      "boardconfig_include": "vendor/guardtalk/device/blazer/BoardConfig-excised-late.mk",
+      "dev_mk_path": "vendor/google_devices/blazer/blazer.mk",
+      "dev_mk_includes": [
+        "vendor/guardtalk/device/blazer/guardtalk-insmod.mk",
+        "vendor/guardtalk/device/blazer/guardtalk-memtag.mk",
+        "vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
+      ],
+      "dev_mk_includes_missing": [],
+      "registry_variant": "laguna_muzel",
+      "variant_canonical_blocklist_path": "vendor/guardtalk/feature-excised/variants/laguna_muzel/vendor_dlkm.modules.blocklist",
+      "variant_canonical_blocklist_exists": true,
+      "variant_canonical_blocklist_convention": "variants-dir",
+      "device_pin": null,
+      "variant_blocklist_path": "vendor/guardtalk/feature-excised/variants/laguna_muzel/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_exists": true,
+      "variant_blocklist_convention": "variants-dir",
+      "presence": {
+        "BoardConfig-excised-late.mk": true,
+        "guardtalk-flags.mk": true,
+        "guardtalk-insmod.mk": true,
+        "guardtalk-product-props.mk": false,
+        "guardtalk-production-hardening.mk": false,
+        "guardtalk-theme.mk": false,
+        "guardtalk-audio.mk": false,
+        "guardtalk-camera.mk": false
+      },
+      "advertised": false,
+      "voice_flag": null,
+      "voice_flag_raw": ""
+    },
+    {
+      "device": "caiman",
+      "shape": "phone",
+      "boardconfig_hooked": true,
+      "boardconfig_include": "vendor/guardtalk/device/caiman/BoardConfig-excised-late.mk",
+      "dev_mk_path": "vendor/google_devices/caiman/caiman.mk",
+      "dev_mk_includes": [
+        "vendor/guardtalk/device/caiman/guardtalk-insmod.mk",
+        "vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
+      ],
+      "dev_mk_includes_missing": [],
+      "registry_variant": "zumapro_caimito",
+      "variant_canonical_blocklist_path": "vendor/guardtalk/feature-excised/vendor_dlkm.modules.blocklist",
+      "variant_canonical_blocklist_exists": true,
+      "variant_canonical_blocklist_convention": "flat",
+      "device_pin": null,
+      "variant_blocklist_path": "vendor/guardtalk/feature-excised/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_exists": true,
+      "variant_blocklist_convention": "flat",
+      "presence": {
+        "BoardConfig-excised-late.mk": true,
+        "guardtalk-flags.mk": true,
+        "guardtalk-insmod.mk": true,
+        "guardtalk-product-props.mk": false,
+        "guardtalk-production-hardening.mk": false,
+        "guardtalk-theme.mk": false,
+        "guardtalk-audio.mk": false,
+        "guardtalk-camera.mk": false
+      },
+      "advertised": false,
+      "voice_flag": null,
+      "voice_flag_raw": ""
+    },
+    {
+      "device": "comet",
+      "shape": "phone",
+      "boardconfig_hooked": true,
+      "boardconfig_include": "vendor/guardtalk/device/comet/BoardConfig-excised-late.mk",
+      "dev_mk_path": "vendor/google_devices/comet/comet.mk",
+      "dev_mk_includes": [
+        "vendor/guardtalk/device/comet/guardtalk-insmod.mk",
+        "vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
+      ],
+      "dev_mk_includes_missing": [],
+      "registry_variant": "zumapro_comet",
+      "variant_canonical_blocklist_path": "vendor/guardtalk/feature-excised/variants/zumapro_comet/vendor_dlkm.modules.blocklist",
+      "variant_canonical_blocklist_exists": true,
+      "variant_canonical_blocklist_convention": "variants-dir",
+      "device_pin": null,
+      "variant_blocklist_path": "vendor/guardtalk/feature-excised/variants/zumapro_comet/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_exists": true,
+      "variant_blocklist_convention": "variants-dir",
+      "presence": {
+        "BoardConfig-excised-late.mk": true,
+        "guardtalk-flags.mk": true,
+        "guardtalk-insmod.mk": true,
+        "guardtalk-product-props.mk": false,
+        "guardtalk-production-hardening.mk": false,
+        "guardtalk-theme.mk": false,
+        "guardtalk-audio.mk": false,
+        "guardtalk-camera.mk": false
+      },
+      "advertised": false,
+      "voice_flag": null,
+      "voice_flag_raw": ""
+    },
+    {
+      "device": "emu64a",
+      "shape": "product-namefile-shape",
+      "boardconfig_hooked": false,
+      "boardconfig_include": null,
+      "dev_mk_path": null,
+      "dev_mk_includes": [],
+      "dev_mk_includes_missing": [],
+      "registry_variant": null,
+      "variant_canonical_blocklist_path": null,
+      "variant_canonical_blocklist_exists": false,
+      "variant_canonical_blocklist_convention": null,
+      "device_pin": null,
+      "variant_blocklist_path": null,
+      "variant_blocklist_exists": false,
+      "variant_blocklist_convention": null,
+      "presence": {
+        "BoardConfig-excised-late.mk": false,
+        "guardtalk-flags.mk": false,
+        "guardtalk-insmod.mk": false,
+        "guardtalk-product-props.mk": false,
+        "guardtalk-production-hardening.mk": false,
+        "guardtalk-theme.mk": false,
+        "guardtalk-audio.mk": false,
+        "guardtalk-camera.mk": false
+      },
+      "advertised": false,
+      "voice_flag": null,
+      "voice_flag_raw": null
+    },
+    {
+      "device": "frankel",
+      "shape": "phone",
+      "boardconfig_hooked": true,
+      "boardconfig_include": "vendor/guardtalk/device/frankel/BoardConfig-excised-late.mk",
+      "dev_mk_path": "vendor/google_devices/frankel/frankel.mk",
+      "dev_mk_includes": [
+        "vendor/guardtalk/device/frankel/guardtalk-insmod.mk",
+        "vendor/guardtalk/device/frankel/guardtalk-memtag.mk",
+        "vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
+      ],
+      "dev_mk_includes_missing": [],
+      "registry_variant": "laguna_muzel",
+      "variant_canonical_blocklist_path": "vendor/guardtalk/feature-excised/variants/laguna_muzel/vendor_dlkm.modules.blocklist",
+      "variant_canonical_blocklist_exists": true,
+      "variant_canonical_blocklist_convention": "variants-dir",
+      "device_pin": null,
+      "variant_blocklist_path": "vendor/guardtalk/feature-excised/variants/laguna_muzel/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_exists": true,
+      "variant_blocklist_convention": "variants-dir",
+      "presence": {
+        "BoardConfig-excised-late.mk": true,
+        "guardtalk-flags.mk": true,
+        "guardtalk-insmod.mk": true,
+        "guardtalk-product-props.mk": false,
+        "guardtalk-production-hardening.mk": false,
+        "guardtalk-theme.mk": false,
+        "guardtalk-audio.mk": false,
+        "guardtalk-camera.mk": false
+      },
+      "advertised": false,
+      "voice_flag": null,
+      "voice_flag_raw": ""
+    },
+    {
+      "device": "husky",
+      "shape": "phone",
+      "boardconfig_hooked": true,
+      "boardconfig_include": "vendor/guardtalk/device/husky/BoardConfig-excised-late.mk",
+      "dev_mk_path": "vendor/google_devices/husky/husky.mk",
+      "dev_mk_includes": [
+        "vendor/guardtalk/device/husky/guardtalk-insmod.mk",
+        "vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
+      ],
+      "dev_mk_includes_missing": [],
+      "registry_variant": "zuma_shusky",
+      "variant_canonical_blocklist_path": "vendor/guardtalk/feature-excised/variants/zuma_shusky/vendor_dlkm.modules.blocklist",
+      "variant_canonical_blocklist_exists": true,
+      "variant_canonical_blocklist_convention": "variants-dir",
+      "device_pin": null,
+      "variant_blocklist_path": "vendor/guardtalk/feature-excised/variants/zuma_shusky/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_exists": true,
+      "variant_blocklist_convention": "variants-dir",
+      "presence": {
+        "BoardConfig-excised-late.mk": true,
+        "guardtalk-flags.mk": true,
+        "guardtalk-insmod.mk": true,
+        "guardtalk-product-props.mk": false,
+        "guardtalk-production-hardening.mk": false,
+        "guardtalk-theme.mk": false,
+        "guardtalk-audio.mk": false,
+        "guardtalk-camera.mk": false
+      },
+      "advertised": false,
+      "voice_flag": null,
+      "voice_flag_raw": ""
+    },
+    {
+      "device": "komodo",
+      "shape": "phone",
+      "boardconfig_hooked": true,
+      "boardconfig_include": "vendor/guardtalk/device/komodo/BoardConfig-excised-late.mk",
+      "dev_mk_path": "vendor/google_devices/komodo/komodo.mk",
+      "dev_mk_includes": [
+        "vendor/guardtalk/device/komodo/guardtalk-insmod.mk",
+        "vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
+      ],
+      "dev_mk_includes_missing": [],
+      "registry_variant": "zumapro_caimito",
+      "variant_canonical_blocklist_path": "vendor/guardtalk/feature-excised/vendor_dlkm.modules.blocklist",
+      "variant_canonical_blocklist_exists": true,
+      "variant_canonical_blocklist_convention": "flat",
+      "device_pin": "vendor/guardtalk/device/komodo/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_path": "vendor/guardtalk/device/komodo/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_exists": true,
+      "variant_blocklist_convention": "device-local",
+      "presence": {
+        "BoardConfig-excised-late.mk": true,
+        "guardtalk-flags.mk": true,
+        "guardtalk-insmod.mk": true,
+        "guardtalk-product-props.mk": false,
+        "guardtalk-production-hardening.mk": true,
+        "guardtalk-theme.mk": true,
+        "guardtalk-audio.mk": true,
+        "guardtalk-camera.mk": true
+      },
+      "advertised": true,
+      "voice_flag": "true",
+      "voice_flag_raw": "true"
+    },
+    {
+      "device": "mustang",
+      "shape": "phone",
+      "boardconfig_hooked": true,
+      "boardconfig_include": "vendor/guardtalk/device/mustang/BoardConfig-excised-late.mk",
+      "dev_mk_path": "vendor/google_devices/mustang/mustang.mk",
+      "dev_mk_includes": [
+        "vendor/guardtalk/device/mustang/guardtalk-insmod.mk",
+        "vendor/guardtalk/device/mustang/guardtalk-memtag.mk",
+        "vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
+      ],
+      "dev_mk_includes_missing": [],
+      "registry_variant": "laguna_muzel",
+      "variant_canonical_blocklist_path": "vendor/guardtalk/feature-excised/variants/laguna_muzel/vendor_dlkm.modules.blocklist",
+      "variant_canonical_blocklist_exists": true,
+      "variant_canonical_blocklist_convention": "variants-dir",
+      "device_pin": null,
+      "variant_blocklist_path": "vendor/guardtalk/feature-excised/variants/laguna_muzel/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_exists": true,
+      "variant_blocklist_convention": "variants-dir",
+      "presence": {
+        "BoardConfig-excised-late.mk": true,
+        "guardtalk-flags.mk": true,
+        "guardtalk-insmod.mk": true,
+        "guardtalk-product-props.mk": false,
+        "guardtalk-production-hardening.mk": false,
+        "guardtalk-theme.mk": false,
+        "guardtalk-audio.mk": false,
+        "guardtalk-camera.mk": false
+      },
+      "advertised": false,
+      "voice_flag": null,
+      "voice_flag_raw": ""
+    },
+    {
+      "device": "rango",
+      "shape": "phone",
+      "boardconfig_hooked": true,
+      "boardconfig_include": "vendor/guardtalk/device/rango/BoardConfig-excised-late.mk",
+      "dev_mk_path": "vendor/google_devices/rango/rango.mk",
+      "dev_mk_includes": [
+        "vendor/guardtalk/device/rango/guardtalk-insmod.mk",
+        "vendor/guardtalk/device/rango/guardtalk-memtag.mk",
+        "vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
+      ],
+      "dev_mk_includes_missing": [],
+      "registry_variant": "laguna_rango",
+      "variant_canonical_blocklist_path": "vendor/guardtalk/device/rango/vendor_dlkm.modules.blocklist",
+      "variant_canonical_blocklist_exists": true,
+      "variant_canonical_blocklist_convention": "device-local",
+      "device_pin": null,
+      "variant_blocklist_path": "vendor/guardtalk/device/rango/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_exists": true,
+      "variant_blocklist_convention": "device-local",
+      "presence": {
+        "BoardConfig-excised-late.mk": true,
+        "guardtalk-flags.mk": true,
+        "guardtalk-insmod.mk": true,
+        "guardtalk-product-props.mk": false,
+        "guardtalk-production-hardening.mk": false,
+        "guardtalk-theme.mk": true,
+        "guardtalk-audio.mk": true,
+        "guardtalk-camera.mk": true
+      },
+      "advertised": true,
+      "voice_flag": "true",
+      "voice_flag_raw": "true"
+    },
+    {
+      "device": "shiba",
+      "shape": "phone",
+      "boardconfig_hooked": true,
+      "boardconfig_include": "vendor/guardtalk/device/shiba/BoardConfig-excised-late.mk",
+      "dev_mk_path": "vendor/google_devices/shiba/shiba.mk",
+      "dev_mk_includes": [
+        "vendor/guardtalk/device/shiba/guardtalk-insmod.mk",
+        "vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
+      ],
+      "dev_mk_includes_missing": [],
+      "registry_variant": "zuma_shusky",
+      "variant_canonical_blocklist_path": "vendor/guardtalk/feature-excised/variants/zuma_shusky/vendor_dlkm.modules.blocklist",
+      "variant_canonical_blocklist_exists": true,
+      "variant_canonical_blocklist_convention": "variants-dir",
+      "device_pin": null,
+      "variant_blocklist_path": "vendor/guardtalk/feature-excised/variants/zuma_shusky/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_exists": true,
+      "variant_blocklist_convention": "variants-dir",
+      "presence": {
+        "BoardConfig-excised-late.mk": true,
+        "guardtalk-flags.mk": true,
+        "guardtalk-insmod.mk": true,
+        "guardtalk-product-props.mk": false,
+        "guardtalk-production-hardening.mk": false,
+        "guardtalk-theme.mk": false,
+        "guardtalk-audio.mk": false,
+        "guardtalk-camera.mk": false
+      },
+      "advertised": false,
+      "voice_flag": null,
+      "voice_flag_raw": ""
+    },
+    {
+      "device": "stallion",
+      "shape": "phone",
+      "boardconfig_hooked": true,
+      "boardconfig_include": "vendor/guardtalk/device/stallion/BoardConfig-excised-late.mk",
+      "dev_mk_path": "vendor/google_devices/stallion/stallion.mk",
+      "dev_mk_includes": [
+        "vendor/guardtalk/device/stallion/guardtalk-insmod.mk",
+        "vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
+      ],
+      "dev_mk_includes_missing": [],
+      "registry_variant": "zumapro_stallion",
+      "variant_canonical_blocklist_path": "vendor/guardtalk/feature-excised/variants/zumapro_stallion/vendor_dlkm.modules.blocklist",
+      "variant_canonical_blocklist_exists": true,
+      "variant_canonical_blocklist_convention": "variants-dir",
+      "device_pin": null,
+      "variant_blocklist_path": "vendor/guardtalk/feature-excised/variants/zumapro_stallion/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_exists": true,
+      "variant_blocklist_convention": "variants-dir",
+      "presence": {
+        "BoardConfig-excised-late.mk": true,
+        "guardtalk-flags.mk": true,
+        "guardtalk-insmod.mk": true,
+        "guardtalk-product-props.mk": false,
+        "guardtalk-production-hardening.mk": false,
+        "guardtalk-theme.mk": false,
+        "guardtalk-audio.mk": false,
+        "guardtalk-camera.mk": false
+      },
+      "advertised": false,
+      "voice_flag": null,
+      "voice_flag_raw": ""
+    },
+    {
+      "device": "tangorpro",
+      "shape": "tablet",
+      "boardconfig_hooked": true,
+      "boardconfig_include": "vendor/guardtalk/device/tangorpro/BoardConfig-excised-late.mk",
+      "dev_mk_path": "vendor/google_devices/tangorpro/tangorpro.mk",
+      "dev_mk_includes": [
+        "vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
+      ],
+      "dev_mk_includes_missing": [],
+      "registry_variant": "gs201_tangorpro",
+      "variant_canonical_blocklist_path": "vendor/guardtalk/feature-excised/variants/gs201_tangorpro/vendor_dlkm.modules.blocklist",
+      "variant_canonical_blocklist_exists": true,
+      "variant_canonical_blocklist_convention": "variants-dir",
+      "device_pin": null,
+      "variant_blocklist_path": "vendor/guardtalk/feature-excised/variants/gs201_tangorpro/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_exists": true,
+      "variant_blocklist_convention": "variants-dir",
+      "presence": {
+        "BoardConfig-excised-late.mk": true,
+        "guardtalk-flags.mk": true,
+        "guardtalk-insmod.mk": false,
+        "guardtalk-product-props.mk": false,
+        "guardtalk-production-hardening.mk": false,
+        "guardtalk-theme.mk": false,
+        "guardtalk-audio.mk": false,
+        "guardtalk-camera.mk": false
+      },
+      "advertised": false,
+      "voice_flag": null,
+      "voice_flag_raw": null
+    },
+    {
+      "device": "tegu",
+      "shape": "phone",
+      "boardconfig_hooked": true,
+      "boardconfig_include": "vendor/guardtalk/device/tegu/BoardConfig-excised-late.mk",
+      "dev_mk_path": "vendor/google_devices/tegu/tegu.mk",
+      "dev_mk_includes": [
+        "vendor/guardtalk/device/tegu/guardtalk-insmod.mk",
+        "vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
+      ],
+      "dev_mk_includes_missing": [],
+      "registry_variant": "zumapro_tegu",
+      "variant_canonical_blocklist_path": "vendor/guardtalk/feature-excised/variants/zumapro_tegu/vendor_dlkm.modules.blocklist",
+      "variant_canonical_blocklist_exists": true,
+      "variant_canonical_blocklist_convention": "variants-dir",
+      "device_pin": null,
+      "variant_blocklist_path": "vendor/guardtalk/feature-excised/variants/zumapro_tegu/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_exists": true,
+      "variant_blocklist_convention": "variants-dir",
+      "presence": {
+        "BoardConfig-excised-late.mk": true,
+        "guardtalk-flags.mk": true,
+        "guardtalk-insmod.mk": true,
+        "guardtalk-product-props.mk": false,
+        "guardtalk-production-hardening.mk": false,
+        "guardtalk-theme.mk": false,
+        "guardtalk-audio.mk": false,
+        "guardtalk-camera.mk": false
+      },
+      "advertised": false,
+      "voice_flag": null,
+      "voice_flag_raw": ""
+    },
+    {
+      "device": "tokay",
+      "shape": "phone",
+      "boardconfig_hooked": true,
+      "boardconfig_include": "vendor/guardtalk/device/tokay/BoardConfig-excised-late.mk",
+      "dev_mk_path": "vendor/google_devices/tokay/tokay.mk",
+      "dev_mk_includes": [
+        "vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
+      ],
+      "dev_mk_includes_missing": [],
+      "registry_variant": "zumapro_caimito",
+      "variant_canonical_blocklist_path": "vendor/guardtalk/feature-excised/vendor_dlkm.modules.blocklist",
+      "variant_canonical_blocklist_exists": true,
+      "variant_canonical_blocklist_convention": "flat",
+      "device_pin": null,
+      "variant_blocklist_path": "vendor/guardtalk/feature-excised/vendor_dlkm.modules.blocklist",
+      "variant_blocklist_exists": true,
+      "variant_blocklist_convention": "flat",
+      "presence": {
+        "BoardConfig-excised-late.mk": true,
+        "guardtalk-flags.mk": true,
+        "guardtalk-insmod.mk": false,
+        "guardtalk-product-props.mk": true,
+        "guardtalk-production-hardening.mk": true,
+        "guardtalk-theme.mk": true,
+        "guardtalk-audio.mk": true,
+        "guardtalk-camera.mk": true
+      },
+      "advertised": true,
+      "voice_flag": "true",
+      "voice_flag_raw": "true"
+    }
+  ],
+  "summary": {
+    "by_shape": {
+      "phone": [
+        "akita",
+        "blazer",
+        "caiman",
+        "comet",
+        "frankel",
+        "husky",
+        "komodo",
+        "mustang",
+        "rango",
+        "shiba",
+        "stallion",
+        "tegu",
+        "tokay"
+      ],
+      "product-namefile-shape": [
+        "emu64a"
+      ],
+      "tablet": [
+        "tangorpro"
+      ]
+    },
+    "boardconfig_hooked_count": 14,
+    "registry_variant_count": 14,
+    "device_pin_count": 1,
+    "blocklist_missing": [],
+    "dev_mk_include_missing": [],
+    "voice_true_count": 4,
+    "voice_true_without_audio_overlay": [],
+    "voice_true_without_audio_overlay_count": 0,
+    "voice_flag_empty_declared": [
+      "blazer",
+      "caiman",
+      "comet",
+      "frankel",
+      "husky",
+      "mustang",
+      "shiba",
+      "stallion",
+      "tegu"
+    ],
+    "voice_flag_empty_declared_count": 9
+  },
+  "snapshot": {
+    "kind": "point-in-time",
+    "generated_at_utc": "2026-10-30T12:35:42Z",
+    "note": "Point-in-time snapshot of the GuardTalk device-alignment matrix, derived from the live tree. It is NOT a contract: the in-flight cards listed in `snapshot.in_flight_cards` were editing these surfaces during capture, so `--check` will legitimately report drift once they land. Regenerate and review the diff; do not edit the tree to make `--check` pass.",
+    "in_flight_cards": [
+      {
+        "task_id": "T-DEVICE-ALIGN-VOICE-FLAG-TRUTH",
+        "status": "DISPATCHED 2026-10-30T13:38+04:00",
+        "touches": "vendor/guardtalk/device/**/guardtalk-flags.mk",
+        "effect_on_this_snapshot": "changes `voice_flag` on the 9 devices that declared true without a guardtalk-audio.mk overlay; those edits were observed landing in `device/**/guardtalk-flags.mk` during capture, so this snapshot may already show them as empty rather than true"
+      },
+      {
+        "task_id": "T-DEVICE-ALIGN-TANGORPRO-CASE1",
+        "status": "READY 2026-10-30T13:35+04:00",
+        "touches": "vendor/guardtalk/device/tangorpro/**",
+        "effect_on_this_snapshot": "may add `guardtalk-flags.mk`, flipping `presence['guardtalk-flags.mk']` and `voice_flag` for tangorpro"
+      },
+      {
+        "task_id": "F-DEVICE-ALIGN-ADVERTISE",
+        "status": "REVIEW",
+        "touches": "vendor/guardtalk/web-installer/lib/ui/offered-devices.ts",
+        "effect_on_this_snapshot": "may change the `WIZARD_DEVICES` advertised set"
+      }
+    ]
+  }
+}

@@ -5,6 +5,7 @@
 #
 # Usage (from GrapheneOS-worktree root):
 #   bash vendor/guardtalk/docs/qa/verify_os_cammic_toggle_static.sh
+#   bash vendor/guardtalk/docs/qa/verify_os_cammic_toggle_static.sh --self-test
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 cd "$ROOT"
@@ -21,7 +22,7 @@ HOOKS="frameworks/base/services/core/java/com/android/server/sensorprivacy/Guard
 SERVICE="frameworks/base/services/core/java/com/android/server/sensorprivacy/SensorPrivacyService.java"
 QS_DIR="frameworks/base/packages/SystemUI/src/com/android/systemui/qs"
 QS_OV="vendor/guardtalk/overlays/GuardTalkSystemUIOverlay/res/values/config.xml"
-PROPS="vendor/guardtalk/device/tokay/guardtalk-product-props.mk"
+PROPS=""
 LPU="frameworks/base/core/java/com/android/internal/widget/LockPatternUtils.java"
 
 require_file() {
@@ -51,9 +52,100 @@ forbid_rg() {
   fi
 }
 
+# Q-DEVICE-ALIGN-TOKAY-PINS: same contract as verify_sec_p5_static.sh.
+# Discover device/*/guardtalk-product-props.mk one level deep. Fail unless
+# the count is exactly 1. Count 2 must not keep reading tokay. Count 0 fails.
+# PROPS is the path this script reads. It is cleared when the count is not 1,
+# so a second device file cannot leave the tokay literal in force.
+# GT_PROPS_SCAN_ROOT overrides the scan for a sandbox injection; it must not
+# point at the live device tree during that injection.
+PROPS_MK=""
+resolve_props_mk() {
+  local scan_root="$1"
+  local nullglob_was=0
+  local -a found=()
+  if shopt -q nullglob; then
+    nullglob_was=1
+  fi
+  shopt -s nullglob
+  found=( "$scan_root"/*/guardtalk-product-props.mk )
+  if [[ "$nullglob_was" -eq 0 ]]; then
+    shopt -u nullglob
+  fi
+  if [[ ${#found[@]} -gt 1 ]]; then
+    local -a sorted=()
+    local f
+    while IFS= read -r f; do
+      sorted+=("$f")
+    done < <(printf '%s\n' "${found[@]}" | LC_ALL=C sort)
+    found=( "${sorted[@]}" )
+  fi
+  if [[ ${#found[@]} -ne 1 ]]; then
+    fail "guardtalk-product-props.mk cardinality is ${#found[@]} under ${scan_root} (expected exactly 1). Count 0 means the tokay fallback target is gone. Count greater than 1 means another device file is selected instead of tokay, and this gate must not stay green on tokay alone. Found: ${found[*]:-<none>}"
+    PROPS_MK=""
+    PROPS=""
+    return
+  fi
+  PROPS_MK="${found[0]}"
+  PROPS="$PROPS_MK"
+  pass "exactly one guardtalk-product-props.mk: ${PROPS}"
+}
+
+self_test_props_cardinality() {
+  local sb one_fail one_mk one_props two_fail two_mk two_props zero_fail zero_props
+  sb="$(mktemp -d)"
+  mkdir -p "$sb/tokay" "$sb/caiman"
+  printf '%s\n' 'PRODUCT_SYSTEM_PROPERTIES += ro.guardtalk.files_policy=1' \
+    > "$sb/tokay/guardtalk-product-props.mk"
+
+  FAIL=0
+  PASS_N=0
+  resolve_props_mk "$sb"
+  one_fail=$FAIL
+  one_mk=$PROPS_MK
+  one_props=$PROPS
+
+  printf '%s\n' 'PRODUCT_SYSTEM_PROPERTIES += ro.guardtalk.files_policy=1' \
+    > "$sb/caiman/guardtalk-product-props.mk"
+  FAIL=0
+  PASS_N=0
+  resolve_props_mk "$sb"
+  two_fail=$FAIL
+  two_mk=$PROPS_MK
+  two_props=$PROPS
+
+  rm -f "$sb/tokay/guardtalk-product-props.mk" "$sb/caiman/guardtalk-product-props.mk"
+  FAIL=0
+  PASS_N=0
+  resolve_props_mk "$sb"
+  zero_fail=$FAIL
+  zero_props=$PROPS
+  rm -rf "$sb"
+
+  if [[ "$one_fail" -eq 0 \
+        && "$one_mk" == "$sb/tokay/guardtalk-product-props.mk" \
+        && "$one_props" == "$one_mk" \
+        && "$two_fail" -eq 1 && -z "$two_mk" && -z "$two_props" \
+        && "$zero_fail" -eq 1 && -z "$zero_props" \
+        && ! -e "$sb" ]]; then
+    echo "SELF-TEST PASSED: cardinality 1 uses the single file; cardinality 2 fails closed (does not keep tokay); cardinality 0 fails closed; sandbox ${sb} removed"
+    return 0
+  fi
+  echo "SELF-TEST FAILED: one_fail=${one_fail} one_mk=${one_mk} one_props=${one_props} two_fail=${two_fail} two_mk=${two_mk} two_props=${two_props} zero_fail=${zero_fail} zero_props=${zero_props} sandbox_left=$([[ -e "$sb" ]] && echo yes || echo no)"
+  return 1
+}
+
+if [[ "${1:-}" == "--self-test" ]]; then
+  self_test_props_cardinality
+  exit $?
+fi
+
 echo "=== Q-OS-CAMMIC-TOGGLE independent rematch ==="
 echo "ROOT=$ROOT"
 echo
+
+echo "=== Q-DEVICE-ALIGN-TOKAY-PINS: product-props cardinality ==="
+resolve_props_mk "${GT_PROPS_SCAN_ROOT:-vendor/guardtalk/device}"
 
 # --- Files ---
 require_file "$POLICY"

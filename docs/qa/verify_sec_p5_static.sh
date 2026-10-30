@@ -52,6 +52,88 @@ forbid_rg() {
   fi
 }
 
+# Q-DEVICE-ALIGN-SHARED-CORE: radio-excised.mk selects
+# device/$(PRODUCT_DEVICE)/guardtalk-product-props.mk and falls back to tokay
+# only when that file is absent (either/or, never a merge). A gate that
+# hardcodes tokay stays green when a second device file appears and then
+# checks the wrong file. Exactly one device-level props file is the contract.
+# GT_PROPS_SCAN_ROOT overrides the scan for a sandbox injection; it must not
+# point at the live device tree during that injection.
+PROPS_MK=""
+resolve_props_mk() {
+  local scan_root="$1"
+  local nullglob_was=0
+  local -a found=()
+  if shopt -q nullglob; then
+    nullglob_was=1
+  fi
+  shopt -s nullglob
+  found=( "$scan_root"/*/guardtalk-product-props.mk )
+  if [[ "$nullglob_was" -eq 0 ]]; then
+    shopt -u nullglob
+  fi
+  if [[ ${#found[@]} -gt 1 ]]; then
+    local -a sorted=()
+    local f
+    while IFS= read -r f; do
+      sorted+=("$f")
+    done < <(printf '%s\n' "${found[@]}" | LC_ALL=C sort)
+    found=( "${sorted[@]}" )
+  fi
+  if [[ ${#found[@]} -ne 1 ]]; then
+    fail "guardtalk-product-props.mk cardinality is ${#found[@]} under ${scan_root} (expected exactly 1). Count 0 means the tokay fallback target is gone. Count greater than 1 means another device file is selected instead of tokay, and this gate must not stay green on tokay alone. Found: ${found[*]:-<none>}"
+    PROPS_MK=""
+    return
+  fi
+  PROPS_MK="${found[0]}"
+  pass "exactly one guardtalk-product-props.mk: ${PROPS_MK}"
+}
+
+self_test_props_cardinality() {
+  local sb one_fail one_mk two_fail two_mk zero_fail
+  sb="$(mktemp -d)"
+  mkdir -p "$sb/tokay" "$sb/caiman"
+  printf '%s\n' 'PRODUCT_SYSTEM_PROPERTIES += ro.guardtalk.files_policy=1' \
+    > "$sb/tokay/guardtalk-product-props.mk"
+
+  FAIL=0
+  PASS_N=0
+  resolve_props_mk "$sb"
+  one_fail=$FAIL
+  one_mk=$PROPS_MK
+
+  printf '%s\n' 'PRODUCT_SYSTEM_PROPERTIES += ro.guardtalk.files_policy=1' \
+    > "$sb/caiman/guardtalk-product-props.mk"
+  FAIL=0
+  PASS_N=0
+  resolve_props_mk "$sb"
+  two_fail=$FAIL
+  two_mk=$PROPS_MK
+
+  rm -f "$sb/tokay/guardtalk-product-props.mk" "$sb/caiman/guardtalk-product-props.mk"
+  FAIL=0
+  PASS_N=0
+  resolve_props_mk "$sb"
+  zero_fail=$FAIL
+  rm -rf "$sb"
+
+  if [[ "$one_fail" -eq 0 \
+        && "$one_mk" == "$sb/tokay/guardtalk-product-props.mk" \
+        && "$two_fail" -eq 1 && -z "$two_mk" \
+        && "$zero_fail" -eq 1 \
+        && ! -e "$sb" ]]; then
+    echo "SELF-TEST PASSED: cardinality 1 uses the single file; cardinality 2 fails closed (does not keep tokay); cardinality 0 fails closed; sandbox ${sb} removed"
+    return 0
+  fi
+  echo "SELF-TEST FAILED: one_fail=${one_fail} one_mk=${one_mk} two_fail=${two_fail} two_mk=${two_mk} zero_fail=${zero_fail} sandbox_left=$([[ -e "$sb" ]] && echo yes || echo no)"
+  return 1
+}
+
+if [[ "${1:-}" == "--self-test" ]]; then
+  self_test_props_cardinality
+  exit $?
+fi
+
 # --- Paths ---
 DOC_HARDEN="vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md"
 DOC_STATUS="vendor/guardtalk/docs/SECURITY_STATUS_API.md"
@@ -68,7 +150,6 @@ DOC_SIGN="vendor/guardtalk/docs/SECURITY_SIGNING_REPORT.md"
 SIGN_RUN="vendor/guardtalk/branding/signing-keys/RUNBOOK.md"
 
 HARDEN_MK="vendor/guardtalk/device/tokay/guardtalk-production-hardening.mk"
-PROPS_MK="vendor/guardtalk/device/tokay/guardtalk-product-props.mk"
 RADIO_MK="vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk"
 FEAT_MK="vendor/guardtalk/feature-excised/guardtalk-feature-excised.mk"
 HARDEN_RC="vendor/guardtalk/init/init.guardtalk.hardening.rc"
@@ -144,7 +225,10 @@ require_rg 'kexec_load_disabled 1' "$HARDEN_RC" "sysctl kexec_load_disabled=1"
 require_rg 'perf_event_paranoid 2' "$HARDEN_RC" "sysctl perf_event_paranoid=2"
 forbid_rg 'perf_event_paranoid 3' "$HARDEN_RC" "live rc has no perf_event_paranoid 3"
 
-# Phase 1–4 product props still wired (closeout continuity)
+# Phase 1–4 product props still wired (closeout continuity).
+# Path is discovered, not tokay-pinned: see resolve_props_mk.
+echo "=== Q-DEVICE-ALIGN-SHARED-CORE: product-props cardinality ==="
+resolve_props_mk "${GT_PROPS_SCAN_ROOT:-vendor/guardtalk/device}"
 require_file "$PROPS_MK" "guardtalk-product-props.mk"
 for prop in \
   ro.guardtalk.files_policy=1 \

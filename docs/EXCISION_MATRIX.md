@@ -5,8 +5,9 @@
 > **Live device/flash evidence:** **none claimed** — `LIVE_FLASH_CLAIMED=false`
 > **Selection ≠ runtime excision.** See the ⚠ **Correction register (2026-09-25)** below — this file
 > describes which filters the core *selects*, not whether an excision took effect on a shipped image.
-> **Unreconciled residuals `D-07`/`D-08` remain `OPEN` (2026-09-26)** — see the ⚠ **Residual** block in
-> the correction register; they live in files this card does not own and are *not* resolved here.
+> **Residuals `D-07`/`D-08` remain `OPEN` (2026-09-26; re-measured 2026-10-30)** — see the ⚠ **Residual**
+> block in the correction register. `D-07`'s *documentation* gap is reconciled in the preflight's **§17**
+> addendum, but its *findings* (`QA-W1`, `QA-W2`, `QI-1`) are still `OPEN`; `D-08` is unaffected.
 
 This document is the authoritative description of **how the shared excision core decides
 what to excise for a given Pixel codename**. It replaces the previous situation where
@@ -41,13 +42,39 @@ no resolution can be asserted from evidence. The D-01…D-06 reconciliation foll
 | D-05 | §6 zero-regression | `androidboot.radio.disabled=1` is **unchanged at board level**, but the flag is **absent from 4/13 laguna stamps** | `D2`, `M-R3` |
 | D-06 | §2 blocklist columns | per-variant blocklists are **selected** uniformly, but BT/NFC GKI modules in `system_dlkm/modules.load` have **0 matching blocklist entries (13/13)** | `C-B1` |
 
+> **Register index — all eight `A-PORT-MATRIX-R2` §8 surfaces, and where each one lives.**
+> Added 2026-10-29 by `T-DEVICE-ALIGN-REGISTER-GAP`. The six rows above are the complete **in-file**
+> register; the remaining two surfaces are carried by files this card does **not** own and are therefore
+> **not** rows here. Each anchor below is a live, re-checkable location — not a paraphrase.
+
+| Surface | Reconciled / owned where | Live anchor |
+|---|---|---|
+| `D-01`–`D-06` | **This file** — the six-row register directly above | `vendor/guardtalk/docs/EXCISION_MATRIX.md:37-42` |
+| `D-07` | `vendor/guardtalk/docs/PORT_MATRIX_GEN8910_PREFLIGHT.md` **§17**, the `T-EXCISE-MATRIX-D07-OPEN` addendum | §17 heading `:475`; the `D-01…D-08` statement `:489-490` |
+| `D-08` | **Not here by design** — owned by `T-EXCISE-MATRIX-DOC-RESIDUAL` as the shipped `stallion` stamp README | `vendor/guardtalk/docs/STALLION_PORT_RESOLUTION.md:235-247` (§6.4 ownership note, `:233`) |
+
+> `D-07`'s *documentation* gap is reconciled in the preflight's §17 addendum (2026-09-26); its
+> *underlying conditions* (`QA-W1` 16-QPR1 stallion lag, `QA-W2` `build_id` pin asymmetry, `QI-1` mutable
+> present-set) remain `OPEN` — which is what the ⚠ **Residual** block below records. `D-08` is a
+> shipped-artifact lane and is not reconcilable from this file. **Neither may be synthesised as a row
+> here** (Law 7): the register is six rows because six surfaces live in this file.
+
 **Withdrawal of the unsubstantiated claim.** The `Q-PORT-MATRIX-PREFLIGHT` approval-note wording
 *"Escalations QA-W1/W2/I1 accepted → docs corrected"* at `TASK_QUEUE.md:6387` is **withdrawn as
-unsubstantiated** (`A-PORT-MATRIX-R2` F-001: the QA deliverable `PORT_MATRIX_GEN8910_PREFLIGHT.md`
-still hashes `e71d4006…`, byte-identical to the *pre*-remediation hash QA recorded, and
-`grep -cE 'QA-W|QI-1|16-QPR1|asymmetry'` on it = **0**). `QA-W1`/`QA-W2`/`QI-1` therefore stand
-**OPEN**, not closed. This dated note preserves the audit trail; the queue line itself is corrected
-by the Architect, who is the sole writer of `TASK_QUEUE.md` this wave.
+unsubstantiated** (`A-PORT-MATRIX-R2` F-001, **measured 2026-09-25**: the QA deliverable
+`PORT_MATRIX_GEN8910_PREFLIGHT.md` then hashed `e71d4006…` — **historical / pre-remediation value
+only — current is `5dffda34ca385da9…`** — and `grep -cE 'QA-W|QI-1|16-QPR1|asymmetry'` on it returned
+**0** *at that time*).
+`QA-W1`/`QA-W2`/`QI-1` therefore stand **OPEN**, not closed.
+
+> **Re-measurement, 2026-10-30 (`T-DEVICE-ALIGN-REGISTER-CONSISTENCY`).** The pre-remediation hash above
+> is **superseded**: the preflight was amended by its own **§17** addendum (`T-EXCISE-MATRIX-D07-OPEN`,
+> 2026-09-26) and now hashes **`5dffda34ca385da9…`** with **19** lines matching
+> `QA-W|QI-1|16-QPR1|asymmetry`. `KERNEL_MATRIX.md` §10 was amended in the same card and now hashes
+> **`f315ec5b10ed9bfd…`** with **12** matching lines. **The 2026-09-25 withdrawal still stands** — the
+> wording it withdrew was false *when it was made*; what changed afterwards is the **documentation**, not
+> the findings. `QA-W1`/`QA-W2`/`QI-1` remain **`OPEN`**. This dated note preserves the audit trail; the
+> queue line itself is corrected by the Architect, who is the sole writer of `TASK_QUEUE.md` this wave.
 
 #### ⚠ Residual — `D-07` / `D-08` annotated **OPEN** (2026-09-26, `T-EXCISE-MATRIX-DOC-RESIDUAL`)
 
@@ -57,9 +84,16 @@ is in this card's exclusive ownership. They are recorded here as **OPEN**, each 
 reason, rather than silently resolved or dropped (Law 7 — no unverified claim; Law 10 audit trail;
 Law 11 reversibility). **No prior text has been deleted.**
 
+> **Amendment, 2026-10-30 (`T-DEVICE-ALIGN-REGISTER-CONSISTENCY`).** The sentence above describes the
+> state on 2026-09-26. **`D-07`'s carrier documentation was reconciled the same day (2026-09-26)** by
+> the preflight's own **§17** addendum (`T-EXCISE-MATRIX-D07-OPEN`) and `KERNEL_MATRIX.md` §10 — so "still
+> unreconciled" now applies to `D-07`'s **findings only**, not to its documentation. `D-08` is
+> unchanged and still owned by the stamp/README lane. Update the `D-07` row below before citing either
+> carrier's hash or token count.
+
 | # | Carrier (file:line) | Disagreement — matrix says vs EXCISE says | Status | Reason it is NOT resolved here |
 |---|---|---|---|---|
-| **D-07** | `vendor/guardtalk/docs/PORT_MATRIX_GEN8910_PREFLIGHT.md:344` (wave-A entry prerequisite) + `vendor/guardtalk/docs/KERNEL_MATRIX.md` | `PORT_MATRIX` lists `T-PORT-EXCISION-MATRIX` **`APPROVED`** as a settled wave-A prerequisite, while the umbrella audit registers **8 CRITICALs** and a **`FALSE`** airgap verdict; `QA-W1` (stallion 16-QPR1 lag), `QA-W2` (`build_id` pin asymmetry + undocumented `tegu` pin) and `QI-1` are still unaddressed in both docs. | **OPEN** | Both carrier files are **outside this card's exclusive ownership** (`EXCISION_MATRIX.md` only), so remediation was **not performed**. Evidence the gap persists: `PORT_MATRIX_GEN8910_PREFLIGHT.md` sha256 `e71d40060cda8e44…` (**byte-identical** to QA's pre-remediation hash) and `KERNEL_MATRIX.md` sha256 `35355da1a72bfe18…`; a grep for the tokens `QA-W`, `QI-1`, `16-QPR1`, `asymmetry` returns **0** on both. **Do not read the wave plan as evidence that excision is clean.** |
+| **D-07** | `vendor/guardtalk/docs/PORT_MATRIX_GEN8910_PREFLIGHT.md` **§17**, the `T-EXCISE-MATRIX-D07-OPEN` addendum (`:475`) + `vendor/guardtalk/docs/KERNEL_MATRIX.md` §10 (`:369`) | **Documentation reconciled; findings still disagree.** The wave plan (`:344`) lists `T-PORT-EXCISION-MATRIX` **`APPROVED`** as a settled wave-A prerequisite while the umbrella audit registers **8 CRITICALs** and a **`FALSE`** airgap verdict. §17 (2026-09-26) corrects that reading — the approval is a **document / static-suite** approval, not evidence of runtime excision — and §10 carries the matching kernel-side note. **The findings are unchanged and unaddressed in substance:** `QA-W1` (stallion `16-QPR1` platform lag), `QA-W2` (`build_id` pin asymmetry + undocumented `tegu` pin) and `QI-1` (mutable `show-status` present-set) are now *documented*, which is not the same as *resolved*; each is declared still open inside §17 itself. | **OPEN** — findings **not** closed; documentation reconciled in §17 | Only the **documentation** gap is closed, by the carriers' own addendum (`T-EXCISE-MATRIX-D07-OPEN`) — **not** by this card, which still owns `EXCISION_MATRIX.md` alone and still performs no remediation in the carriers. The underlying conditions are declared open by that addendum in its own words ("the lag itself remains `OPEN`"; "`tegu`'s pin rationale remains `OPEN`"; "inherent, not fixable here"). **Re-measured 2026-10-30:** `PORT_MATRIX_GEN8910_PREFLIGHT.md` sha256 **`5dffda34ca385da9…`** — **amended**, i.e. no longer the pre-remediation hash QA recorded — with **19** lines matching `QA-W1\|QA-W2\|QI-1\|16-QPR1\|asymmetry`; `KERNEL_MATRIX.md` sha256 **`f315ec5b10ed9bfd…`** with **12** such lines. (The "**0** on both" this cell previously asserted was measured **before** the 2026-09-26 addendum and survives only as history.) **Do not read the wave plan as evidence that excision is clean.** |
 | **D-08** | `releases/desktop-flash/stallion-20260923-100618/README-FLASH-DESKTOP.md:10` (shipped stamp) | README advertises *"VINTF excised manifest (resolved in the built image): `vendor_manifest_no_radio_stallion.xml`"*, but the shipped `vendor.img` carries `/etc/vintf/manifest/dmd.xml`, which re-declares `vendor.samsung_slsi.telephony.hardware.oemservice` (`IOemService/dm0`, `dm1`) — the "no_radio" claim is **false as written on that stamp**. | **OPEN** | The shipped stamp README is **outside this card's exclusive ownership** (stamp README lane / `F-EXCISE-CLAIM-HONESTY`) and is immutable output of stamp `stallion-20260923-100618`; editing it would tamper with the stamp and re-stamping is out of scope. README sha256 `f2b9e01a217226c0…`; fragment `dmd.xml` sha256 `9909ea142376d376…`. **Do not cite the stamp README as a clean-basis artifact.** |
 
 **Hand-off (open items, 2026-09-26):** closing `D-07` requires the owners of
@@ -67,6 +101,12 @@ Law 11 reversibility). **No prior text has been deleted.**
 Both remain **unresolved**; this note asserts no resolution. No file outside this card's ownership was
 touched, and `TASK_QUEUE.md` was not edited (Architect-owned — see
 `.agent-comm/evidence/E-TASK-QUEUE-CONCURRENT-WRITER.md`).
+
+> **Amendment to the hand-off, 2026-10-30 (`T-DEVICE-ALIGN-REGISTER-CONSISTENCY`).** The **`D-07`
+> documentation** hand-off was discharged by those owners themselves in **§17** / **§10** on 2026-09-26.
+> No edit to either carrier was made — or needed — from this lane. What the hand-off still covers, and
+> what the `D-07` row above now records, is `D-07`'s **findings** (`QA-W1`, `QA-W2`, `QI-1`, all
+> **`OPEN`**) plus `D-08`'s stamp claim. `D-07` is **not** closed by this note.
 
 ---
 
@@ -235,10 +275,86 @@ QA-anchored paths, or a verified device-local delta). Such a pin is only accepte
 
 | Device | Pin | Why |
 |---|---|---|
-| `komodo` | `vendor/guardtalk/device/komodo/vendor_dlkm.modules.blocklist` | device-local copy so `REGEN_HOOKS` stays device-local; token-identical to `zumapro_caimito` canonical (14/14) |
+| `komodo` | `vendor/guardtalk/device/komodo/vendor_dlkm.modules.blocklist` | device-local copy so `REGEN_HOOKS` stays device-local; token-identical to `zumapro_caimito` canonical (14/14 tokens; sorted-token SHA-256 `4b404489…` on both sides) |
 
-`akita`, `tokay` and `rango` resolve straight to their variant's canonical file — no pin
-needed, so no drift surface.
+`akita`, `tokay` and `rango` resolve straight to their variant's canonical file — they are
+**not** pins, so there is no token-drift surface. Their *location*, however, is not the
+`feature-excised/variants/<variant>/` convention. Those locations are registered below.
+
+#### 4.1.1 Sanctioned canonical blocklist locations outside `variants/<variant>/` — `T-DEVICE-ALIGN-REGISTRY` (2026-10-29)
+
+Measured population of the registry (`GT_VARIANT_*_BLOCKLIST`, 9 assignments, plus the one
+`GT_DEVICE_BLOCKLIST_` override):
+
+| Convention | Count | Variants |
+|---|---|---|
+| `feature-excised/variants/<variant>/vendor_dlkm.modules.blocklist` | **6** | `zuma_shusky`, `zumapro_comet`, `zumapro_tegu`, `zumapro_stallion`, `laguna_muzel`, `gs201_tangorpro` |
+| `feature-excised/vendor_dlkm.modules.blocklist` (flat) | **1** | `zumapro_caimito` |
+| `device/<codename>/vendor_dlkm.modules.blocklist` (device-local) | **2** | `zuma_akita`, `laguna_rango` |
+| `GT_DEVICE_BLOCKLIST_<codename>` override | **1** | `komodo` (the pin above) |
+
+Each of the three non-`variants/` entries is **registered, not normalised**. None of them is a
+pin: `GT_VARIANT_<variant>_BLOCKLIST` points straight at the file, so identity is reflexive — the
+proof below is that the file is the variant's single source and that its tokens are what the
+variant table in §3 requires.
+
+| Variant (devices) | Registered path | Class | Why this location is sanctioned | Identity proof |
+|---|---|---|---|---|
+| `zuma_akita` (`akita`) | `vendor/guardtalk/device/akita/vendor_dlkm.modules.blocklist` | variant canonical, **device-local** location | `akita` is the only `zuma` kernel family shipping `bcmdhd4383` + `goodix_brl_touch` and no `sec_touch` / `ftm5` / `gnss*`; there is no `feature-excised/variants/zuma_akita/` copy, so this path is the single source (a second copy would create the only possible drift surface) | **9 tokens** · sorted-token SHA-256 `54996074…`. vs `zuma_shusky` canonical (14 tokens · `4a094be1…`): lacks `ftm5`, `gnssif`, `gnss_spi`, `rt6160_regulator`, `sec_touch`, and carries `bcmdhd4383` where `shusky` carries `bcmdhd4398` |
+| `zumapro_caimito` (`tokay`, `caiman`; `komodo` pins it) | `vendor/guardtalk/feature-excised/vendor_dlkm.modules.blocklist` | variant canonical, **flat** location | the file is caimito-specific (`bcmdhd4390`, `syna_touch`, `sec_touch`, `nitrous`) — **not** a variant-agnostic tree default; it predates the per-variant layout (added 2026-06-24 `23f185b`; oldest `variants/<v>/` blocklist added 2026-09-25 `2e9f829` — both via `git log --diff-filter=A`) and is the reference the registered `komodo` pin is proven against | **14 tokens** · sorted-token SHA-256 `4b404489…`. Identical to the `komodo` pin (14/14). vs `device/akita/…` (9 · `54996074…`) it has 7 tokens akita lacks (`bcmdhd4390`, `gs-panel-common-test.ko`, `panel-gs-tk4c-test.ko`, `pwm_exynos`, `rt4539_bl`, `sec_touch`, `syna_touch`) and lacks akita's `bcmdhd4383` / `goodix_brl_touch` |
+| `laguna_rango` (`rango`) | `vendor/guardtalk/device/rango/vendor_dlkm.modules.blocklist` | variant canonical, **device-local** location | the registry resolves straight to it (no pin); the per-variant mirror `feature-excised/variants/laguna_rango/…` exists and declares itself the canonical *home*, but its own header requires any repoint to land with the paired `Q-*` gate update (see below) | **20 tokens** · sorted-token SHA-256 `1069c4d6…`. Token-identical (20/20) to both the `feature-excised/variants/laguna_rango/…` mirror and the `laguna_muzel` canonical |
+
+> **What is *not* claimed.** `feature-excised/variants/laguna_rango/vendor_dlkm.modules.blocklist`
+> is a verified token-identical duplicate, **not** a second authority: the registry does not
+> reference it. Nothing in the build or the QA suite enforces that equality today; it is held by
+> review only. A QA-side guard would be a `verify_*.sh` change and is therefore **reported, not
+> made** by `T-DEVICE-ALIGN-REGISTRY` (QA lane owns those files).
+
+**Deferred normalisation — why register and not re-point.** Registering was chosen for all three
+because the resolved path is already anchored outside this card:
+
+1. `vendor/guardtalk/docs/qa/verify_port_excision_matrix_static.sh` **case 5** hard-codes the
+   pre-card resolved path for `akita`, `tokay`, `komodo` and `rango` and fails on any move
+   (`blocklist path moved: got … want …`).
+2. `vendor/guardtalk/device/akita/BoardConfig-excised-late.mk` carries the akita path as a
+   literal, so a registry re-point would trip `gt-excision-validate-device-blocklist` — repairing
+   it needs a write under `device/` (out of scope for this card).
+3. `feature-excised/variants/laguna_rango/…`'s header states the repoint "must be done together
+   with the paired `Q-*` gate update".
+
+A normalisation is therefore a **joint Backend + QA card** (plus a lane-C device edit for akita),
+and it changes the resolved path of four in-force devices — a zero-regression question, not a
+cosmetic one. Until then every convention is registered with its token count and hash, so no
+unregistered second convention remains.
+
+**Reproduce the table above.**
+
+```bash
+# Registry assignments — 10 lines: the 9 GT_VARIANT_*_BLOCKLIST entries plus the
+# GT_DEVICE_BLOCKLIST_komodo override. NOTE: the `GT_[A-Z_]*BLOCKLIST` idiom used by
+# earlier evidence cards does NOT match these names — variant keys are lowercase
+# (`GT_VARIANT_zuma_akita_BLOCKLIST`) and the override appends `_<codename>`. Use
+# `GT_[A-Za-z0-9_]*BLOCKLIST.*:=` so the override is captured too.
+rg -n '^GT_[A-Za-z0-9_]*BLOCKLIST.*:=[[:space:]]*' \
+  vendor/guardtalk/feature-excised/excision-variants.mk
+
+# Every registered path resolves to a real file (expect 10 x OK, 0 x MISS).
+grep -E '^GT_[A-Za-z0-9_]*BLOCKLIST.*:=[[:space:]]*' \
+  vendor/guardtalk/feature-excised/excision-variants.mk \
+  | sed 's/.*:=[[:space:]]*//' | while read -r f; do
+      test -f "$f" && echo "OK   $f" || echo "MISS $f"; done
+
+# Token count + sorted-token SHA-256 (comment/blank lines ignored).
+tok() { grep -E '^[[:space:]]*blocklist[[:space:]]' "$1" | awk '{print $2}' | sort; }
+for f in vendor/guardtalk/device/akita/vendor_dlkm.modules.blocklist \
+         vendor/guardtalk/feature-excised/vendor_dlkm.modules.blocklist \
+         vendor/guardtalk/device/komodo/vendor_dlkm.modules.blocklist \
+         vendor/guardtalk/device/rango/vendor_dlkm.modules.blocklist \
+         vendor/guardtalk/feature-excised/variants/laguna_rango/vendor_dlkm.modules.blocklist \
+         vendor/guardtalk/feature-excised/variants/zuma_shusky/vendor_dlkm.modules.blocklist; do
+  printf '%-80s %3s %s\n' "$f" "$(tok "$f" | wc -l)" "$(tok "$f" | sha256sum | cut -d' ' -f1)"
+done
+```
 
 ---
 

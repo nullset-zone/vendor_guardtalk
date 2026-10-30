@@ -103,6 +103,9 @@ GT_VARIANT_zuma_akita_WIFI_MODULES  := bcmdhd4383
 GT_VARIANT_zuma_akita_TOUCH_MODULES := goodix_brl_touch
 GT_VARIANT_zuma_akita_FP_STACK      := goodix
 GT_VARIANT_zuma_akita_RADIO_SET     := shannon
+# BLOCKLIST: LOCATION-convention drift — device-local path, but it IS this
+# variant's canonical file (no pin, nothing to drift from). Registered in
+# docs/EXCISION_MATRIX.md §4.1: 9 tokens, sorted-token sha256 54996074….
 GT_VARIANT_zuma_akita_BLOCKLIST     := vendor/guardtalk/device/akita/vendor_dlkm.modules.blocklist
 
 # --- zumapro / caimito (Pixel 9, 9 Pro, 9 Pro XL) -------------------------
@@ -112,6 +115,9 @@ GT_VARIANT_zumapro_caimito_WIFI_MODULES  := bcmdhd4390
 GT_VARIANT_zumapro_caimito_TOUCH_MODULES := syna_touch sec_touch
 GT_VARIANT_zumapro_caimito_FP_STACK      := qfp
 GT_VARIANT_zumapro_caimito_RADIO_SET     := shannon
+# BLOCKLIST: LOCATION-convention drift — FLAT path, but it IS this variant's
+# canonical file (no pin). Registered in docs/EXCISION_MATRIX.md §4.1: 14
+# tokens, sorted-token sha256 4b404489…, the reference the komodo pin matches.
 GT_VARIANT_zumapro_caimito_BLOCKLIST     := vendor/guardtalk/feature-excised/vendor_dlkm.modules.blocklist
 
 # --- zumapro / comet (Pixel 9 Pro Fold) -----------------------------------
@@ -157,6 +163,11 @@ GT_VARIANT_laguna_rango_WIFI_MODULES  := bcmdhd4383 bcmdhd4390
 GT_VARIANT_laguna_rango_TOUCH_MODULES := syna_touch focal_touch fst2
 GT_VARIANT_laguna_rango_FP_STACK      := goodix
 GT_VARIANT_laguna_rango_RADIO_SET     := shannon
+# BLOCKLIST: LOCATION-convention drift — device-local path, but it IS this
+# variant's canonical file (no pin). Registered in docs/EXCISION_MATRIX.md §4.1:
+# 20 tokens, sorted-token sha256 1069c4d6…, token-identical to the verified
+# feature-excised/variants/laguna_rango/ mirror (kept as a second file today;
+# re-pointing the registry at it needs the paired QA-gate update, §4.1).
 GT_VARIANT_laguna_rango_BLOCKLIST     := vendor/guardtalk/device/rango/vendor_dlkm.modules.blocklist
 
 # --- gs201 / tangorpro (Google Pixel Tablet) ------------------------------
@@ -218,6 +229,33 @@ GT_VARIANT_gs201_tangorpro_BLOCKLIST     := vendor/guardtalk/feature-excised/var
 #    override to be token-identical to the variant's canonical blocklist, so a
 #    per-device copy can never silently drift off its variant.
 #    Only overrides that DIFFER from the canonical file need a row.
+#
+# BLOCKLIST PATH CONVENTIONS — measured 2026-10-29 (T-DEVICE-ALIGN-REGISTRY).
+# The registry above uses THREE location conventions. Counting the 9
+# GT_VARIANT_*_BLOCKLIST assignments (not the files on disk):
+#
+#   6 x feature-excised/variants/<variant>/vendor_dlkm.modules.blocklist
+#        zuma_shusky, zumapro_comet, zumapro_tegu, zumapro_stallion,
+#        laguna_muzel, gs201_tangorpro                        (the convention)
+#   1 x feature-excised/vendor_dlkm.modules.blocklist   (FLAT)  zumapro_caimito
+#   2 x device/<codename>/vendor_dlkm.modules.blocklist (LOCAL) zuma_akita,
+#                                                               laguna_rango
+#   + 1 separate override mechanism: GT_DEVICE_BLOCKLIST_komodo (below), which
+#     is the ONLY entry that is a *pin* (it points somewhere other than
+#     GT_VARIANT_zumapro_caimito_BLOCKLIST).
+#
+# The flat and the two device-local paths are NOT pins: each one IS the
+# variant's canonical file (GT_VARIANT_<v>_BLOCKLIST points straight at it), so
+# there is no second copy to drift from. They were nevertheless undocumented, so
+# a reader could not tell a sanctioned location from an accidental one. They are
+# now registered in docs/EXCISION_MATRIX.md §4.1 with token counts and hashes.
+#
+# DO NOT re-point any of the three at feature-excised/variants/<variant>/ in
+# isolation. The resolved path is anchored by
+# docs/qa/verify_port_excision_matrix_static.sh case5 (zero-regression table) and
+# by device/akita/BoardConfig-excised-late.mk (literal path), so a repoint must
+# land together with the paired QA-gate update — see §4.1 "deferred
+# normalisation". This file must stay runnable with the current QA script.
 # ---------------------------------------------------------------------------
 GT_DEVICE_BLOCKLIST_komodo := vendor/guardtalk/device/komodo/vendor_dlkm.modules.blocklist
 
