@@ -15,7 +15,7 @@ import { INSTALLER_CSP } from "../lib/claims/csp.js";
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const PAJAMAS = join(ROOT, "design", "pajamas");
 const D006 =
-  "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'";
+  "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src http://192.168.2.220:9100";
 const REMOTE_REF =
   /url\(\s*https?:|@import\s+url\(\s*https?:|design\.guardtalk\.io|fonts\.googleapis/i;
 

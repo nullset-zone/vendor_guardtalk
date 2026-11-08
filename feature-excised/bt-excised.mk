@@ -1,9 +1,30 @@
 # T-W2-I4-BT / T-BT-FULL — 5-layer graceful excision of the Bluetooth HAL.
 #
+# T-EXCISE-BT-SOCKET-LIB-KEEP (2026-11-07, P0) — TWO CORRECTIONS TO THIS FILE.
+# The Stallion handset boot-looped on the GuardTalk animation because this file
+# removed libraries that HALs the excision KEEPS link against. Both are fixed
+# below; the measured detail is in
+# .agent-comm/evidence/T-EXCISE-BT-SOCKET-LIB-KEEP/.
+#
+#   (1) OVER-MATCH: the Layer-1 defence-in-depth macro used
+#       `$(findstring android.hardware.bluetooth,$(1))`. `findstring` is a
+#       SUBSTRING test, so it also matched `android.hardware.bluetooth.socket-V1-ndk`
+#       — the AIDL glue library for the CHRE context-hub socket API, not a
+#       Bluetooth feature. `android.hardware.contexthub-service.generic` (which
+#       this excision KEEPS, and still declares in
+#       vendor/etc/vintf/manifest/android.hardware.contexthub-service.generic.xml)
+#       has `NEEDED android.hardware.bluetooth.socket-V1-ndk.so`. With the .so
+#       gone the contexthub HAL could not link, never published
+#       `android.frameworks.sensorservice.ISensorManager`, so `system_server`
+#       blocked in SystemSensorManager.nativeCreate and Watchdog killed it. The
+#       macro is now exact-module matching plus a fail-closed keep-list guard.
+#
+#   (2) REVERSAL: the BT-audio libraries are NOT excised any more. The *kept*
+#       vendor audio HAL is a prebuilt binary whose DT_NEEDED includes them, so
+#       dropping them made `vendor.audio-hal-aidl` crash-loop too ([restarting]
+#       28x on device). See the T-EXCISE-BT-SOCKET-LIB-KEEP note in Layer 1.
+#
 # Scope: Broadcom BCM4390 Bluetooth HAL (android.hardware.bluetooth-service.bcmbtlinux),
-# the Bluetooth audio HAL (android.hardware.bluetooth.audio-impl + NDK/HIDL stubs;
-# transitively installed via the AOSP reference lib `libaudioserviceexampleimpl`,
-# which is itself dropped in Layer 1 — see the T-EXCISE-BT-AUDIO-HAL note there),
 # the BT finder/ranging stubs, the two feature-permission prebuilt XMLs
 # (android.hardware.bluetooth.prebuilt.xml + android.hardware.bluetooth_le.prebuilt.xml),
 # the Google BT extension NDK stubs (vendor.google.bluetooth_ext-V1/V4-ndk),
@@ -61,12 +82,45 @@
 # ---------------------------------------------------------------------------
 # Layer 1 — Package layer: Bluetooth HAL packages, stubs, apps, and overlays.
 # ---------------------------------------------------------------------------
+# NOTE (T-EXCISE-BT-SOCKET-LIB-KEEP): the BT-**audio** module names are NOT in
+# this list any more. They were, and that broke a HAL this excision keeps.
+#
+# The shipped vendor audio HAL is the prebuilt
+#   vendor/google_devices/stallion/proprietary/vendor/bin/hw/
+#       android.hardware.audio.service-aidl.aoc
+# and its ELF DT_NEEDED (readelf -d, measured) includes all four:
+#   android.hardware.bluetooth.audio-V5-ndk.so
+#   android.hardware.bluetooth.audio-impl.so
+#   libbluetooth_audio_session_aidl.so
+#   libaudioserviceexampleimpl.so
+# plus android.hardware.bluetooth.audio@2.0/@2.1, which
+# libbluetooth_audio_session_aidl links in turn. DT_NEEDED is resolved by the
+# dynamic linker at process start, before any code runs, so removing them does
+# not disable BT audio — it makes the *whole* audio HAL fail to exec:
+#   F linker : CANNOT LINK EXECUTABLE ".../android.hardware.audio.service-aidl.aoc":
+#              library "libbluetooth_audio_session_aidl.so" not found: needed by
+#              main executable
+# On the Stallion handset `vendor.audio-hal-aidl` sat in [restarting] and
+# retried 28 times. Audio is not a BT feature: the voice filter, the mic path
+# and every non-BT stream go through this same HAL.
+#
+# Decision on record (T-EXCISE-BT-SOCKET-LIB-KEEP): restore the libs and keep
+# the audio HAL working (option (a)). The BT air-gap does not depend on them —
+# it is enforced by the feature-permission prebuilts below (hasSystemFeature
+# returns false), the BT HAL .rc drop, the BT-free VINTF manifest, and the
+# nitrous/GKI module blocklists. These libraries are inert glue with no BT radio
+# behind them. The prior T-EXCISE-BT-AUDIO-HAL removal is therefore REVERSED;
+# its evidence (A-EXCISE-BT F-003) is preserved in
+# .agent-comm/evidence/T-EXCISE-BT-SOCKET-LIB-KEEP/.
+#
+# Residual (Law 7, stated not hidden): installing `android.hardware.bluetooth.audio-impl`
+# re-installs its `vintf_fragments: ["bluetooth_audio.xml"]`, which declares
+# android.hardware.bluetooth.audio v5 IBluetoothAudioProviderFactory/default.
+# That declaration is now *accurate* (the audio HAL registers that factory from
+# ModuleBluetooth's constructor), but it is a `android.hardware.bluetooth.*` name
+# and the BT VINTF gate forbids that class. See the report for the follow-up.
 GUARDTALK_BT_PACKAGES := \
     android.hardware.bluetooth-V1-ndk.vendor \
-    android.hardware.bluetooth.audio-V5-ndk.vendor \
-    android.hardware.bluetooth.audio-impl \
-    android.hardware.bluetooth.audio@2.0.vendor \
-    android.hardware.bluetooth.audio@2.1.vendor \
     android.hardware.bluetooth.finder-V1-ndk.vendor \
     android.hardware.bluetooth.ranging-V1-ndk.vendor \
     android.hardware.bluetooth.prebuilt.xml \
@@ -75,58 +129,117 @@ GUARDTALK_BT_PACKAGES := \
     hardware.google.bluetooth.bt_channel_avoidance@1.0 \
     vendor.google.bluetooth_ext-V1-ndk \
     vendor.google.bluetooth_ext-V4-ndk \
-    BluetoothMidiService \
+    BluetoothMidiService
+
+# Modules that LOOK like Bluetooth but must NEVER be dropped: they are
+# dependencies of HALs this excision keeps. Checked before every pattern in
+# _gt-bt-package-drop, so a future edit cannot silently re-drop them.
+#
+#   android.hardware.bluetooth.socket-V1-ndk.vendor
+#       AIDL glue for the CHRE context-hub socket API
+#       (hardware/interfaces/bluetooth/socket/aidl/Android.bp, `frozen: true`,
+#       imports android.hardware.contexthub-V4). NOT a Bluetooth feature.
+#       `android.hardware.contexthub-service.generic` — kept, and still declared
+#       in vendor/etc/vintf/manifest/android.hardware.contexthub-service.generic.xml
+#       — has `NEEDED android.hardware.bluetooth.socket-V1-ndk.so`. Dropping it
+#       stopped contexthub from exec'ing, so ISensorManager never published,
+#       system_server blocked in SystemSensorManager.nativeCreate, and Watchdog
+#       killed the system process at 67 s → zygote exit → boot loop.
+#   android.hardware.bluetooth.audio-*, libbluetooth_audio_session_aidl,
+#   libaudioserviceexampleimpl
+#       DT_NEEDED of the kept vendor audio HAL (see the note above).
+GUARDTALK_BT_KEEP := \
+    android.hardware.bluetooth.socket-V1-ndk.vendor \
+    android.hardware.bluetooth.audio-V5-ndk.vendor \
+    android.hardware.bluetooth.audio-impl \
+    android.hardware.bluetooth.audio@2.0.vendor \
+    android.hardware.bluetooth.audio@2.1.vendor \
     libbluetooth_audio_session_aidl \
     libaudioserviceexampleimpl
 
-# T-EXCISE-BT-AUDIO-HAL (A-EXCISE-BT F-003) — WHY `libaudioserviceexampleimpl`
-# IS IN THE DROP LIST.
-#
-# The 5 BT-audio artifacts below/above —
-#   android.hardware.bluetooth.audio-impl.so, -V5-ndk.so, @2.0.so, @2.1.so,
-#   libbluetooth_audio_session_aidl.so — and the `bluetooth_audio.xml` VINTF
-#   fragment survived on 13/13 even though every one of those module names was
-#   already in this drop list. Root cause: the names were being filtered out of
-#   PRODUCT_PACKAGES, but Soong still installs them *transitively*. The only
-#   installed module that links the BT-audio stack is the AOSP reference library
-#   `libaudioserviceexampleimpl`:
-#     hardware/interfaces/audio/aidl/default/Android.bp
-#       -> shared_libs: ["android.hardware.bluetooth.audio-impl",
-#                        "libbluetooth_audio_session_aidl", ...]
-#       -> defaults:   latest_android_hardware_bluetooth_audio_ndk_shared
-#     ... and `android.hardware.bluetooth.audio-impl` itself declares
-#       `vintf_fragments: ["bluetooth_audio.xml"]`, so the fragment installs as
-#       an install-dep of `-impl` (hence `bluetooth_audio.xml` leaked too).
-#
-# `libaudioserviceexampleimpl` is listed in PRODUCT_PACKAGES by every
-# vendor/google_devices/<codename>/<codename>.mk, and it has ZERO in-tree
-# consumers (verified against out/soong/installs-<dev>.mk 13/13: the only module
-# that referenced it was android.hardware.audio.service-aidl.example, which is
-# `installable: false` / APEX-only). The shipped vendor audio HAL is the
-# prebuilt `google_devices/.../android.hardware.audio.service-aidl.aoc`, which
-# does not link it. So filtering it out here is dead-weight removal that severs
-# the transitive install of the whole BT-audio subtree — the 5 .so files and the
-# VINTF fragment — in one reversible PRODUCT_PACKAGES filter-out.
-#
-# Scope note (Law 7): this removes the BT-audio libs + fragment from
-# vendor.img. The same modules also exist inside the mainline
-# `com.android.hardware.audio` APEX; that APEX half is out of scope here and is
-# tracked by the separate APEX-dormancy card, NOT by this file.
-#
 # Defence-in-depth: catch any other Bluetooth-named packages that a future
-# adevtool regen might slide into PRODUCT_PACKAGES. Scoped to BT-only tokens
-# so it cannot accidentally hit unrelated packages.
-define _gt-bt-package-drop
-$(or \
-  $(findstring android.hardware.bluetooth,$(1)), \
-  $(findstring vendor.google.bluetooth_ext,$(1)), \
-  $(findstring hardware.google.bluetooth,$(1)), \
-  $(findstring bluetooth-service,$(1)), \
-  $(findstring .bluetooth.prebuilt.xml,$(1)), \
-  $(findstring BluetoothMidiService,$(1)), \
-  $(findstring libaudioserviceexampleimpl,$(1)), \
-  $(findstring libbluetooth_audio,$(1)))
+# adevtool regen might slide into PRODUCT_PACKAGES.
+#
+# T-EXCISE-BT-SOCKET-LIB-KEEP (P0): this macro used to be
+#     $(or $(findstring android.hardware.bluetooth,$(1)), ...)
+# and `findstring` is a SUBSTRING test, so the single token
+# `android.hardware.bluetooth` also matched
+# `android.hardware.bluetooth.socket-V1-ndk`. That is how a non-Bluetooth
+# library got excised and the device stopped booting. `findstring` on a family
+# prefix cannot express "this family, but not these members", so the patterns
+# are now EXACT module names / exact prefixes, and the keep-list above is
+# removed first and short-circuits.
+#
+# The genuine BT feature set this still excises (measured across
+# vendor/google_devices/*/*.mk):
+#   android.hardware.bluetooth-V1-ndk[.vendor]      <- the BT AIDL interface
+#   android.hardware.bluetooth@1.0/@1.1[.vendor]    <- HIDL BT interfaces
+#   android.hardware.bluetooth@1.1-service.synabtlinux (synabt linux BT HAL)
+#   android.hardware.bluetooth.finder-V1-ndk[.vendor]
+#   android.hardware.bluetooth.ranging-V{1,2}-ndk[.vendor]
+#   android.hardware.bluetooth.prebuilt.xml, android.hardware.bluetooth_le.prebuilt.xml
+#   android.hardware.bluetooth-service.bcmbtlinux   <- BCM4390 BT HAL binary
+#   hardware.google.bluetooth.{bt_channel_avoidance,sar}@*
+#   vendor.google.bluetooth_ext-V{1,3,4}-ndk
+#   BluetoothMidiService
+#   libbluetooth_audio_session                      <- HIDL-era session lib (no kept consumer)
+# Note `android.hardware.bluetooth.audio@2.0` is deliberately NOT matched by the
+# `android.hardware.bluetooth@%` pattern — the `.audio` segment differs — and
+# `libbluetooth_audio_session` is an EXACT filter, so it does not catch
+# `libbluetooth_audio_session_aidl`.
+#
+# MECHANISM NOTE: this is a LIST + $(filter), not $(or) of $(filter)s. Each line
+# of a `define` block that uses backslash continuation contributes a leading
+# space to the value, so an `$(or <ws>$(filter ...), <ws>$(filter ...))` chain
+# degenerates and matches every input — i.e. that pattern form silently turns
+# into "drop everything". The list form has no such failure mode, and the
+# fail-closed checks below prove it stays correct.
+GT_BT_DROP_PATTERNS := \
+    android.hardware.bluetooth-V1-ndk% \
+    android.hardware.bluetooth@% \
+    android.hardware.bluetooth.finder-% \
+    android.hardware.bluetooth.ranging-% \
+    android.hardware.bluetooth.prebuilt.xml \
+    android.hardware.bluetooth_le.prebuilt.xml \
+    android.hardware.bluetooth-service.% \
+    vendor.google.bluetooth_ext-% \
+    hardware.google.bluetooth.% \
+    BluetoothMidiService \
+    libbluetooth_audio_session
+
+# Raw pattern test, WITHOUT the keep-list bypass. Exists so the guard below can
+# ask "would the patterns alone drop a module we must keep?" — that question
+# cannot be asked of _gt-bt-package-drop, which subtracts the keep-list first.
+define _gt-bt-pattern-hit
+$(strip $(filter $(GT_BT_DROP_PATTERNS),$(1)))
 endef
+
+define _gt-bt-package-drop
+$(call _gt-bt-pattern-hit,$(filter-out $(GUARDTALK_BT_KEEP),$(1)))
+endef
+
+# Fail-closed (Law 3). The keep-list and the drop patterns are two halves of one
+# rule: a future edit that widens a pattern over a keep-listed module would bring
+# the contexthub boot loop back, silently. Refuse to configure instead. Both
+# checks are static — they do not depend on what the product happens to list.
+#
+# (a) no keep-listed name may appear in the explicit drop list;
+_gt_bt_keep_dropped := $(filter $(GUARDTALK_BT_KEEP),$(GUARDTALK_BT_PACKAGES))
+ifneq ($(_gt_bt_keep_dropped),)
+  $(error T-EXCISE-BT-SOCKET-LIB-KEEP: GUARDTALK_BT_PACKAGES contains a \
+    keep-listed module ($(_gt_bt_keep_dropped)); its HAL is kept and would \
+    fail to link)
+endif
+#
+# (b) no drop pattern may match a keep-listed name. Uses the RAW pattern test, so
+# the keep-list cannot hide a regression here.
+_gt_bt_keep_pattern_hits := $(strip $(foreach k,$(GUARDTALK_BT_KEEP),\
+    $(call _gt-bt-pattern-hit,$(k))))
+ifneq ($(_gt_bt_keep_pattern_hits),)
+  $(error T-EXCISE-BT-SOCKET-LIB-KEEP: GT_BT_DROP_PATTERNS matches keep-listed \
+    module(s) ($(_gt_bt_keep_pattern_hits)); tighten the pattern — this library \
+    is linked by a HAL the excision keeps)
+endif
 
 _gt_bt_filtered_product_packages :=
 $(foreach p,$(filter-out $(GUARDTALK_BT_PACKAGES),$(PRODUCT_PACKAGES)),\

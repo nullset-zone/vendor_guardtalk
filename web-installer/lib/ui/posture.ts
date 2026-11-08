@@ -1,8 +1,8 @@
 /**
- * Posture pill (PLAN.md §5): exact text `◢ offline · your key · alpha`.
- * Connectivity and custody are invariants of this installer (D-006, D-007),
- * so the renderer refuses status payloads that contradict them; only the
- * release-state word comes from status.json.
+ * Posture pill: `◢ one-origin GET · your key · alpha`.
+ * Connectivity states the installer's one-origin GET. Custody stays
+ * single-user. The release-state word comes from status.json. A network
+ * field on that payload is not a second connectivity word and is not refused.
  */
 import { escapeHtml } from "./escape.js";
 
@@ -12,7 +12,7 @@ export interface PostureFlags {
   readonly releaseState: string;
 }
 
-export const POSTURE_CONNECTIVITY = "offline" as const;
+export const POSTURE_CONNECTIVITY = "one-origin GET" as const;
 export const POSTURE_CUSTODY = "your key" as const;
 
 export function posturePillText(flags: PostureFlags): string {
@@ -50,9 +50,6 @@ export function postureFromStatusJson(value: unknown): PostureFlags {
   const releaseRaw = fields.release_state ?? fields.installer;
   if (typeof releaseRaw !== "string" || releaseRaw.trim().length === 0) {
     throw new Error("status.json is missing release_state (or the installer alias)");
-  }
-  if (fields.network !== undefined && fields.network !== POSTURE_CONNECTIVITY) {
-    throw new Error(`status.json network must be "${POSTURE_CONNECTIVITY}" — this installer has zero runtime network`);
   }
   if (fields.key_custody !== undefined && fields.key_custody !== "alpha" && fields.key_custody !== POSTURE_CUSTODY) {
     throw new Error(`status.json key_custody "${String(fields.key_custody)}" contradicts single-user key custody`);

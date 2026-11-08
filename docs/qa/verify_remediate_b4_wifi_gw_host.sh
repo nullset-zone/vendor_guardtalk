@@ -417,6 +417,9 @@ gbv() {
 VARIANT="$(gbv TARGET_BUILD_VARIANT | tail -n 1 | tr -d '[:space:]')"
 PRODUCT="$(gbv TARGET_PRODUCT | tail -n 1 | tr -d '[:space:]')"
 PROPS="$(gbv PRODUCT_PROPERTY_OVERRIDES || true)"
+# ro.guardtalk.wifi.* policy flags are system/build.prop
+# (PRODUCT_SYSTEM_PROPERTIES). Accept them from either make list.
+SYS_PROPS="$(gbv PRODUCT_SYSTEM_PROPERTIES || true)"
 PKGS="$(gbv PRODUCT_PACKAGES || true)"
 COPY="$(gbv PRODUCT_COPY_FILES || true)"
 
@@ -444,6 +447,7 @@ gt_tokens() {
 }
 
 PROP_TOKENS="$(gt_tokens "$PROPS")"
+SYS_TOKENS="$(gt_tokens "$SYS_PROPS")"
 if printf '%s\n' "$PROP_TOKENS" | grep -Fx -- "persist.radio.disabled=1" >/dev/null; then
   pass "PRODUCT_PROPERTY_OVERRIDES contains persist.radio.disabled=1 (RIL stays disabled)"
 else
@@ -454,15 +458,17 @@ if printf '%s\n' "$PROP_TOKENS" | grep -Ex -- 'persist\.radio\.disabled=0' >/dev
 else
   pass "PRODUCT_PROPERTY_OVERRIDES does not set persist.radio.disabled=0"
 fi
-if printf '%s\n' "$PROP_TOKENS" | grep -Fx -- "ro.guardtalk.wifi.gateway_only=1" >/dev/null; then
-  pass "PRODUCT_PROPERTY_OVERRIDES contains ro.guardtalk.wifi.gateway_only=1"
+if printf '%s\n' "$PROP_TOKENS" | grep -Fx -- "ro.guardtalk.wifi.gateway_only=1" >/dev/null \
+  || printf '%s\n' "$SYS_TOKENS" | grep -Fx -- "ro.guardtalk.wifi.gateway_only=1" >/dev/null; then
+  pass "ro.guardtalk.wifi.gateway_only=1 in PRODUCT_SYSTEM_PROPERTIES or PRODUCT_PROPERTY_OVERRIDES"
 else
-  fail "PRODUCT_PROPERTY_OVERRIDES missing ro.guardtalk.wifi.gateway_only=1"
+  fail "ro.guardtalk.wifi.gateway_only=1 missing from PRODUCT_SYSTEM_PROPERTIES and PRODUCT_PROPERTY_OVERRIDES"
 fi
-if printf '%s\n' "$PROP_TOKENS" | grep -Fx -- "ro.guardtalk.wifi.fail_closed=1" >/dev/null; then
-  pass "PRODUCT_PROPERTY_OVERRIDES contains ro.guardtalk.wifi.fail_closed=1"
+if printf '%s\n' "$PROP_TOKENS" | grep -Fx -- "ro.guardtalk.wifi.fail_closed=1" >/dev/null \
+  || printf '%s\n' "$SYS_TOKENS" | grep -Fx -- "ro.guardtalk.wifi.fail_closed=1" >/dev/null; then
+  pass "ro.guardtalk.wifi.fail_closed=1 in PRODUCT_SYSTEM_PROPERTIES or PRODUCT_PROPERTY_OVERRIDES"
 else
-  fail "PRODUCT_PROPERTY_OVERRIDES missing ro.guardtalk.wifi.fail_closed=1"
+  fail "ro.guardtalk.wifi.fail_closed=1 missing from PRODUCT_SYSTEM_PROPERTIES and PRODUCT_PROPERTY_OVERRIDES"
 fi
 
 COPY_TOKENS="$(gt_tokens "$COPY")"

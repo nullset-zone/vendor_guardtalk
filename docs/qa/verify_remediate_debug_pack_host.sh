@@ -13,7 +13,7 @@
 #     dated 2026-09-15 → HOLD, not FAIL
 #     ABSENT → HOLD, not FAIL
 #   pack not staged → HOLD, not FAIL
-#   komodo-latest must still → komodo-20260915-063833 (FAIL if retargeted)
+#   komodo-latest must still → komodo-20260928-052609 (FAIL if retargeted)
 #
 # Never invent FLASH_READY=true or DEBUG_FLASH_READY=true.
 # Do not start m. Do not USB GO. Do not run *_ondevice.sh. Do not cat pem.
@@ -41,7 +41,7 @@ QUEUE="TASK_QUEUE.md"
 DEC015=".memory-bank/decisions.md"
 LATEST="releases/desktop-flash/komodo-latest"
 DEBUG_LATEST="releases/desktop-flash/komodo-debug-latest"
-STAMP_NAME="komodo-20260915-063833"
+STAMP_NAME="komodo-20260928-052609"
 OUT_KOMODO="out/target/product/komodo"
 AB_FOUR=(boot.img vendor_kernel_boot.img pvmfw.img dtbo.img)
 SERIAL="54111FDAS000GN"

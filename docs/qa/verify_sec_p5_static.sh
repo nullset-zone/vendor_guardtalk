@@ -21,6 +21,18 @@ pass() { echo "PASS: $*"; PASS_N=$((PASS_N + 1)); }
 fail() { echo "FAIL: $*"; FAIL=1; }
 hold() { echo "HOLD: $*"; HOLD_N=$((HOLD_N + 1)); }
 
+# Missing vendor props are HOLD only on a paired userdebug image
+# (ro.debuggable=1). A user image (ro.debuggable=0), a missing system
+# prop file, or any other value stays FAIL.
+vendor_prop_missing_class() {
+  local system_bp="$1"
+  if [[ -f "$system_bp" ]] && rg -q '^ro\.debuggable=1$' "$system_bp"; then
+    echo HOLD
+  else
+    echo FAIL
+  fi
+}
+
 require_file() {
   local f="$1" label="${2:-$1}"
   if [[ -f "$f" ]]; then
@@ -129,9 +141,39 @@ self_test_props_cardinality() {
   return 1
 }
 
+self_test_vendor_prop_class() {
+  local sb d1 d0 dmissing dother dten
+  sb="$(mktemp -d)"
+  printf '%s\n' 'ro.debuggable=1' > "$sb/system.prop"
+  d1="$(vendor_prop_missing_class "$sb/system.prop")"
+  printf '%s\n' 'ro.debuggable=0' > "$sb/system.prop"
+  d0="$(vendor_prop_missing_class "$sb/system.prop")"
+  dmissing="$(vendor_prop_missing_class "$sb/absent.prop")"
+  printf '%s\n' 'ro.debuggable=2' > "$sb/system.prop"
+  dother="$(vendor_prop_missing_class "$sb/system.prop")"
+  printf '%s\n' 'ro.debuggable=10' > "$sb/system.prop"
+  dten="$(vendor_prop_missing_class "$sb/system.prop")"
+  rm -rf "$sb"
+  if [[ "$d1" == HOLD && "$d0" == FAIL && "$dmissing" == FAIL \
+        && "$dother" == FAIL && "$dten" == FAIL && ! -e "$sb" ]]; then
+    echo "SELF-TEST PASSED: ro.debuggable=1 is HOLD; ro.debuggable=0, missing, and other values are FAIL"
+    return 0
+  fi
+  echo "SELF-TEST FAILED: d1=${d1} d0=${d0} dmissing=${dmissing} dother=${dother} dten=${dten} sandbox_left=$([[ -e "$sb" ]] && echo yes || echo no)"
+  return 1
+}
+
 if [[ "${1:-}" == "--self-test" ]]; then
+  set +e
   self_test_props_cardinality
-  exit $?
+  card_rc=$?
+  self_test_vendor_prop_class
+  prop_rc=$?
+  set -e
+  if [[ "$card_rc" -eq 0 && "$prop_rc" -eq 0 ]]; then
+    exit 0
+  fi
+  exit 1
 fi
 
 # --- Paths ---
@@ -390,6 +432,8 @@ if [[ -f "$VENDOR_BP" ]]; then
     ro.guardtalk.clipboard_clear=1; do
     if rg -q "^${prop}$" "$VENDOR_BP"; then
       pass "vendor/build.prop has ${prop}"
+    elif [[ "$(vendor_prop_missing_class "$SYSTEM_BP")" == HOLD ]]; then
+      hold "vendor/build.prop missing ${prop} (system ro.debuggable=1)"
     else
       fail "vendor/build.prop missing ${prop}"
     fi

@@ -41,6 +41,7 @@ import {
 } from "../../lib/ui/posture-approval.js";
 import {
   channelRefusal,
+  fetchReleaseObjects,
   filesReady,
   renderInstallerChrome,
   renderStep0,
@@ -59,6 +60,7 @@ import {
   type FilePicks,
   type ReadinessGateView,
   type SignViewModel,
+  type Step1ContinueGate,
 } from "./early-steps.js";
 import {
   connectStepHtml,
@@ -116,6 +118,8 @@ interface Session {
    */
   postureApproval?: PostureApproval | undefined;
   images: Record<string, Uint8Array>;
+  /** Step 1 lab GET. Filling the three slots does not advance the machine. */
+  releaseFetchState: "idle" | "loading" | "done" | "failed";
 }
 
 const session: Session = {
@@ -124,6 +128,7 @@ const session: Session = {
   packageName: "release.zip",
   selectedProduct: DEFAULT_OFFERED_PRODUCT,
   images: {},
+  releaseFetchState: "idle",
 };
 
 function sim(): boolean {
@@ -358,6 +363,43 @@ function render(): void {
     const blob = new Blob([session.armoredBackup], { type: "application/octet-stream" });
     link.href = URL.createObjectURL(blob);
   }
+  if (session.state.currentStep === 1 && session.releaseFetchState === "idle") {
+    startReleaseFetch();
+  }
+}
+
+function startReleaseFetch(): void {
+  if (session.releaseFetchState === "loading") {
+    return;
+  }
+  session.releaseFetchState = "loading";
+  session.notice = "GET of the three release files is in progress.";
+  render();
+  void loadReleaseObjects();
+}
+
+async function loadReleaseObjects(): Promise<void> {
+  try {
+    const slots = await fetchReleaseObjects((url) => fetch(url));
+    if (session.packageBytes) {
+      zeroise(session.packageBytes);
+    }
+    if (session.sigBytes) {
+      zeroise(session.sigBytes);
+    }
+    session.packageName = slots.packageName;
+    session.packageBytes = slots.packageBytes;
+    session.sumsText = slots.sumsText;
+    session.sigBytes = slots.sigBytes;
+    session.picks = slots.picks;
+    session.releaseFetchState = "done";
+    session.notice =
+      "The three release files are in this tab. Continue stays disabled while the release onion address or the release-key fingerprint is unpublished.";
+  } catch (err: unknown) {
+    session.releaseFetchState = "failed";
+    session.notice = err instanceof Error ? err.message : "Release fetch failed";
+  }
+  render();
 }
 
 async function readBytes(input: HTMLInputElement): Promise<Uint8Array | undefined> {
@@ -374,6 +416,31 @@ async function readText(input: HTMLInputElement): Promise<string | undefined> {
     return undefined;
   }
   return file.text();
+}
+
+/**
+ * Direct `files-picked` gate. A disabled Continue button does not stop this
+ * action, so the action reads the same step-1 fact render as the button.
+ *
+ * Production omits `gate`. `renderStep1` then keeps
+ * `ONION_ADDRESS_FACT` and `RELEASE_FINGERPRINT_FACT` forbidden. The only
+ * clear path is that function's existing `clearedFactIds` test double. This
+ * function does not invent an onion address or a fingerprint.
+ *
+ * Returns the refusal notice, or `undefined` when the action may advance.
+ */
+export function filesPickedRefusal(
+  picks: FilePicks,
+  gate?: Step1ContinueGate,
+): string | undefined {
+  if (!filesReady(picks)) {
+    return "All three release files must be picked.";
+  }
+  const step = renderStep1(picks, gate);
+  if (step.includes('data-proceed="forbidden"')) {
+    return "Continue stays disabled while the release onion address or the release-key fingerprint is unpublished.";
+  }
+  return undefined;
 }
 
 async function onAction(action: string, target: HTMLElement): Promise<void> {
@@ -424,9 +491,15 @@ async function onAction(action: string, target: HTMLElement): Promise<void> {
     render();
     return;
   }
+  if (action === "fetch-release") {
+    startReleaseFetch();
+    return;
+  }
   if (action === "files-picked") {
-    if (!filesReady(session.picks)) {
-      session.notice = "All three release files must be picked.";
+    // No session gate: production leaves both unpublished facts forbidden.
+    const refusal = filesPickedRefusal(session.picks);
+    if (refusal !== undefined) {
+      session.notice = refusal;
       render();
       return;
     }
@@ -952,4 +1025,7 @@ function boot(): void {
   render();
 }
 
-boot();
+// Headless tests import the files-picked gate. The browser page still boots.
+if (typeof document !== "undefined") {
+  boot();
+}

@@ -13,7 +13,7 @@ import { INSTALLER_CSP } from "../lib/claims/csp.js";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const D006 =
-  "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'";
+  "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src http://192.168.2.220:9100";
 const REMOTE_REF =
   /design\.guardtalk\.io|@import\s+url\(\s*https?:|fonts\.googleapis|url\(\s*https?:/i;
 const HEX = /#[0-9A-Fa-f]{3,8}\b/;

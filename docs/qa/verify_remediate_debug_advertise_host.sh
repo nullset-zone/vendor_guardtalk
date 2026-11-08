@@ -12,8 +12,9 @@
 #   KOMODO_DEBUG_FLASH.md exists; current DEBUG_FLASH_READY=false
 #   FLASH_READY=false (signed-user; documentary)
 #   LIVE_FLASH_CLAIMED=false at src/types.ts:119
-#   komodo-latest still → komodo-20260915-063833
-#   komodo-debug-latest ABSENT (not invented)
+#   komodo-latest still → komodo-20260928-052609
+#   komodo-debug-latest ABSENT (not invented; absence is HOLD)
+#   an existing komodo-debug-* directory is not an invented-stamp FAIL
 #   debug sidecar distinguished from signed-user FLASH_READY
 #
 # Usage (from GrapheneOS-worktree root):
@@ -38,7 +39,8 @@ TYPES="vendor/guardtalk/web-installer/src/types.ts"
 DIST_TYPES="vendor/guardtalk/web-installer/dist/src/types.js"
 LATEST="releases/desktop-flash/komodo-latest"
 DEBUG_LATEST="releases/desktop-flash/komodo-debug-latest"
-STAMP_NAME="komodo-20260915-063833"
+LATEST_TARGET="komodo-20260928-052609"
+STALE_STAMP="komodo-20260915-063833"
 HONESTY_FILES=(
   "${DEBUG_DOC}"
   "${SIDECAR}"
@@ -144,9 +146,9 @@ if [[ -f "${DEBUG_DOC}" ]]; then
   else
     fail "${DEBUG_DOC} missing signed-user vs debug-sidecar distinction"
   fi
-  if rg -q -- 'Do not treat `komodo-20260915-063833` as the DEC-011 debug flash gate' \
+  if rg -q -- "Do not treat \`${STALE_STAMP}\` as the DEC-011 debug flash gate" \
     "${DEBUG_DOC}"; then
-    pass "${DEBUG_DOC} denies stale ${STAMP_NAME} as this debug gate"
+    pass "${DEBUG_DOC} denies stale ${STALE_STAMP} as this debug gate"
   else
     fail "${DEBUG_DOC} missing stale-stamp denial"
   fi
@@ -229,12 +231,12 @@ else
 fi
 
 echo
-echo "--- komodo-latest still points at ${STAMP_NAME} (not retargeted) ---"
+echo "--- komodo-latest still points at ${LATEST_TARGET} (not moved) ---"
 if [[ -L "${LATEST}" ]]; then
-  if [[ "${LATEST_LINK}" == "${STAMP_NAME}" ]]; then
-    pass "${LATEST} -> ${STAMP_NAME} (relative symlink; not retargeted)"
+  if [[ "${LATEST_LINK}" == "${LATEST_TARGET}" ]]; then
+    pass "${LATEST} -> ${LATEST_TARGET} (relative symlink; not moved)"
   else
-    fail "NEGATIVE HIT: ${LATEST} retargeted to '${LATEST_LINK}' (want ${STAMP_NAME})"
+    fail "NEGATIVE HIT: ${LATEST} is '${LATEST_LINK}' (want ${LATEST_TARGET})"
   fi
 else
   fail "${LATEST} is not a symlink"
@@ -244,14 +246,14 @@ echo
 echo "--- komodo-debug-latest ABSENT (not invented) ---"
 DEBUG_HITS="$(ls -d releases/desktop-flash/komodo-debug-* 2>/dev/null || true)"
 if [[ -e "${DEBUG_LATEST}" || -L "${DEBUG_LATEST}" ]]; then
-  fail "NEGATIVE HIT: ${DEBUG_LATEST} invented (want ABSENT)"
+  fail "NEGATIVE HIT: ${DEBUG_LATEST} present (want ABSENT; do not create)"
 else
   pass "${DEBUG_LATEST} ABSENT (not invented)"
 fi
 if [[ -n "${DEBUG_HITS}" ]]; then
-  fail "NEGATIVE HIT: invented debug stamp path(s): ${DEBUG_HITS}"
+  hold "debug stamp path exists; existence alone is not a ready claim: ${DEBUG_HITS}"
 else
-  pass "no releases/desktop-flash/komodo-debug-* stamp invented"
+  pass "no releases/desktop-flash/komodo-debug-* stamp present"
 fi
 
 echo
@@ -274,16 +276,19 @@ if [[ -n "${CURRENT_TRUE}" ]]; then
 else
   pass "honesty docs do not claim current DEBUG_FLASH_READY/FLASH_READY true"
 fi
-# Denial-list =true is expected in KOMODO_DEBUG_FLASH.md ("listing is not").
-if [[ -f "${DEBUG_DOC}" ]]; then
-  if rg -q -- 'That listing is \*\*not\*\*' "${DEBUG_DOC}" && \
-     rg -q -- '- `DEBUG_FLASH_READY=true`' "${DEBUG_DOC}" && \
-     rg -q -- '- `FLASH_READY=true`' "${DEBUG_DOC}" && \
-     rg -q -- '- `LIVE_FLASH_CLAIMED=true`' "${DEBUG_DOC}"; then
-    pass "${DEBUG_DOC} lists READY=true only as denied claims"
-  else
-    fail "${DEBUG_DOC} missing denied-claim list for READY=true flags"
+# A literal ready=true claim on an advertise surface is a FAIL.
+# Absence of that literal is the required state. Do not require the
+# docs to spell the forbidden claim in a denial list.
+READY_TRUE_HITS=""
+for f in "${HONESTY_FILES[@]}"; do
+  if [[ -f "${f}" ]] && rg -q -- 'DEBUG_FLASH_READY=true|FLASH_READY=true' "${f}"; then
+    READY_TRUE_HITS+="${f} "
   fi
+done
+if [[ -n "${READY_TRUE_HITS}" ]]; then
+  fail "NEGATIVE HIT: advertise surface contains a ready=true claim: ${READY_TRUE_HITS}"
+else
+  pass "advertise surfaces do not contain DEBUG_FLASH_READY=true or FLASH_READY=true"
 fi
 
 echo

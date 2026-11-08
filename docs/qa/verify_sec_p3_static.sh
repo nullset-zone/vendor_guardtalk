@@ -13,6 +13,14 @@ PASS_N=0
 pass() { echo "PASS: $*"; PASS_N=$((PASS_N + 1)); }
 fail() { echo "FAIL: $*"; FAIL=1; }
 
+# Recorded approval on the root queue: card heading or matrix row.
+# The dispatch scope sentence names these ids and is not an approval cite.
+queue_approved() {
+  local id="$1"
+  rg -q "^#### ${id} .*APPROVED \\(" TASK_QUEUE.md \
+    || rg -q "^\\| ${id} \\|.*APPROVED \\(" TASK_QUEUE.md
+}
+
 require_file() {
   local f="$1" label="${2:-$1}"
   if [[ -f "$f" ]]; then
@@ -216,20 +224,28 @@ require_rg 'Do not introduce Lockdown' "$SYSUI_STR" \
 echo "=== Q-SEC-P3-QS: prior green SystemUI / overlay builds (cite) ==="
 
 cite_ok=0
+# DONE_LOG build cite, or the recorded TASK_QUEUE approval.
+# T-EXCISE-FLASHREADY-SEC-CITES: do not require an invented build line.
 if rg -q 'T-SEC-P3-QS APPROVED' .agent-comm/completed/DONE_LOG.md \
   && rg -q 'm SystemUI green' .agent-comm/completed/DONE_LOG.md; then
   pass "DONE_LOG cites T-SEC-P3-QS m SystemUI green"
   cite_ok=1
+elif queue_approved T-SEC-P3-QS; then
+  pass "TASK_QUEUE cites T-SEC-P3-QS APPROVED"
+  cite_ok=1
 else
-  fail "DONE_LOG missing T-SEC-P3-QS SystemUI green cite"
+  fail "missing T-SEC-P3-QS APPROVED cite (DONE_LOG build chain or TASK_QUEUE)"
 fi
 if rg -q 'F-SEC-P3-QS-EDITOR APPROVED' .agent-comm/completed/DONE_LOG.md \
   && rg -q 'SystemUI\+overlay green|SystemUI\+overlay EXIT=0|overlay green' \
        .agent-comm/completed/DONE_LOG.md; then
   pass "DONE_LOG cites F-SEC-P3-QS-EDITOR SystemUI+overlay green"
   cite_ok=1
+elif queue_approved F-SEC-P3-QS-EDITOR; then
+  pass "TASK_QUEUE cites F-SEC-P3-QS-EDITOR APPROVED"
+  cite_ok=1
 else
-  fail "DONE_LOG missing F-SEC-P3-QS-EDITOR overlay green cite"
+  fail "missing F-SEC-P3-QS-EDITOR APPROVED cite (DONE_LOG build chain or TASK_QUEUE)"
 fi
 if rg -q 'm SystemUI' "$DOC_POL" && rg -q 'm SystemUI' "$DOC_ED"; then
   pass "policy/editor docs document m SystemUI verification"

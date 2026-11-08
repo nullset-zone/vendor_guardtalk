@@ -100,8 +100,15 @@ const BOOT_DISCLAIMER_PATTERNS: RegExp[] = [
  * The verb set is generalised (H2), sentence-split/long-gap structures are
  * matched (H3), and objects that are not the modem function (`radio buttons`,
  * `radio.img partition`, `radio firmware files`, `telephony permission
- * requests`, ...) are excluded as non-functional contexts (H4). Like every
- * family here this is a mechanical tripwire, not a correctness or boot proof.
+ * requests`, ...) are excluded as non-functional contexts (H4).
+ *
+ * Laundering fix (T-EXCISE-CLAIMS-LINTER-ALLOWLIST-LAUNDERING): an H4 context
+ * token silences only a claim whose radio noun sits inside that context
+ * phrase. A qualifier silences only a claim that overlaps its clause. A
+ * context token elsewhere on the line does not disarm a real overclaim.
+ * Cyrillic lookalikes of the letters in `radio` / `removed` are folded before
+ * the scan. Like every family here this is a mechanical tripwire, not a
+ * correctness or boot proof.
  */
 const RADIO_NOUN_SOURCE = "radio(?:\\.img)?|ril|modem|telephony|cellular|baseband";
 
@@ -135,6 +142,23 @@ const RADIO_EXCISION_PREDICATE_SOURCE = [
   "done\\s+away\\s+with",
   "cleaned\\s+out",
   "surgically\\s+removed",
+  // Finite-verb evasions (QA-HD-3). Multi-word phrases stay inside this
+  // alternation so the required leading whitespace still guards hyphen labels.
+  "decommissioned",
+  "vanished",
+  "retired",
+  "disappeared",
+  "axed",
+  "liquidated",
+  "abolished",
+  "annihilated",
+  "extinguished",
+  "terminated",
+  "sunset",
+  "shut\\s+off",
+  "turned\\s+off",
+  "ripped\\s+out",
+  "torn\\s+out",
 ].join("|");
 
 /** Absolute modifiers that make an excision claim unqualified. */
@@ -160,6 +184,13 @@ const RADIO_EXCISION_OVERCLAIM_PATTERNS: RegExp[] = [
   ),
   // The radio.img build artifact is explicitly removed.
   /\bradio\.img\b[^.;\n]{0,30}?(?:fully\s+)?removed\b/i,
+  // Predicate then article then noun: `we removed the radio`. The article is
+  // required so a prenominal adjective (`the retired radio`) is not a claim.
+  // Hyphenated labels still fail the leading whitespace check.
+  new RegExp(
+    `(?:^|\\s)(?:${RADIO_EXCISION_PREDICATE_SOURCE})\\s+(?:the|a|an)\\s+(?:${RADIO_NOUN_SOURCE})\\b`,
+    "i",
+  ),
 ];
 
 /**
@@ -194,8 +225,10 @@ const RADIO_EXCISION_QUALIFIER_PATTERNS: RegExp[] = [
  * Non-functional contexts (H4): UI widgets, build artifacts, permission
  * surfaces and calibration data. These name a `radio|cellular|telephony` token
  * but not the modem excision this rule guards. Every entry is multi-token so a
- * lone innocent word cannot disarm the rule; these do not name the modem
- * verdict, so appending one to a genuine overclaim does not read as scope.
+ * lone innocent word cannot disarm the rule. A match silences a claim only
+ * when every radio noun inside that claim span sits inside one of these
+ * phrases — a context token in another clause, or beside a separate modem
+ * noun, does not launder the overclaim.
  */
 const RADIO_NON_FUNCTION_CONTEXT_PATTERNS: RegExp[] = [
   /\bradio\s+buttons?\b/i,
@@ -354,11 +387,7 @@ export function lintText(text: string, file: string, options: LintOptions = {}):
         excerpt: excerptOf(line),
       });
     }
-    if (
-      RADIO_EXCISION_OVERCLAIM_PATTERNS.some((p) => p.test(line)) &&
-      !RADIO_EXCISION_QUALIFIER_PATTERNS.some((p) => p.test(line)) &&
-      !RADIO_NON_FUNCTION_CONTEXT_PATTERNS.some((p) => p.test(line))
-    ) {
+    if (radioLineHasUngovernedOverclaim(line)) {
       hits.push({
         file,
         line: lineNumber,
@@ -439,6 +468,152 @@ export function main(argv: readonly string[]): number {
     `claim lint: clean (readiness verdict: ${verdict.ready ? "PASS" : "NOT READY"} via ${verdict.source})\n`,
   );
   return 0;
+}
+
+interface TextSpan {
+  readonly start: number;
+  readonly end: number;
+}
+
+/**
+ * Cyrillic (and the identical Greek omicron/iota) lookalikes of the letters
+ * in `radio` / `removed` and the rest of this family's vocabulary. Folded
+ * only for the radio scan. Latin `I` vs `l` is intentionally left alone.
+ */
+const RADIO_CONFUSABLE_FOLDS = new Map<string, string>([
+  ["\u0430", "a"], ["\u0410", "A"],
+  ["\u0435", "e"], ["\u0415", "E"],
+  ["\u043E", "o"], ["\u041E", "O"],
+  ["\u0456", "i"], ["\u0406", "I"],
+  ["\u04CF", "i"],
+  ["\u0501", "d"], ["\u0500", "D"],
+  ["\u043C", "m"], ["\u041C", "M"],
+  ["\u0441", "c"], ["\u0421", "C"],
+  ["\u0445", "x"], ["\u0425", "X"],
+  ["\u0455", "s"], ["\u0405", "S"],
+  ["\u0443", "y"], ["\u0423", "Y"],
+  ["\u04BB", "h"], ["\u04BA", "H"],
+  ["\u043A", "k"], ["\u041A", "K"],
+  ["\u041D", "H"],
+  ["\u0412", "B"],
+  ["\u0422", "T"],
+  ["\u0433", "r"],
+  ["\u0475", "v"], ["\u0474", "V"],
+  ["\u03BF", "o"], ["\u039F", "O"],
+  ["\u03B9", "i"], ["\u0399", "I"],
+]);
+
+const RADIO_NOUN_FINDER = new RegExp(`\\b(?:${RADIO_NOUN_SOURCE})\\b`, "i");
+
+function normaliseRadioScanText(line: string): string {
+  const folded = line.normalize("NFKC").replace(/[\u200B\u200C\u200D\uFEFF\u2060\u00AD]/g, "");
+  let out = "";
+  for (const ch of folded) {
+    out += RADIO_CONFUSABLE_FOLDS.get(ch) ?? ch;
+  }
+  return out;
+}
+
+function globalCopy(pattern: RegExp): RegExp {
+  const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
+  return new RegExp(pattern.source, flags);
+}
+
+function collectSpans(patterns: readonly RegExp[], text: string): TextSpan[] {
+  const spans: TextSpan[] = [];
+  for (const pattern of patterns) {
+    const re = globalCopy(pattern);
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(text)) !== null) {
+      const start = match.index;
+      const end = start + match[0].length;
+      if (end === start) {
+        re.lastIndex += 1;
+        continue;
+      }
+      spans.push({ start, end });
+    }
+  }
+  return spans;
+}
+
+function isClauseBreak(text: string, index: number): boolean {
+  const ch = text[index];
+  if (ch === ";" || ch === "!" || ch === "?") {
+    return true;
+  }
+  if (ch !== ".") {
+    return false;
+  }
+  if (text.slice(index, index + 4).toLowerCase() === ".img") {
+    return false;
+  }
+  const next = text[index + 1];
+  return next === undefined || next === " " || next === "\t" || next === "(";
+}
+
+function clauseRanges(text: string): TextSpan[] {
+  const ranges: TextSpan[] = [];
+  let start = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    if (!isClauseBreak(text, index)) {
+      continue;
+    }
+    ranges.push({ start, end: index });
+    start = index + 1;
+  }
+  ranges.push({ start, end: text.length });
+  return ranges;
+}
+
+function patternHits(pattern: RegExp, text: string): boolean {
+  const flags = pattern.flags.replace("g", "");
+  return new RegExp(pattern.source, flags).test(text);
+}
+
+function qualifierGovernsClaim(text: string, claim: TextSpan): boolean {
+  for (const clause of clauseRanges(text)) {
+    const overlaps = claim.start < clause.end && claim.end > clause.start;
+    if (!overlaps) {
+      continue;
+    }
+    const slice = text.slice(clause.start, clause.end);
+    if (RADIO_EXCISION_QUALIFIER_PATTERNS.some((pattern) => patternHits(pattern, slice))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function contextGovernsClaim(text: string, claim: TextSpan, contextSpans: readonly TextSpan[]): boolean {
+  const nouns = collectSpans([RADIO_NOUN_FINDER], text).filter(
+    (noun) => noun.start < claim.end && noun.end > claim.start,
+  );
+  if (nouns.length === 0) {
+    return false;
+  }
+  return nouns.every((noun) =>
+    contextSpans.some((context) => noun.start >= context.start && noun.end <= context.end),
+  );
+}
+
+function radioLineHasUngovernedOverclaim(line: string): boolean {
+  const scan = normaliseRadioScanText(line);
+  const claims = collectSpans(RADIO_EXCISION_OVERCLAIM_PATTERNS, scan);
+  if (claims.length === 0) {
+    return false;
+  }
+  const contexts = collectSpans(RADIO_NON_FUNCTION_CONTEXT_PATTERNS, scan);
+  for (const claim of claims) {
+    if (qualifierGovernsClaim(scan, claim)) {
+      continue;
+    }
+    if (contextGovernsClaim(scan, claim, contexts)) {
+      continue;
+    }
+    return true;
+  }
+  return false;
 }
 
 function excerptOf(line: string): string {

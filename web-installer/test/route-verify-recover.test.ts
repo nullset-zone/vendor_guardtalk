@@ -134,7 +134,7 @@ test("verify-device page renders both capabilities as equals with posture pill a
   const html = renderVerifyDevicePage({ simMode: true });
   assert.match(html, /data-capability="read"/);
   assert.match(html, /data-capability="compare"/);
-  assert.match(html, /◢ offline · your key · alpha/);
+  assert.match(html, /◢ one-origin GET · your key · alpha/);
   assert.match(html, /Tor Browser blocks WebUSB on purpose/);
   assertCspSafe(html);
 });

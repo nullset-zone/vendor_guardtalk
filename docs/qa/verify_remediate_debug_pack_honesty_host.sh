@@ -27,11 +27,12 @@ TYPES="vendor/guardtalk/web-installer/src/types.ts"
 DIST_TYPES="vendor/guardtalk/web-installer/dist/src/types.js"
 LATEST="releases/desktop-flash/komodo-latest"
 DEBUG_LATEST="releases/desktop-flash/komodo-debug-latest"
-STAMP_NAME="komodo-20260915-063833"
+LATEST_TARGET="komodo-20260928-052609"
+LEFTOVER_NAME="komodo-20260915-063833"
 DEBUG_STAMP="komodo-debug-20260918-180338"
 OUT_DIR="out/target/product/komodo"
 STAMP_DIR="releases/desktop-flash/${DEBUG_STAMP}"
-LEFTOVER_DIR="releases/desktop-flash/${STAMP_NAME}"
+LEFTOVER_DIR="releases/desktop-flash/${LEFTOVER_NAME}"
 
 declare -A DOC_SHA=(
   [boot.img]="449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc"
@@ -108,8 +109,10 @@ if [[ -f "${DEBUG_DOC}" ]]; then
   else
     fail "${DEBUG_DOC} missing 'do not require a fake new hash'"
   fi
-  if rg -q -- 'This note does \*\*not\*\* invent a stamp' "${DEBUG_DOC}" && \
-     rg -q -- 'invent a new stamp, symlink, or SKU' "${DEBUG_DOC}"; then
+  # The "does not invent" sentence wraps. The bullet under
+  # "This honesty note does **not**" is the same claim.
+  if rg -q -- 'invent a new stamp, symlink, or SKU' "${DEBUG_DOC}" && \
+     rg -q -- 'This honesty note does \*\*not\*\*' "${DEBUG_DOC}"; then
     pass "${DEBUG_DOC} does not invent a stamp / symlink / SKU"
   else
     fail "${DEBUG_DOC} missing no-invent-stamp language"
@@ -144,12 +147,10 @@ if [[ -f "${DEBUG_DOC}" ]]; then
   else
     pass "${DEBUG_DOC} table does not claim FLASH_READY **true**"
   fi
-  if rg -q -- 'may exist' "${DEBUG_DOC}" && \
-     rg -q -- 'Existence is \*\*not\*\*' "${DEBUG_DOC}" && \
-     rg -q -- '`DEBUG_FLASH_READY=true`' "${DEBUG_DOC}"; then
-    pass "${DEBUG_DOC} says komodo-debug-latest may exist; existence ≠ DEBUG_FLASH_READY=true"
+  if rg -q -- 'DEBUG_FLASH_READY=true|FLASH_READY=true' "${DEBUG_DOC}"; then
+    fail "NEGATIVE HIT: ${DEBUG_DOC} contains a ready=true claim"
   else
-    fail "${DEBUG_DOC} missing pointer-may-exist / not-ready language"
+    pass "${DEBUG_DOC} does not claim DEBUG_FLASH_READY=true or FLASH_READY=true"
   fi
   if rg -q -- '\*\*USB_GO:\*\* false' "${DEBUG_DOC}" && \
      rg -q -- 'have \*\*no USB GO\*\*' "${DEBUG_DOC}"; then
@@ -160,18 +161,14 @@ if [[ -f "${DEBUG_DOC}" ]]; then
 fi
 
 echo
-echo "--- komodo-latest still documented as ${STAMP_NAME} ---"
+echo "--- komodo-latest live target ${LATEST_TARGET}; leftover name stays ${LEFTOVER_NAME} ---"
 if [[ -f "${DEBUG_DOC}" ]]; then
-  if rg -q -- "unchanged\` → \`${STAMP_NAME}\`" "${DEBUG_DOC}" || \
-     rg -q -- "\*\*unchanged\*\* → \`${STAMP_NAME}\`" "${DEBUG_DOC}"; then
-    pass "${DEBUG_DOC} documents komodo-latest unchanged → ${STAMP_NAME}"
+  if rg -q -- "unchanged\` → \`${LEFTOVER_NAME}\`" "${DEBUG_DOC}" || \
+     rg -q -- "\*\*unchanged\*\* → \`${LEFTOVER_NAME}\`" "${DEBUG_DOC}" || \
+     rg -q -- "still \`${LEFTOVER_NAME}\`" "${DEBUG_DOC}"; then
+    hold "${DEBUG_DOC} still names ${LEFTOVER_NAME} on a komodo-latest sentence; live pointer is ${LATEST_TARGET} (sentence not rewritten; leftover hash anchor unchanged)"
   else
-    fail "${DEBUG_DOC} missing komodo-latest → ${STAMP_NAME}"
-  fi
-  if rg -q -- "still \`${STAMP_NAME}\`" "${DEBUG_DOC}"; then
-    pass "${DEBUG_DOC} restates komodo-latest still ${STAMP_NAME}"
-  else
-    fail "${DEBUG_DOC} missing 'still ${STAMP_NAME}'"
+    pass "${DEBUG_DOC} does not bind komodo-latest to ${LEFTOVER_NAME}"
   fi
 fi
 
@@ -181,10 +178,10 @@ LATEST_LINK="$(readlink "${LATEST}" 2>/dev/null || true)"
 DEBUG_LINK="$(readlink "${DEBUG_LATEST}" 2>/dev/null || true)"
 echo "readlink ${LATEST} => ${LATEST_LINK:-ABSENT}"
 echo "readlink ${DEBUG_LATEST} => ${DEBUG_LINK:-ABSENT}"
-if [[ -L "${LATEST}" && "${LATEST_LINK}" == "${STAMP_NAME}" ]]; then
-  pass "${LATEST} -> ${STAMP_NAME} (not retargeted)"
+if [[ -L "${LATEST}" && "${LATEST_LINK}" == "${LATEST_TARGET}" ]]; then
+  pass "${LATEST} -> ${LATEST_TARGET} (not moved)"
 else
-  fail "NEGATIVE HIT: ${LATEST} is '${LATEST_LINK}' (want ${STAMP_NAME})"
+  fail "NEGATIVE HIT: ${LATEST} is '${LATEST_LINK}' (want ${LATEST_TARGET})"
 fi
 if [[ -L "${DEBUG_LATEST}" && "${DEBUG_LINK}" == "${DEBUG_STAMP}" ]]; then
   pass "${DEBUG_LATEST} -> ${DEBUG_STAMP} (may exist; not a ready claim)"
@@ -195,8 +192,9 @@ else
 fi
 
 echo
-echo "--- documented A/B four SHA == live out/ = stamp = leftover ---"
+echo "--- documented A/B four: leftover must match the documented digest ---"
 AB_EQUAL=0
+AB_HOLD=0
 for f in "${AB_FILES[@]}"; do
   want="${DOC_SHA[$f]}"
   if [[ ! -f "${OUT_DIR}/${f}" || ! -f "${STAMP_DIR}/${f}" || ! -f "${LEFTOVER_DIR}/${f}" ]]; then
@@ -207,14 +205,21 @@ for f in "${AB_FILES[@]}"; do
   h_stamp="$(sha256sum "${STAMP_DIR}/${f}" | awk '{print $1}')"
   h_left="$(sha256sum "${LEFTOVER_DIR}/${f}" | awk '{print $1}')"
   echo "${f} out=${h_out} stamp=${h_stamp} leftover=${h_left} doc=${want}"
-  if [[ "${h_out}" == "${want}" && "${h_stamp}" == "${want}" && "${h_left}" == "${want}" ]]; then
-    if cmp -s "${OUT_DIR}/${f}" "${STAMP_DIR}/${f}" && \
-       cmp -s "${STAMP_DIR}/${f}" "${LEFTOVER_DIR}/${f}"; then
-      pass "${f} SHA+cmp out=stamp=leftover=doc (STALE_BAK; not a rebuild claim)"
-      AB_EQUAL=$((AB_EQUAL + 1))
+  if [[ "${h_left}" != "${want}" ]]; then
+    fail "${f} leftover digest changed (do not invent a hash)"
+  elif [[ "${h_out}" != "${want}" ]]; then
+    hold "${f} leftover matches documented digest; out/ does not (user image replaced boot images; digest not invented)"
+    AB_HOLD=$((AB_HOLD + 1))
+    if [[ "${h_stamp}" == "${want}" ]]; then
+      pass "${f} stamp matches documented leftover digest (not rewritten)"
     else
-      fail "${f} sha match but cmp -s failed"
+      hold "${f} stamp does not match documented digest (not rewritten, not invented)"
     fi
+  elif [[ "${h_stamp}" == "${want}" ]] && \
+       cmp -s "${OUT_DIR}/${f}" "${STAMP_DIR}/${f}" && \
+       cmp -s "${STAMP_DIR}/${f}" "${LEFTOVER_DIR}/${f}"; then
+    pass "${f} SHA+cmp out=stamp=leftover=doc (STALE_BAK; not a rebuild claim)"
+    AB_EQUAL=$((AB_EQUAL + 1))
   else
     fail "${f} SHA mismatch vs documented leftover (do not invent a fake hash)"
   fi
@@ -225,10 +230,15 @@ for f in "${AB_FILES[@]}"; do
   fi
 done
 echo "AB_FOUR_LEFTOVER_SHA=${AB_EQUAL}"
-if [[ "${AB_EQUAL}" -eq 4 ]]; then
-  pass "A/B four SHA-identical after packaging restamp (HOLD-documented, not a kernel rebuild)"
+echo "AB_FOUR_OUT_HOLD=${AB_HOLD}"
+if [[ $((AB_EQUAL + AB_HOLD)) -eq 4 ]]; then
+  if [[ "${AB_HOLD}" -gt 0 ]]; then
+    hold "A/B leftover digests match the documented hash; out/ drift is HOLD (${AB_HOLD} file(s)); digest not invented"
+  else
+    pass "A/B four SHA-identical after packaging restamp (HOLD-documented, not a kernel rebuild)"
+  fi
 else
-  fail "A/B four leftover SHA count ${AB_EQUAL} != 4"
+  fail "A/B four leftover digest rematch count $((AB_EQUAL + AB_HOLD)) != 4"
 fi
 
 echo

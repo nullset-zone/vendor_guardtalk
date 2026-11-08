@@ -859,7 +859,8 @@ test("CSP sweep: emitted strings carry zero inline handlers/styles/scripts and r
       assert.equal(pattern.test(html), false, `forbidden CSP pattern ${String(pattern)} found`);
     }
   }
-  assert.equal(INSTALLER_CSP, "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'");
+  assert.equal(INSTALLER_CSP, "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src http://192.168.2.220:9100");
+  assert.equal(INSTALLER_CSP.includes("*"), false);
 });
 
 // --- custody sweep ------------------------------------------------------------

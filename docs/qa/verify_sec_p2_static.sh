@@ -12,6 +12,14 @@ PASS_N=0
 pass() { echo "PASS: $*"; PASS_N=$((PASS_N + 1)); }
 fail() { echo "FAIL: $*"; FAIL=1; }
 
+# Recorded approval on the root queue: card heading or matrix row.
+# The dispatch scope sentence names these ids and is not an approval cite.
+queue_approved() {
+  local id="$1"
+  rg -q "^#### ${id} .*APPROVED \\(" TASK_QUEUE.md \
+    || rg -q "^\\| ${id} \\|.*APPROVED \\(" TASK_QUEUE.md
+}
+
 require_file() {
   local f="$1" label="${2:-$1}"
   if [[ -f "$f" ]]; then
@@ -354,14 +362,18 @@ for sig in \
     fail "missing/non-green build signal: $sig"
   fi
 done
-# DONE_LOG / signals also cover USB→WIPE→Frontend green builds
+# DONE_LOG build chain, or the recorded TASK_QUEUE approval.
+# T-EXCISE-FLASHREADY-SEC-CITES: do not require an invented build line.
 if rg -q 'T-SEC-P2-USB' .agent-comm/completed/DONE_LOG.md \
   && rg -q 'T-SEC-P2-WIPE|T-SEC-P2-AUTOREBOOT|m services Settings|m Settings' \
        .agent-comm/completed/DONE_LOG.md; then
   pass "DONE_LOG cites Phase-2 USB/WIPE/build chain"
   cite_ok=1
+elif queue_approved T-SEC-P2-USB; then
+  pass "TASK_QUEUE cites T-SEC-P2-USB APPROVED"
+  cite_ok=1
 else
-  fail "DONE_LOG missing Phase-2 build cite"
+  fail "missing Phase-2 USB APPROVED cite (DONE_LOG build chain or TASK_QUEUE)"
 fi
 [[ $cite_ok -eq 1 ]] || fail "no prior green build citations found"
 

@@ -2,7 +2,10 @@
 # Independent rematch for Q-REMEDIATE-B2-APEX (pair of T-REMEDIATE-B2-APEX
 # item 13 residual). Do not trust Backend/Architect lunch dumps.
 # Host static + lunch komodo-trunk_staging-user (not userdebug).
-# BCP/SSR DeviceLock jars PRESENT = HOLD (intentional Zygote; do not FAIL).
+# BCP framework-devicelock PRESENT = HOLD (do not strip PRODUCT_APEX_BOOT_JARS).
+# SSR service-devicelock filter-out is PASS (operator ruling 2026-09-27,
+# dex_preopt_check). An active filter-out of PRODUCT_APEX_BOOT_JARS or
+# com.android.devicelock:framework-devicelock is FAIL.
 # Stale out/ APEX + adb empty = HOLD. Do not invent on-device/Zygote PASS.
 # Do not lift PASS HOLD. Do not m. Do not overwrite the EXCISE suite.
 #
@@ -148,17 +151,31 @@ require_fixed "com.android.devicelock:framework-devicelock" "$ART" \
 require_fixed "com.android.devicelock:service-devicelock" "$ART" \
   "default_art_config still lists service-devicelock SSR"
 
-# Comments may name BCP/SSR to document why they are NOT stripped.
-# Only uncommented make code is a strip.
+# Comments may name BCP/SSR. Only uncommented make code is a strip.
+# Operator ruling 2026-09-27: the standalone SSR filter-out of
+# com.android.devicelock:service-devicelock stays active. BOOT_JARS and
+# framework-devicelock stay unfiltered.
 if rg -v '^\s*#' "$APEX_MK" | rg -q 'PRODUCT_APEX_BOOT_JARS'; then
   fail "devicelock-apex-excised.mk active code touches PRODUCT_APEX_BOOT_JARS (do not strip BCP)"
 else
   pass "devicelock-apex-excised.mk active code does not touch PRODUCT_APEX_BOOT_JARS"
 fi
-if rg -v '^\s*#' "$APEX_MK" | rg -q 'PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS|PRODUCT_APEX_SYSTEM_SERVER_JARS'; then
-  fail "devicelock-apex-excised.mk active code touches SSR/BCP system-server jars (do not strip)"
+if rg -v '^\s*#' "$APEX_MK" | rg -q 'com\.android\.devicelock:framework-devicelock'; then
+  fail "devicelock-apex-excised.mk active code filters framework-devicelock (BCP jar must stay)"
 else
-  pass "devicelock-apex-excised.mk active code does not touch SSR jar lists"
+  pass "devicelock-apex-excised.mk active code does not filter framework-devicelock"
+fi
+if rg -v '^\s*#' "$APEX_MK" | rg -q 'PRODUCT_APEX_SYSTEM_SERVER_JARS'; then
+  fail "devicelock-apex-excised.mk active code touches PRODUCT_APEX_SYSTEM_SERVER_JARS"
+else
+  pass "devicelock-apex-excised.mk active code does not touch PRODUCT_APEX_SYSTEM_SERVER_JARS"
+fi
+if rg -v '^\s*#' "$APEX_MK" | rg -q 'PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS' \
+  && rg -v '^\s*#' "$APEX_MK" | rg -q 'com\.android\.devicelock:service-devicelock' \
+  && rg -v '^\s*#' "$APEX_MK" | rg -q 'filter-out'; then
+  pass "active SSR filter-out of com.android.devicelock:service-devicelock (operator ruling 2026-09-27)"
+else
+  fail "active SSR filter-out of com.android.devicelock:service-devicelock missing (dexpreopt lockstep)"
 fi
 
 echo
@@ -241,11 +258,78 @@ elif "filter-out" in apex and "PRODUCT_PACKAGES" in apex and "GUARDTALK_DEVICELO
 else:
     out("FAIL", "APEX mk does not filter PRODUCT_PACKAGES")
 
-apex_code = "\n".join(line.split("#", 1)[0] for line in apex.splitlines())
-if "PRODUCT_APEX_BOOT_JARS" in apex_code or "PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS" in apex_code:
-    out("FAIL", "APEX mk active code strips BCP/SSR (Zygote boot-loop class)")
+def apex_active_problems(src):
+    """Problems in uncommented make. Empty means the 2026-09-27 SSR filter is the live shape."""
+    code = "\n".join(line.split("#", 1)[0] for line in src.splitlines())
+    problems = []
+    if "PRODUCT_APEX_BOOT_JARS" in code:
+        problems.append("boot_jars")
+    if "com.android.devicelock:framework-devicelock" in code:
+        problems.append("framework-devicelock")
+    if "PRODUCT_APEX_SYSTEM_SERVER_JARS" in code:
+        problems.append("nonstandalone_ssr")
+    ssr_ok = (
+        "PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS" in code
+        and "com.android.devicelock:service-devicelock" in code
+        and "filter-out" in code
+    )
+    if not ssr_ok:
+        problems.append("missing_ssr_filter")
+    return problems
+
+
+_ssr_live = """
+PRODUCT_PACKAGES := $(filter-out $(GUARDTALK_DEVICELOCK_APEX_DROP),$(PRODUCT_PACKAGES))
+PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS := $(filter-out \\
+    com.android.devicelock:service-devicelock \\
+    ,$(PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS))
+# PRODUCT_APEX_BOOT_JARS com.android.devicelock:framework-devicelock stays
+"""
+_ssr_boot = _ssr_live + (
+    "\nPRODUCT_APEX_BOOT_JARS := $(filter-out "
+    "com.android.devicelock:framework-devicelock,$(PRODUCT_APEX_BOOT_JARS))\n"
+)
+_ssr_framework = _ssr_live + (
+    "\nPRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS := $(filter-out "
+    "com.android.devicelock:framework-devicelock,"
+    "$(PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS))\n"
+)
+_ssr_commented = """
+PRODUCT_PACKAGES := $(filter-out $(GUARDTALK_DEVICELOCK_APEX_DROP),$(PRODUCT_PACKAGES))
+# PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS := $(filter-out com.android.devicelock:service-devicelock,$(PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS))
+"""
+
+
+def _expect_apex(src, pred, label):
+    got = apex_active_problems(src)
+    if pred(got):
+        out("PASS", f"selftest: {label} ({got or 'clean'})")
+    else:
+        out("FAIL", f"selftest: {label} got {got}")
+
+
+_expect_apex(_ssr_live, lambda g: g == [], "active service-devicelock SSR filter is clean")
+_expect_apex(_ssr_boot, lambda g: "boot_jars" in g, "active PRODUCT_APEX_BOOT_JARS filter is FAIL")
+_expect_apex(
+    _ssr_framework,
+    lambda g: "framework-devicelock" in g,
+    "active framework-devicelock filter is FAIL",
+)
+_expect_apex(
+    _ssr_commented,
+    lambda g: "missing_ssr_filter" in g,
+    "commented-out SSR filter is FAIL",
+)
+
+apex_problems = apex_active_problems(apex)
+if apex_problems:
+    out("FAIL", "APEX mk active code violates the SSR/BCP ruling: " + ",".join(apex_problems))
 else:
-    out("PASS", "APEX mk active code does not strip BCP/SSR jar lists")
+    out(
+        "PASS",
+        "APEX mk active code filters service-devicelock from standalone SSR jars "
+        "and does not filter BOOT_JARS or framework-devicelock",
+    )
 
 idx_apps = feat.find("include vendor/guardtalk/feature-excised/apps-excised.mk")
 idx_apex = feat.find("include vendor/guardtalk/feature-excised/devicelock-apex-excised.mk")
@@ -392,16 +476,16 @@ else
 fi
 
 echo
-echo "--- BCP / SSR DeviceLock jars (PRESENT = HOLD, not FAIL) ---"
+echo "--- BCP framework-devicelock PRESENT; SSR service-devicelock filtered ---"
 if token_in_file "$DUMP_BCP" "com.android.devicelock:framework-devicelock"; then
   hold "PRODUCT_APEX_BOOT_JARS: com.android.devicelock:framework-devicelock PRESENT (intentional Zygote; not FAIL)"
 else
   fail "PRODUCT_APEX_BOOT_JARS missing com.android.devicelock:framework-devicelock (BCP stripped — Zygote risk)"
 fi
 if token_in_file "$DUMP_SSR" "com.android.devicelock:service-devicelock"; then
-  hold "PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS: com.android.devicelock:service-devicelock PRESENT (intentional Zygote; not FAIL)"
+  fail "PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS still has com.android.devicelock:service-devicelock (SSR filter-out not applied)"
 else
-  fail "PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS missing com.android.devicelock:service-devicelock (SSR stripped — Zygote risk)"
+  pass "PRODUCT_APEX_STANDALONE_SYSTEM_SERVER_JARS: service-devicelock ABSENT (active SSR filter-out)"
 fi
 
 echo
@@ -429,7 +513,8 @@ fi
 echo
 echo "RESULT: $([[ "$FAIL" -eq 0 ]] && echo PASS || echo FAIL) (host)  bash_PASS=${PASS_N} bash_HOLD=${HOLD_N} PY_RC=${PY_RC}"
 echo "LIVE_DEVICE_CLAIMED=false"
-echo "BCP_SSR=HOLD_IF_PRESENT"
+echo "BCP_FRAMEWORK_DEVICELOCK=HOLD_IF_PRESENT"
+echo "SSR_SERVICE_DEVICELOCK=FILTERED"
 echo "STALE_OUT_APEX=HOLD"
 echo "DEVICE=HOLD"
 echo "ZYGOTE=not claimed"

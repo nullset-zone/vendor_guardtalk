@@ -4,12 +4,14 @@
 # Pair of F-REMEDIATE-DEBUG-READY / F-REMEDIATE-DEBUG-READY-SURFACES
 # (APPROVED). Do not trust Frontend or Architect dumps.
 # Host static only. No USB GO. No m. No retarget.
-# Verifies DEBUG_FLASH_READY=true for stamp 180338 (sidecar bind) on
-# KOMODO_DEBUG_FLASH.md, stamp README, installer README, and
-# ENGINEERING_SIDECAR_USERDEBUG.md. Does not invent FLASH_READY=true
-# or USB GO. Distinct from Q-REMEDIATE-DEBUG-ADVERTISE (DEC-011;
-# flag was false) and Q-REMEDIATE-DEBUG-PACK-HONESTY (DEC-017).
-# Do not overwrite those.
+# Verifies DEBUG_FLASH_READY=false on KOMODO_DEBUG_FLASH.md, the
+# stamp README, the installer README, and ENGINEERING_SIDECAR_USERDEBUG.md.
+# A table that claims the flag true is a FAIL. A literal
+# DEBUG_FLASH_READY=true or FLASH_READY=true in KOMODO_DEBUG_FLASH.md
+# is a FAIL. Does not invent a
+# signed-user ready claim or USB GO. Distinct from
+# Q-REMEDIATE-DEBUG-ADVERTISE (DEC-011) and
+# Q-REMEDIATE-DEBUG-PACK-HONESTY (DEC-017). Do not overwrite those.
 #
 # Usage (from GrapheneOS-worktree root):
 #   bash vendor/guardtalk/docs/qa/verify_remediate_debug_ready_host.sh
@@ -36,11 +38,12 @@ INSTALL_README="vendor/guardtalk/web-installer/README.md"
 SIDECAR="vendor/guardtalk/docs/ENGINEERING_SIDECAR_USERDEBUG.md"
 LATEST="releases/desktop-flash/komodo-latest"
 DEBUG_LATEST="releases/desktop-flash/komodo-debug-latest"
-STAMP_NAME="komodo-20260915-063833"
+LATEST_TARGET="komodo-20260928-052609"
+LEFTOVER_NAME="komodo-20260915-063833"
 DEBUG_STAMP="komodo-debug-20260918-180338"
 OUT_DIR="out/target/product/komodo"
 STAMP_DIR="releases/desktop-flash/${DEBUG_STAMP}"
-LEFTOVER_DIR="releases/desktop-flash/${STAMP_NAME}"
+LEFTOVER_DIR="releases/desktop-flash/${LEFTOVER_NAME}"
 
 declare -A DOC_SHA=(
   [boot.img]="449a6bc2ebd1650f07d15b3f2852a6aec94d0d2f4356c30809808d6e884810fc"
@@ -108,20 +111,25 @@ echo "readlink ${LATEST} => ${LATEST_LINK:-ABSENT}"
 echo "readlink ${DEBUG_LATEST} => ${DEBUG_LINK:-ABSENT}"
 
 echo
-echo "--- KOMODO_DEBUG_FLASH.md DEC-018 bind: DEBUG_FLASH_READY=true ---"
+echo "--- KOMODO_DEBUG_FLASH.md DEC-018: DEBUG_FLASH_READY is false ---"
 if [[ -f "${DEBUG_DOC}" ]]; then
   pass "${DEBUG_DOC} exists"
-  if rg -q -- '## DEC-018 — DEBUG_FLASH_READY=true for stamp 180338' \
-    "${DEBUG_DOC}"; then
-    pass "${DEBUG_DOC} has DEC-018 heading for stamp 180338"
+  if rg -q -- '## DEC-018 —' "${DEBUG_DOC}" && \
+     rg -q -- 'binding WITHDRAWN' "${DEBUG_DOC}"; then
+    pass "${DEBUG_DOC} has DEC-018 heading; binding withdrawn"
   else
     fail "${DEBUG_DOC} missing DEC-018 heading"
   fi
-  if rg -q -- '\| `DEBUG_FLASH_READY` \| \*\*true\*\*' "${DEBUG_DOC}" && \
+  if rg -q -- '\| `DEBUG_FLASH_READY` \| \*\*false\*\*' "${DEBUG_DOC}" && \
      rg -q -- 'komodo-debug-20260918-180338' "${DEBUG_DOC}"; then
-    pass "${DEBUG_DOC} table current DEBUG_FLASH_READY is **true** for 180338"
+    pass "${DEBUG_DOC} table current DEBUG_FLASH_READY is **false** for 180338"
   else
-    fail "${DEBUG_DOC} table missing current DEBUG_FLASH_READY **true** for 180338"
+    fail "${DEBUG_DOC} table missing current DEBUG_FLASH_READY **false** for 180338"
+  fi
+  if rg -q -- '\| `DEBUG_FLASH_READY` \| \*\*true\*\*' "${DEBUG_DOC}"; then
+    fail "NEGATIVE HIT: ${DEBUG_DOC} table claims DEBUG_FLASH_READY **true**"
+  else
+    pass "${DEBUG_DOC} table does not claim DEBUG_FLASH_READY **true**"
   fi
   if rg -q -- '\| `FLASH_READY` \| \*\*false\*\*' "${DEBUG_DOC}"; then
     pass "${DEBUG_DOC} table current FLASH_READY is **false**"
@@ -137,6 +145,11 @@ if [[ -f "${DEBUG_DOC}" ]]; then
     fail "NEGATIVE HIT: ${DEBUG_DOC} table claims FLASH_READY **true**"
   else
     pass "${DEBUG_DOC} table does not claim FLASH_READY **true**"
+  fi
+  if rg -q -- 'DEBUG_FLASH_READY=true|FLASH_READY=true' "${DEBUG_DOC}"; then
+    fail "NEGATIVE HIT: ${DEBUG_DOC} contains a ready=true claim"
+  else
+    pass "${DEBUG_DOC} does not claim DEBUG_FLASH_READY=true or FLASH_READY=true"
   fi
   if rg -q -- '\*\*USB_GO:\*\* false' "${DEBUG_DOC}" && \
      rg -q -- 'have \*\*no USB GO\*\*' "${DEBUG_DOC}"; then
@@ -185,10 +198,15 @@ echo
 echo "--- stamp README same flags ---"
 if [[ -f "${STAMP_README}" ]]; then
   pass "${STAMP_README} exists"
-  if rg -q -- '\| `DEBUG_FLASH_READY` \| \*\*true\*\*' "${STAMP_README}"; then
-    pass "${STAMP_README} DEBUG_FLASH_READY is **true**"
+  if rg -q -- '\| `DEBUG_FLASH_READY` \| \*\*false\*\*' "${STAMP_README}"; then
+    pass "${STAMP_README} DEBUG_FLASH_READY is **false**"
   else
-    fail "${STAMP_README} missing DEBUG_FLASH_READY **true**"
+    fail "${STAMP_README} missing DEBUG_FLASH_READY **false**"
+  fi
+  if rg -q -- '\| `DEBUG_FLASH_READY` \| \*\*true\*\*' "${STAMP_README}"; then
+    fail "NEGATIVE HIT: ${STAMP_README} claims DEBUG_FLASH_READY **true**"
+  else
+    pass "${STAMP_README} does not claim DEBUG_FLASH_READY **true**"
   fi
   if rg -q -- '\| `FLASH_READY` \| \*\*false\*\*' "${STAMP_README}"; then
     pass "${STAMP_README} FLASH_READY is **false**"
@@ -218,34 +236,37 @@ else
 fi
 
 echo
-echo "--- live pointers (do not invent; do not retarget) ---"
-if [[ -L "${LATEST}" && "${LATEST_LINK}" == "${STAMP_NAME}" ]]; then
-  pass "${LATEST} -> ${STAMP_NAME} (not retargeted)"
+echo "--- live pointers (do not invent; do not move) ---"
+if [[ -L "${LATEST}" && "${LATEST_LINK}" == "${LATEST_TARGET}" ]]; then
+  pass "${LATEST} -> ${LATEST_TARGET} (not moved)"
 else
-  fail "NEGATIVE HIT: ${LATEST} is '${LATEST_LINK}' (want ${STAMP_NAME})"
+  fail "NEGATIVE HIT: ${LATEST} is '${LATEST_LINK}' (want ${LATEST_TARGET})"
 fi
 if [[ -L "${DEBUG_LATEST}" && "${DEBUG_LINK}" == "${DEBUG_STAMP}" ]]; then
   pass "${DEBUG_LATEST} -> ${DEBUG_STAMP}"
+elif [[ ! -e "${DEBUG_LATEST}" && ! -L "${DEBUG_LATEST}" ]]; then
+  hold "${DEBUG_LATEST} ABSENT (not created; absence is HOLD)"
 else
-  fail "NEGATIVE HIT: ${DEBUG_LATEST} is '${DEBUG_LINK:-ABSENT}' (want ${DEBUG_STAMP})"
+  fail "NEGATIVE HIT: ${DEBUG_LATEST} is '${DEBUG_LINK:-ABSENT}'"
 fi
 if [[ -f "${DEBUG_DOC}" ]]; then
-  if rg -q -- "\*\*unchanged\*\* → \`${STAMP_NAME}\`" "${DEBUG_DOC}" || \
-     rg -q -- "still \`${STAMP_NAME}\`" "${DEBUG_DOC}"; then
-    pass "${DEBUG_DOC} documents komodo-latest unchanged → ${STAMP_NAME}"
+  if rg -q -- "\*\*unchanged\*\* → \`${LEFTOVER_NAME}\`" "${DEBUG_DOC}" || \
+     rg -q -- "still \`${LEFTOVER_NAME}\`" "${DEBUG_DOC}"; then
+    hold "${DEBUG_DOC} still names ${LEFTOVER_NAME} on a komodo-latest sentence; live pointer is ${LATEST_TARGET} (sentence not rewritten)"
   else
-    fail "${DEBUG_DOC} missing komodo-latest → ${STAMP_NAME}"
+    pass "${DEBUG_DOC} does not bind komodo-latest to ${LEFTOVER_NAME}"
   fi
 fi
-if [[ -f "${STAMP_README}" ]] && rg -q -- "${STAMP_NAME}" "${STAMP_README}"; then
-  pass "${STAMP_README} names komodo-latest target ${STAMP_NAME}"
+if [[ -f "${STAMP_README}" ]] && rg -q -- "${LEFTOVER_NAME}" "${STAMP_README}"; then
+  hold "${STAMP_README} still names ${LEFTOVER_NAME}; live komodo-latest is ${LATEST_TARGET} (stamp README not rewritten)"
 else
-  fail "${STAMP_README} missing ${STAMP_NAME}"
+  pass "${STAMP_README} does not name ${LEFTOVER_NAME} as komodo-latest"
 fi
 
 echo
-echo "--- documented A/B four SHA == live out/ = stamp = leftover ---"
+echo "--- documented A/B four: leftover must match the documented digest ---"
 AB_EQUAL=0
+AB_HOLD=0
 for f in "${AB_FILES[@]}"; do
   want="${DOC_SHA[$f]}"
   if [[ ! -f "${OUT_DIR}/${f}" || ! -f "${STAMP_DIR}/${f}" || ! -f "${LEFTOVER_DIR}/${f}" ]]; then
@@ -256,14 +277,21 @@ for f in "${AB_FILES[@]}"; do
   h_stamp="$(sha256sum "${STAMP_DIR}/${f}" | awk '{print $1}')"
   h_left="$(sha256sum "${LEFTOVER_DIR}/${f}" | awk '{print $1}')"
   echo "${f} out=${h_out} stamp=${h_stamp} leftover=${h_left} doc=${want}"
-  if [[ "${h_out}" == "${want}" && "${h_stamp}" == "${want}" && "${h_left}" == "${want}" ]]; then
-    if cmp -s "${OUT_DIR}/${f}" "${STAMP_DIR}/${f}" && \
-       cmp -s "${STAMP_DIR}/${f}" "${LEFTOVER_DIR}/${f}"; then
-      pass "${f} SHA+cmp out=stamp=leftover=doc (HOLD residual, not a rebuild claim)"
-      AB_EQUAL=$((AB_EQUAL + 1))
+  if [[ "${h_left}" != "${want}" ]]; then
+    fail "${f} leftover digest changed (do not invent a hash)"
+  elif [[ "${h_out}" != "${want}" ]]; then
+    hold "${f} leftover matches documented digest; out/ does not (user image replaced boot images; digest not invented)"
+    AB_HOLD=$((AB_HOLD + 1))
+    if [[ "${h_stamp}" == "${want}" ]]; then
+      pass "${f} stamp matches documented leftover digest (not rewritten)"
     else
-      fail "${f} sha match but cmp -s failed"
+      hold "${f} stamp does not match documented digest (not rewritten, not invented)"
     fi
+  elif [[ "${h_stamp}" == "${want}" ]] && \
+       cmp -s "${OUT_DIR}/${f}" "${STAMP_DIR}/${f}" && \
+       cmp -s "${STAMP_DIR}/${f}" "${LEFTOVER_DIR}/${f}"; then
+    pass "${f} SHA+cmp out=stamp=leftover=doc (HOLD residual, not a rebuild claim)"
+    AB_EQUAL=$((AB_EQUAL + 1))
   else
     fail "${f} SHA mismatch vs documented leftover (do not invent a fake hash)"
   fi
@@ -274,10 +302,15 @@ for f in "${AB_FILES[@]}"; do
   fi
 done
 echo "AB_FOUR_LEFTOVER_SHA=${AB_EQUAL}"
-if [[ "${AB_EQUAL}" -eq 4 ]]; then
-  pass "A/B four leftover SHA residual rematched 4/4"
+echo "AB_FOUR_OUT_HOLD=${AB_HOLD}"
+if [[ $((AB_EQUAL + AB_HOLD)) -eq 4 ]]; then
+  if [[ "${AB_HOLD}" -gt 0 ]]; then
+    hold "A/B leftover digests match the documented hash; out/ drift is HOLD (${AB_HOLD} file(s)); digest not invented"
+  else
+    pass "A/B four leftover SHA residual rematched 4/4"
+  fi
 else
-  fail "A/B four leftover SHA count ${AB_EQUAL} != 4"
+  fail "A/B four leftover digest rematch count $((AB_EQUAL + AB_HOLD)) != 4"
 fi
 
 echo
@@ -339,12 +372,15 @@ echo
 echo "--- leftover honesty surfaces (DEC-018 bind; was HOLD residual) ---"
 if [[ -f "${INSTALL_README}" ]]; then
   pass "${INSTALL_README} exists"
-  if rg -q -- 'DEBUG_FLASH_READY' "${INSTALL_README}" && \
-     rg -q -- 'is \*\*true\*\*' "${INSTALL_README}" && \
-     rg -q -- 'komodo-debug-20260918-180338' "${INSTALL_README}"; then
-    pass "${INSTALL_README} binds DEBUG_FLASH_READY **true** for 180338"
+  if rg -q -- 'DEBUG_FLASH_READY` is \*\*false\*\*' "${INSTALL_README}"; then
+    pass "${INSTALL_README} binds DEBUG_FLASH_READY **false**"
   else
-    fail "${INSTALL_README} missing DEBUG_FLASH_READY **true** for 180338"
+    fail "${INSTALL_README} missing DEBUG_FLASH_READY **false**"
+  fi
+  if rg -q -- 'DEBUG_FLASH_READY` is \*\*true\*\*' "${INSTALL_README}"; then
+    fail "NEGATIVE HIT: ${INSTALL_README} claims DEBUG_FLASH_READY **true**"
+  else
+    pass "${INSTALL_README} does not claim DEBUG_FLASH_READY **true**"
   fi
   if rg -q -- '`USB_GO` stays' "${INSTALL_README}" && \
      rg -q -- 'No USB GO' "${INSTALL_README}"; then
@@ -364,15 +400,10 @@ if [[ -f "${INSTALL_README}" ]]; then
     fail "${INSTALL_README} missing leftover SHA HOLD residual"
   fi
   if rg -q -- 'Do not retarget `komodo-latest`' "${INSTALL_README}" && \
-     rg -q -- 'komodo-20260915-063833' "${INSTALL_README}"; then
-    pass "${INSTALL_README} keeps komodo-latest / 063833 (not retargeted)"
+     rg -q -- "${LEFTOVER_NAME}" "${INSTALL_README}"; then
+    pass "${INSTALL_README} does not retarget komodo-latest; stale ${LEFTOVER_NAME} stays denied"
   else
-    fail "${INSTALL_README} missing komodo-latest unchanged / 063833"
-  fi
-  if rg -q -- 'DEBUG_FLASH_READY` is \*\*false\*\*' "${INSTALL_README}"; then
-    fail "NEGATIVE HIT: ${INSTALL_README} still claims DEBUG_FLASH_READY **false**"
-  else
-    pass "${INSTALL_README} does not claim current DEBUG_FLASH_READY **false**"
+    fail "${INSTALL_README} missing do-not-retarget / stale ${LEFTOVER_NAME} denial"
   fi
   if rg -q -- 'USB_GO` \| \*\*true\*\*|USB_GO=true|USB_GO:\*\* true' "${INSTALL_README}"; then
     fail "NEGATIVE HIT: ${INSTALL_README} invents USB_GO true"
@@ -390,11 +421,15 @@ else
 fi
 if [[ -f "${SIDECAR}" ]]; then
   pass "${SIDECAR} exists"
-  if rg -q -- 'DEBUG_FLASH_READY=true' "${SIDECAR}" && \
-     rg -q -- 'komodo-debug-20260918-180338' "${SIDECAR}"; then
-    pass "${SIDECAR} binds DEBUG_FLASH_READY=true for 180338"
+  if rg -q -- 'DEBUG_FLASH_READY=false' "${SIDECAR}"; then
+    pass "${SIDECAR} binds DEBUG_FLASH_READY=false"
   else
-    fail "${SIDECAR} missing DEBUG_FLASH_READY=true for 180338"
+    fail "${SIDECAR} missing DEBUG_FLASH_READY=false"
+  fi
+  if rg -q -- 'DEBUG_FLASH_READY=true' "${SIDECAR}"; then
+    fail "NEGATIVE HIT: ${SIDECAR} claims DEBUG_FLASH_READY=true"
+  else
+    pass "${SIDECAR} does not claim DEBUG_FLASH_READY=true"
   fi
   if rg -q -- 'USB_GO=false' "${SIDECAR}"; then
     pass "${SIDECAR} USB_GO=false"
@@ -415,11 +450,6 @@ if [[ -f "${SIDECAR}" ]]; then
     pass "${SIDECAR} does not retarget komodo-latest"
   else
     fail "${SIDECAR} missing do not retarget komodo-latest"
-  fi
-  if rg -q -- 'DEBUG_FLASH_READY=false' "${SIDECAR}"; then
-    fail "NEGATIVE HIT: ${SIDECAR} still claims DEBUG_FLASH_READY=false"
-  else
-    pass "${SIDECAR} does not claim DEBUG_FLASH_READY=false"
   fi
   if rg -q -- 'USB_GO=true' "${SIDECAR}"; then
     fail "NEGATIVE HIT: ${SIDECAR} invents USB_GO=true"
@@ -445,15 +475,10 @@ else
   hold "adb devices empty — not device-fixed; on-device working not invented"
 fi
 
-# Sidecar advertise bind may be true. Signed-user FLASH_READY stays false.
-# This rematch never starts USB GO.
+# Sidecar advertise stays false. Signed-user ready stays false.
+# This rematch never starts USB GO and never lifts either flag.
 FLASH_READY=false
 DEBUG_FLASH_READY=false
-if [[ "${FAIL}" -eq 0 ]] && \
-   rg -q -- '\| `DEBUG_FLASH_READY` \| \*\*true\*\*' "${DEBUG_DOC}" && \
-   [[ "${DEBUG_LINK}" == "${DEBUG_STAMP}" ]]; then
-  DEBUG_FLASH_READY=true
-fi
 if [[ "${FAIL}" -ne 0 ]]; then
   FLASH_CLASS="FAIL"
 else

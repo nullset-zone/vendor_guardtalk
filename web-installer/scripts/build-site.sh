@@ -94,7 +94,7 @@ cat > "$SITE/index.html" <<'EOF'
     <meta http-equiv="refresh" content="0; url=./install/" />
     <title>GuardTalkOS installer</title>
     <meta http-equiv="Content-Security-Policy"
-          content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'" />
+          content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src http://192.168.2.220:9100" />
   </head>
   <body>
     <p><a href="./install/">Open the installer</a></p>

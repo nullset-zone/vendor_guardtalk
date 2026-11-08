@@ -12,12 +12,48 @@
 #
 # Read-only w.r.t. the product: the product script is executed, never edited.
 # No USB, no network, no git. Exit 0 = all assertions PASS.
+#
+# READINESS TEST DOUBLE — this harness never measures readiness.
+# flash-from-remote.sh now refuses any stamp the readiness reporter does not
+# call READY. This harness deliberately fabricates a fake komodo-latest under a
+# temp dir, which no reporter can ever certify, so the gate correctly refuses
+# it. The stamp verdict is therefore supplied by a SYNTHETIC double
+# (SYNTHETIC-b6-komodo-READY.json): the live report with ONLY komodo's verdict
+# changed HOLD -> READY. It is an ASSERTION for this harness, not a
+# measurement, and it is labelled as such here and in the flasher's own reused-
+# report warning. If the double is absent the harness DIES — it never skips the
+# gate, because skipping the gate is what the gate exists to prevent.
 # =============================================================================
 set -euo pipefail
 
 REPO="${REPO:-/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree}"
 SCRIPT="$REPO/scripts/flash-from-remote.sh"
 [[ -f "$SCRIPT" ]] || { echo "FATAL: missing $SCRIPT" >&2; exit 1; }
+
+# --- Readiness test double (NOT a measurement) -----------------------------
+# Resolved relative to $REPO so this works from any checkout or CI worktree.
+GT_READY_DOUBLE="$REPO/.agent-comm/evidence/T-EXCISE-FLASH-BUILDOK-REFUSAL/fixtures/SYNTHETIC-b6-komodo-READY.json"
+if [[ ! -f "$GT_READY_DOUBLE" ]]; then
+    echo "FATAL: readiness test double missing: $GT_READY_DOUBLE" >&2
+    echo "FATAL: this harness CANNOT run without it. The flasher's readiness gate" >&2
+    echo "FATAL: would refuse the fabricated komodo-latest stamp, so the post-gate" >&2
+    echo "FATAL: assertions below would fail for a reason unrelated to what they test." >&2
+    echo "FATAL: Refusing to skip the gate silently. Restore the double or fix its path." >&2
+    exit 1
+fi
+if [[ ! -r "$GT_READY_DOUBLE" ]]; then
+    echo "FATAL: readiness test double is not readable: $GT_READY_DOUBLE" >&2
+    exit 1
+fi
+# The double must still SAY it is a double. A real scan substituted here would
+# make this harness look like a live readiness measurement.
+if ! grep -q '"not_a_measurement"[[:space:]]*:[[:space:]]*true' "$GT_READY_DOUBLE"; then
+    echo "FATAL: $GT_READY_DOUBLE does not carry fixture.not_a_measurement=true." >&2
+    echo "FATAL: refusing to run with an unlabelled report: this harness must never" >&2
+    echo "FATAL: present a readiness verdict it cannot attribute to a labelled double." >&2
+    exit 1
+fi
+export GT_READY_REPORT="$GT_READY_DOUBLE"
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/b6-flash-sop.XXXXXX")"
 KEEP="${KEEP:-0}"
@@ -140,6 +176,7 @@ run_flash() {   # run_flash <local_work_dir> <outfile> <capture:0|1>
     set +e
     PATH="$STUBS:$PATH" \
     FB_STATE="$FB_STATE" ADB_STATE="$ADB_STATE" \
+    GT_READY_REPORT="$GT_READY_DOUBLE" \
     CAPTURE_LOGS="$cap" CAPTURE_POST_ADB_SECS=20 BOOT_WATCH_SECS=30 \
     REMOTE_TREE="$FAKE_REMOTE" \
     REMOTE_BUILD_DIR="$FAKE_STAMP" REMOTE_KEY_DIR="$FAKE_STAMP" \
@@ -151,6 +188,10 @@ run_flash() {   # run_flash <local_work_dir> <outfile> <capture:0|1>
 }
 
 echo "=== T-REMEDIATE-B6-FLASH-SOP host harness ==="
+echo "NOTE: readiness verdict supplied by a SYNTHETIC test double (komodo=READY), not a live scan."
+echo "NOTE: double = $GT_READY_DOUBLE"
+echo "NOTE: sha256 = $(sha256sum -- "$GT_READY_DOUBLE" 2>/dev/null | cut -d' ' -f1 || shasum -a 256 -- "$GT_READY_DOUBLE" 2>/dev/null | cut -d' ' -f1 || echo '<unreadable>')"
+echo "NOTE: the double is the live report with ONLY komodo's verdict changed HOLD -> READY."
 
 # --- Regression: empty-array expansion under set -u must not abort ----------
 if bash -u -c 'set -euo pipefail; f(){ echo "$#"; }; f' >/dev/null 2>&1; then
@@ -255,6 +296,7 @@ echo 0        > "$ADB_STATE/counter"
 set +e
 PATH="$WORK/bin3:$STUBS:$PATH" FB_REAL="$STUBS/fastboot" \
 FB_STATE="$FB_STATE" ADB_STATE="$ADB_STATE" \
+GT_READY_REPORT="$GT_READY_DOUBLE" \
 CAPTURE_LOGS=1 CAPTURE_POST_ADB_SECS=5 BOOT_WATCH_SECS=10 \
 REMOTE_TREE="$FAKE_REMOTE" REMOTE_BUILD_DIR="$FAKE_STAMP" REMOTE_KEY_DIR="$FAKE_STAMP" \
 DEVICE=komodo LOCAL_WORK_DIR="$LWD3" \

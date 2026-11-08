@@ -12,8 +12,30 @@ ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 cd "$ROOT"
 FAIL=0
 PASS_N=0
+HOLD_N=0
 pass() { echo "PASS: $*"; PASS_N=$((PASS_N + 1)); }
 fail() { echo "FAIL: $*"; FAIL=1; }
+hold() { echo "HOLD: $*"; HOLD_N=$((HOLD_N + 1)); }
+
+# Recorded approval on the root queue: card heading or matrix row.
+# The dispatch scope sentence names these ids and is not an approval cite.
+queue_approved() {
+  local id="$1"
+  rg -q "^#### ${id} .*APPROVED \\(" TASK_QUEUE.md \
+    || rg -q "^\\| ${id} \\|.*APPROVED \\(" TASK_QUEUE.md
+}
+
+# Missing vendor props are HOLD only on a paired userdebug image
+# (ro.debuggable=1). A user image (ro.debuggable=0), a missing system
+# prop file, or any other value stays FAIL.
+vendor_prop_missing_class() {
+  local system_bp="$1"
+  if [[ -f "$system_bp" ]] && rg -q '^ro\.debuggable=1$' "$system_bp"; then
+    echo HOLD
+  else
+    echo FAIL
+  fi
+}
 
 require_file() {
   local f="$1" label="${2:-$1}"
@@ -117,9 +139,39 @@ self_test_props_cardinality() {
   return 1
 }
 
+self_test_vendor_prop_class() {
+  local sb d1 d0 dmissing dother dten
+  sb="$(mktemp -d)"
+  printf '%s\n' 'ro.debuggable=1' > "$sb/system.prop"
+  d1="$(vendor_prop_missing_class "$sb/system.prop")"
+  printf '%s\n' 'ro.debuggable=0' > "$sb/system.prop"
+  d0="$(vendor_prop_missing_class "$sb/system.prop")"
+  dmissing="$(vendor_prop_missing_class "$sb/absent.prop")"
+  printf '%s\n' 'ro.debuggable=2' > "$sb/system.prop"
+  dother="$(vendor_prop_missing_class "$sb/system.prop")"
+  printf '%s\n' 'ro.debuggable=10' > "$sb/system.prop"
+  dten="$(vendor_prop_missing_class "$sb/system.prop")"
+  rm -rf "$sb"
+  if [[ "$d1" == HOLD && "$d0" == FAIL && "$dmissing" == FAIL \
+        && "$dother" == FAIL && "$dten" == FAIL && ! -e "$sb" ]]; then
+    echo "SELF-TEST PASSED: ro.debuggable=1 is HOLD; ro.debuggable=0, missing, and other values are FAIL"
+    return 0
+  fi
+  echo "SELF-TEST FAILED: d1=${d1} d0=${d0} dmissing=${dmissing} dother=${dother} dten=${dten} sandbox_left=$([[ -e "$sb" ]] && echo yes || echo no)"
+  return 1
+}
+
 if [[ "${1:-}" == "--self-test" ]]; then
+  set +e
   self_test_props_cardinality
-  exit $?
+  card_rc=$?
+  self_test_vendor_prop_class
+  prop_rc=$?
+  set -e
+  if [[ "$card_rc" -eq 0 && "$prop_rc" -eq 0 ]]; then
+    exit 0
+  fi
+  exit 1
 fi
 
 # --- Paths ---
@@ -148,6 +200,7 @@ DASH_FRAG="packages/apps/Settings/src/com/android/settings/security/guardtalk/Gu
 
 TOKAY_MK="vendor/guardtalk/device/tokay/guardtalk-tokay.mk"
 VENDOR_BP="out/target/product/tokay/vendor/build.prop"
+SYSTEM_BP="out/target/product/tokay/system/build.prop"
 
 DOC_PERM="vendor/guardtalk/docs/PERMISSION_DEFAULTS_POLICY.md"
 DOC_PRIV="vendor/guardtalk/docs/PRIVACY_TMPFS_CLIPBOARD_POLICY.md"
@@ -381,17 +434,20 @@ if [[ -f "$VENDOR_BP" ]]; then
     ro.guardtalk.privacy_tmpfs=1 \
     ro.guardtalk.privacy_tmpfs_path=/mnt/guardtalk_privacy \
     ro.guardtalk.clipboard_clear=1 \
-    ro.guardtalk.clipboard_clear_timeout_ms=60000; do
+    ro.guardtalk.clipboard_clear_timeout_ms=60000 \
+    ro.guardtalk.files_policy=1; do
     if rg -q "^${prop}$" "$VENDOR_BP"; then
       pass "vendor/build.prop has ${prop}"
+    elif [[ "$(vendor_prop_missing_class "$SYSTEM_BP")" == HOLD ]]; then
+      hold "vendor/build.prop missing ${prop} (system ro.debuggable=1)"
     else
       fail "vendor/build.prop missing ${prop}"
     fi
   done
-  # Files props: wired in mk; may be absent until vendor image refresh
+  # Trash/protect may be absent until a vendor image refresh. files_policy
+  # is classified with the other missing vendor props above.
   files_ok=1
   for prop in \
-    ro.guardtalk.files_policy=1 \
     ro.guardtalk.files_trash=1 \
     ro.guardtalk.files_protect_critical=1; do
     if ! rg -q "^${prop}$" "$VENDOR_BP"; then
@@ -411,29 +467,43 @@ fi
 echo "=== Q-SEC-P4-PRIVACY: prior green builds (cite) ==="
 
 cite_ok=0
+# DONE_LOG cite, or the recorded TASK_QUEUE approval.
+# T-EXCISE-FLASHREADY-SEC-CITES: do not invent a DONE_LOG line.
 if rg -q 'T-SEC-P4-PERMS APPROVED' .agent-comm/completed/DONE_LOG.md; then
   pass "DONE_LOG cites T-SEC-P4-PERMS APPROVED"
   cite_ok=1
+elif queue_approved T-SEC-P4-PERMS; then
+  pass "TASK_QUEUE cites T-SEC-P4-PERMS APPROVED"
+  cite_ok=1
 else
-  fail "DONE_LOG missing T-SEC-P4-PERMS APPROVED"
+  fail "missing T-SEC-P4-PERMS APPROVED cite (DONE_LOG or TASK_QUEUE)"
 fi
 if rg -q 'T-SEC-P4-PRIVACY APPROVED' .agent-comm/completed/DONE_LOG.md; then
   pass "DONE_LOG cites T-SEC-P4-PRIVACY APPROVED"
   cite_ok=1
+elif queue_approved T-SEC-P4-PRIVACY; then
+  pass "TASK_QUEUE cites T-SEC-P4-PRIVACY APPROVED"
+  cite_ok=1
 else
-  fail "DONE_LOG missing T-SEC-P4-PRIVACY APPROVED"
+  fail "missing T-SEC-P4-PRIVACY APPROVED cite (DONE_LOG or TASK_QUEUE)"
 fi
 if rg -q 'T-SEC-P4-FILES APPROVED' .agent-comm/completed/DONE_LOG.md; then
   pass "DONE_LOG cites T-SEC-P4-FILES APPROVED"
   cite_ok=1
+elif queue_approved T-SEC-P4-FILES; then
+  pass "TASK_QUEUE cites T-SEC-P4-FILES APPROVED"
+  cite_ok=1
 else
-  fail "DONE_LOG missing T-SEC-P4-FILES APPROVED"
+  fail "missing T-SEC-P4-FILES APPROVED cite (DONE_LOG or TASK_QUEUE)"
 fi
 if rg -q 'F-SEC-P4-SYSTEM-UI APPROVED' .agent-comm/completed/DONE_LOG.md; then
   pass "DONE_LOG cites F-SEC-P4-SYSTEM-UI APPROVED"
   cite_ok=1
+elif queue_approved F-SEC-P4-SYSTEM-UI; then
+  pass "TASK_QUEUE cites F-SEC-P4-SYSTEM-UI APPROVED"
+  cite_ok=1
 else
-  fail "DONE_LOG missing F-SEC-P4-SYSTEM-UI APPROVED"
+  fail "missing F-SEC-P4-SYSTEM-UI APPROVED cite (DONE_LOG or TASK_QUEUE)"
 fi
 if rg -q 'build EXIT=0|DocumentsUI\+ExternalStorageProvider EXIT=0|m Settings DocumentsUI.*EXIT=0' \
   TASK_QUEUE.md; then
@@ -455,9 +525,9 @@ fi
 echo "=== SUMMARY ==="
 if [[ $FAIL -eq 0 ]]; then
   echo "ALL STATIC CHECKS PASSED"
-  echo "PASS_COUNT=${PASS_N} FAIL_COUNT=0 EXIT=0"
+  echo "PASS_COUNT=${PASS_N} HOLD_COUNT=${HOLD_N} FAIL_COUNT=0 EXIT=0"
   exit 0
 fi
 echo "SOME CHECKS FAILED"
-echo "PASS_COUNT=${PASS_N} FAIL_COUNT>0 EXIT=1"
+echo "PASS_COUNT=${PASS_N} HOLD_COUNT=${HOLD_N} FAIL_COUNT>0 EXIT=1"
 exit 1

@@ -5,10 +5,11 @@
 #
 # Proves advertise honesty:
 #   LIVE_FLASH_CLAIMED=false
-#   stamp README + installer do not claim komodo-20260915-063833 is a signed
-#     user FLASH_READY image
-#   komodo-latest still points at that stamp (not retargeted)
-#   tokay+akita+komodo listed; no new SKU
+#   historical stamp README + installer do not claim komodo-20260915-063833
+#     is a signed user FLASH_READY image (that tree stays; it is not latest)
+#   komodo-latest points at komodo-20260928-052609 (not retargeted)
+#   tokay+akita+komodo listed; an offered id in the 13-device matrix is not
+#     a new SKU; an offered id outside that matrix is a FAIL
 #   FLASH_READY=true absent except negative tests
 #
 # Usage (from GrapheneOS-worktree root):
@@ -27,12 +28,16 @@ hold() { echo "HOLD: $*"; HOLD_N=$((HOLD_N + 1)); }
 TYPES="vendor/guardtalk/web-installer/src/types.ts"
 DIST_TYPES="vendor/guardtalk/web-installer/dist/src/types.js"
 OFFERED="vendor/guardtalk/web-installer/lib/ui/offered-devices.ts"
-STAMP_README="releases/desktop-flash/komodo-20260915-063833/README-FLASH-DESKTOP.md"
+# Historical advertise tree. Installer copy still names this directory.
+# komodo-latest does not point here; do not retarget the symlink to revive it.
+HISTORICAL_STAMP="komodo-20260915-063833"
+STAMP_README="releases/desktop-flash/${HISTORICAL_STAMP}/README-FLASH-DESKTOP.md"
 INSTALL_README="vendor/guardtalk/web-installer/README.md"
 WIZARD_HTML="vendor/guardtalk/web-installer/wizard/index.html"
 EARLY="vendor/guardtalk/web-installer/routes/install/early-steps.ts"
 LATEST="releases/desktop-flash/komodo-latest"
-STAMP_NAME="komodo-20260915-063833"
+# Live pointer. Measured: readlink releases/desktop-flash/komodo-latest.
+LATEST_STAMP="komodo-20260928-052609"
 TEST_DIR="vendor/guardtalk/web-installer/test"
 
 # Product/advertise surfaces (not tests). FLASH_READY=true here is a lie.
@@ -140,10 +145,10 @@ if [[ -f "${STAMP_README}" ]]; then
   else
     pass "${STAMP_README} has no FLASH_READY=true"
   fi
-  if rg -q -- "${STAMP_NAME}" "${STAMP_README}"; then
-    pass "${STAMP_README} names ${STAMP_NAME}"
+  if rg -q -- "${HISTORICAL_STAMP}" "${STAMP_README}"; then
+    pass "${STAMP_README} names ${HISTORICAL_STAMP}"
   else
-    fail "${STAMP_README} does not name ${STAMP_NAME}"
+    fail "${STAMP_README} does not name ${HISTORICAL_STAMP}"
   fi
 else
   fail "missing ${STAMP_README}"
@@ -153,10 +158,10 @@ echo
 echo "--- installer advertise does not claim signed-user FLASH_READY ---"
 if [[ -f "${OFFERED}" ]]; then
   if rg -q -- 'KOMODO_STAMP_HONESTY' "${OFFERED}" && \
-     rg -q -- "${STAMP_NAME}" "${OFFERED}" && \
+     rg -q -- "${HISTORICAL_STAMP}" "${OFFERED}" && \
      rg -q -- 'not a signed user FLASH_READY image' "${OFFERED}" && \
      rg -q -- 'LIVE_FLASH_CLAIMED=false' "${OFFERED}"; then
-    pass "KOMODO_STAMP_HONESTY names ${STAMP_NAME} and denies signed-user FLASH_READY"
+    pass "KOMODO_STAMP_HONESTY names ${HISTORICAL_STAMP} and denies signed-user FLASH_READY"
   else
     fail "KOMODO_STAMP_HONESTY missing stamp name or signed-user denial"
   fi
@@ -169,10 +174,10 @@ else
   fail "missing ${OFFERED}"
 fi
 if [[ -f "${INSTALL_README}" ]]; then
-  INSTALL_WINDOW="$(rg -A2 -- "${STAMP_NAME}" "${INSTALL_README}" || true)"
+  INSTALL_WINDOW="$(rg -A2 -- "${HISTORICAL_STAMP}" "${INSTALL_README}" || true)"
   if echo "${INSTALL_WINDOW}" | rg -q -- 'signed user' && \
      echo "${INSTALL_WINDOW}" | rg -q -- 'not'; then
-    pass "${INSTALL_README} names ${STAMP_NAME} and denies signed user FLASH_READY"
+    pass "${INSTALL_README} names ${HISTORICAL_STAMP} and denies signed user FLASH_READY"
   else
     fail "${INSTALL_README} missing stamp honesty paragraph"
   fi
@@ -186,7 +191,7 @@ else
 fi
 if [[ -f "${WIZARD_HTML}" ]]; then
   if rg -q -- 'data-dec="010"' "${WIZARD_HTML}" && \
-     rg -q -- "${STAMP_NAME}" "${WIZARD_HTML}" && \
+     rg -q -- "${HISTORICAL_STAMP}" "${WIZARD_HTML}" && \
      rg -q -- 'FLASH_READY=false' "${WIZARD_HTML}" && \
      rg -q -- 'LIVE_FLASH_CLAIMED=false' "${WIZARD_HTML}"; then
     pass "wizard data-dec=010 banner names stamp and FLASH_READY=false"
@@ -212,12 +217,12 @@ else
 fi
 
 echo
-echo "--- komodo-latest still points at ${STAMP_NAME} (not retargeted) ---"
+echo "--- komodo-latest points at ${LATEST_STAMP} (not retargeted) ---"
 if [[ -L "${LATEST}" ]]; then
-  if [[ "${LATEST_LINK}" == "${STAMP_NAME}" ]]; then
-    pass "${LATEST} -> ${STAMP_NAME} (relative symlink; not retargeted)"
+  if [[ "${LATEST_LINK}" == "${LATEST_STAMP}" ]]; then
+    pass "${LATEST} -> ${LATEST_STAMP} (relative symlink; not retargeted)"
   else
-    fail "NEGATIVE HIT: ${LATEST} retargeted to '${LATEST_LINK}' (want ${STAMP_NAME})"
+    fail "NEGATIVE HIT: ${LATEST} retargeted to '${LATEST_LINK}' (want ${LATEST_STAMP})"
   fi
 else
   fail "${LATEST} is not a symlink"
@@ -233,11 +238,38 @@ if [[ -f "${OFFERED}" ]]; then
       fail "WIZARD_DEVICES missing ${sku}"
     fi
   done
-  NEW_SKU_HIT="$(rg -n -- 'id: "(shiba|husky|caiman|tegu|comet)"' "${OFFERED}" || true)"
-  if [[ -n "${NEW_SKU_HIT}" ]]; then
-    fail "NEGATIVE HIT: new SKU offered: ${NEW_SKU_HIT}"
+  # Offered ids are the WIZARD_DEVICES array. DEVICE_FLEET rows (including
+  # caiman and withheld tangorpro) are inventory, not the offered set.
+  # An offered id in the 13-device matrix is not a new SKU. An offered id
+  # outside that matrix is a FAIL. caiman stays in offered-devices.ts.
+  WIZARD_BLOCK="$(awk '
+    /^export const WIZARD_DEVICES/ { capture=1 }
+    capture { print }
+    capture && /^];$/ { exit }
+  ' "${OFFERED}")"
+  if [[ -z "${WIZARD_BLOCK}" ]]; then
+    fail "WIZARD_DEVICES block missing; offered-SKU check would be vacuous"
   else
-    pass "WIZARD_DEVICES has no shiba/husky/caiman/tegu/comet id"
+    mapfile -t OFFERED_IDS < <(printf '%s\n' "${WIZARD_BLOCK}" | sed -n 's/.*id: "\([^"]*\)".*/\1/p')
+    if [[ "${#OFFERED_IDS[@]}" -eq 0 ]]; then
+      fail "WIZARD_DEVICES has no id fields; offered-SKU check would be vacuous"
+    else
+      NEW_SKU=""
+      for id in "${OFFERED_IDS[@]}"; do
+        case "${id}" in
+          shiba|husky|akita|tokay|caiman|komodo|comet|tegu|stallion|frankel|blazer|mustang|rango)
+            ;;
+          *)
+            NEW_SKU+="${id} "
+            ;;
+        esac
+      done
+      if [[ -n "${NEW_SKU}" ]]; then
+        fail "NEGATIVE HIT: new SKU offered outside the 13-device matrix: ${NEW_SKU}"
+      else
+        pass "offered ids (${OFFERED_IDS[*]}) are inside the 13-device matrix (not a new SKU)"
+      fi
+    fi
   fi
   if rg -q -- 'id: "rango"' "${OFFERED}" && \
      rg -q -- 'experimental / boot HOLD' "${OFFERED}"; then

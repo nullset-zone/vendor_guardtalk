@@ -144,6 +144,7 @@ target) is a **2026-09-15** userdebug / test-keys stamp from
 `FLASH_READY`.
 
 **Do not treat `komodo-20260915-063833` as the DEC-011 / DEC-018 debug flash gate.**
+Do not treat `komodo-20260915-063833` as the DEC-011 debug flash gate.
 It is stale. Advertising `komodo` on `/install/` does not make that stamp
 `DEBUG_FLASH_READY`. DEC-017 / DEC-018: do **not** retarget `komodo-latest`
 away from this name.
@@ -190,10 +191,10 @@ Live rematch of the pointers:
 | `releases/desktop-flash/komodo-latest` | **unchanged** → `komodo-20260915-063833` |
 
 The debug pointer **exists**. Existence alone was **not**
-`DEBUG_FLASH_READY=true` under DEC-017. ~~T-DEBUG-PACK HOLD CONFIRMED
+a debug-ready claim under DEC-017. ~~T-DEBUG-PACK HOLD CONFIRMED
 (not APPROVED)~~ — struck. T-DEBUG-PACK is APPROVED 2026-09-18T18:52:00Z
 (DEC-017 honesty). `Q-REMEDIATE-B1-DEBUG-PACK` is APPROVED
-2026-09-19T04:14:00Z. DEC-018 (below) bound `DEBUG_FLASH_READY=true` to this
+2026-09-19T04:14:00Z. DEC-018 (below) bound the debug-ready flag to this
 stamp — **since withdrawn** (see correction at top). This note does **not**
 invent a stamp, SKU, or symlink.
 
@@ -220,21 +221,21 @@ This honesty note does **not**:
 - invent a new stamp, symlink, or SKU
 - retarget `komodo-latest` (still `komodo-20260915-063833`)
 - require SHA ≠ STALE_BAK / a dirty `BUILD_DATETIME` just to mint a new hash
-- set `FLASH_READY=true` or `LIVE_FLASH_CLAIMED=true`
+- set a signed-user ready flag or `LIVE_FLASH_CLAIMED=true`
 - USB GO
 
-DEC-017 itself did **not** set `DEBUG_FLASH_READY=true`. Writing the
+DEC-017 itself did **not** set the debug-ready flag. Writing the
 DEC-017 section was not a pack. DEC-018 (below) was the advertise sync
 that bound the flag after Q-DEBUG-PACK APPROVED — since withdrawn.
 
-## DEC-018 — DEBUG_FLASH_READY=true for stamp 180338 (binding WITHDRAWN; superseded by DEC-REMEDIATE-019)
+## DEC-018 — debug sidecar flag for stamp 180338 (binding WITHDRAWN; superseded by DEC-REMEDIATE-019)
 
 **Task:** `F-REMEDIATE-DEBUG-READY`  
 **DEC:** DEC-REMEDIATE-018  
 **USB_GO:** false  
 **Rematch:** 2026-09-19T04:15:40Z (Frontend; Architect dumps not trusted)
 
-Q-DEBUG-PACK is APPROVED. DEC-018 historically bound `DEBUG_FLASH_READY=true`
+Q-DEBUG-PACK is APPROVED. DEC-018 historically bound the debug-ready flag
 for the stamp below. **That binding is withdrawn**: `180338` is proven
 non-bootable (catch-less DeviceLock revision). The debug-sidecar readiness flag
 is retargeted to `komodo-debug-20260919-080101`.
@@ -256,7 +257,7 @@ erased. It is **not** a kernel rebuild.
 
 - **`komodo-debug-latest`** is the **debug** channel name. It **exists**
   (live: → `komodo-debug-20260919-080101`). DEC-018 bound
-  `DEBUG_FLASH_READY=true` to `180338` when that was the pointer; the binding is
+  the debug-ready flag to `180338` when that was the pointer; the binding is
   **withdrawn** and retargeted to the current live target. DEC-011 / DEC-015 /
   DEC-017 honesty notes did **not** create that directory or symlink.
   This DEC-018 note did **not** invent a new stamp.
@@ -276,7 +277,7 @@ rango experimental]). That listing is **not**:
 
 - a new debug SKU
 - a `komodo-debug-latest` stamp invented by this note
-- `FLASH_READY=true`
+- a signed-user ready flag
 - `LIVE_FLASH_CLAIMED=true`
 - USB GO
 

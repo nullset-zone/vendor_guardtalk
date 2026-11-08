@@ -60,6 +60,78 @@ forbid_re() {
   fi
 }
 
+# T-EXCISE-FLASHREADY-KEY-PRESENCE. Development keys stay installed.
+# A pem or pk8 under vendor/guardtalk that git ls-files does not track is a
+# PASS. A tracked pem or pk8 is a FAIL. avb.pem present and untracked is a
+# PASS. avb.pem absent is a HOLD, not a PASS. Never read or print key bytes.
+# The workspace root is not a git repository; vendor/guardtalk is.
+# GT_KEY_TRACKED_FIXTURE: workspace-relative pem/pk8 path treated as tracked
+# for the negative proof. It is never git-added. GT_KEY_PRESENCE_ONLY=1 exits
+# after this check so the proof does not lunch. Unset both for a normal run.
+classify_vendor_key_material() {
+  local found tracked rel line n shown avb_rel
+  avb_rel="vendor/guardtalk/branding/signing-keys/avb.pem"
+  found="$(find vendor/guardtalk \( -name '*.pem' -o -name '*.pk8' \) -print 2>/dev/null | sort || true)"
+  tracked=""
+  if git -C vendor/guardtalk rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    rel="$(git -C vendor/guardtalk ls-files -z | tr '\0' '\n' | grep -E '\.(pem|pk8)$' || true)"
+    if [[ -n "$rel" ]]; then
+      tracked="$(printf '%s\n' "$rel" | sed '/^$/d' | sed 's|^|vendor/guardtalk/|')"
+    fi
+  fi
+  if [[ -n "${GT_KEY_TRACKED_FIXTURE:-}" ]]; then
+    if [[ "${GT_KEY_TRACKED_FIXTURE}" != vendor/guardtalk/* ]] \
+      || [[ "${GT_KEY_TRACKED_FIXTURE}" != *.pem && "${GT_KEY_TRACKED_FIXTURE}" != *.pk8 ]]; then
+      fail "GT_KEY_TRACKED_FIXTURE must be a pem or pk8 path under vendor/guardtalk"
+    else
+      tracked="$(printf '%s\n%s\n' "$tracked" "${GT_KEY_TRACKED_FIXTURE}" | sed '/^$/d' | sort -u)"
+    fi
+  else
+    tracked="$(printf '%s\n' "$tracked" | sed '/^$/d' | sort -u)"
+  fi
+  if [[ -n "$tracked" ]]; then
+    shown=""
+    while IFS= read -r line; do
+      [[ -z "$line" ]] && continue
+      if [[ -z "$shown" ]]; then
+        shown="$line"
+      else
+        shown="${shown}, ${line}"
+      fi
+    done <<< "$tracked"
+    fail "pem/pk8 classified as tracked under vendor/guardtalk: ${shown}"
+  else
+    pass "git ls-files tracks no pem/pk8 under vendor/guardtalk"
+  fi
+  n=0
+  if [[ -n "$found" ]]; then
+    while IFS= read -r line; do
+      [[ -z "$line" ]] && continue
+      if [[ -n "$tracked" ]] && printf '%s\n' "$tracked" | grep -Fxq -- "$line"; then
+        continue
+      fi
+      n=$((n + 1))
+    done <<< "$found"
+  fi
+  if [[ "$n" -gt 0 ]]; then
+    pass "${n} untracked pem/pk8 under vendor/guardtalk (development keys; bytes not printed)"
+  fi
+  if [[ -f "$avb_rel" ]]; then
+    if [[ -n "$tracked" ]] && printf '%s\n' "$tracked" | grep -Fxq -- "$avb_rel"; then
+      fail "avb.pem classified as tracked"
+    else
+      pass "avb.pem present and untracked"
+    fi
+  else
+    hold "avb.pem absent (not a PASS)"
+  fi
+  if [[ "${GT_KEY_PRESENCE_ONLY:-}" == "1" ]]; then
+    echo "RESULT: $([[ "$FAIL" -eq 0 ]] && echo PASS || echo FAIL) (key presence only)"
+    echo "FLASH_READY=false"
+    exit "$FAIL"
+  fi
+}
+
 echo "=== Q-REMEDIATE-B1-USERBUILD independent rematch (items 1,2,3,5) ==="
 echo "ROOT=$ROOT"
 echo "LIVE_DEVICE_CLAIMED=false"
@@ -92,13 +164,8 @@ rg -n "ro.adb.secure|release-keys|testkey" \
   vendor/guardtalk/device/komodo \
   vendor/guardtalk/docs/PRODUCTION_HARDENING_POLICY.md || true
 echo
-echo "--- packet find (pem/pk8) ---"
-PEM_PK8="$(find vendor/guardtalk \( -name '*.pem' -o -name '*.pk8' \) | head || true)"
-if [[ -z "${PEM_PK8}" ]]; then
-  pass "no *.pem / *.pk8 under vendor/guardtalk"
-else
-  fail "private key material under vendor/guardtalk: ${PEM_PK8}"
-fi
+echo "--- pem/pk8 presence (untracked development keys PASS; tracked FAIL) ---"
+classify_vendor_key_material
 
 echo
 echo "--- static product wiring ---"

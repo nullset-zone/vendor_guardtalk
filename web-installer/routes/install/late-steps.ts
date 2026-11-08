@@ -433,7 +433,7 @@ export function keepKeyStepHtml(sim = false): string {
   return parts.join("");
 }
 
-/** CSP meta tag emitted by the route page shell (D-006, zero runtime network). */
+/** CSP meta tag emitted by the route page shell. connect-src is the one origin. */
 export function lateStepsCspMeta(): string {
   return `<meta http-equiv="Content-Security-Policy" content="${INSTALLER_CSP}">`;
 }

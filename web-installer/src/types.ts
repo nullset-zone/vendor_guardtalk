@@ -117,3 +117,6 @@ export interface FlashPlan {
 
 /** Host/unit tests never perform or claim a live device flash. */
 export const LIVE_FLASH_CLAIMED = false;
+
+/** Installed image is development keys (`ro.build.tags=dev-keys`), not a production release. */
+export const PRODUCTION_RELEASE_CLAIMED = false;

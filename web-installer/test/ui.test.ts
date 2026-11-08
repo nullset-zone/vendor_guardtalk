@@ -303,14 +303,18 @@ test("progress bar label states partition and bytes in mono-friendly text", () =
 /* Posture pill                                                        */
 /* ------------------------------------------------------------------ */
 
-test("posture pill renders the exact required string", () => {
+test("posture pill states the one-origin GET", () => {
   const flags = postureFromStatusJson({ network: "offline", release_state: "alpha", key_custody: "alpha" });
-  assert.equal(posturePillText(flags), "◢ offline · your key · alpha");
-  assert.match(renderPosturePill(flags), /^<span[^>]*>◢ offline · your key · alpha<\/span>$/);
+  assert.equal(flags.connectivity, "one-origin GET");
+  assert.equal(posturePillText(flags), "◢ one-origin GET · your key · alpha");
+  assert.match(renderPosturePill(flags), /data-connectivity="one-origin GET"/);
+  assert.match(renderPosturePill(flags), /^<span[^>]*>◢ one-origin GET · your key · alpha<\/span>$/);
 });
 
-test("posture reader refuses payloads that contradict offline custody", () => {
-  assert.throws(() => postureFromStatusJson({ network: "online", release_state: "alpha" }));
+test("posture reader accepts any status.json network value", () => {
+  const other = postureFromStatusJson({ network: "online", release_state: "alpha" });
+  assert.equal(other.connectivity, "one-origin GET");
+  assert.equal(posturePillText(other), "◢ one-origin GET · your key · alpha");
   assert.throws(() => postureFromStatusJson({ release_state: "" }));
 });
 

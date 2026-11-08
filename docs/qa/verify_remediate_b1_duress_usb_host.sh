@@ -344,6 +344,9 @@ gbv() {
 VARIANT="$(gbv TARGET_BUILD_VARIANT | tail -n 1 | tr -d '[:space:]')"
 PRODUCT="$(gbv TARGET_PRODUCT | tail -n 1 | tr -d '[:space:]')"
 PROPS="$(gbv PRODUCT_PROPERTY_OVERRIDES || true)"
+# ro.guardtalk.production_profile is a system/build.prop policy flag
+# (PRODUCT_SYSTEM_PROPERTIES). Accept it from either make list.
+SYS_PROPS="$(gbv PRODUCT_SYSTEM_PROPERTIES || true)"
 PKGS="$(gbv PRODUCT_PACKAGES || true)"
 PKGS_DBG="$(gbv PRODUCT_PACKAGES_DEBUG || true)"
 
@@ -367,6 +370,7 @@ else
 fi
 
 PROP_LINES="$(printf '%s\n' "$PROPS" | tr ' ' '\n')"
+SYS_PROP_LINES="$(printf '%s\n' "$SYS_PROPS" | tr -d '\r' | tr ' \t' '\n')"
 if echo "$PROP_LINES" | grep -Fxq "$FLAG"; then
   pass "user PRODUCT_PROPERTY_OVERRIDES contains ${FLAG}"
 else
@@ -382,10 +386,12 @@ if echo "$PROP_LINES" | grep -Fxq "ro.adb.secure=1"; then
 else
   fail "USERBUILD regression: ro.adb.secure=1 missing from user overrides"
 fi
-if echo "$PROP_LINES" | grep -Fxq "ro.guardtalk.production_profile=1"; then
-  pass "user PRODUCT_PROPERTY_OVERRIDES still contains ro.guardtalk.production_profile=1"
+# Read the whole list (no grep -q) so pipefail cannot SIGPIPE-miss an early token.
+if printf '%s\n' "$PROP_LINES" | tr -d '\r' | grep -Fx -- "ro.guardtalk.production_profile=1" >/dev/null \
+  || printf '%s\n' "$SYS_PROP_LINES" | grep -Fx -- "ro.guardtalk.production_profile=1" >/dev/null; then
+  pass "ro.guardtalk.production_profile=1 in PRODUCT_SYSTEM_PROPERTIES or PRODUCT_PROPERTY_OVERRIDES"
 else
-  fail "user production_profile=1 missing from overrides"
+  fail "ro.guardtalk.production_profile=1 missing from PRODUCT_SYSTEM_PROPERTIES and PRODUCT_PROPERTY_OVERRIDES"
 fi
 if echo "$PROP_LINES" | grep -Eq '^ro\.boot\.verifiedbootstate=green$'; then
   fail "NEGATIVE HIT: PRODUCT-lie ro.boot.verifiedbootstate=green in overrides"

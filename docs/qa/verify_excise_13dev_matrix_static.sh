@@ -32,6 +32,14 @@
 # Env:
 #   GTQ_MX_DEVICES   override device list (default: the 13 program devices)
 #   GTQ_MX_OUT       output dir (default .agent-comm/evidence/Q-EXCISE-13DEV-MATRIX)
+#   GTQ_MX_STAMPS    stamp root (default releases/desktop-flash). Unset, the
+#                    script reads the live <dev>-latest symlinks with readlink
+#                    (not readlink -f). Set only to point a fixture at a temp root.
+#   GTQ_MX_INJECT_STAMP_EXPECT
+#                    optional space-separated dev=stamp pairs. When a pair names
+#                    the device under test, the live readlink must equal that
+#                    stamp or INV-5 FAILs. Unset in production. A missing pointer
+#                    still fails closed; the injection cannot force a PASS.
 #
 # Usage (from GrapheneOS-worktree root):
 #   bash vendor/guardtalk/docs/qa/verify_excise_13dev_matrix_static.sh
@@ -48,7 +56,7 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 cd "$ROOT"
 
-STAMPS="releases/desktop-flash"
+STAMPS="${GTQ_MX_STAMPS:-releases/desktop-flash}"
 LEDGER="vendor/guardtalk/docs/qa/excision_ledger.json"
 MODE="${GTQ_MX_MODE:-stamp}"
 FIXTURE="${GTQ_MX_FIXTURE:-}"
@@ -78,26 +86,18 @@ declare -A ACCEPT_TOKENS=(
   [comet]="zumapro_comet comet" [tegu]="zumapro_tegu tegu" [stallion]="zumapro_stallion stallion"
   [frankel]="laguna_muzel frankel" [blazer]="laguna_muzel blazer" [mustang]="laguna_muzel mustang" [rango]="laguna_rango rango"
 )
-declare -A EXPECTED_STAMP=(
-  [shiba]=shiba-20260923-094055 [husky]=husky-20260923-095309 [akita]=akita-20260725-101434
-  [tokay]=tokay-20260928-084839 [caiman]=caiman-20260922-090535 [komodo]=komodo-20260915-063833
-  [comet]=comet-20260922-160129 [tegu]=tegu-20260922-164700 [stallion]=stallion-20260923-100618
-  [frankel]=frankel-20260923-094457 [blazer]=blazer-20260923-090842 [mustang]=mustang-20260923-094541
-  [rango]=rango-20260802-130756
-)
-# Every device (including tokay, after T-EXCISE-TOKAY-LATEST-REPOINT retired the
-# legacy generic `latest` alias) has its own <dev>-latest pointer.
-declare -A HAS_DEV_LATEST=(
-  [shiba]=yes [husky]=yes [akita]=yes [tokay]=yes [caiman]=yes [komodo]=yes
-  [comet]=yes [tegu]=yes [stallion]=yes [frankel]=yes [blazer]=yes [mustang]=yes [rango]=yes
-)
+# Expected stamp is the literal <dev>-latest symlink target (readlink, not
+# readlink -f). There is no per-device stamp literal. A missing pointer fails
+# closed — it never falls back to a global `latest` and never PASSes.
 
 FAIL=0
 PASS_N=0
+HOLD_N=0
 RES_N=0
 CHECKS_N=0
 pass(){ echo "PASS: $*"; PASS_N=$((PASS_N+1)); }
 fail(){ echo "FAIL: $*"; FAIL=1; }
+hold(){ echo "HOLD: $*"; HOLD_N=$((HOLD_N+1)); }
 res(){  echo "RESIDUAL: $*"; RES_N=$((RES_N+1)); }
 
 CANON() { # resolution token -> canonical variant id (or UNKNOWN)
@@ -114,9 +114,29 @@ CANON() { # resolution token -> canonical variant id (or UNKNOWN)
   esac
 }
 
-stamp_dir() { # <dev> -> resolved stamp directory (authoritative)
+stamp_dir() { # <dev> -> canonical dir of the <dev>-latest symlink, else a missing path
   local d="$1"
-  if [[ -e "$STAMPS/$d-latest" ]]; then readlink -f "$STAMPS/$d-latest"; else readlink -f "$STAMPS/latest"; fi
+  local ptr="$STAMPS/$d-latest"
+  local resolved=""
+  if [[ -L "$ptr" ]]; then
+    resolved="$(readlink -f "$ptr" 2>/dev/null || true)"
+  fi
+  if [[ -n "$resolved" && -d "$resolved" ]]; then
+    printf '%s' "$resolved"
+  else
+    # No global `latest` fallback: a missing pointer must not open another device.
+    printf '%s' "${ptr}.missing"
+  fi
+}
+
+# Literal symlink text. Empty when the pointer is missing or not a symlink.
+stamp_pointer_literal() {
+  local ptr="$STAMPS/$1-latest"
+  if [[ ! -L "$ptr" ]]; then
+    printf ''
+    return 1
+  fi
+  readlink "$ptr"
 }
 
 # --- artifact readers (stamp=debugfs images, fixture=plain tree) ---------------
@@ -209,7 +229,9 @@ for dev in $DEVICES; do
   # ---- INV-1: variant resolved from a BUILT artifact equals the expected one ----
   bhdr="$(img_cat "$dev" vendor_dlkm.img /lib/modules/modules.blocklist | grep -m1 'GuardTalkOS')"
   htok="$(printf '%s' "$bhdr" | sed -n 's/.*GuardTalkOS[^A-Za-z0-9_]*\([A-Za-z0-9_]*\).*/\1/p')"
-  vhdr="$(img_cat "$dev" vendor.img /etc/vintf/manifest.xml | grep -oE 'vendor_manifest_no_radio[^ ]*\.xml' | head -1)"
+  manifest="$(img_cat "$dev" vendor.img /etc/vintf/manifest.xml || true)"
+  vhdr="$(printf '%s\n' "$manifest" | grep -oE 'vendor_manifest_no_radio[^ ]*\.xml' | head -1 || true)"
+  observed="$(printf '%s\n' "$manifest" | grep -oE 'vendor_manifest[^[:space:]]*\.xml' | head -1 || true)"
   vsuf="$(printf '%s' "$vhdr" | sed -n 's/^vendor_manifest_no_radio_\(.*\)\.xml$/\1/p')"
   if [[ -n "$htok" ]]; then rtok="$htok"; rsrc="vendor_dlkm-blocklist-header"
   elif [[ -n "$vsuf" ]]; then rtok="$vsuf"; rsrc="vintf-provenance-header"
@@ -221,15 +243,20 @@ for dev in $DEVICES; do
     f=1; fail "$dev variant resolved '$rtok' ($rsrc) -> '$rvar' but expected ${EXPECTED_VARIANT[$dev]} (accepted: ${ACCEPT_TOKENS[$dev]})"
   fi
 
-  # ---- INV-2: vendor VINTF manifest is the radio-free manifest ----
-  radio_hal="$(img_cat "$dev" vendor.img /etc/vintf/manifest.xml | grep -cE '<name>android\.hardware\.(radio|telephony|ims|iwlan)')"
-  if [[ "$vhdr" == vendor_manifest_no_radio* && "$radio_hal" == "0" ]]; then
+  # ---- INV-2: radio HALs absent. Missing radio-free provenance is HOLD, not a radio-HAL failure. ----
+  radio_hal="$(printf '%s\n' "$manifest" | grep -cE '<name>android\.hardware\.(radio|telephony|ims|iwlan)' || true)"
+  if [[ -z "${manifest//[[:space:]]/}" ]]; then
+    f=1; fail "$dev vendor VINTF manifest unreadable or empty — radio HAL count not evaluated"
+  elif [[ "$radio_hal" != "0" ]]; then
+    f=1; fail "$dev vendor VINTF not radio-free (provenance='${vhdr:-NONE}', radio HALs=$radio_hal)"
+  elif [[ "$vhdr" == vendor_manifest_no_radio* ]]; then
     inv_vintf=PASS; pass "$dev vendor VINTF is radio-free ($vhdr; 0 radio/telephony/ims/iwlan HALs)"
   else
-    f=1; fail "$dev vendor VINTF not radio-free (provenance='${vhdr:-NONE}', radio HALs=$radio_hal)"
+    inv_vintf=HOLD
+    hold "$dev vendor VINTF radio HALs=0 but radio-free provenance artifact absent (expected vendor_manifest_no_radio*.xml, observed='${observed:-NONE}') — radio-free claim BLOCKED"
   fi
   # residual: BT HAL still declared (F-003)
-  bt_hal="$(img_cat "$dev" vendor.img /etc/vintf/manifest.xml | grep -cE '<name>android\.hardware\.bluetooth</name>')"
+  bt_hal="$(printf '%s\n' "$manifest" | grep -cE '<name>android\.hardware\.bluetooth</name>' || true)"
   [[ "$bt_hal" != "0" ]] && resid="$resid bt_hal_declared"
 
   # ---- INV-3: userspace RIL residue absent ----
@@ -252,19 +279,39 @@ for dev in $DEVICES; do
   if [[ "$fx_hits" == "0" ]]; then inv_fx=PASS; pass "$dev feature-permission XMLs absent for BT/NFC/Location"
   else f=1; fail "$dev $fx_hits feature-permission XML(s) present for BT/NFC/Location"; fi
 
-  # ---- INV-5: stamp identity ----
+  # ---- INV-5: stamp identity is the live <dev>-latest symlink (readlink, not -f) ----
   if [[ "$MODE" == "stamp" ]]; then
-    resolved="$(basename "$(stamp_dir "$dev")")"
-    if [[ "${HAS_DEV_LATEST[$dev]}" == "yes" ]]; then
-      if [[ "$resolved" == "${EXPECTED_STAMP[$dev]}" && -e "$STAMPS/$dev-latest" ]]; then
-        inv_stamp=PASS; pass "$dev stamp $resolved-latest -> $resolved (expected)"
-      else f=1; fail "$dev stamp mismatch: resolved='$resolved' expected='${EXPECTED_STAMP[$dev]}'"; fi
+    ptr="$STAMPS/${dev}-latest"
+    literal="$(stamp_pointer_literal "$dev" || true)"
+    injected=""
+    if [[ -n "${GTQ_MX_INJECT_STAMP_EXPECT:-}" ]]; then
+      for pair in $GTQ_MX_INJECT_STAMP_EXPECT; do
+        case "$pair" in
+          "${dev}="*) injected="${pair#*=}" ;;
+        esac
+      done
+    fi
+    canon=""
+    if [[ -L "$ptr" ]]; then
+      canon="$(basename "$(readlink -f "$ptr" 2>/dev/null || true)")"
+    fi
+    stamp_id_glob="${dev}-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]"
+    if [[ ! -L "$ptr" ]]; then
+      f=1; fail "$dev stamp pointer missing or not a symlink ($ptr) — fail closed"
+    elif [[ -z "$literal" ]]; then
+      f=1; fail "$dev stamp pointer readlink is empty ($ptr) — fail closed"
+    elif [[ "$literal" == /* || "$literal" == */* || "$literal" == *..* ]]; then
+      f=1; fail "$dev stamp pointer target '$literal' is not a single relative stamp id — fail closed"
+    elif [[ "$literal" != $stamp_id_glob ]]; then
+      f=1; fail "$dev stamp pointer target '$literal' is not a ${dev}-YYYYMMDD-HHMMSS id — fail closed"
+    elif [[ ! -d "$STAMPS/$literal" ]]; then
+      f=1; fail "$dev stamp pointer target '$literal' does not exist — fail closed"
+    elif [[ "$canon" != "$literal" ]]; then
+      f=1; fail "$dev stamp canonical name '$canon' disagrees with readlink '$literal'"
+    elif [[ -n "$injected" && "$literal" != "$injected" ]]; then
+      f=1; fail "$dev stamp mismatch: live readlink='$literal' injected expected='$injected'"
     else
-      if [[ ! -e "$STAMPS/$dev-latest" && "$resolved" == "${EXPECTED_STAMP[$dev]}" ]]; then
-        inv_stamp=PASS; pass "$dev NO ${dev}-latest (as documented); authoritative stamp = global latest -> $resolved"
-      else
-        f=1; fail "$dev stamp rule violated: dev-latest exists=$([[ -e "$STAMPS/$dev-latest" ]] && echo yes || echo no) resolved='$resolved' expected='${EXPECTED_STAMP[$dev]}'"
-      fi
+      inv_stamp=PASS; pass "$dev stamp ${dev}-latest -> $literal (live readlink)"
     fi
   else
     inv_stamp=PASS; printf ''   # fixture mode: no stamp symlinks to assert
@@ -340,12 +387,18 @@ done
 echo "==================================================================="
 echo "Q-EXCISE-13DEV-MATRIX summary"
 echo "devices=$DEVICES"
-echo "PASS=$PASS_N  RESIDUAL=$RES_N  FAIL=$FAIL"
+echo "PASS=$PASS_N  HOLD=$HOLD_N  RESIDUAL=$RES_N  FAIL=$FAIL"
+echo "PASS_COUNT=$PASS_N HOLD_COUNT=$HOLD_N FAIL=$FAIL"
 echo "matrix TSV: $TSV"
 if [[ "$FAIL" -ne 0 ]]; then
   echo "RESULT: FAIL — at least one invariant violated or undocumented residual"
+  echo "PASS_COUNT=$PASS_N HOLD_COUNT=$HOLD_N FAIL=$FAIL"
   exit 1
 fi
-echo "RESULT: PASS — every invariant holds on every device; residuals are the documented register only"
+echo "RESULT: PASS — every hard invariant holds on every device; residuals are the documented register only"
+echo "PASS_COUNT=$PASS_N HOLD_COUNT=$HOLD_N FAIL=0"
+if [[ "$HOLD_N" -ne 0 ]]; then
+  echo "NOTE: HOLD=$HOLD_N. A HOLD blocks the named claim. It is not a PASS of that claim."
+fi
 echo "NOTE: this harness proves the matrix, NOT the absence of the documented residuals."
 exit 0

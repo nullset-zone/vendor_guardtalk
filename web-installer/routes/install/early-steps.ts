@@ -30,6 +30,7 @@ import { renderKeyDiagram } from "../../lib/ui/key-diagram.js";
 import { renderSideBySideRow } from "../../lib/ui/sidebyside.js";
 import type { DialogOptions } from "../../lib/ui/dialog.js";
 import { Hardening, LineageNote, ProtectionLimit } from "../../lib/claims/components.js";
+import { RELEASE_FETCH_ORIGIN } from "../../lib/claims/csp.js";
 import {
   ONION_ADDRESS_FACT,
   PARTITION_LAYOUT_FACT,
@@ -248,7 +249,7 @@ export const CUSTODY_SENTENCES: readonly string[] = [
   "Your private key is created or imported inside this tab and never leaves it.",
   "The browser holds it as a non-extractable handle, or in memory that is zeroed after use.",
   "Only the public half — a fingerprint you can read and compare — is ever displayed.",
-  "Nothing is uploaded: the installer makes no network request of any kind.",
+  `Nothing is uploaded. The only network request is a GET of the three release files from ${RELEASE_FETCH_ORIGIN}.`,
   "An optional encrypted backup file is written only when you ask; sealing happens offline with your passphrase.",
   "GuardTalk's release key proves who built the download; your key alone decides what boots.",
 ];
@@ -487,8 +488,126 @@ export function filesReady(picks: FilePicks): boolean {
   return picks.package && picks.sums && picks.sig;
 }
 
-export function renderStep1(picks: FilePicks): string {
-  const ready = filesReady(picks);
+/** Bucket and object names for the lab GET. The lab key is not a release fingerprint. */
+export const RELEASE_BUCKET = "guardtalk-browser-test";
+export const RELEASE_PREFIX = "tokay-20260928-084839/";
+export const RELEASE_PACKAGE_NAME = "tokay-20260928-084839.zip";
+export const RELEASE_SUMS_NAME = "SHA256SUMS";
+export const RELEASE_SIG_NAME = "SHA256SUMS.sig";
+
+const RELEASE_OBJECT_NAMES = [RELEASE_PACKAGE_NAME, RELEASE_SUMS_NAME, RELEASE_SIG_NAME] as const;
+
+export function releaseObjectUrl(objectName: (typeof RELEASE_OBJECT_NAMES)[number]): string {
+  return `${RELEASE_FETCH_ORIGIN}/${RELEASE_BUCKET}/${RELEASE_PREFIX}${objectName}`;
+}
+
+const RELEASE_PATHS: ReadonlySet<string> = new Set(
+  RELEASE_OBJECT_NAMES.map((name) => new URL(releaseObjectUrl(name)).pathname),
+);
+
+/** True only for the three object URLs on RELEASE_FETCH_ORIGIN. Any other origin is false. */
+export function releaseFetchAllowed(url: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  if (parsed.origin !== RELEASE_FETCH_ORIGIN) {
+    return false;
+  }
+  if (parsed.username !== "" || parsed.password !== "") {
+    return false;
+  }
+  if (parsed.search !== "" || parsed.hash !== "") {
+    return false;
+  }
+  return RELEASE_PATHS.has(parsed.pathname);
+}
+
+export function assertReleaseFetchUrl(url: string): void {
+  if (!releaseFetchAllowed(url)) {
+    throw new Error(`Refused fetch: only ${RELEASE_FETCH_ORIGIN} release objects are allowed`);
+  }
+}
+
+export interface ReleaseFetchResponse {
+  readonly ok: boolean;
+  readonly status: number;
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+
+export type ReleaseFetchImpl = (url: string) => Promise<ReleaseFetchResponse>;
+
+/** GET one allowed object. A URL on any other origin throws before fetchImpl runs. */
+export async function getAllowedReleaseObject(
+  url: string,
+  fetchImpl: ReleaseFetchImpl,
+): Promise<Uint8Array> {
+  assertReleaseFetchUrl(url);
+  const response = await fetchImpl(url);
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (!response.ok) {
+    throw new Error(`Release GET failed (${String(response.status)})`);
+  }
+  return bytes;
+}
+
+export interface ReleaseSlots {
+  readonly packageName: string;
+  readonly packageBytes: Uint8Array;
+  readonly sumsText: string;
+  readonly sigBytes: Uint8Array;
+  readonly picks: FilePicks;
+}
+
+/** GET the package, SHA256SUMS, and SHA256SUMS.sig. Does not advance the machine. */
+export async function fetchReleaseObjects(fetchImpl: ReleaseFetchImpl): Promise<ReleaseSlots> {
+  const packageBytes = await getAllowedReleaseObject(releaseObjectUrl(RELEASE_PACKAGE_NAME), fetchImpl);
+  const sumsBytes = await getAllowedReleaseObject(releaseObjectUrl(RELEASE_SUMS_NAME), fetchImpl);
+  const sigBytes = await getAllowedReleaseObject(releaseObjectUrl(RELEASE_SIG_NAME), fetchImpl);
+  return {
+    packageName: RELEASE_PACKAGE_NAME,
+    packageBytes,
+    sumsText: new TextDecoder().decode(sumsBytes),
+    sigBytes,
+    picks: { package: true, sums: true, sig: true },
+  };
+}
+
+/**
+ * Q-05 (release onion) and Q-04 (release-key fingerprint). Either fact still
+ * rendered with `data-proceed="forbidden"` keeps Continue disabled.
+ */
+const STEP1_UNPUBLISHED_FACTS = [ONION_ADDRESS_FACT, RELEASE_FINGERPRINT_FACT] as const;
+
+/**
+ * Test double for the unpublished-fact gate. Production callers omit this, so
+ * both facts stay forbidden. Listing an id clears that fact for this render
+ * only. No address and no fingerprint are invented.
+ */
+export interface Step1ContinueGate {
+  readonly clearedFactIds?: readonly ("Q-04" | "Q-05")[];
+}
+
+function renderStep1UnpublishedFact(
+  fact: (typeof STEP1_UNPUBLISHED_FACTS)[number],
+  cleared: boolean,
+): string {
+  if (!cleared) {
+    return renderUnavailableFact(fact);
+  }
+  return `<div data-unavailable="${fact.id}" data-proceed="allowed"></div>`;
+}
+
+export function renderStep1(picks: FilePicks, gate?: Step1ContinueGate): string {
+  const cleared = new Set<string>(gate?.clearedFactIds ?? []);
+  const factHtml = STEP1_UNPUBLISHED_FACTS.map((fact) =>
+    renderStep1UnpublishedFact(fact, cleared.has(fact.id)),
+  );
+  const unpublishedForbidden = factHtml.some((html) => html.includes('data-proceed="forbidden"'));
+  const slotsReady = filesReady(picks);
+  const continueEnabled = slotsReady && !unpublishedForbidden;
   const slot = (role: string, label: string): string =>
     [
       `<div class="file-slot" data-role="${role}-slot">`,
@@ -496,22 +615,28 @@ export function renderStep1(picks: FilePicks): string {
       `<input type="file" id="file-${role}" data-role="${role}" />`,
       `</div>`,
     ].join("");
-  const cta = [
-    `<button type="button" class="${GL_BTN_CONFIRM}" data-action="files-picked"`,
-    ready ? `` : `disabled aria-disabled="true"`,
-    `>Continue to verification</button>`,
-    ready ? `` : `<p class="note">All three files must be picked before continuing.</p>`,
-  ].join("");
+  const continueAttrs = continueEnabled ? "" : ` disabled aria-disabled="true"`;
+  let note = "";
+  if (!slotsReady) {
+    note = `<p class="note">All three files must be picked before continuing.</p>`;
+  } else if (unpublishedForbidden) {
+    note =
+      `<p class="note">Continue stays disabled while the release onion address or the release-key fingerprint is unpublished.</p>`;
+  }
+  const cta =
+    `<button type="button" class="${GL_BTN_CONFIRM}" data-action="files-picked"${continueAttrs}>Continue to verification</button>${note}`;
+  const fetchButton =
+    `<button type="button" class="${GL_BTN_DEFAULT}" data-action="fetch-release">GET the three release files</button>`;
   return [
     headline(1, "Bring the three release files into this tab."),
-    `<p class="lede">Fetch the bundle yourself over Tor Browser, then pick the files here:</p>`,
+    `<p class="lede">This step GETs the package, SHA256SUMS, and SHA256SUMS.sig from one origin. You can also pick the same three files.</p>`,
     `<ul class="fetch-points">`,
-    `<li>${renderUnavailableFact(ONION_ADDRESS_FACT)}</li>`,
-    `<li>${renderUnavailableFact(RELEASE_FINGERPRINT_FACT)}</li>`,
+    ...factHtml.map((html) => `<li>${html}</li>`),
     `</ul>`,
     Hardening(
-      "No network request leaves this page — the files are hashed and checked offline in this tab.",
+      `The only network request is a GET from ${RELEASE_FETCH_ORIGIN}. Hashing and the signature check stay in this tab.`,
     ).html,
+    fetchButton,
     `<div class="file-slots">${slot("package", "Release package (.zip)")}${slot("sums", "SHA256SUMS")}${slot("sig", "SHA256SUMS.sig")}</div>`,
     makeChip("ALL THREE REQUIRED", "caution"),
     cta,

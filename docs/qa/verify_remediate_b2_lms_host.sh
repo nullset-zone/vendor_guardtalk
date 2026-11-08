@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Independent rematch for Q-REMEDIATE-B2-LMS (pair of T-REMEDIATE-B2-LMS
 # item 8 residual). Do not trust Backend/Architect dumps.
+# T-EXCISE-FLASHREADY-BOOT-SUITES: LocationManagerService.Lifecycle starts
+# unconditionally (SystemServer boot ruling: skipping it null-deref'd
+# system_server). CountryDetector stays behind FEATURE_LOCATION. An
+# unconditional CountryDetector start is FAIL. Do not re-gate LMS.
 # Host static + lunch komodo-trunk_staging-user (not userdebug).
 # Runtime LMS-absent / m / adb → HOLD (do not invent PASS; do not lift PASS HOLD).
 # Do not overwrite verify_remediate_b2_excise_host.sh (that card HOLDs LMS start
@@ -116,7 +120,7 @@ else
 fi
 
 echo
-echo "--- python structural rematch (FEATURE_LOCATION else-gate) ---"
+echo "--- python structural rematch (unconditional LMS; CountryDetector FEATURE_LOCATION) ---"
 set +e
 python3 - "$ROOT" <<'PY'
 import re
@@ -250,6 +254,59 @@ def line_of(src, pos):
     return src.count("\n", 0, pos) + 1
 
 
+def ancestor_opens(src, pos):
+    stack = []
+    i = 0
+    while i < pos:
+        c = src[i]
+        if c == "{":
+            stack.append(i)
+        elif c == "}" and stack:
+            stack.pop()
+        i += 1
+    return list(stack)
+
+
+def feature_else_ancestors(code, pos, feature_const):
+    gated = []
+    for open_pos in ancestor_opens(code, pos):
+        close_pos = matching_close(code, open_pos)
+        if close_pos is None or not (open_pos < pos < close_pos):
+            continue
+        prefix = code[:open_pos].rstrip()
+        if not re.search(r"\belse\s*$", prefix):
+            continue
+        chain = code[max(0, open_pos - 1200) : open_pos]
+        if "hasSystemFeature" in chain and feature_const in chain:
+            gated.append((open_pos, close_pos))
+    return gated
+
+
+def needle_hits(code, needle):
+    hits = []
+    start = 0
+    while True:
+        pos = code.find(needle, start)
+        if pos < 0:
+            break
+        hits.append(pos)
+        start = pos + len(needle)
+    return hits
+
+
+def feature_gate_kind(code, feature_const, needle):
+    """Return absent, gated, unconditional, or mixed for every needle hit."""
+    hits = needle_hits(code, needle)
+    if not hits:
+        return "absent"
+    gated = [p for p in hits if feature_else_ancestors(code, p, feature_const)]
+    if len(gated) == len(hits):
+        return "gated"
+    if gated:
+        return "mixed"
+    return "unconditional"
+
+
 def assert_feature_else_start(code, feature_const, start_needle, label):
     hits = []
     start = 0
@@ -323,29 +380,87 @@ assert_feature_else_start(
     "BT FEATURE_BLUETOOTH",
 )
 
-# LMS: startService of Lifecycle MUST be inside FEATURE_LOCATION else.
-lms_needles = [
-    "startService(LocationManagerService.Lifecycle.class)",
-    "startService(LocationManagerService.class)",
-]
-lms_hits = [n for n in lms_needles if n in code]
+# Predicate selftest. These snippets are not SystemServer.java. A re-gated LMS
+# and an unconditional CountryDetector must classify as the forbidden shapes.
+_lms_needle = "startService(LocationManagerService.Lifecycle.class)"
+_cd_needle = "new CountryDetectorService"
+_unconditional_lms = """
+t.traceBegin("StartLocationManagerService");
+try {
+    mSystemServiceManager.startService(LocationManagerService.Lifecycle.class);
+} catch (Throwable e) {
+    reportWtf("starting LocationManagerService service", e);
+}
+"""
+_gated_lms = """
+if (!context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION)) {
+    Slog.i(TAG, "skip");
+} else {
+    try {
+        mSystemServiceManager.startService(LocationManagerService.Lifecycle.class);
+    } catch (Throwable e) {
+        reportWtf("starting", e);
+    }
+}
+"""
+_gated_cd = """
+if (!context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION)) {
+    Slog.i(TAG, "skip");
+} else {
+    try {
+        countryDetector = new CountryDetectorService(context);
+        ServiceManager.addService(Context.COUNTRY_DETECTOR, countryDetector);
+    } catch (Throwable e) {
+        reportWtf("starting Country Detector", e);
+    }
+}
+"""
+_ungated_cd = """
+try {
+    countryDetector = new CountryDetectorService(context);
+    ServiceManager.addService(Context.COUNTRY_DETECTOR, countryDetector);
+} catch (Throwable e) {
+    reportWtf("starting Country Detector", e);
+}
+"""
+
+
+def _expect_kind(snippet, needle, want, label):
+    got = feature_gate_kind(blank_java_noise(snippet), "FEATURE_LOCATION", needle)
+    if got == want:
+        out("PASS", f"selftest: {label} ({got})")
+    else:
+        out("FAIL", f"selftest: {label} wanted {want} got {got}")
+
+
+_expect_kind(_unconditional_lms, _lms_needle, "unconditional", "unconditional LMS")
+_expect_kind(_gated_lms, _lms_needle, "gated", "FEATURE_LOCATION else around LMS")
+_expect_kind(_gated_cd, _cd_needle, "gated", "CountryDetector behind FEATURE_LOCATION")
+_expect_kind(_ungated_cd, _cd_needle, "unconditional", "unconditional CountryDetector")
+
+# LMS Lifecycle start is unconditional. Re-gating it on FEATURE_LOCATION is FAIL.
 if "startService(LocationManagerService.class)" in code:
     out(
         "FAIL",
         "LocationManagerService.class startService present (Lifecycle-only expected)",
     )
-if "startService(LocationManagerService.Lifecycle.class)" not in code:
+lms_kind = feature_gate_kind(
+    code, "FEATURE_LOCATION", "startService(LocationManagerService.Lifecycle.class)"
+)
+if lms_kind == "unconditional":
+    out(
+        "PASS",
+        "LMS Lifecycle start is unconditional (not inside FEATURE_LOCATION else)",
+    )
+elif lms_kind == "absent":
     out("FAIL", "LocationManagerService.Lifecycle startService absent")
 else:
-    assert_feature_else_start(
-        code,
-        "FEATURE_LOCATION",
-        "startService(LocationManagerService.Lifecycle.class)",
-        "LMS FEATURE_LOCATION",
+    out(
+        "FAIL",
+        f"LMS Lifecycle start is {lms_kind} on FEATURE_LOCATION (re-gate forbidden)",
     )
 
-# Raw-source adversarial: FEATURE_LOCATION and startService share a short window
-# that contains else (catches comment-only FEATURE next to unconditional start).
+# Ruling comment sits immediately above the unconditional start.
 raw_lms = [
     i
     for i, line in enumerate(sysj.splitlines(), 1)
@@ -358,22 +473,39 @@ if len(raw_lms) != 1:
     )
 else:
     ln = raw_lms[0]
-    window = "\n".join(sysj.splitlines()[max(0, ln - 12) : ln])
-    if (
-        "FEATURE_LOCATION" in window
-        and "hasSystemFeature" in window
-        and re.search(r"\belse\b", window)
-    ):
+    # Slice ends at the start line (exclusive of the following CountryDetector block).
+    window = "\n".join(sysj.splitlines()[max(0, ln - 16) : ln])
+    if "UNCONDITIONALLY" in window and "LocationManagerService" in window:
         out(
             "PASS",
-            f"12-line window above startService L{ln} contains "
-            "hasSystemFeature(FEATURE_LOCATION) and else",
+            f"window ending at Lifecycle start L{ln} contains the "
+            "UNCONDITIONALLY LocationManagerService boot ruling",
         )
     else:
         out(
             "FAIL",
-            f"12-line window above startService L{ln} missing FEATURE_LOCATION else",
+            f"window ending at Lifecycle start L{ln} missing UNCONDITIONALLY "
+            "LocationManagerService ruling",
         )
+
+# CountryDetector construct + addService stay behind FEATURE_LOCATION.
+# An unconditional CountryDetector start is FAIL.
+cd_kind = feature_gate_kind(code, "FEATURE_LOCATION", "new CountryDetectorService")
+if cd_kind == "gated":
+    out("PASS", "CountryDetector construct is inside FEATURE_LOCATION else")
+elif cd_kind == "absent":
+    out("FAIL", "CountryDetectorService construct absent")
+else:
+    out("FAIL", f"CountryDetector construct is {cd_kind} (FEATURE_LOCATION gate required)")
+add_kind = feature_gate_kind(
+    code, "FEATURE_LOCATION", "ServiceManager.addService(Context.COUNTRY_DETECTOR"
+)
+if add_kind == "gated":
+    out("PASS", "COUNTRY_DETECTOR addService is inside FEATURE_LOCATION else")
+elif add_kind == "absent":
+    out("FAIL", "COUNTRY_DETECTOR addService absent")
+else:
+    out("FAIL", f"COUNTRY_DETECTOR addService is {add_kind} (FEATURE_LOCATION gate required)")
 
 # Handheld: strip XML comments, then live <feature name="android.hardware.location*".
 xml_no_comments = re.sub(r"<!--.*?-->", "", handheld, flags=re.S)

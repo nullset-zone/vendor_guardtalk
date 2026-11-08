@@ -64,6 +64,54 @@
 # Overrides (optional):
 #   DEVICE=tokay|akita|komodo|rango|caiman|comet|tegu|stallion|shiba|husky|frankel|blazer|mustang
 #   REMOTE_BUILD_DIR=...   REMOTE_KEY_DIR=...
+#   A REMOTE_BUILD_DIR that is quarantined, marked FIRST-FLASH-RISK, or listed
+#   under releases/desktop-flash/.quarantine/ is refused before any download
+#   or fastboot write (T-EXCISE-STAMP-REMOTE-BUILD-DIR-QUARANTINE-BYPASS).
+#   An unlisted path with any 8-digit run below the registry live_date_floor
+#   is refused the same way, before step 0. Overlapping starts count
+#   (T-EXCISE-QUARANTINE-FLOOR-HOLE, T-EXCISE-QUARANTINE-DATE-WINDOW).
+#   A character whose Unicode digit value is 0-9 counts as ASCII 0-9 in that
+#   scan, including category Nd (U+FF10-U+FF19 and mathematical monospace
+#   U+1D7F6-U+1D7FF) and category No superscripts and subscripts (U+00B2 is
+#   digit two; U+2080 is digit zero). A character whose numeric value is an
+#   integer 0-9 counts the same way, including Khmer lek attak (U+17F0 is
+#   zero) and Medefaidrin digits (U+16E80 is zero). A non-integer numeric
+#   value, such as vulgar fraction one half, is not a digit.
+#   While that scan walks the date, categories Mn, Mc, Me, Cf, Zs, Zl, Zp,
+#   Cc, Cn, Co, and Cs are ignored so a mark, a format character, a space
+#   separator, a line separator, a paragraph separator, a control character,
+#   an unassigned character, a private-use character, or a surrogate cannot
+#   split an eight-digit window. Twelve explicit
+#   characters are ignored the same way: U+1806 MONGOLIAN TODO SOFT HYPHEN,
+#   U+115F HANGUL CHOSEONG FILLER, U+1160 HANGUL JUNGSEONG FILLER,
+#   U+3164 HANGUL FILLER, U+FFA0 HALFWIDTH HANGUL FILLER,
+#   U+2800 BRAILLE PATTERN BLANK, U+13441 EGYPTIAN HIEROGLYPH FULL BLANK,
+#   U+13442 EGYPTIAN HIEROGLYPH HALF BLANK, U+13443 EGYPTIAN HIEROGLYPH
+#   LOST SIGN, U+13444 EGYPTIAN HIEROGLYPH HALF LOST SIGN,
+#   U+13445 EGYPTIAN HIEROGLYPH TALL LOST SIGN, and U+13446 EGYPTIAN
+#   HIEROGLYPH WIDE LOST SIGN. Category Lo is not omitted in general by
+#   this change. Category Cs is omitted. Category Sk is not omitted.
+#   Category Pd is not omitted in general. Category So is not omitted in
+#   general. A hyphen-minus stays a separator
+#   (T-EXCISE-QUARANTINE-FULLWIDTH-DATE, T-EXCISE-QUARANTINE-ND-DIGITS,
+#   T-EXCISE-QUARANTINE-SUPERSCRIPT-DATE, T-EXCISE-QUARANTINE-KHMER-DATE,
+#   T-EXCISE-QUARANTINE-MARK-DATE, T-EXCISE-QUARANTINE-SPACING-MARK-DATE,
+#   T-EXCISE-QUARANTINE-LINE-SEPARATOR-DATE,
+#   T-EXCISE-QUARANTINE-TODO-HYPHEN-DATE,
+#   T-EXCISE-QUARANTINE-BRAILLE-BLANK-DATE,
+#   T-EXCISE-QUARANTINE-HIEROGLYPH-BLANK-DATE,
+#   T-EXCISE-QUARANTINE-HALF-BLANK-DATE,
+#   T-EXCISE-QUARANTINE-UNASSIGNED-DATE,
+#   T-EXCISE-QUARANTINE-PRIVATE-USE-DATE,
+#   T-EXCISE-QUARANTINE-SURROGATE-DATE).
+#   GT_STAMP_TREE  optional override for the stamp tree that holds the registry.
+#   GT_FLASH_QUARANTINE_CHECK_ONLY=1  run only that refusal, then exit (no flash).
+#   GT_FLASH_ALLOW_HISTORICAL_BISECT=1
+#                          allow an unlisted REMOTE_BUILD_DIR whose 8-digit run
+#                          is below live_date_floor. Default OFF. Never auto-selected.
+#                          Does not bypass a named quarantine registry entry,
+#                          an on-disk marker, or FIRST-FLASH-RISK.
+#                          UNSAFE — a historical bisect is not a current bundle.
 #   REMOTE_HOST=...        REMOTE_TREE=...
 #   ALLOW_AVB_KEY_FAIL=1   continue if avb_custom_key flash fails (default: die)
 #   GT_BOOT_CHAIN=gt|hybrid  boot-chain mode. Default 'gt' = today's behaviour
@@ -338,6 +386,453 @@ device_pretty() {
     esac
 }
 
+# -----------------------------------------------------------------------------
+# Quarantine gate — explicit REMOTE_BUILD_DIR must fail closed
+# -----------------------------------------------------------------------------
+# T-EXCISE-STAMP-REMOTE-BUILD-DIR-QUARANTINE-BYPASS. The stamp resolver already
+# refuses a quarantined / FIRST-FLASH-RISK bundle, but an explicit
+# REMOTE_BUILD_DIR never consulted that registry. This gate reads
+# releases/desktop-flash/.quarantine/registry.json (and the on-disk markers)
+# and dies before ssh, scp, or fastboot. A path that is not listed, not marked,
+# and not under .quarantine/ is allowed when it has no 8 consecutive digits,
+# or when every 8-digit run is at or above the registry live_date_floor, so
+# the override is not disabled wholesale.
+# T-EXCISE-QUARANTINE-FLOOR-HOLE / T-EXCISE-QUARANTINE-DATE-WINDOW: every
+# 8-digit run in a path component is compared, including overlapping starts.
+# One run below live_date_floor refuses the path before step 0. The floor is
+# the registry value, applied even when the path is not a registry hit. A
+# historical bisect requires GT_FLASH_ALLOW_HISTORICAL_BISECT=1 (default off).
+# T-EXCISE-QUARANTINE-FULLWIDTH-DATE / T-EXCISE-QUARANTINE-ND-DIGITS /
+# T-EXCISE-QUARANTINE-SUPERSCRIPT-DATE / T-EXCISE-QUARANTINE-KHMER-DATE:
+# before that walk, every character whose Unicode digit value is 0-9, and
+# every character whose numeric value is an integer 0-9, is folded to ASCII.
+# That includes category No superscripts and subscripts, Khmer lek attak, and
+# Medefaidrin digits. A non-integer numeric value is not a digit, so a vulgar
+# fraction stays in the leaf. A fullwidth, mathematical-monospace, superscript,
+# subscript, Khmer, or Medefaidrin below-floor run dies the same way.
+# T-EXCISE-QUARANTINE-MARK-DATE / T-EXCISE-QUARANTINE-SPACING-MARK-DATE /
+# T-EXCISE-QUARANTINE-LINE-SEPARATOR-DATE /
+# T-EXCISE-QUARANTINE-TODO-HYPHEN-DATE /
+# T-EXCISE-QUARANTINE-BRAILLE-BLANK-DATE /
+# T-EXCISE-QUARANTINE-HIEROGLYPH-BLANK-DATE /
+# T-EXCISE-QUARANTINE-HALF-BLANK-DATE /
+# T-EXCISE-QUARANTINE-UNASSIGNED-DATE /
+# T-EXCISE-QUARANTINE-PRIVATE-USE-DATE /
+# T-EXCISE-QUARANTINE-SURROGATE-DATE:
+# categories Mn, Mc, Me, Cf, Zs, Zl, Zp, Cc, Cn, Co, and Cs are omitted on
+# that walk, so a mark, a format character, a space separator, a line
+# separator, a paragraph separator, a control character, an unassigned
+# character, a private-use character, or a surrogate cannot split an
+# eight-digit window. U+1806, U+115F,
+# U+1160, U+3164, U+FFA0, U+2800, and U+13441 are omitted too, and so are
+# U+13442 EGYPTIAN HIEROGLYPH HALF BLANK, U+13443 EGYPTIAN HIEROGLYPH LOST
+# SIGN, U+13444 EGYPTIAN HIEROGLYPH HALF LOST SIGN, U+13445 EGYPTIAN
+# HIEROGLYPH TALL LOST SIGN, and U+13446 EGYPTIAN HIEROGLYPH WIDE LOST SIGN.
+# Category Lo is not omitted in general by this change. Category Cs is
+# omitted. Category Sk is not omitted. Category Pd is not omitted in
+# general. Category So is not omitted in general. A hyphen-minus stays a
+# separator.
+# Named registry stamps still die. The floor is also cited when a matched
+# entry is below it.
+# Locate order: GT_STAMP_TREE, REMOTE_TREE, then walk up from this script.
+# No ssh. If the registry cannot be read, refuse (cannot prove the path is safe).
+
+_gt_locate_quarantine_registry() {
+    local candidate stamp_tree dir i
+    if [[ -n "${GT_STAMP_TREE:-}" ]]; then
+        stamp_tree="${GT_STAMP_TREE%/}"
+        for candidate in \
+            "$stamp_tree/.quarantine/registry.json" \
+            "$stamp_tree/releases/desktop-flash/.quarantine/registry.json"
+        do
+            if [[ -f "$candidate" ]]; then
+                printf '%s\n' "$candidate"
+                return 0
+            fi
+        done
+        echo "[flash] GT_STAMP_TREE has no quarantine registry: $stamp_tree" >&2
+        return 1
+    fi
+    if [[ -n "${REMOTE_TREE:-}" ]]; then
+        candidate="${REMOTE_TREE%/}/releases/desktop-flash/.quarantine/registry.json"
+        if [[ -f "$candidate" ]]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    fi
+    dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    for i in 1 2 3 4 5 6 7 8; do
+        candidate="$dir/releases/desktop-flash/.quarantine/registry.json"
+        if [[ -f "$candidate" ]]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+        [[ "$dir" == "/" ]] && break
+        dir="$(cd "$(dirname "$dir")" && pwd)"
+    done
+    return 1
+}
+
+# Print one US-separated record if any path component is in registry.json.
+# kind, entry, class, reason, marker_rel, floor. Empty stdout = no JSON match.
+# Exit 2 = registry unreadable (caller must fail closed).
+_gt_registry_match() {
+    python3 - "$1" "$2" <<'PY'
+import json, sys
+reg_path, path = sys.argv[1], sys.argv[2]
+US = "\x1f"
+try:
+    with open(reg_path, encoding="utf-8") as fh:
+        reg = json.load(fh)
+except (OSError, json.JSONDecodeError) as exc:
+    sys.stderr.write("registry unreadable: %s\n" % exc)
+    sys.exit(2)
+floor = str(reg.get("live_date_floor") or "")
+stamps = {}
+for row in reg.get("quarantined_stamps") or []:
+    name = row.get("stamp")
+    if name:
+        stamps[name] = row
+pointers = [row for row in (reg.get("quarantined_pointers") or []) if row.get("pointer")]
+
+def candidates(part):
+    out = [part]
+    suffix = ".quarantined"
+    if part.endswith(suffix):
+        out.append(part[: -len(suffix)])
+    token = ".quarantined-"
+    if token in part:
+        out.append(part.split(token, 1)[0])
+    seen = set()
+    uniq = []
+    for item in out:
+        if item and item not in seen:
+            seen.add(item)
+            uniq.append(item)
+    return uniq
+
+def emit(kind, entry, cls, reason, marker):
+    dated = ""
+    digits = ""
+    for ch in entry:
+        if ch.isdigit():
+            digits += ch
+            if len(digits) == 8:
+                break
+        else:
+            if len(digits) != 8:
+                digits = ""
+    if len(digits) == 8 and floor.isdigit() and int(digits) < int(floor):
+        dated = " (dated %s, below live_date_floor %s)" % (digits, floor)
+    sys.stdout.write(US.join([
+        kind, entry, cls or "", (reason or "") + dated, marker or "", floor,
+    ]) + "\n")
+    sys.exit(0)
+
+parts = [part for part in path.split("/") if part]
+for part in reversed(parts):
+    for cand in candidates(part):
+        stamp = stamps.get(cand)
+        if stamp:
+            emit(
+                "stamp",
+                stamp.get("stamp", cand),
+                stamp.get("class", ""),
+                stamp.get("reason", ""),
+                "stamps/%s.quarantined" % stamp.get("stamp", cand),
+            )
+        for ptr in pointers:
+            name = ptr.get("pointer") or ""
+            target = ptr.get("original_target") or ""
+            if cand == name or (target and cand == target):
+                emit(
+                    "pointer",
+                    name,
+                    ptr.get("class", ""),
+                    ptr.get("reason", ""),
+                    "pointers/%s.quarantined" % name,
+                )
+sys.exit(0)
+PY
+}
+
+# Print the registry live_date_floor. Exit 2 if it is missing or not YYYYMMDD.
+# A dated path cannot be proven current without that value.
+_gt_registry_live_date_floor() {
+    python3 - "$1" <<'PY'
+import json, sys
+reg_path = sys.argv[1]
+try:
+    with open(reg_path, encoding="utf-8") as fh:
+        reg = json.load(fh)
+except (OSError, json.JSONDecodeError) as exc:
+    sys.stderr.write("registry unreadable: %s\n" % exc)
+    sys.exit(2)
+floor = str(reg.get("live_date_floor") or "")
+if len(floor) != 8 or not floor.isdigit():
+    sys.stderr.write("live_date_floor missing or not YYYYMMDD\n")
+    sys.exit(2)
+sys.stdout.write(floor + "\n")
+PY
+}
+
+# Month 01-12 and day 01-31. This only chooses which below-floor run the
+# fatal line names. Every 8-digit window is still compared.
+_gt_yyyymmdd_plausible() {
+    [[ "$1" =~ ^[0-9]{4}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$ ]]
+}
+
+# Map every character whose Unicode digit value is 0-9, and every character
+# whose numeric value is an integer 0-9, onto ASCII 0-9. That includes
+# category Nd (U+FF10-U+FF19, mathematical monospace U+1D7F6-U+1D7FF),
+# category No superscripts and subscripts, Khmer lek attak (U+17F0 is zero),
+# and Medefaidrin digits (U+16E80 is zero). unicodedata.digit is tried first.
+# unicodedata.numeric is used only when digit() has no value and the numeric
+# value is an integer 0-9. A non-integer, such as vulgar fraction one half
+# (U+00BD, numeric 1/2), stays a non-digit. An integer outside 0-9 stays
+# unchanged, so a value such as ten is not split into two digits. LC_ALL=C
+# counts bytes, so the overlapping walk must see one byte per digit.
+# Characters with neither value are left unchanged, except category Nd, which
+# dies (it cannot be proven), and categories Mn, Mc, Me, Cf, Zs, Zl, Zp, Cc,
+# Cn, Co, and Cs, which are omitted so they cannot split an eight-digit
+# window.
+# U+1806, U+115F, U+1160, U+3164, U+FFA0, U+2800, and U+13441 are omitted the
+# same way, and so are U+13442 EGYPTIAN HIEROGLYPH HALF BLANK, U+13443
+# EGYPTIAN HIEROGLYPH LOST SIGN, U+13444 EGYPTIAN HIEROGLYPH HALF LOST SIGN,
+# U+13445 EGYPTIAN HIEROGLYPH TALL LOST SIGN, and U+13446 EGYPTIAN
+# HIEROGLYPH WIDE LOST SIGN. Category Lo is not omitted in general by this
+# change. Category Cs is omitted. Category Sk is not omitted. Category Pd
+# is not omitted in general. Category So is not omitted in general. A
+# hyphen-minus is U+002D and stays.
+# The bytes are passed through the environment so a C locale cannot decode
+# the leaf as ASCII and skip the fold.
+_gt_fold_digit_values() {
+    GT_FOLD_PART="$1" python3 - <<'PY'
+import os, sys, unicodedata
+raw = os.environb[b"GT_FOLD_PART"]
+text = raw.decode("utf-8", "surrogateescape")
+out = []
+for ch in text:
+    value = None
+    try:
+        value = unicodedata.digit(ch)
+    except (TypeError, ValueError):
+        value = None
+    if value is None:
+        try:
+            num = unicodedata.numeric(ch)
+        except (TypeError, ValueError):
+            num = None
+        if type(num) is int or (type(num) is float and num.is_integer()):
+            ivalue = int(num)
+            if 0 <= ivalue <= 9:
+                value = ivalue
+    if value is None:
+        cat = unicodedata.category(ch)
+        if cat == "Nd":
+            sys.stderr.write("Nd character has no digit value\n")
+            sys.exit(2)
+        # Mn, Mc, and Me (marks), Cf (format), Zs (space separator),
+        # Zl (line separator), Zp (paragraph separator), Cc (control),
+        # Cn (unassigned), Co (private use), and Cs (surrogate) must not
+        # split an 8-digit window. U+1806, U+115F, U+1160, U+3164, U+FFA0,
+        # U+2800, and U+13441 are omitted too, and so are U+13442 EGYPTIAN
+        # HIEROGLYPH HALF BLANK, U+13443 EGYPTIAN HIEROGLYPH LOST SIGN,
+        # U+13444 EGYPTIAN HIEROGLYPH HALF LOST SIGN, U+13445 EGYPTIAN
+        # HIEROGLYPH TALL LOST SIGN, and U+13446 EGYPTIAN HIEROGLYPH WIDE
+        # LOST SIGN. Category Lo is not omitted in general by this change.
+        # Category Cs is omitted. Category Sk is not omitted. Category Pd
+        # stays in general. Category So is not omitted in general.
+        # Hyphen-minus (U+002D) is kept. Category Cs is in this tuple.
+        # Category Sk is not in this tuple.
+        if cat in ("Mn", "Cf", "Mc", "Me", "Zs", "Zl", "Zp", "Cc", "Cn", "Co", "Cs"):
+            continue
+        if ord(ch) in (0x1806, 0x115F, 0x1160, 0x3164, 0xFFA0, 0x2800, 0x13441, 0x13442, 0x13443, 0x13444, 0x13445, 0x13446):
+            continue
+        out.append(ch)
+        continue
+    if type(value) is int and 0 <= value <= 9:
+        out.append(chr(48 + value))
+        continue
+    sys.stderr.write("digit value out of range\n")
+    sys.exit(2)
+sys.stdout.buffer.write("".join(out).encode("utf-8", "surrogateescape"))
+PY
+}
+
+# Refuse an unlisted path component when any 8-digit run is below the floor,
+# including overlapping starts. Call only after registry and marker checks: a
+# named stamp must already have died, and this opt-in must not resurrect it.
+# No 8 consecutive digits means a non-stamp path, which stays allowed.
+# Equal to the floor is allowed. The fatal line names the first plausible
+# YYYYMMDD below the floor when one exists, otherwise the first below-floor run.
+# The cited date is ASCII. Characters with a digit value 0-9, and characters
+# whose numeric value is an integer 0-9, are folded before the walk.
+# Categories Mn, Mc, Me, Cf, Zs, Zl, Zp, Cc, Cn, Co, and Cs are omitted on
+# that walk.
+# U+1806, U+115F, U+1160, U+3164, U+FFA0, U+2800, and U+13441 are omitted
+# too, and so are U+13442 EGYPTIAN HIEROGLYPH HALF BLANK, U+13443 EGYPTIAN
+# HIEROGLYPH LOST SIGN, U+13444 EGYPTIAN HIEROGLYPH HALF LOST SIGN,
+# U+13445 EGYPTIAN HIEROGLYPH TALL LOST SIGN, and U+13446 EGYPTIAN
+# HIEROGLYPH WIDE LOST SIGN. Category Lo is not omitted in general by this
+# change. Category Cs is omitted. Category Sk is not omitted. Category Pd
+# is not omitted in general. Category So is not omitted in general. A
+# hyphen-minus is kept.
+_gt_refuse_unlisted_below_floor() {
+    local path="$1"
+    local registry="$2"
+    local probe part folded dt floor="" i len window below="" named=""
+
+    probe="${path%/}"
+    while [[ -n "$probe" && "$probe" != "/" ]]; do
+        part="$(basename "$probe")"
+        folded="$(_gt_fold_digit_values "$part")" || die "$(printf 'REFUSING REMOTE_BUILD_DIR before any download or fastboot: path component '\''%s'\'' could not be folded to ASCII digits, so it cannot be proven at or above the floor. Path: %s' \
+            "$part" "$path")"
+        len=${#folded}
+        below=""
+        named=""
+        i=0
+        while (( i + 8 <= len )); do
+            window="${folded:i:8}"
+            if [[ "$window" =~ ^[0-9]{8}$ ]]; then
+                if [[ -z "$floor" ]]; then
+                    floor="$(_gt_registry_live_date_floor "$registry")" || die "$(printf 'REFUSING REMOTE_BUILD_DIR before any download or fastboot: quarantine registry '\''%s'\'' has no YYYYMMDD live_date_floor, so '\''%s'\'' cannot be proven at or above the floor. Path: %s' \
+                        "$registry" "$part" "$path")"
+                    [[ "$floor" =~ ^[0-9]{8}$ ]] || die "$(printf 'REFUSING REMOTE_BUILD_DIR before any download or fastboot: quarantine registry '\''%s'\'' has no YYYYMMDD live_date_floor, so '\''%s'\'' cannot be proven at or above the floor. Path: %s' \
+                        "$registry" "$part" "$path")"
+                fi
+                if [[ "10#$window" -lt "10#$floor" ]]; then
+                    if [[ -z "$below" ]]; then
+                        below="$window"
+                    fi
+                    if [[ -z "$named" ]] && _gt_yyyymmdd_plausible "$window"; then
+                        named="$window"
+                    fi
+                fi
+            fi
+            i=$((i + 1))
+        done
+        if [[ -n "$below" ]]; then
+            dt="$below"
+            if [[ -n "$named" ]]; then
+                dt="$named"
+            fi
+            if [[ "${GT_FLASH_ALLOW_HISTORICAL_BISECT:-}" == "1" ]]; then
+                warn "GT_FLASH_ALLOW_HISTORICAL_BISECT=1 — allowing unlisted stamp '$part' dated $dt below live_date_floor $floor (UNSAFE: historical bisect is not a current bundle). Path: $path"
+                return 0
+            fi
+            die "$(printf 'REFUSING REMOTE_BUILD_DIR before any download or fastboot: unlisted stamp '\''%s'\'' dated %s is below live_date_floor %s (registry %s). Reason: historical bundle is not a current flash target. Set GT_FLASH_ALLOW_HISTORICAL_BISECT=1 to opt in. Path: %s' \
+                "$part" "$dt" "$floor" "$registry" "$path")"
+        fi
+        probe="$(dirname "$probe")"
+    done
+}
+
+_gt_die_quarantine() {
+    # $1 entry, $2 class, $3 marker path, $4 registry, $5 floor, $6 reason, $7 path
+    die "$(printf 'REFUSING REMOTE_BUILD_DIR before any download or fastboot: quarantined registry entry '\''%s'\'' (class %s, marker %s, registry %s, live_date_floor %s). Reason: %s. Path: %s' \
+        "$1" "$2" "$3" "$4" "$5" "$6" "$7")"
+}
+
+_gt_refuse_build_dir_against_registry() {
+    local path="$1"
+    local registry="$2"
+    local quar hit kind entry class reason marker_rel floor
+    local part cand probe f marker_path readme note
+
+    path="${path%/}"
+    [[ -n "$path" ]] || die "REMOTE_BUILD_DIR is empty — refusing before download or fastboot"
+    quar="$(dirname "$registry")"
+
+    case "$path" in
+        */releases/desktop-flash/.quarantine|*/releases/desktop-flash/.quarantine/*)
+            die "$(printf 'REFUSING REMOTE_BUILD_DIR before any download or fastboot: path is listed under releases/desktop-flash/.quarantine/ (registry entry '\''%s'\'', registry %s). Reason: quarantine evidence is not a flashable bundle. Path: %s' \
+                "$(basename "$path")" "$registry" "$path")"
+            ;;
+    esac
+
+    if ! command -v python3 >/dev/null 2>&1; then
+        die "$(printf 'REFUSING REMOTE_BUILD_DIR before any download or fastboot: quarantine registry '\''%s'\'' could not be parsed. Reason: python3 is required to read registry.json and is not installed. Path: %s' \
+            "$registry" "$path")"
+    fi
+    hit="$(_gt_registry_match "$registry" "$path")" || die "$(printf 'REFUSING REMOTE_BUILD_DIR before any download or fastboot: quarantine registry '\''%s'\'' could not be parsed. Reason: registry unreadable. Path: %s' \
+        "$registry" "$path")"
+    if [[ -n "$hit" ]]; then
+        IFS=$'\x1f' read -r kind entry class reason marker_rel floor <<<"$hit"
+        marker_path="$quar/${marker_rel}"
+        _gt_die_quarantine "$entry" "${class:-UNCLASSIFIED}" "$marker_path" "$registry" "${floor:-unknown}" "${reason:-quarantined}" "$path"
+    fi
+
+    # Marker files are part of the registry. A row that exists only on disk
+    # still refuses, so a JSON miss cannot fail open.
+    probe="$path"
+    while [[ -n "$probe" && "$probe" != "/" ]]; do
+        part="$(basename "$probe")"
+        cand="$part"
+        [[ "$cand" == *.quarantined ]] && cand="${cand%.quarantined}"
+        if [[ "$cand" == *".quarantined-"* ]]; then
+            cand="${cand%%.quarantined-*}"
+        fi
+        if [[ -f "$quar/stamps/$cand.quarantined" ]]; then
+            class="$(sed -n 's/^class=//p' "$quar/stamps/$cand.quarantined" | head -1)"
+            reason="$(sed -n 's/^reason=//p' "$quar/stamps/$cand.quarantined" | head -1)"
+            _gt_die_quarantine "$cand" "${class:-UNCLASSIFIED}" "$quar/stamps/$cand.quarantined" "$registry" "unknown" "${reason:-quarantine marker}" "$path"
+        fi
+        if [[ -f "$quar/pointers/$cand.quarantined" ]]; then
+            class="$(sed -n 's/^class=//p' "$quar/pointers/$cand.quarantined" | head -1)"
+            reason="$(sed -n 's/^reason=//p' "$quar/pointers/$cand.quarantined" | head -1)"
+            [[ -n "$reason" ]] || reason="$(sed -n 's/^action=//p' "$quar/pointers/$cand.quarantined" | head -1)"
+            _gt_die_quarantine "$cand" "${class:-UNCLASSIFIED}" "$quar/pointers/$cand.quarantined" "$registry" "unknown" "${reason:-quarantined pointer}" "$path"
+        fi
+        f="$(grep -l -F "original_target=$cand" "$quar"/pointers/*.quarantined 2>/dev/null | head -1 || true)"
+        if [[ -n "$f" ]]; then
+            entry="$(basename "$f" .quarantined)"
+            class="$(sed -n 's/^class=//p' "$f" | head -1)"
+            reason="$(sed -n 's/^action=//p' "$f" | head -1)"
+            _gt_die_quarantine "$entry" "${class:-UNCLASSIFIED}" "$f" "$registry" "unknown" "${reason:-quarantined pointer original_target} (original_target $cand)" "$path"
+        fi
+        probe="$(dirname "$probe")"
+    done
+
+    if [[ -d "$path" && ! -L "$path" ]]; then
+        if [[ -f "$path/QUARANTINE-NOT-CURRENT.md" ]]; then
+            note="$(grep -m1 -i -E 'FIRST-FLASH|Class:' "$path/QUARANTINE-NOT-CURRENT.md" | sed 's/^[*[:space:]-]*//' || true)"
+            _gt_die_quarantine "$path/QUARANTINE-NOT-CURRENT.md" "FIRST_FLASH_RISK" "$path/QUARANTINE-NOT-CURRENT.md" "$registry" "unknown" "${note:-in-tree quarantine marker QUARANTINE-NOT-CURRENT.md}" "$path"
+        fi
+        readme="$path/README-FLASH-DESKTOP.md"
+        if [[ -f "$readme" ]] && grep -qiE 'FIRST-FLASH RISK.*UNRESOLVED' "$readme"; then
+            _gt_die_quarantine "$readme" "FIRST_FLASH_RISK" "$readme" "$registry" "unknown" "unresolved FIRST-FLASH RISK block in README-FLASH-DESKTOP.md" "$path"
+        fi
+    fi
+
+    # Registry hits and on-disk markers already died above. What remains is an
+    # unlisted path: refuse a YYYYMMDD below the registry floor before step 0.
+    _gt_refuse_unlisted_below_floor "$path" "$registry"
+}
+
+refuse_quarantined_remote_build_dir() {
+    local path="$1"
+    local registry resolved
+
+    if [[ "$path" == *$'\n'* || "$path" == *$'\r'* ]]; then
+        die "REMOTE_BUILD_DIR contains a newline — refusing before quarantine lookup, download, or fastboot"
+    fi
+    if [[ "${path//[\'\"\$\\]/}" != "$path" ]]; then
+        die "REMOTE_BUILD_DIR contains shell metacharacters (' \" \$ \\) — refusing before quarantine lookup, download, or fastboot"
+    fi
+
+    registry="$(_gt_locate_quarantine_registry)" || die "$(printf 'REFUSING REMOTE_BUILD_DIR before any download or fastboot: quarantine registry unreadable, so '\''%s'\'' cannot be proven non-quarantined. Reason: no releases/desktop-flash/.quarantine/registry.json under GT_STAMP_TREE, REMOTE_TREE, or this script'\''s parent directories. Path: %s' \
+        "$path" "$path")"
+    _gt_refuse_build_dir_against_registry "$path" "$registry"
+    if [[ -e "$path" || -L "$path" ]]; then
+        resolved="$(readlink -f -- "$path" 2>/dev/null || true)"
+        if [[ -n "$resolved" && "$resolved" != "${path%/}" ]]; then
+            _gt_refuse_build_dir_against_registry "$resolved" "$registry"
+        fi
+    fi
+    log "quarantine check: not quarantined: $path"
+}
+
 # Set REMOTE_BUILD_DIR / REMOTE_KEY_DIR from codename unless already set.
 apply_remote_paths() {
     local codename="$1"
@@ -442,6 +937,12 @@ apply_remote_paths() {
     fi
     if [[ "${REMOTE_BUILD_DIR//[\'\"\$\\]/}" != "$REMOTE_BUILD_DIR" ]]; then
         die "REMOTE_BUILD_DIR contains shell metacharacters (' \" \$ \\) — refusing ssh interpolation"
+    fi
+    # Quarantine registry / FIRST-FLASH-RISK / .quarantine/ — before ssh or download.
+    # Explicit overrides are also refused earlier, before any fastboot invocation.
+    if [[ "${GT_QUARANTINE_CHECKED_PATH:-}" != "$REMOTE_BUILD_DIR" ]]; then
+        refuse_quarantined_remote_build_dir "$REMOTE_BUILD_DIR"
+        GT_QUARANTINE_CHECKED_PATH="$REMOTE_BUILD_DIR"
     fi
     if [[ "$REMOTE_BUILD_DIR" != "${REMOTE_TREE}"/* && "$REMOTE_BUILD_DIR" != "$REMOTE_TREE" ]]; then
         warn "REMOTE_BUILD_DIR is not under REMOTE_TREE ($REMOTE_TREE) — check you did not lose the tree prefix"
@@ -833,6 +1334,23 @@ ensure_device_in_fastboot() {
     wait_for_fastboot "adb reboot bootloader" "$FASTBOOT_WAIT_SECS" \
         || die "Device did not enter fastboot after adb reboot bootloader (waited ${FASTBOOT_WAIT_SECS}s). Manual: vol-down + power, then re-run."
 }
+
+# -----------------------------------------------------------------------------
+# Quarantine gate before device detect. An explicit REMOTE_BUILD_DIR is known
+# now; refusing here is before fastboot, ssh, and scp. Auto <dev>-latest is
+# checked inside apply_remote_paths, still before download or a fastboot write.
+# GT_FLASH_QUARANTINE_CHECK_ONLY=1 stops after the check so a harness never
+# reaches a handset.
+# -----------------------------------------------------------------------------
+if [[ -n "${REMOTE_BUILD_DIR:-}" ]]; then
+    refuse_quarantined_remote_build_dir "$REMOTE_BUILD_DIR"
+    GT_QUARANTINE_CHECKED_PATH="$REMOTE_BUILD_DIR"
+fi
+if [[ "${GT_FLASH_QUARANTINE_CHECK_ONLY:-}" == "1" ]]; then
+    [[ -n "${REMOTE_BUILD_DIR:-}" ]] || die "GT_FLASH_QUARANTINE_CHECK_ONLY=1 requires REMOTE_BUILD_DIR (refusing to continue into fastboot)"
+    echo "PASS: REMOTE_BUILD_DIR is not refused by the quarantine check: $REMOTE_BUILD_DIR"
+    exit 0
+fi
 
 # -----------------------------------------------------------------------------
 # Step 0 — Sanity checks + device detect

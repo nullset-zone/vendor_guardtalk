@@ -45,10 +45,12 @@ to production-custody hardware. Serial under audit (`54111FDAS000GN`) stays
 **PASS HOLD** until a signed **user** image is rematched on-device
 (Q-REMEDIATE-B1-ONDEVICE).
 
-DEC-011 / DEC-018 debug-channel honesty (`DEBUG_FLASH_READY=true` for
-sidecar stamp `komodo-debug-20260918-180338` / `komodo-debug-latest`;
+DEC-011 debug-channel honesty (`DEBUG_FLASH_READY=false`;
 `USB_GO=false`; `FLASH_READY=false`; DEC-017 leftover SHA HOLD residual;
-do not retarget `komodo-latest`): `vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md`.
+do not retarget `komodo-latest`). Sidecar stamp
+`komodo-debug-20260918-180338` is not a ready claim.
+`komodo-debug-latest` is absent. See
+`vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md`.
 
 ## Rollback
 

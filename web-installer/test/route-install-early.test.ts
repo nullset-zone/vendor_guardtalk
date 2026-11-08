@@ -51,9 +51,18 @@ import {
   runImportFlow,
   runSignElsewhereFlow,
   signVbmetaStep,
+  assertReleaseFetchUrl,
+  fetchReleaseObjects,
+  getAllowedReleaseObject,
+  releaseFetchAllowed,
+  releaseObjectUrl,
   step3Decide,
   verifyRelease,
+  RELEASE_PACKAGE_NAME,
+  RELEASE_SIG_NAME,
+  RELEASE_SUMS_NAME,
 } from "../routes/install/early-steps.js";
+import { filesPickedRefusal } from "../routes/install/install-app.js";
 import { initialInstallState, reduce } from "../lib/install-state/machine.js";
 import type { InstallAction, InstallState } from "../lib/install-state/machine.js";
 import { STOP_REASONS } from "../lib/install-state/stops.js";
@@ -63,7 +72,7 @@ import type { KeyMaterial as SignerKeyMaterial } from "../lib/avb/signer.js";
 import { parseVbmeta, algorithmName } from "../lib/avb/parser.js";
 import { DESCRIPTOR_TAG_CHAIN, DESCRIPTOR_TAG_HASH } from "../lib/avb/descriptors.js";
 import { lintText } from "../lib/claims/lint-claims.js";
-import { INSTALLER_CSP } from "../lib/claims/csp.js";
+import { INSTALLER_CSP, RELEASE_FETCH_ORIGIN } from "../lib/claims/csp.js";
 import {
   ONION_ADDRESS_FACT,
   PARTITION_LAYOUT_FACT,
@@ -379,6 +388,8 @@ test("page shell carries the exact D-006 CSP meta and no inline script/style", (
     "utf8",
   );
   assert.ok(page.includes(INSTALLER_CSP), "page.html must embed the exact D-006 CSP");
+  assert.match(page, /Step 1 GETs three release objects from http:\/\/192\.168\.2\.220:9100/);
+  assert.doesNotMatch(page, /nothing is sent/i);
   assert.doesNotMatch(page, /\son[a-z]+\s*=/i);
   assert.doesNotMatch(page, /\sstyle\s*=/i);
   assert.doesNotMatch(page, /fetch\(|XMLHttpRequest|WebSocket/i);
@@ -508,7 +519,8 @@ test("step 3 refuses fingerprint-recorded until a flow is chosen", () => {
 
 test("step 0 renders posture pill, targets table, honesty blocks, custody sentences, CTA", () => {
   const html = renderStep0();
-  assert.match(html, /◢ offline · your key · alpha/);
+  assert.match(html, /◢ one-origin GET · your key · alpha/);
+  assert.match(html, /data-connectivity="one-origin GET"/);
   assert.deepEqual(
     SUPPORTED_TARGETS.map((t) => t.codename),
     ["tokay", "akita", "komodo", "rango"],
@@ -537,7 +549,9 @@ test("step 0 renders posture pill, targets table, honesty blocks, custody senten
   assert.match(html, /CLI export/);
   assert.match(html, /wipes the phone twice/);
   assert.ok(html.includes('/threat-model'));
-  assert.match(html, /makes no network request of any kind|No network request leaves this page/);
+  assert.match(html, /Nothing is uploaded/);
+  assert.ok(html.includes(RELEASE_FETCH_ORIGIN));
+  assert.doesNotMatch(html, /no network request of any kind/i);
   assert.ok(html.includes(ACK_CTA_LABEL));
   assert.match(html, /data-action="acknowledge-intro"/);
   // Key-custody explanation: exactly six sentences.
@@ -561,9 +575,10 @@ test("step 0 claim language passes the project linter", () => {
   assert.deepEqual(hits, [], hits.map((h) => `${h.rule}: ${h.excerpt}`).join("\n"));
 });
 
-test("posture pill text matches PLAN.md §5 exactly", () => {
-  assert.match(renderPostureHeader(), /◢ offline · your key · alpha/);
-  assert.equal(ALPHA_POSTURE_FLAGS.connectivity, "offline");
+test("posture pill states the one-origin GET", () => {
+  assert.match(renderPostureHeader(), /◢ one-origin GET · your key · alpha/);
+  assert.match(renderPostureHeader(), /data-connectivity="one-origin GET"/);
+  assert.equal(ALPHA_POSTURE_FLAGS.connectivity, "one-origin GET");
   assert.equal(ALPHA_POSTURE_FLAGS.custody, "your key");
 });
 
@@ -587,13 +602,197 @@ test("step 1 renders honest unavailable facts for the onion address and release 
   assert.ok(empty.includes("step 2"));
   // Blocking: each fact names what it gates.
   assert.ok(empty.includes("step 6"));
-  assert.match(empty, /No network request leaves this page/);
+  assert.match(empty, /The only network request is a GET from http:\/\/192\.168\.2\.220:9100/);
+  assert.match(empty, /data-action="fetch-release"/);
   assert.match(empty, /data-action="files-picked"[^>]*disabled/);
 
-  const ready = renderStep1({ package: true, sums: true, sig: true });
-  assert.match(ready, /data-action="files-picked">/);
+  // All three picks still leave both facts unpublished, so Continue stays disabled.
+  const picked = renderStep1({ package: true, sums: true, sig: true });
+  assert.ok(picked.includes(`data-unavailable="${ONION_ADDRESS_FACT.id}"`));
+  assert.ok(picked.includes(`data-unavailable="${RELEASE_FINGERPRINT_FACT.id}"`));
+  assert.equal((picked.match(/data-proceed="forbidden"/g) ?? []).length, 2);
+  assert.equal((picked.match(new RegExp(UNAVAILABLE_CHIP_WORD, "g")) ?? []).length, 2);
+  assert.match(picked, /data-action="files-picked"[^>]*disabled/);
+  assert.doesNotMatch(picked, /data-action="files-picked">/);
+
+  // Test double: clearing both facts enables Continue once the three files are picked.
+  const cleared = renderStep1(
+    { package: true, sums: true, sig: true },
+    { clearedFactIds: ["Q-04", "Q-05"] },
+  );
+  assert.doesNotMatch(cleared, /data-proceed="forbidden"/);
+  assert.match(cleared, /data-action="files-picked">/);
+  assert.doesNotMatch(cleared, /\.onion/i);
+  assert.doesNotMatch(cleared, /[A-Fa-f0-9]{32,}/);
+
+  // Either fact still forbidden keeps Continue disabled.
+  const onionStillForbidden = renderStep1(
+    { package: true, sums: true, sig: true },
+    { clearedFactIds: ["Q-04"] },
+  );
+  assert.match(onionStillForbidden, /data-unavailable="Q-05"[^>]*data-proceed="forbidden"/);
+  assert.match(onionStillForbidden, /data-action="files-picked"[^>]*disabled/);
+
+  const fingerprintStillForbidden = renderStep1(
+    { package: true, sums: true, sig: true },
+    { clearedFactIds: ["Q-05"] },
+  );
+  assert.match(fingerprintStillForbidden, /data-unavailable="Q-04"[^>]*data-proceed="forbidden"/);
+  assert.match(fingerprintStillForbidden, /data-action="files-picked"[^>]*disabled/);
+  assert.doesNotMatch(fingerprintStillForbidden, /data-action="files-picked">/);
+
+  // A missing file still disables Continue after the facts are cleared.
+  const missingSig = renderStep1(
+    { package: true, sums: true, sig: false },
+    { clearedFactIds: ["Q-04", "Q-05"] },
+  );
+  assert.match(missingSig, /data-action="files-picked"[^>]*disabled/);
+  assert.match(missingSig, /All three files must be picked before continuing/);
+
   assert.equal(filesReady({ package: true, sums: true, sig: true }), true);
   assert.equal(filesReady({ package: true, sums: true, sig: false }), false);
+});
+
+test("files-picked action refuses unpublished facts and a missing file", () => {
+  const step1 = driveTo(1);
+  assert.equal(step1.currentStep, 1);
+  const three = { package: true, sums: true, sig: true } as const;
+  const bothCleared = { clearedFactIds: ["Q-04", "Q-05"] } as const;
+
+  // Direct action, three picks, both facts still unpublished: do not advance.
+  const unpublished = filesPickedRefusal(three);
+  assert.equal(
+    unpublished,
+    "Continue stays disabled while the release onion address or the release-key fingerprint is unpublished.",
+  );
+  assert.doesNotMatch(unpublished ?? "", /\.onion/i);
+  assert.doesNotMatch(unpublished ?? "", /[A-Fa-f0-9]{32,}/);
+
+  // Same branch as the handler: a refusal returns before dispatch.
+  const afterAction = (
+    picks: { readonly package: boolean; readonly sums: boolean; readonly sig: boolean },
+    gate?: { readonly clearedFactIds: readonly ("Q-04" | "Q-05")[] },
+  ): number => {
+    const refusal = gate === undefined ? filesPickedRefusal(picks) : filesPickedRefusal(picks, gate);
+    if (refusal !== undefined) {
+      return step1.currentStep;
+    }
+    return reduce(step1, { type: "files-picked" }).currentStep;
+  };
+
+  assert.equal(afterAction(three), 1);
+  assert.equal(afterAction(three, { clearedFactIds: ["Q-04"] }), 1);
+  assert.equal(afterAction(three, { clearedFactIds: ["Q-05"] }), 1);
+
+  // Clearing both facts in the existing test double does advance.
+  assert.equal(filesPickedRefusal(three, bothCleared), undefined);
+  assert.equal(afterAction(three, bothCleared), 2);
+
+  // A missing file still does not advance, even after both facts are cleared.
+  const missing = filesPickedRefusal(
+    { package: true, sums: true, sig: false },
+    bothCleared,
+  );
+  assert.equal(missing, "All three release files must be picked.");
+  assert.equal(afterAction({ package: true, sums: true, sig: false }, bothCleared), 1);
+
+  // The live handler consults the same gate before it dispatches.
+  const source = readFileSync(
+    fileURLToPath(new URL("../routes/install/install-app.ts", import.meta.url)),
+    "utf8",
+  );
+  const start = source.indexOf('if (action === "files-picked")');
+  const end = source.indexOf('if (action === "verify-release")');
+  assert.ok(start >= 0 && end > start, "files-picked handler must exist");
+  const block = source.slice(start, end);
+  const refusalAt = block.indexOf("filesPickedRefusal(");
+  const dispatchAt = block.indexOf('dispatch({ type: "files-picked" })');
+  assert.ok(refusalAt >= 0, "handler must call filesPickedRefusal");
+  assert.ok(dispatchAt > refusalAt, "refusal must precede the advance");
+  assert.match(block.slice(refusalAt, dispatchAt), /return;/u);
+});
+
+test("step 1 GET fills the three slots from a stub and refuses any other origin", async () => {
+  const csp =
+    "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src http://192.168.2.220:9100";
+  assert.equal(INSTALLER_CSP, csp);
+  assert.equal(INSTALLER_CSP.includes("*"), false);
+  assert.equal(INSTALLER_CSP.split("connect-src ")[1], RELEASE_FETCH_ORIGIN);
+
+  const seen: string[] = [];
+  const slots = await fetchReleaseObjects(async (url) => {
+    seen.push(url);
+    assert.equal(releaseFetchAllowed(url), true, url);
+    assert.equal(new URL(url).origin, RELEASE_FETCH_ORIGIN);
+    if (url.endsWith(`/${RELEASE_PACKAGE_NAME}`)) {
+      return { ok: true, status: 200, arrayBuffer: async () => Uint8Array.of(1, 2, 3).buffer };
+    }
+    if (url.endsWith(`/${RELEASE_SIG_NAME}`)) {
+      return { ok: true, status: 200, arrayBuffer: async () => Uint8Array.of(9).buffer };
+    }
+    assert.equal(url, releaseObjectUrl(RELEASE_SUMS_NAME));
+    return {
+      ok: true,
+      status: 200,
+      arrayBuffer: async () => new TextEncoder().encode(`abc  ${RELEASE_PACKAGE_NAME}\n`).buffer,
+    };
+  });
+  assert.deepEqual(seen, [
+    releaseObjectUrl(RELEASE_PACKAGE_NAME),
+    releaseObjectUrl(RELEASE_SUMS_NAME),
+    releaseObjectUrl(RELEASE_SIG_NAME),
+  ]);
+  assert.deepEqual(slots.picks, { package: true, sums: true, sig: true });
+  assert.equal(slots.packageName, RELEASE_PACKAGE_NAME);
+  assert.deepEqual(slots.packageBytes, Uint8Array.of(1, 2, 3));
+  assert.equal(slots.sumsText, `abc  ${RELEASE_PACKAGE_NAME}\n`);
+  assert.deepEqual(slots.sigBytes, Uint8Array.of(9));
+  assert.equal(
+    filesPickedRefusal(slots.picks),
+    "Continue stays disabled while the release onion address or the release-key fingerprint is unpublished.",
+  );
+  assert.doesNotMatch(slots.sumsText, /\.onion/i);
+
+  const foreign = [
+    "https://192.168.2.220:9100/guardtalk-browser-test/tokay-20260928-084839/SHA256SUMS",
+    "http://192.168.2.221:9100/guardtalk-browser-test/tokay-20260928-084839/SHA256SUMS",
+    "http://192.168.2.220:9101/guardtalk-browser-test/tokay-20260928-084839/SHA256SUMS",
+    "http://evil.example/SHA256SUMS",
+    "http://192.168.2.220:9100/other-bucket/tokay-20260928-084839/SHA256SUMS",
+    "http://192.168.2.220:9100/*",
+    "http://192.168.2.220:9100/guardtalk-browser-test/tokay-20260928-084839/SHA256SUMS.sig.extra",
+  ];
+  for (const url of foreign) {
+    assert.equal(releaseFetchAllowed(url), false, url);
+    let calls = 0;
+    await assert.rejects(
+      () =>
+        getAllowedReleaseObject(url, async () => {
+          calls += 1;
+          return { ok: true, status: 200, arrayBuffer: async () => new ArrayBuffer(0) };
+        }),
+      /Refused fetch/,
+    );
+    assert.equal(calls, 0, url);
+    assert.throws(() => assertReleaseFetchUrl(url), /Refused fetch/);
+  }
+
+  const source = readFileSync(
+    fileURLToPath(new URL("../routes/install/install-app.ts", import.meta.url)),
+    "utf8",
+  );
+  const startFn = source.indexOf("function startReleaseFetch(");
+  const readBytesAt = source.indexOf("async function readBytes(");
+  assert.ok(startFn >= 0 && readBytesAt > startFn, "release fetch helpers must exist");
+  const loader = source.slice(startFn, readBytesAt);
+  assert.match(loader, /fetchReleaseObjects\(/);
+  assert.doesNotMatch(loader, /files-picked/);
+  assert.doesNotMatch(loader, /LIVE_FLASH_CLAIMED\s*=\s*true/);
+  const fetchAction = source.indexOf('if (action === "fetch-release")');
+  const filesAction = source.indexOf('if (action === "files-picked")');
+  assert.ok(fetchAction >= 0 && filesAction > fetchAction);
+  assert.match(source.slice(fetchAction, filesAction), /return;/u);
+  assert.doesNotMatch(source.slice(fetchAction, filesAction), /dispatch\(/);
 });
 
 // ---------------------------------------------------------------------------
