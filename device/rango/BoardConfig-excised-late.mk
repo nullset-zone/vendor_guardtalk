@@ -52,3 +52,6 @@ $(call gt-excision-validate-device-blocklist)
 # includes com.android.virt. Factory-boot stamps must drop
 # system/apex/com.android.virt.apex in stage-rango-release.sh (MODE=gtuserspace)
 # or apexd-bootstrap hits reboot_on_failure → bootloader (0xfc).
+
+# F-003: shared system_dlkm blocklist (wwan.ko + GKI BT/NFC .ko)
+BOARD_SYSTEM_KERNEL_MODULES_BLOCKLIST_FILE := vendor/guardtalk/feature-excised/system_dlkm.modules.blocklist

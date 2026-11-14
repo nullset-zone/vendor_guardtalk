@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
-import { ChannelError, WrongProductError } from "../src/errors.js";
-import { loadChannelFromTexts } from "../src/channel.js";
+import { ChannelError, HashMismatchError, WrongProductError } from "../src/errors.js";
+import { loadChannelFromTexts, verifyChannelAvbKey } from "../src/channel.js";
+import { loadChannelFromDir } from "../src/channel-fs.js";
 import { channelTextsFromBlobs, tokayBlobs } from "./helpers.js";
 
 test("loads matching manifest + SHA256SUMS + files.txt", () => {
@@ -104,10 +108,10 @@ test("shiba product in pointer-shaped channel is rejected", () => {
   );
 });
 
-test("caiman product in pointer-shaped channel is rejected", () => {
+test("tegu product in pointer-shaped channel is rejected", () => {
   const texts = channelTextsFromBlobs(tokayBlobs());
   const manifest = JSON.parse(texts.manifestJson) as { product: string };
-  manifest.product = "caiman";
+  manifest.product = "tegu";
   assert.throws(
     () =>
       loadChannelFromTexts({
@@ -116,4 +120,36 @@ test("caiman product in pointer-shaped channel is rejected", () => {
       }),
     WrongProductError,
   );
+});
+
+test("verifyChannelAvbKey and loadChannelFromDir fail closed on tampered or invalid avb_pkmd.bin", async () => {
+  const blobs = tokayBlobs();
+  const texts = channelTextsFromBlobs(blobs);
+  const bundle = loadChannelFromTexts(texts);
+  const realPkmd = readFileSync(
+    join(import.meta.dirname, "..", "channels", "tokay", "avb_pkmd.bin"),
+  );
+  const pkmdBlob = blobs.find((b) => b.name === "avb_pkmd.bin");
+  assert.ok(pkmdBlob);
+  // Real AVB pkmd with matching manifest passes; fixture synthetic blob fails decodePkmd
+  assert.throws(() => verifyChannelAvbKey(bundle, pkmdBlob.bytes), ChannelError);
+
+  const tmp = mkdtempSync(join(tmpdir(), "gt-chan-avb-"));
+  try {
+    const channelDir = join(import.meta.dirname, "..", "channels", "tokay");
+    writeFileSync(join(tmp, "manifest.json"), readFileSync(join(channelDir, "manifest.json")));
+    writeFileSync(join(tmp, "SHA256SUMS"), readFileSync(join(channelDir, "SHA256SUMS")));
+    writeFileSync(join(tmp, "files.txt"), readFileSync(join(channelDir, "files.txt")));
+    writeFileSync(join(tmp, "avb_pkmd.bin"), realPkmd);
+    const loaded = await loadChannelFromDir(tmp);
+    assert.equal(loaded.manifest.product, "tokay");
+
+    // Flip 1 byte in avb_pkmd.bin -> HashMismatchError
+    const tampered = Buffer.from(realPkmd);
+    tampered[0] = (tampered[0] ?? 0) ^ 0xff;
+    writeFileSync(join(tmp, "avb_pkmd.bin"), tampered);
+    await assert.rejects(() => loadChannelFromDir(tmp), HashMismatchError);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
 });

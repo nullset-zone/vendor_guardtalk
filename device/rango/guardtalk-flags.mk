@@ -2,6 +2,7 @@
 # Also pulled by vendor/guardtalk/radio-excised/guardtalk-radio-excised.mk via
 # -include vendor/guardtalk/device/$(PRODUCT_DEVICE)/guardtalk-flags.mk.
 GUARDTALK_RADIO_EXCISED := true
+GUARDTALK_DEVICE := rango
 # T-PORT-SHARED-CORE / T-BRAND-PROPS (minimal rebrand): only Build.MODEL is
 # overridden; *_FOR_ATTESTATION variants stay upstream so Play Integrity /
 # keymint attestation still matches the signed vendor image.

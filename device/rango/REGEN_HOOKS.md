@@ -22,11 +22,17 @@ include vendor/guardtalk/device/rango/guardtalk-insmod.mk
 
 # Kill memtag-common.mk async path defaults (bpfloader/netd/ip) — see guardtalk-memtag.mk
 include vendor/guardtalk/device/rango/guardtalk-memtag.mk
+
+# GuardTalkOS rango: restore EROFS APEX payloads on rango-cur-userdebug
+include vendor/guardtalk/device/rango/guardtalk-apex-erofs.mk
 ```
 
 ## Per-device notes
 
 - **SoC:** laguna (Pixel 10 Pro Fold). Not zumapro (tokay) or zuma (akita).
+- **adevtool baseline:** Canonical `16-qpr2` (`BP4A.260205.001` + `CP1A.260505.005` backport via `common/gen10pixel.yml`), NOT `build_id: CP1A.260505.005`.
+- **APEX payloads:** `vendor/guardtalk/device/rango/guardtalk-apex-erofs.mk` sets
+  `PRODUCT_DEFAULT_APEX_PAYLOAD_TYPE := erofs` (mirrors blazer).
 - **Blocklist:** `vendor/guardtalk/device/rango/vendor_dlkm.modules.blocklist`
   (laguna-kernels grapheneos/rango baseline + `blocklist nitrous.ko`). Do not
   reuse the tokay caimito file under `feature-excised/`.

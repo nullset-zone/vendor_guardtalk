@@ -21,7 +21,7 @@ import {
   runUpdateFlow,
   type UpdatePageModel,
 } from "../routes/update/update-route.js";
-import { INSTALLER_CSP } from "../lib/claims/csp.js";
+import { INSTALLER_CSP, RELEASE_FETCH_ORIGIN } from "../lib/claims/csp.js";
 import { initialInstallState, isHardStopped, reduce, serialize } from "../lib/install-state/machine.js";
 import { stepsForRoute } from "../lib/install-state/steps.js";
 import { STOP_REASONS } from "../lib/install-state/stops.js";
@@ -616,7 +616,8 @@ test("CSP sweep: no inline handlers, no style attributes, no remote references",
   for (const pattern of CSP_FORBIDDEN_ATTRS) {
     assert.doesNotMatch(html, pattern, `markup violates ${String(pattern)}`);
   }
-  assert.doesNotMatch(html, /https?:\/\//i);
+  const withoutAllowedOrigin = html.replaceAll(RELEASE_FETCH_ORIGIN, "");
+  assert.doesNotMatch(withoutAllowedOrigin, /https?:\/\//i);
   assert.match(html, new RegExp(INSTALLER_CSP));
   // No network sinks may exist anywhere in emitted markup:
   assert.doesNotMatch(html, /<script(?![^>]*src="\/)/);
@@ -648,4 +649,11 @@ test("claim lint over route copy: no push-channel phrasing, no auto-advance, no 
     skip: ["generate-in-update"],
   });
   assert.equal(hits.length, 0, `claim lint hits: ${hits.map((hit) => `${hit.rule}: ${hit.text}`).join("; ")}`);
+});
+
+test("update route step 5 includes OS-specific USB/udev/driver troubleshooting", () => {
+  const html = allStepsHtml();
+  assert.match(html, /data-guide="usb-troubleshooting"/);
+  assert.match(html, /18d1/);
+  assert.match(html, /Google USB Driver/);
 });

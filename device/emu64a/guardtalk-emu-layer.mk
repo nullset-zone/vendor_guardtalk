@@ -9,6 +9,11 @@ GUARDTALK_FACE_FILTER := true
 PRODUCT_COPY_FILES += \
     vendor/guardtalk/branding/GuardTalkOS_Brand_Assets/01_boot_animation/bootanimation.zip:$(TARGET_COPY_OUT_PRODUCT)/media/bootanimation.zip
 
+ifneq ($(wildcard vendor/guardtalk/branding/wallpapers/wallpaper_guardtalk_default.png),)
+PRODUCT_COPY_FILES += \
+    vendor/guardtalk/branding/wallpapers/wallpaper_guardtalk_default.png:system/etc/wallpaper_guardtalk_default.png
+endif
+
 # Framework + Settings overlays (telephony flag tweaks; safe on emulator)
 PRODUCT_PACKAGES += \
     GuardTalkFrameworksBaseOverlay \
@@ -21,6 +26,10 @@ PRODUCT_SOONG_NAMESPACES += \
 DEVICE_PACKAGE_OVERLAYS += \
     vendor/guardtalk/overlays/GuardTalkFrameworksBaseOverlay \
     vendor/guardtalk/overlays/GuardTalkSettingsOverlay
+
+# F-006: wire brand, SetupWizard, SystemUI, Launcher, and 5 icon RROs on emu64a
+include vendor/guardtalk/feature-excised/feature-overlays.mk
+include vendor/guardtalk/feature-excised/icon-overlays.mk
 
 $(call inherit-product-if-exists, vendor/guardtalk/device/tokay/guardtalk-audio.mk)
 $(call inherit-product-if-exists, vendor/guardtalk/device/tokay/guardtalk-camera.mk)

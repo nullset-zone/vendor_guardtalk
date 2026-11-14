@@ -1,0 +1,46 @@
+{
+  "schema": "gt-stamp-quarantine/v1",
+  "card": "T-EXCISE-STAMP-TREE-QUARANTINE",
+  "owner": "Backend Engineer (Panel 2)",
+  "tree": "releases/desktop-flash",
+  "live_date_floor": "20260928",
+  "enforced_by": "scripts/gt-resolve-stamp.sh",
+  "boot_verified": false,
+  "live_pointers": [
+    "akita-latest", "blazer-latest", "caiman-latest", "comet-latest",
+    "frankel-latest", "husky-latest", "komodo-latest", "mustang-latest",
+    "rango-latest", "shiba-latest", "stallion-latest", "tegu-latest",
+    "tokay-latest"
+  ],
+  "quarantined_stamps": [
+    { "stamp": "blazer-20260923-034646",  "class": "FIRST_FLASH_RISK", "reason": "unresolved FIRST-FLASH RISK (EARLY_VM/apexd 0xfc); pre-2026-09-28 superseded", "in_tree_marker": "QUARANTINE-NOT-CURRENT.md" },
+    { "stamp": "blazer-20260923-090842",  "class": "FIRST_FLASH_RISK", "reason": "unresolved FIRST-FLASH RISK; pre-2026-09-28 superseded", "in_tree_marker": "QUARANTINE-NOT-CURRENT.md" },
+    { "stamp": "frankel-20260923-094457", "class": "FIRST_FLASH_RISK", "reason": "unresolved FIRST-FLASH RISK; pre-2026-09-28 superseded", "in_tree_marker": "QUARANTINE-NOT-CURRENT.md" },
+    { "stamp": "mustang-20260923-094541", "class": "FIRST_FLASH_RISK", "reason": "unresolved FIRST-FLASH RISK; pre-2026-09-28 superseded", "in_tree_marker": "QUARANTINE-NOT-CURRENT.md" },
+    { "stamp": "mustang-20260923-101119", "class": "FIRST_FLASH_RISK", "reason": "unresolved FIRST-FLASH RISK; pre-2026-09-28 superseded", "in_tree_marker": "QUARANTINE-NOT-CURRENT.md" }
+  ],
+  "quarantined_pointers": [
+    {
+      "pointer": "latest",
+      "original_target": "tokay-20260725-102506",
+      "class": "STALE",
+      "dated": "20260725",
+      "reason": "legacy tokay alias pointing at the July stamp; the 2026-09-28 re-stamp did not re-point it",
+      "action": "physical quarantine (renamed); live re-point handed to T-EXCISE-TOKAY-LATEST-REPOINT",
+      "owner_card": "T-EXCISE-TOKAY-LATEST-REPOINT"
+    },
+    {
+      "pointer": "komodo-debug-latest",
+      "original_target": "komodo-debug-20260921-041838",
+      "class": "STALE",
+      "dated": "20260921",
+      "reason": "debug-lane alias pointing at a 2026-09-21 stamp",
+      "action": "physical quarantine (renamed)",
+      "owner_card": "T-EXCISE-STAMP-TREE-QUARANTINE",
+      "live_consumers": [
+        "scripts/flash-komodo-debug-mac.sh:43 (REMOTE_STAMP default) -> now fails closed at :103"
+      ],
+      "consumer_note": "No bundle deleted; the flasher accepts an explicit REMOTE_STAMP=<path> override. Repointing the default is out of this card's scope."
+    }
+  ]
+}

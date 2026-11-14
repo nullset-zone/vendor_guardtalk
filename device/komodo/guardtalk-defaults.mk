@@ -14,10 +14,8 @@
 # Settings.Global.Wearable.bug_report is 0 on user via Build.TYPE; the
 # persist.sys.bug_report=0 marker is the product-visible default.
 
-PRODUCT_PACKAGES += GuardTalkSettingsProviderOverlay
-
-PRODUCT_SOONG_NAMESPACES += \
-    vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay
+# GuardTalkSettingsProviderOverlay is wired globally in
+# vendor/guardtalk/feature-excised/guardtalk-feature-excised.mk (BUG-SET-02).
 
 PRODUCT_COPY_FILES += \
     vendor/guardtalk/device/komodo/init.guardtalk.defaults.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/init.guardtalk.defaults.rc

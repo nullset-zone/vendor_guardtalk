@@ -192,15 +192,18 @@ test("PICKER-TRUTH: (c) each chip word is exactly the status.json fact, and komo
       assert.notEqual(statusJsonChipWord(product), "EXPERIMENTAL");
     }
   }
-  // The exact komodo adjudication this card records (D-029).
-  assert.equal(statusJsonFact("komodo"), "absent-from-status-json");
-  assert.equal(statusJsonChipWord("komodo"), "NOT IN status.json");
-  assert.equal(hasPackedChannel("komodo"), true, "komodo IS packed; the gap is product-facts only");
+  // komodo is now a status.json target; shiba remains absent from status.json.
+  assert.equal(statusJsonFact("komodo"), "target");
+  assert.equal(statusJsonChipWord("komodo"), "TARGET");
+  assert.equal(hasPackedChannel("komodo"), true, "komodo IS packed");
+  assert.equal(statusJsonFact("shiba"), "absent-from-status-json");
+  assert.equal(statusJsonChipWord("shiba"), "NOT IN status.json");
 });
 
-test("PICKER-TRUTH: (c) the rendered table shows the status.json chip, including komodo's absence", () => {
+test("PICKER-TRUTH: (c) the rendered table shows the status.json chip for every offered product", () => {
   const html = renderStep0("tokay");
-  assert.ok(html.includes("NOT IN status.json"), "komodo's absence must be visible in the table");
+  assert.ok(html.includes("TARGET"), "TARGET chip must be visible in the table");
+  assert.ok(html.includes("EXPERIMENTAL"), "EXPERIMENTAL chip must be visible in the table");
   for (const product of ALLOWED_PRODUCTS) {
     const row = rowFor(html, product);
     assert.match(row, new RegExp(`data-status-json="${statusJsonFact(product)}"`), `${product} status-json fact`);

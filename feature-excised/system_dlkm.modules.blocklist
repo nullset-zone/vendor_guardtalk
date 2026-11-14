@@ -1,0 +1,24 @@
+# GuardTalkOS — shared system_dlkm kernel module blocklist (F-003).
+#
+# Wired via BOARD_SYSTEM_KERNEL_MODULES_BLOCKLIST_FILE in each device's
+# BoardConfig-excised-late.mk so it overrides upstream/adevtool
+# system_dlkm.modules.blocklist (including tangorpro where upstream was empty
+# and laguna CP1A where wwan.ko / GKI BT/NFC modules were unblocklisted).
+#
+# rfkill.ko is intentionally NOT blocklisted — it is shared with Wi-Fi.
+
+# usbmon will be loaded on demand for debug purpose only
+blocklist usbmon.ko
+
+# Modem / WWAN GKI driver (F-003: unblocklisted 14/14 in prior stamps)
+blocklist wwan.ko
+
+# GKI Bluetooth / NFC transport stack (F-003: unblocklisted on laguna & tangorpro)
+blocklist bluetooth.ko
+blocklist hci_uart.ko
+blocklist btbcm.ko
+blocklist btqca.ko
+blocklist btsdio.ko
+blocklist rfcomm.ko
+blocklist hidp.ko
+blocklist nfc.ko

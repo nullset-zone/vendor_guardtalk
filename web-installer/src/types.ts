@@ -64,6 +64,7 @@ export interface ChannelBundle {
 
 export interface ArtifactStore {
   read(name: string): Promise<Uint8Array>;
+  readStream?(name: string): Promise<ReadableStream<Uint8Array>>;
 }
 
 export type ReconnectHook = () => Promise<void>;
@@ -91,11 +92,17 @@ export interface FastbootTransport {
     options?: FlashOptions,
   ): Promise<void>;
   rebootBootloader(onReconnect: ReconnectHook): Promise<void>;
+  rebootFastboot?(onReconnect: ReconnectHook): Promise<void>;
+  wipeSuper?(data: Uint8Array): Promise<void>;
+  close?(): Promise<void>;
 }
 
 export function isDryRunTransport(transport: FastbootTransport): boolean {
   return transport.dryRun === true;
 }
+
+export type BootChainMode = "gt" | "hybrid";
+export type SuperMode = "super" | "super_empty" | "direct";
 
 export type PlanStep =
   | {
@@ -107,12 +114,17 @@ export type PlanStep =
     }
   | { kind: "erase"; phase: FlashOrderPhase; partition: string }
   | { kind: "command"; phase: FlashOrderPhase; command: string }
+  | { kind: "wipe-super"; phase: FlashOrderPhase; artifact: string; reason: string }
+  | { kind: "reboot-fastboot"; phase: FlashOrderPhase; reason: string }
   | { kind: "reconnect"; phase: FlashOrderPhase; reason: string };
 
 export interface FlashPlan {
-  product: AllowedProduct;
+  product: string;
   flashOrder: readonly FlashOrderPhase[];
   steps: PlanStep[];
+  bootChain?: BootChainMode;
+  superMode?: SuperMode;
+  bootloaderDualSlot?: boolean;
 }
 
 /** Host/unit tests never perform or claim a live device flash. */

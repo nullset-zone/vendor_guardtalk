@@ -42,14 +42,18 @@ require_file() {
 }
 require_rg() {
   local pat="$1" file="$2" label="${3:-$1}"
-  if [[ -f "$file" ]] && rg -q -- "$pat" "$file"; then pass "$label"
+  if [[ -f "$file" ]] && grep -qE -- "$pat" "$file"; then pass "$label"
   else fail "$label (pattern '$pat' missing in $file)"; fi
 }
 forbid_rg() {
   local pat="$1" file="$2" label="${3:-$1}"
   if [[ ! -f "$file" ]]; then fail "$label (file missing: $file)"; return; fi
-  if rg -q -- "$pat" "$file"; then fail "$label (forbidden pattern '$pat' present in $file)"
-  else pass "$label"; fi
+  if grep -qE -- "$pat" "$file"; then fail "$label (forbidden pattern '$pat' present in $file)"
+  else
+    local rc=$?
+    if [[ "$rc" -ge 2 ]]; then fail "$label (grep error rc=$rc on $file)"
+    else pass "$label"; fi
+  fi
 }
 
 REGISTRY="vendor/guardtalk/feature-excised/excision-variants.mk"
@@ -122,7 +126,7 @@ RESOLVED="$TMP/resolved.txt"
 for row in "${EXPECTED[@]}"; do
   dev="${row%%|*}"; want="${row#*|}"
   out="$(make -s -f "$PROBE" GUARDTALK_DEVICE="$dev" TARGET_BOARD_PLATFORM="$(soc_of "$dev")" 2>&1 || true)"
-  line="$(printf '%s\n' "$out" | rg '^GTQ\|' | head -1 || true)"
+  line="$(printf '%s\n' "$out" | grep -E '^GTQ\|' | head -1 || true)"
   printf '%s\n' "$line" >> "$RESOLVED"
   if [[ -z "$line" ]]; then
     fail "resolve $dev produced no GTQ row (make output: $(printf '%s' "$out" | tail -1))"
@@ -135,7 +139,7 @@ for row in "${EXPECTED[@]}"; do
     fail "resolve $dev → '$got' expected '$want'"
   fi
 done
-n_resolved="$(rg -c '^GTQ\|' "$RESOLVED" || true)"
+n_resolved="$(grep -cE '^GTQ\|' "$RESOLVED" || true)"
 if [[ "${n_resolved:-0}" == "13" ]]; then
   pass "13/13 program devices resolved from registry data"
 else
@@ -155,33 +159,33 @@ forbid_rg '^blocklist bcmdhd4390$' \
   device/google/akita-kernels/6.1/grapheneos/vendor_dlkm.modules.blocklist \
   "upstream akita tree does NOT blocklist bcmdhd4390"
 
-akita_row="$(rg '^GTQ\|akita\|' "$RESOLVED" || true)"
-komodo_row="$(rg '^GTQ\|komodo\|' "$RESOLVED" || true)"
-tokay_row="$(rg '^GTQ\|tokay\|' "$RESOLVED" || true)"
+akita_row="$(grep -E '^GTQ\|akita\|' "$RESOLVED" || true)"
+komodo_row="$(grep -E '^GTQ\|komodo\|' "$RESOLVED" || true)"
+tokay_row="$(grep -E '^GTQ\|tokay\|' "$RESOLVED" || true)"
 akita_blk="$(printf '%s' "$akita_row" | cut -d'|' -f10)"
 komodo_blk="$(printf '%s' "$komodo_row" | cut -d'|' -f10)"
 tokay_blk="$(printf '%s' "$tokay_row" | cut -d'|' -f10)"
 
 # The resolved payload must carry the variant's Wi-Fi token and must NOT carry
 # the other SoC's token — proven against the file the resolver actually returned.
-if tokens "$akita_blk" | rg -qx 'bcmdhd4383'; then
+if tokens "$akita_blk" | grep -qxF 'bcmdhd4383'; then
   pass "akita resolved blocklist carries bcmdhd4383 ($akita_blk)"
 else
   fail "akita resolved blocklist $akita_blk missing bcmdhd4383"
 fi
-if tokens "$akita_blk" | rg -qx 'bcmdhd4390'; then
+if tokens "$akita_blk" | grep -qxF 'bcmdhd4390'; then
   fail "akita resolved blocklist $akita_blk wrongly carries bcmdhd4390"
 else
   pass "akita resolved blocklist omits bcmdhd4390"
 fi
 for d in tokay komodo; do
   if [[ $d == tokay ]]; then blk="$tokay_blk"; else blk="$komodo_blk"; fi
-  if tokens "$blk" | rg -qx 'bcmdhd4390'; then
+  if tokens "$blk" | grep -qxF 'bcmdhd4390'; then
     pass "$d resolved blocklist carries bcmdhd4390 ($blk)"
   else
     fail "$d resolved blocklist $blk missing bcmdhd4390"
   fi
-  if tokens "$blk" | rg -qx 'bcmdhd4383'; then
+  if tokens "$blk" | grep -qxF 'bcmdhd4383'; then
     fail "$d resolved blocklist $blk wrongly carries bcmdhd4383"
   else
     pass "$d resolved blocklist omits bcmdhd4383"
@@ -194,10 +198,10 @@ qfp_devs="tokay caiman komodo frankel blazer mustang"
 goodix_devs="shiba husky akita comet tegu stallion rango"
 for d in $qfp_devs; do
   skel="vendor/adevtool/vendor-skels/google_devices/$d/$d.mk"
-  row="$(rg "^GTQ\\|$d\\|" "$RESOLVED" || true)"
+  row="$(grep -E "^GTQ\\|$d\\|" "$RESOLVED" || true)"
   reg_fp="$(printf '%s' "$row" | cut -d'|' -f8)"
-  if [[ -f "$skel" ]] && rg -q 'fingerprint-ext-V2-ndk' "$skel" \
-     && ! rg -q 'fingerprint-service\.goodix' "$skel"; then
+  if [[ -f "$skel" ]] && grep -qE 'fingerprint-ext-V2-ndk' "$skel" \
+     && ! grep -qE 'fingerprint-service\.goodix' "$skel"; then
     pass "vendor-skel $d = QFP (upstream fingerprint truth)"
   else
     fail "vendor-skel $d does not look QFP ($skel)"
@@ -210,9 +214,9 @@ for d in $qfp_devs; do
 done
 for d in $goodix_devs; do
   skel="vendor/adevtool/vendor-skels/google_devices/$d/$d.mk"
-  row="$(rg "^GTQ\\|$d\\|" "$RESOLVED" || true)"
+  row="$(grep -E "^GTQ\\|$d\\|" "$RESOLVED" || true)"
   reg_fp="$(printf '%s' "$row" | cut -d'|' -f8)"
-  if [[ -f "$skel" ]] && rg -q 'goodix' "$skel"; then
+  if [[ -f "$skel" ]] && grep -qE 'goodix' "$skel"; then
     pass "vendor-skel $d = Goodix (upstream fingerprint truth)"
   else
     fail "vendor-skel $d does not look Goodix ($skel)"
@@ -238,9 +242,9 @@ EOF
 
 for dev in akita tokay komodo rango; do
   out="$(make -s -f "$BOARD_PROBE" GTB_DEV="$dev" 2>&1 || true)"
-  line="$(printf '%s\n' "$out" | rg '^GTB\|' | head -1 || true)"
+  line="$(printf '%s\n' "$out" | grep -E '^GTB\|' | head -1 || true)"
   if [[ -z "$line" ]]; then
-    fail "board dry run $dev produced no resolution ($(printf '%s' "$out" | rg '\*\*\*' | head -1))"
+    fail "board dry run $dev produced no resolution ($(printf '%s' "$out" | grep -E '\*\*\*' | head -1))"
     continue
   fi
   blk="$(printf '%s' "$line" | cut -d'|' -f3)"
@@ -250,10 +254,10 @@ for dev in akita tokay komodo rango; do
   if [[ -f "$blk" ]]; then pass "  $dev blocklist file exists"; else fail "  $dev blocklist missing: $blk"; fi
   if [[ "$abp" == "boot system vendor" ]]; then pass "  $dev modem filtered out of AB_OTA_PARTITIONS ($abp)"
   else fail "  $dev AB_OTA_PARTITIONS unexpected: '$abp'"; fi
-  if printf '%s' "$cmd" | rg -q 'androidboot\.radio\.disabled=1'; then pass "  $dev cmdline has androidboot.radio.disabled=1"
+  if printf '%s' "$cmd" | grep -qE 'androidboot\.radio\.disabled=1'; then pass "  $dev cmdline has androidboot.radio.disabled=1"
   else fail "  $dev cmdline missing radio.disabled=1 ('$cmd')"; fi
-  if ! printf '%s' "$out" | rg -q '\*\*\*|Stop\.'; then pass "  $dev gt-excision-validate-device-blocklist PASS"
-  else fail "  $dev validate errored: $(printf '%s' "$out" | rg '\*\*\*' | head -1)"; fi
+  if ! printf '%s' "$out" | grep -qE '\*\*\*|Stop\.'; then pass "  $dev gt-excision-validate-device-blocklist PASS"
+  else fail "  $dev validate errored: $(printf '%s' "$out" | grep -E '\*\*\*' | head -1)"; fi
 done
 
 echo "=== T-PORT-EXCISION-MATRIX case5: zero-regression — resolved blocklist == pre-card path ==="
@@ -267,7 +271,7 @@ declare -A PRE_CARD_BLOCKLIST=(
 )
 for dev in akita tokay komodo rango; do
   out="$(make -s -f "$BOARD_PROBE" GTB_DEV="$dev" 2>&1 || true)"
-  got="$(printf '%s\n' "$out" | rg '^GTB\|' | head -1 | cut -d'|' -f3)"
+  got="$(printf '%s\n' "$out" | grep -E '^GTB\|' | head -1 | cut -d'|' -f3)"
   want="${PRE_CARD_BLOCKLIST[$dev]}"
   if [[ "$got" == "$want" ]]; then
     pass "$dev resolved blocklist path identical to pre-card ($got)"
@@ -324,14 +328,14 @@ else
 fi
 fp_leak=0
 for tok in biometrics.fingerprint fingerprint.prebuilt qfp-daemon goodixfingerprint goodix_sfps goodixbinderservice dump_fingerprint; do
-  if printf '%s' "$pkgs" | rg -q -- "$tok"; then
+  if printf '%s' "$pkgs" | grep -qE -- "$tok"; then
     fail "fp filter LEAKED package token '$tok'"
     fp_leak=1
   fi
 done
 [[ "$fp_leak" == "0" ]] && pass "all fingerprint packages dropped from PRODUCT_PACKAGES"
 for keep in com.android.hardware.biometrics.face.virtual android.hardware.biometrics.common-V3-ndk.vendor TrichromeWebView SomeUnrelatedPkg; do
-  if printf '%s' "$pkgs" | rg -q -F -- "$keep"; then pass "  preserved: $keep"
+  if printf '%s' "$pkgs" | grep -qF -- "$keep"; then pass "  preserved: $keep"
   else fail "  wrongly dropped: $keep"; fi
 done
 if [[ -z "$copies" ]]; then pass "fingerprint init .rc copy-files dropped"
@@ -348,10 +352,10 @@ GTST_FP_DONE:
 	@:
 EOF
 st_out="$(make -s -f "$STANDALONE" 2>&1 || true)"
-if printf '%s' "$st_out" | rg -q '^GTST\|13\|com\.android\.hardware\.biometrics\.face\.virtual$'; then
+if printf '%s' "$st_out" | grep -qE '^GTST\|13\|com\.android\.hardware\.biometrics\.face\.virtual$'; then
   pass "standalone fp-excised include falls back to the 13-token baseline"
 else
-  fail "standalone fp-excised baseline wrong: $(printf '%s' "$st_out" | rg '^GTST' | head -1)"
+  fail "standalone fp-excised baseline wrong: $(printf '%s' "$st_out" | grep -E '^GTST' | head -1)"
 fi
 
 echo "=== T-PORT-EXCISION-MATRIX case7: NEGATIVE — no silent no-op anywhere ==="
@@ -365,10 +369,10 @@ neg_case() { # <name> <must-match-regex> <expected-exit-nonzero> <make args...>
     fail "NEG $name: exited 0 (SILENT NO-OP — must fail loudly)"
     return
   fi
-  if printf '%s' "$out" | rg -q -- "$want"; then
-    pass "NEG $name: failed loudly (exit $rc) — $(printf '%s' "$out" | rg -o -- "$want" | head -1)"
+  if printf '%s' "$out" | grep -qE -- "$want"; then
+    pass "NEG $name: failed loudly (exit $rc) — $(printf '%s' "$out" | grep -oE -- "$want" | head -1)"
   else
-    fail "NEG $name: failed but message did not match /$want/ (got: $(printf '%s' "$out" | rg '\*\*\*' | head -1))"
+    fail "NEG $name: failed but message did not match /$want/ (got: $(printf '%s' "$out" | grep -E '\*\*\*' | head -1))"
   fi
 }
 
@@ -405,11 +409,11 @@ neg_path() { # <name> <want-regex> <board-path>
   out="$(make -s -f "$DRIFT_A" GTB_BLK="$blk" 2>&1 || true)"
   make -s -f "$DRIFT_A" GTB_BLK="$blk" >/dev/null 2>&1 || rc=$?
   if [[ "$rc" -eq 0 ]]; then fail "NEG $name: exited 0 (silent blocklist drift accepted)"; return; fi
-  if printf '%s' "$out" | rg -q 'GTDRIFT_REACHED'; then fail "NEG $name: validate did not abort"; return; fi
-  if printf '%s' "$out" | rg -q -- "$want"; then
+  if printf '%s' "$out" | grep -qE 'GTDRIFT_REACHED'; then fail "NEG $name: validate did not abort"; return; fi
+  if printf '%s' "$out" | grep -qE -- "$want"; then
     pass "NEG $name: failed loudly (exit $rc)"
   else
-    fail "NEG $name: wrong error (got: $(printf '%s' "$out" | rg '\*\*\*' | head -1))"
+    fail "NEG $name: wrong error (got: $(printf '%s' "$out" | grep -E '\*\*\*' | head -1))"
   fi
 }
 neg_path "blocklist-pin-not-variant-file" "resolves to" \
@@ -437,11 +441,11 @@ neg_tokens() { # <name> <want-regex> <pin-path>
   out="$(make -s -f "$DRIFT_B" GTB_PIN="$pin" 2>&1 || true)"
   make -s -f "$DRIFT_B" GTB_PIN="$pin" >/dev/null 2>&1 || rc=$?
   if [[ "$rc" -eq 0 ]]; then fail "NEG $name: exited 0 (silent token drift accepted)"; return; fi
-  if printf '%s' "$out" | rg -q 'GTDRIFT_REACHED'; then fail "NEG $name: validate did not abort"; return; fi
-  if printf '%s' "$out" | rg -q -- "$want"; then
+  if printf '%s' "$out" | grep -qE 'GTDRIFT_REACHED'; then fail "NEG $name: validate did not abort"; return; fi
+  if printf '%s' "$out" | grep -qE -- "$want"; then
     pass "NEG $name: failed loudly (exit $rc)"
   else
-    fail "NEG $name: wrong error (got: $(printf '%s' "$out" | rg '\*\*\*' | head -1))"
+    fail "NEG $name: wrong error (got: $(printf '%s' "$out" | grep -E '\*\*\*' | head -1))"
   fi
 }
 tokens vendor/guardtalk/device/komodo/vendor_dlkm.modules.blocklist \
@@ -464,8 +468,8 @@ GTNARROW_NARROW_DONE:
 EOF
 n_out="$(make -s -f "$NARROW" 2>&1 || true)"
 n_rc=0; make -s -f "$NARROW" >/dev/null 2>&1 || n_rc=$?
-if [[ "$n_rc" -ne 0 ]] && printf '%s' "$n_out" | rg -q 'missing baseline token\(s\)' \
-   && ! printf '%s' "$n_out" | rg -q 'GTNARROW_REACHED'; then
+if [[ "$n_rc" -ne 0 ]] && printf '%s' "$n_out" | grep -qE 'missing baseline token\(s\)' \
+   && ! printf '%s' "$n_out" | grep -qE 'GTNARROW_REACHED'; then
   pass "NEG fp-registry-narrowed: failed loudly (exit $n_rc) — refuses to narrow the excision"
 else
   fail "NEG fp-registry-narrowed: did not abort (exit $n_rc)"
@@ -477,7 +481,7 @@ echo "=== T-PORT-EXCISION-MATRIX case8: Gen 6/7 codenames absent (out of program
 # deliberately NOT in this forbidden set. The other 7 Gen 6/7 codenames remain
 # guarded — do not remove them (non-vacuity is proven with a negative control).
 for forbidden in oriole raven bluejay panther cheetah lynx felix; do
-  if rg -q "^GT_DEVICE_VARIANT_${forbidden}[[:space:]]*:=" "$REGISTRY"; then
+  if grep -qE "^GT_DEVICE_VARIANT_${forbidden}[[:space:]]*:=" "$REGISTRY"; then
     fail "Gen 6/7 codename '$forbidden' registered (out of scope, forbidden)"
   else
     pass "Gen 6/7 codename '$forbidden' absent from registry"

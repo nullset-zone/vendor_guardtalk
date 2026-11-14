@@ -94,9 +94,22 @@ export function packedChannelFor(product) {
   };
 }
 
-/** Every allowlisted product, with its packed state. Derived, never listed twice. */
+/** Every allowlisted or on-disk channel product, with its packed state. Derived, never listed twice. */
 export function buildPackedChannels() {
-  return readAllowedProducts().map((product) => ({
+  const allowed = readAllowedProducts();
+  const onDisk = existsSync(CHANNELS_ROOT)
+    ? readdirSync(CHANNELS_ROOT, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name)
+        .sort()
+    : [];
+  const products = [...allowed];
+  for (const name of onDisk) {
+    if (!products.includes(name)) {
+      products.push(name);
+    }
+  }
+  return products.map((product) => ({
     product,
     ...(packedChannelFor(product) ?? {
       packed: false,

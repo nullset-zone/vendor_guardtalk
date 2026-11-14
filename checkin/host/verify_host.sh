@@ -43,17 +43,17 @@ require_file "$LATE"
 
 echo
 echo "--- 12 h interval ---"
-if rg -q 'INTERVAL_S = 12 \* 60 \* 60' "$CONST"; then
+if grep -Eq 'INTERVAL_S = 12 \* 60 \* 60' "$CONST"; then
   pass "Kotlin INTERVAL_S is 12 hours"
 else
   fail "Kotlin INTERVAL_S not 12 hours"
 fi
-if rg -q 'INTERVAL_S = 12 \* 60 \* 60' "$CHK/host/checkin_contract.py"; then
+if grep -Eq 'INTERVAL_S = 12 \* 60 \* 60' "$CHK/host/checkin_contract.py"; then
   pass "Python INTERVAL_S is 12 hours"
 else
   fail "Python INTERVAL_S not 12 hours"
 fi
-if rg -qF '"interval_s": { "const": 43200 }' "$CHK/payload.schema.json"; then
+if grep -Fq '"interval_s": { "const": 43200 }' "$CHK/payload.schema.json"; then
   pass "schema interval_s const 43200"
 else
   fail "schema interval_s missing 43200"
@@ -61,7 +61,7 @@ fi
 
 echo
 echo "--- no public C2 / no secrets ---"
-C2_HITS="$(rg -n 'https?://[a-zA-Z0-9.-]+\.(com|net|org|io)/' \
+C2_HITS="$(grep -rnE 'https?://[a-zA-Z0-9.-]+\.(com|net|org|io)/' \
     "$APP/src" "$CHK/host/checkin_contract.py" "$CHK/guardtalk-checkin.mk" \
     2>/dev/null || true)"
 if [[ -n "$C2_HITS" ]]; then
@@ -70,7 +70,7 @@ if [[ -n "$C2_HITS" ]]; then
 else
   pass "no public URL C2 in client/host sources"
 fi
-if rg -q 'BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY' "$APP" "$CHK" "$DOC"; then
+if grep -rqE 'BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY' "$APP" "$CHK" "$DOC"; then
   fail "private key material in check-in tree"
 else
   pass "no private key material"
@@ -82,23 +82,23 @@ if [[ -n "$KEY_FILES" ]]; then
 else
   pass "no pem/pk8/key files under check-in paths"
 fi
-if rg -q 'no public DNS C2' "$EP" && rg -q 'onion requires SOCKS' "$EP"; then
+if grep -Eq 'no public DNS C2' "$EP" && grep -Eq 'onion requires SOCKS' "$EP"; then
   pass "fail-closed onion/SOCKS + no public DNS in CheckinEndpoint"
 else
   fail "fail-closed comments/guards missing in CheckinEndpoint"
 fi
 
 echo
-echo "--- product wiring ---"
-if rg -q 'guardtalk-checkin.mk' "$LATE"; then
-  pass "product-config-late.mk includes guardtalk-checkin.mk"
+echo "--- product wiring (decommissioned per T-VENDOR-REMOVE-GUARDMESSENGER-CHECKIN) ---"
+if grep -Eq 'guardtalk-checkin\.mk' "$LATE"; then
+  fail "product-config-late.mk still includes guardtalk-checkin.mk"
 else
-  fail "product-config-late.mk missing check-in include"
+  pass "product-config-late.mk does not include guardtalk-checkin.mk"
 fi
-if rg -qF 'PRODUCT_PACKAGES += GuardTalkCheckin' "$CHK/guardtalk-checkin.mk"; then
-  pass "GuardTalkCheckin in PRODUCT_PACKAGES"
+if grep -Fq 'PRODUCT_PACKAGES += GuardTalkCheckin' "$CHK/guardtalk-checkin.mk"; then
+  fail "GuardTalkCheckin still in PRODUCT_PACKAGES"
 else
-  fail "GuardTalkCheckin not in PRODUCT_PACKAGES"
+  pass "GuardTalkCheckin removed from PRODUCT_PACKAGES"
 fi
 
 echo
@@ -111,7 +111,7 @@ fi
 
 echo
 echo "--- Tor admin HOLD honesty ---"
-if rg -q 'HOLD' "$DOC" && rg -q 'admin_surface' "$CHK/host/checkin_contract.py"; then
+if grep -Eq 'HOLD' "$DOC" && grep -Eq 'admin_surface' "$CHK/host/checkin_contract.py"; then
   pass "docs + contract record Tor admin HOLD / tor surface"
 else
   fail "missing HOLD or admin_surface"

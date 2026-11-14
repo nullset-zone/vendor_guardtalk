@@ -27,7 +27,7 @@
       "file": "avb_pkmd.bin",
       "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
       "size": 1032,
-      "sourceStamp": "rango-20260928-081134",
+      "sourceStamp": "rango-20261113-045952",
       "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
     },
     "tokay": {
@@ -35,6 +35,34 @@
       "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
       "size": 1032,
       "sourceStamp": "tokay-20260928-084839",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "caiman": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "caiman-20261113-135738",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "frankel": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "frankel-20261113-113011",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "stallion": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "stallion-20261110-labelled",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "blazer": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "blazer-20261112-guardtalk",
       "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
     }
   }

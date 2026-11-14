@@ -1,13 +1,31 @@
 import { ChannelError, WrongProductError } from "./errors.js";
 import {
-  ALLOWED_PRODUCTS,
   type AllowedProduct,
   type ChannelManifest,
 } from "./types.js";
 
-/** tokay (Pixel 9), akita (Pixel 8a), komodo (Pixel 9 Pro XL), rango (Pixel 10 Pro Fold, experimental / boot HOLD). Unstamped shiba / husky / caiman / tegu / comet stay rejected (DEC-WEBINSTALL-015). */
+/**
+ * Staged GuardTalkOS devices with verified desktop-flash stamps:
+ * tokay (Pixel 9), akita (Pixel 8a), komodo (Pixel 9 Pro XL),
+ * rango (Pixel 10 Pro Fold), caiman (Pixel 9 Pro), frankel (Pixel 10),
+ * stallion (Pixel 9a), blazer (Pixel 10 Pro).
+ * Unstamped shiba / husky / tegu / comet stay rejected.
+ */
+export const STAGED_PRODUCTS = [
+  "tokay",
+  "akita",
+  "komodo",
+  "rango",
+  "caiman",
+  "frankel",
+  "stallion",
+  "blazer",
+] as const;
+
+export type StagedProduct = (typeof STAGED_PRODUCTS)[number];
+
 export function isAllowedProduct(product: string): product is AllowedProduct {
-  return (ALLOWED_PRODUCTS as readonly string[]).includes(product.trim());
+  return (STAGED_PRODUCTS as readonly string[]).includes(product.trim());
 }
 
 export function assertAllowedProduct(

@@ -144,10 +144,10 @@ test("READINESS-GATE: (b)+(c) FAILS on a stale matrix, PASSES once the stamp is 
 
     // Now make the same matrix current → PASS. Same code path, both directions.
     const current = withTempMatrix((matrix) => {
-      const devices = matrix.devices as { product: string; channels: { sourceStamp: string }[] }[];
+      const devices = matrix.devices as { product: string; currentStamp: string; channels: { sourceStamp: string }[] }[];
       const tokay = devices.find((d) => d.product === "tokay");
       assert.ok(tokay);
-      for (const channel of tokay.channels) channel.sourceStamp = "tokay-20260928-084839";
+      for (const channel of tokay.channels) channel.sourceStamp = tokay.currentStamp;
     });
     try {
       const passed = runMatrixOnly(["--matrix=" + current.path]);

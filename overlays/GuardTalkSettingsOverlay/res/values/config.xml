@@ -2,7 +2,6 @@
 <resources>
     <!-- Hide SIM / mobile-network entry points in Settings -->
     <bool name="config_show_sim_info">false</bool>
-    <bool name="config_show_communal_settings_mobile">false</bool>
     <bool name="config_show_glanceable_hub_toggle_setting_mobile">false</bool>
 
     <!-- T-CD-CRASH (FR-F §9): hide the top-level "Connected devices" entry.

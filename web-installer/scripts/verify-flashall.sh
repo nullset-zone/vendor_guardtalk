@@ -144,8 +144,12 @@ else
   fail "gate does not import scripts/channel-freshness.mjs (rule re-implemented)"
 fi
 
-echo "=== FLASHALL case4: every advertised device is packed from a CURRENT stamp ==="
-advertised="$(sed -n 's/^export const ALLOWED_PRODUCTS = \[\(.*\)\] as const;/\1/p' "$WI/src/types.ts" | tr -d '"' | tr -d ' ' | tr ',' '\n')"
+echo "=== FLASHALL case4: every staged/advertised device is packed from a CURRENT stamp ==="
+advertised="$("$NODE_BIN" -e '
+  const fs = require("node:fs");
+  const s = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+  for (const p of [...(s.targets || []), ...(s.experimentalTargets || [])]) console.log(p);
+' "$WI/status.json")"
 for product in $advertised; do
   ch="${WI}/channels/${product}"
   if [[ ! -f "${ch}/manifest.json" ]]; then

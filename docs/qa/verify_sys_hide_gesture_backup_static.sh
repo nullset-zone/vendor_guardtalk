@@ -24,7 +24,7 @@ require_file() {
 
 require_rg() {
   local pat="$1" file="$2" label="$3"
-  if [[ -f "$file" ]] && rg -q -- "$pat" "$file"; then
+  if [[ -f "$file" ]] && grep -Eq -- "$pat" "$file"; then
     pass "$label"
   else
     fail "$label (pattern missing in $file)"
@@ -37,10 +37,14 @@ forbid_rg() {
     fail "$label (file missing: $file)"
     return
   fi
-  if rg -q -- "$pat" "$file"; then
+  local rc=0
+  grep -Eq -- "$pat" "$file" || rc=$?
+  if [[ "$rc" -eq 0 ]]; then
     fail "$label (forbidden pattern present in $file)"
-  else
+  elif [[ "$rc" -eq 1 ]]; then
     pass "$label"
+  else
+    fail "$label (grep error exit $rc on $file)"
   fi
 }
 
@@ -206,16 +210,16 @@ require_rg 'Hide = UI|APKs stay|do not delete|≠ delete' "$POLICY" \
 
 # F-SYS-HIDE must not introduce PRODUCT_PACKAGES removals of Settings Backup/Gestures
 # (pre-existing feature-excised Backup cluster is out of this task's delta)
-if rg -n 'F-SYS-HIDE-GESTURE-BACKUP' vendor/guardtalk/feature-excised/ --glob '*.mk' 2>/dev/null | rg -q .; then
+if grep -rnF --include='*.mk' 'F-SYS-HIDE-GESTURE-BACKUP' vendor/guardtalk/feature-excised/ 2>/dev/null | grep -q .; then
   fail "feature-excised references F-SYS-HIDE-GESTURE-BACKUP (unexpected APK excision tie-in)"
 else
   pass "feature-excised has no F-SYS-HIDE-GESTURE-BACKUP APK excision tie-in"
 fi
 
 # No rm of gesture/backup Settings packages under vendor/guardtalk for this task
-if rg -n --glob '*.{mk,sh,bp}' \
+if grep -rnE --include='*.mk' --include='*.sh' --include='*.bp' \
   'rm[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*.*(GestureSettings|BackupSettings|Settings\.apk)' \
-  vendor/guardtalk/ 2>/dev/null | rg -q .; then
+  vendor/guardtalk/ 2>/dev/null | grep -q .; then
   fail "vendor/guardtalk contains rm targeting Gesture/Backup/Settings APK paths"
 else
   pass "no vendor/guardtalk rm of Gesture/Backup/Settings APK paths"
@@ -232,8 +236,8 @@ require_rg 'PreventRingingParentPreferenceController|PreventRingingGestureSettin
 require_rg 'isGestureSettingsAvailable' "$PREVENT_RING" \
   "PreventRingingGestureSettings search page gated (dedicated page hidden)"
 # Document residual in policy / F APPROVED note
-if rg -q 'Prevent Ringing|prevent_ringing|Sound' "$ROOT_QUEUE" \
-  && rg -q 'F-SYS-HIDE-GESTURE-BACKUP' "$ROOT_QUEUE"; then
+if grep -Eq 'Prevent Ringing|prevent_ringing|Sound' "$ROOT_QUEUE" \
+  && grep -Fq 'F-SYS-HIDE-GESTURE-BACKUP' "$ROOT_QUEUE"; then
   pass "TASK_QUEUE documents accepted Sound Prevent Ringing residual for F-SYS-HIDE"
 else
   fail "TASK_QUEUE missing accepted Sound Prevent Ringing residual note"
@@ -242,10 +246,10 @@ fi
 echo "=== Q-SYS-HIDE-GESTURE-BACKUP: F APPROVED + Settings EXIT=0 cites ==="
 
 cite_ok=0
-if [[ -f "$ROOT_QUEUE" ]] && rg -q 'F-SYS-HIDE-GESTURE-BACKUP' "$ROOT_QUEUE" \
-  && rg -q 'APPROVED' "$ROOT_QUEUE"; then
+if [[ -f "$ROOT_QUEUE" ]] && grep -Fq 'F-SYS-HIDE-GESTURE-BACKUP' "$ROOT_QUEUE" \
+  && grep -Fq 'APPROVED' "$ROOT_QUEUE"; then
   # Card header or Architect APPROVED line
-  if rg -q 'F-SYS-HIDE-GESTURE-BACKUP \(Frontend\) — APPROVED|Architect APPROVED:.*2026-07-24' \
+  if grep -Eq 'F-SYS-HIDE-GESTURE-BACKUP \(Frontend\) — APPROVED|Architect APPROVED:.*2026-07-24' \
        "$ROOT_QUEUE"; then
     pass "root TASK_QUEUE cites F-SYS-HIDE-GESTURE-BACKUP APPROVED"
     cite_ok=1
@@ -256,21 +260,21 @@ else
   fail "root TASK_QUEUE missing F-SYS-HIDE APPROVED"
 fi
 
-if [[ -f "$ROOT_QUEUE" ]] && rg -q 'residual Sound Prevent Ringing' "$ROOT_QUEUE"; then
+if [[ -f "$ROOT_QUEUE" ]] && grep -Fq 'residual Sound Prevent Ringing' "$ROOT_QUEUE"; then
   pass "root TASK_QUEUE notes residual Sound Prevent Ringing (accepted)"
 else
   fail "root TASK_QUEUE missing residual Sound Prevent Ringing acceptance"
 fi
 
-if [[ -f "$F_REPORT" ]] && rg -q 'm Settings' "$F_REPORT" && rg -q 'EXIT=0' "$F_REPORT"; then
+if [[ -f "$F_REPORT" ]] && grep -Fq 'm Settings' "$F_REPORT" && grep -Fq 'EXIT=0' "$F_REPORT"; then
   pass "TO_ARCHITECT_F-SYS-HIDE cites m Settings EXIT=0"
   cite_ok=1
 else
   fail "TO_ARCHITECT_F-SYS-HIDE missing m Settings EXIT=0 cite"
 fi
 
-if [[ -f "$AGENT_QUEUE" ]] && rg -q 'F-SYS-HIDE-GESTURE-BACKUP' "$AGENT_QUEUE" \
-  && rg -q 'APPROVED' "$AGENT_QUEUE"; then
+if [[ -f "$AGENT_QUEUE" ]] && grep -Fq 'F-SYS-HIDE-GESTURE-BACKUP' "$AGENT_QUEUE" \
+  && grep -Fq 'APPROVED' "$AGENT_QUEUE"; then
   pass "agent TASK_QUEUE lists F-SYS-HIDE-GESTURE-BACKUP APPROVED"
   cite_ok=1
 else
@@ -278,20 +282,20 @@ else
 fi
 
 # Artifact smoke: Settings.apk present from F build (freshness informational).
-# Use rg -a (not strings): dex/xml symbols may not be NUL-terminated C strings.
+# Use grep -a (not strings): dex/xml symbols may not be NUL-terminated C strings.
 if [[ -f "$SETTINGS_APK" ]]; then
   pass "present: Settings.apk artifact (tokay)"
-  if rg -a -q 'config_show_gesture_settings' "$SETTINGS_APK"; then
+  if grep -a -Fq 'config_show_gesture_settings' "$SETTINGS_APK"; then
     pass "Settings.apk contains config_show_gesture_settings symbol"
   else
     fail "Settings.apk missing config_show_gesture_settings symbol"
   fi
-  if rg -a -q 'config_show_backup_settings' "$SETTINGS_APK"; then
+  if grep -a -Fq 'config_show_backup_settings' "$SETTINGS_APK"; then
     pass "Settings.apk contains config_show_backup_settings symbol"
   else
     fail "Settings.apk missing config_show_backup_settings symbol"
   fi
-  if rg -a -q 'isGestureSettingsAvailable' "$SETTINGS_APK"; then
+  if grep -a -Fq 'isGestureSettingsAvailable' "$SETTINGS_APK"; then
     pass "Settings.apk contains isGestureSettingsAvailable symbol"
   else
     fail "Settings.apk missing isGestureSettingsAvailable symbol"

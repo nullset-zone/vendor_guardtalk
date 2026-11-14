@@ -21,7 +21,8 @@ import { existsSync, readFileSync, readdirSync, lstatSync, realpathSync, statSyn
 import { basename, join } from "node:path";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { ALLOWED_PRODUCTS, type ChannelManifest } from "../src/types.js";
+import { STAGED_PRODUCTS } from "../src/allowlist.js";
+import { type ChannelManifest } from "../src/types.js";
 import { loadChannelFromTexts } from "../src/channel.js";
 import { loadChannelFromDir } from "../src/channel-fs.js";
 import { INSTALLER_ROOT, RELEASES_ROOT, readStamps } from "../scripts/gen-flash-matrix.mjs";
@@ -72,8 +73,8 @@ async function sha256File(path: string): Promise<string> {
 test("CHANNEL-COMPLETE: (a) every packed channel's sourceStamp is CURRENT, not July", () => {
   const products = packedProducts();
   // The card's starting defect: 2 devices advertised, 0 with a current channel.
-  // All four allowlisted devices must now be genuinely packed.
-  assert.deepEqual(products, ["akita", "komodo", "rango", "tokay"]);
+  // All 8 staged devices must now be genuinely packed.
+  assert.deepEqual(products, [...STAGED_PRODUCTS].slice().sort());
   for (const product of products) {
     const manifest = readManifest(product);
     assert.equal(manifest.product, product);
@@ -97,19 +98,20 @@ test("CHANNEL-COMPLETE: (a) every packed channel's sourceStamp is CURRENT, not J
 test("CHANNEL-COMPLETE: (a) the channel releaseId/unixEpoch agree with the stamp name", () => {
   for (const product of packedProducts()) {
     const manifest = readManifest(product);
-    const m = /^([a-z0-9]+)-([0-9]{8})-([0-9]{6})$/.exec(manifest.sourceStamp);
+    const m = /^([a-z0-9]+)-([0-9]{8})-([0-9]{6}|[a-z][a-z0-9_-]*)$/.exec(manifest.sourceStamp);
     assert.ok(m, `sourceStamp is not a stamp name: ${manifest.sourceStamp}`);
-    const [, stampProduct, stampDate, stampTime] = m;
-    assert.ok(stampProduct && stampDate && stampTime, "stamp name must parse into three tokens");
+    const [, stampProduct, stampDate, stampSuffix] = m;
+    assert.ok(stampProduct && stampDate && stampSuffix, "stamp name must parse into three tokens");
     assert.equal(stampProduct, product);
-    assert.equal(manifest.releaseId, `${stampDate}-${stampTime}`);
+    assert.equal(manifest.releaseId, `${stampDate}-${stampSuffix}`);
+    const isTime = /^[0-9]{6}$/.test(stampSuffix);
     const expectedEpoch = Date.UTC(
       Number(stampDate.slice(0, 4)),
       Number(stampDate.slice(4, 6)) - 1,
       Number(stampDate.slice(6, 8)),
-      Number(stampTime.slice(0, 2)),
-      Number(stampTime.slice(2, 4)),
-      Number(stampTime.slice(4, 6)),
+      isTime ? Number(stampSuffix.slice(0, 2)) : 0,
+      isTime ? Number(stampSuffix.slice(2, 4)) : 0,
+      isTime ? Number(stampSuffix.slice(4, 6)) : 0,
     ) / 1000;
     assert.equal(manifest.unixEpoch, expectedEpoch);
   }
@@ -149,7 +151,10 @@ test("CHANNEL-COMPLETE: (b) every channel pointer names the packed product + dev
     const pointerPath = join(dir, `${product}-dev`);
     assert.ok(existsSync(pointerPath), `${product} pointer missing`);
     const body = readFileSync(pointerPath, "utf8").trim();
-    assert.match(body, /^[A-Za-z0-9._-]+ \d+ (tokay|akita|komodo|rango) dev$/);
+    assert.match(
+      body,
+      /^[A-Za-z0-9._-]+ \d+ (tokay|akita|komodo|rango|caiman|frankel|stallion|blazer) dev$/,
+    );
     const manifest = readManifest(product);
     assert.ok(body.startsWith(manifest.releaseId), "pointer releaseId disagrees with manifest");
     assert.match(body, new RegExp(` ${String(manifest.unixEpoch)} `));
@@ -245,7 +250,7 @@ test("CHANNEL-COMPLETE: (c) the packer refuses on a missing / retired stamp (nev
 
 test("CHANNEL-COMPLETE: (d) no unpacked device is advertised, and no channel is a stub", () => {
   const products = packedProducts();
-  for (const product of ALLOWED_PRODUCTS) {
+  for (const product of STAGED_PRODUCTS) {
     const dir = join(CHANNELS_ROOT, product);
     if (products.includes(product)) {
       // A packed channel must be complete: manifest + SHA256SUMS + files.txt.
@@ -281,7 +286,7 @@ test("CHANNEL-COMPLETE: (d) no unpacked device is advertised, and no channel is 
   // genuinely packable, the advertised set (pick-worthy products) equals the
   // packed set — verified through the allowlist ∩ packed.
   assert.deepEqual(
-    ALLOWED_PRODUCTS.filter((p) => products.includes(p)).slice().sort(),
+    STAGED_PRODUCTS.filter((p) => products.includes(p)).slice().sort(),
     products,
   );
 });
@@ -313,7 +318,7 @@ test("CHANNEL-COMPLETE: (e) schema maxItems and reservedProducts are honoured", 
   };
   const maxItems = schema.properties.advertisedDevices.maxItems;
   const advertisedEnum = schema.properties.advertisedDevices.items.enum;
-  assert.equal(maxItems, 4);
+  assert.equal(maxItems, STAGED_PRODUCTS.length);
   for (const product of packedProducts()) {
     const manifest = readManifest(product);
     assert.ok(manifest.advertisedDevices.length >= 1);
@@ -327,7 +332,7 @@ test("CHANNEL-COMPLETE: (e) schema maxItems and reservedProducts are honoured", 
     assert.ok(manifest.advertisedDevices.includes(manifest.product));
     for (const reserved of manifest.reservedProducts ?? []) {
       assert.ok(
-        !ALLOWED_PRODUCTS.includes(reserved as (typeof ALLOWED_PRODUCTS)[number]),
+        !STAGED_PRODUCTS.includes(reserved as (typeof STAGED_PRODUCTS)[number]),
         "reservedProducts must not list an advertised device",
       );
     }
@@ -357,7 +362,7 @@ test("CHANNEL-COMPLETE: basename() of every channel dir is an allowlisted produc
   for (const name of readdirSync(CHANNELS_ROOT)) {
     if (!existsSync(join(CHANNELS_ROOT, name, "manifest.json"))) continue;
     assert.ok(
-      ALLOWED_PRODUCTS.includes(basename(name) as (typeof ALLOWED_PRODUCTS)[number]),
+      STAGED_PRODUCTS.includes(basename(name) as (typeof STAGED_PRODUCTS)[number]),
       `${name} is not an allowlisted product`,
     );
   }

@@ -60,3 +60,6 @@ blocklist syna_touch
 # Leaves cfg80211.ko, mac80211.ko, bcm_dbg.ko, wlan_ptracker.ko untouched.
 # (bcmdhd4390.ko WiFi is handled per the upstream two-phase note above.)
 blocklist nitrous
+
+# F-003: GNSS/PPS & NFC kernel module excision
+blocklist bbd_pps_gpio.ko

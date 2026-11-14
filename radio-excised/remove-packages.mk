@@ -239,7 +239,9 @@ $(or \
   $(findstring ImsMedia,$(1)), \
   $(findstring Mms,$(1)), \
   $(findstring Telephony,$(1)), \
-  $(findstring TeleService,$(1)))
+  $(findstring TeleService,$(1)), \
+  $(findstring PixelModemService,$(1)), \
+  $(findstring com.google.android.modem.pms,$(1)))
 endef
 
 _gt_filtered_product_packages :=

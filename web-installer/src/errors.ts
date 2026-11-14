@@ -70,8 +70,53 @@ export class PlanError extends FlashcoreError {
 }
 
 export class FastbootError extends FlashcoreError {
+  constructor(message: string, code = "FASTBOOT") {
+    super(code, message);
+  }
+}
+
+export class UsbDisconnectError extends FastbootError {
+  readonly recoverable = true;
+
+  constructor(context: string, detail?: string) {
+    super(
+      detail ? `USB disconnected during ${context}: ${detail}` : `USB disconnected during ${context}`,
+      "USB_DISCONNECTED",
+    );
+  }
+}
+
+export class UsbTimeoutError extends FastbootError {
+  readonly recoverable = true;
+
+  constructor(context: string, detail?: string) {
+    super(
+      detail ? `USB timeout during ${context}: ${detail}` : `USB timeout during ${context}`,
+      "USB_TIMEOUT",
+    );
+  }
+}
+
+export class UsbPermissionError extends FastbootError {
+  readonly recoverable = true;
+
+  constructor(context: string, detail?: string) {
+    super(
+      detail ? `USB permission lost or denied during ${context}: ${detail}` : `USB permission lost or denied during ${context}`,
+      "USB_PERMISSION_LOST",
+    );
+  }
+}
+
+export class LockSafetyError extends FlashcoreError {
   constructor(message: string) {
-    super("FASTBOOT", message);
+    super("LOCK_SAFETY_GATE", message);
+  }
+}
+
+export class StorageQuotaError extends FlashcoreError {
+  constructor(message: string) {
+    super("STORAGE_QUOTA_EXCEEDED", message);
   }
 }
 

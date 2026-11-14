@@ -46,3 +46,9 @@ blocklist nitrous.ko
 blocklist cpif.ko
 blocklist cpif_page.ko
 blocklist shm_ipc.ko
+
+# F-003: GNSS/PPS & NFC kernel module excision
+blocklist bbd_pps_gpio.ko
+blocklist gnss_spi.ko
+blocklist gnssif.ko
+blocklist st21nfc.ko

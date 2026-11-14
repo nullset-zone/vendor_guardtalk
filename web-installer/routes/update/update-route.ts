@@ -30,6 +30,7 @@ import { compareHex, type SideBySide } from "../../lib/verify/side-by-side.js";
 import { makeChip } from "../../lib/ui/chips.js";
 import { consoleMarkup } from "../../lib/ui/console.js";
 import { escapeHtml } from "../../lib/ui/escape.js";
+import { usbTroubleshootingHtml } from "../../lib/ui/usb-troubleshooting.js";
 import { POSTURE_CONNECTIVITY, POSTURE_CUSTODY, renderPosturePill } from "../../lib/ui/posture.js";
 import { DEFAULT_OFFERED_PRODUCT, parseOfferedDevice } from "../../lib/ui/offered-devices.js";
 import {
@@ -301,6 +302,7 @@ function step5Html(lockState?: "locked" | "unlocked"): string {
     pendingCompareRow("product-compare", "product", "this release&#39;s target", "getvar product"),
     `<p class="mono" data-role="lock-readout" data-var="unlocked">${escapeHtml(readout)}</p>`,
     `<p>${escapeHtml(lockStateCopy(lockState))}</p>`,
+    usbTroubleshootingHtml(),
     `<label class="ack-line">`,
     `<input type="checkbox" data-ack="state-unchanged">`,
     ` I understand this update changes no lock state and wipes no data.`,

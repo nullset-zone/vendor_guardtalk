@@ -78,10 +78,18 @@ export type StatusJsonFact = "target" | "experimental" | "absent-from-status-jso
 
 /**
  * The shipped `status.json` product facts, as constants. These are the EXACT
- * values of `routes.targets` / `routes.experimentalTargets`. A test asserts
+ * values of `status.json` `targets` / `experimentalTargets`. A test asserts
  * they still equal the live `status.json`, so a hand-edit cannot drift.
  */
-export const STATUS_JSON_TARGETS: readonly string[] = ["tokay", "rango"];
+export const STATUS_JSON_TARGETS: readonly string[] = [
+  "tokay",
+  "komodo",
+  "caiman",
+  "frankel",
+  "stallion",
+  "blazer",
+  "rango",
+];
 export const STATUS_JSON_EXPERIMENTAL_TARGETS: readonly string[] = ["akita"];
 
 /** The `status.json` fact for a product. Absence from both lists is its own fact. */

@@ -30,24 +30,31 @@
  * at", never "this build boots". `BOOT_VERIFIED=false`.
  */
 
-const STAMP_RE = /^([a-z0-9]+)-([0-9]{8})-([0-9]{6})$/;
+const STAMP_RE = /^([a-z0-9]+)-([0-9]{8})-([0-9]{6}|[a-z][a-z0-9_-]*)$/;
+const TIME_RE = /^[0-9]{6}$/;
 
 /** Parse a stamp name into its product + UTC epoch. `null` when malformed. */
 export function parseStamp(stamp) {
   const m = STAMP_RE.exec(String(stamp));
   if (m === null) return null;
-  const [, product, date, time] = m;
-  if (product === undefined || date === undefined || time === undefined) return null;
+  const [, product, date, suffix] = m;
+  if (product === undefined || date === undefined || suffix === undefined) return null;
   const y = Number(date.slice(0, 4));
   const mo = Number(date.slice(4, 6));
   const d = Number(date.slice(6, 8));
-  const h = Number(time.slice(0, 2));
-  const mi = Number(time.slice(2, 4));
-  const s = Number(time.slice(4, 6));
-  if (mo < 1 || mo > 12 || d < 1 || d > 31 || h > 23 || mi > 59 || s > 59) return null;
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  let h = 0;
+  let mi = 0;
+  let s = 0;
+  if (TIME_RE.test(suffix)) {
+    h = Number(suffix.slice(0, 2));
+    mi = Number(suffix.slice(2, 4));
+    s = Number(suffix.slice(4, 6));
+    if (h > 23 || mi > 59 || s > 59) return null;
+  }
   return {
     product,
-    releaseId: `${date}-${time}`,
+    releaseId: `${date}-${suffix}`,
     unixEpoch: Date.UTC(y, mo - 1, d, h, mi, s) / 1000,
   };
 }

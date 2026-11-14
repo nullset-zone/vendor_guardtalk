@@ -1,23 +1,29 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { assertAllowedProduct } from "../src/allowlist.js";
+import { assertAllowedProduct, STAGED_PRODUCTS } from "../src/allowlist.js";
 import { WrongProductError } from "../src/errors.js";
 import { loadChannelFromTexts } from "../src/channel.js";
-import { ALLOWED_PRODUCTS } from "../src/types.js";
 import { channelTextsFromBlobs, tokayBlobs } from "./helpers.js";
 
-test("tokay, akita, komodo, and rango are allowed", () => {
-  assert.deepEqual([...ALLOWED_PRODUCTS], ["tokay", "akita", "komodo", "rango"]);
-  assert.doesNotThrow(() => assertAllowedProduct("tokay"));
-  assert.doesNotThrow(() => assertAllowedProduct("akita"));
-  assert.doesNotThrow(() => assertAllowedProduct("komodo"));
-  assert.doesNotThrow(() => assertAllowedProduct("rango"));
+test("all 8 staged products are allowed", () => {
+  assert.deepEqual([...STAGED_PRODUCTS], [
+    "tokay",
+    "akita",
+    "komodo",
+    "rango",
+    "caiman",
+    "frankel",
+    "stallion",
+    "blazer",
+  ]);
+  for (const product of STAGED_PRODUCTS) {
+    assert.doesNotThrow(() => assertAllowedProduct(product));
+  }
 });
 
-test("shiba, husky, caiman, tegu, comet, and empty product are rejected", () => {
+test("unstamped shiba, husky, tegu, comet, and empty product are rejected", () => {
   assert.throws(() => assertAllowedProduct("shiba"), WrongProductError);
   assert.throws(() => assertAllowedProduct("husky"), WrongProductError);
-  assert.throws(() => assertAllowedProduct("caiman"), WrongProductError);
   assert.throws(() => assertAllowedProduct("tegu"), WrongProductError);
   assert.throws(() => assertAllowedProduct("comet"), WrongProductError);
   assert.throws(() => assertAllowedProduct(""), WrongProductError);

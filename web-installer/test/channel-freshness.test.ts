@@ -251,3 +251,18 @@ test("FRESHNESS: the CLI gate exposes the same freshness detail", () => {
   const stdout = execFileSync(process.execPath, [GATE], { encoding: "utf8" });
   assert.match(stdout, /\[ok\] channel-freshness: all \d+ packed channel\(s\) are fresh/);
 });
+
+test("FRESHNESS: parseStamp accepts labelled stamps (stallion-20261110-labelled, blazer-20261112-guardtalk)", () => {
+  const stallion = parseStamp("stallion-20261110-labelled");
+  assert.deepEqual(stallion, {
+    product: "stallion",
+    releaseId: "20261110-labelled",
+    unixEpoch: Date.UTC(2026, 10, 10, 0, 0, 0) / 1000,
+  });
+  const blazer = parseStamp("blazer-20261112-guardtalk");
+  assert.deepEqual(blazer, {
+    product: "blazer",
+    releaseId: "20261112-guardtalk",
+    unixEpoch: Date.UTC(2026, 10, 12, 0, 0, 0) / 1000,
+  });
+});

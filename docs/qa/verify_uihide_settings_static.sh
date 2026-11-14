@@ -24,7 +24,7 @@ require_file() {
 
 require_rg() {
   local pat="$1" file="$2" label="$3"
-  if [[ -f "$file" ]] && rg -q -- "$pat" "$file"; then
+  if [[ -f "$file" ]] && grep -Eq -- "$pat" "$file"; then
     pass "$label"
   else
     fail "$label (pattern missing in $file)"
@@ -37,16 +37,20 @@ forbid_rg() {
     fail "$label (file missing: $file)"
     return
   fi
-  if rg -q -- "$pat" "$file"; then
+  local rc=0
+  grep -Eq -- "$pat" "$file" || rc=$?
+  if [[ "$rc" -eq 0 ]]; then
     fail "$label (forbidden pattern present in $file)"
-  else
+  elif [[ "$rc" -eq 1 ]]; then
     pass "$label"
+  else
+    fail "$label (grep error exit $rc on $file)"
   fi
 }
 
 require_bool_false() {
   local name="$1" file="$2"
-  if [[ -f "$file" ]] && rg -q "<bool name=\"${name}\">false</bool>" "$file"; then
+  if [[ -f "$file" ]] && grep -Fq -- "<bool name=\"${name}\">false</bool>" "$file"; then
     pass "overlay ${name}=false"
   else
     fail "overlay ${name} must be false in $file"
@@ -55,7 +59,7 @@ require_bool_false() {
 
 require_bool_true() {
   local name="$1" file="$2"
-  if [[ -f "$file" ]] && rg -q "<bool name=\"${name}\">true</bool>" "$file"; then
+  if [[ -f "$file" ]] && grep -Fq -- "<bool name=\"${name}\">true</bool>" "$file"; then
     pass "baseline ${name}=true"
   else
     fail "baseline ${name} must be true in $file"
@@ -146,7 +150,7 @@ require_rg 'system_dashboard_summary">Languages, gestures, time, backup<' "$SETT
   "base values/ still has legacy summary (locale residual source)"
 
 # --- Locale residual documentation (must exist as residual; count > 0) ---
-LOCALE_HITS=$(rg -l 'system_dashboard_summary' packages/apps/Settings/res/values-*/strings.xml 2>/dev/null | wc -l | tr -d ' ')
+LOCALE_HITS=$(grep -Fl 'system_dashboard_summary' packages/apps/Settings/res/values-*/strings.xml 2>/dev/null | wc -l | tr -d ' ')
 if [[ "${LOCALE_HITS}" -gt 0 ]]; then
   pass "locale residual present: ${LOCALE_HITS} values-* files still translate system_dashboard_summary"
 else
@@ -209,13 +213,13 @@ require_rg '[Dd]o not.*delete|hide ≠ delete|Does NOT delete' "$OVERLAY_CFG" \
 require_rg '[Dd]o not.*delete|No deletion' "$T_DOC" "T doc non-goals no APK delete"
 
 # --- HC external SearchIndexablesProvider residual (document, not fail) ---
-if [[ -f "$HC_EXT_PROVIDER" ]] && rg -q 'class HealthConnectSearchIndexablesProvider' "$HC_EXT_PROVIDER"; then
+if [[ -f "$HC_EXT_PROVIDER" ]] && grep -Fq 'class HealthConnectSearchIndexablesProvider' "$HC_EXT_PROVIDER"; then
   pass "RESIDUAL DOCUMENTED: HealthConnectSearchIndexablesProvider still exists (external to Settings)"
 else
   fail "expected HC external SearchIndexablesProvider source for residual docs"
 fi
 # apex-bcp excision of healthfitness reduces runtime risk (defence-in-depth)
-if rg -q 'com\.android\.healthfitness' vendor/guardtalk/feature-excised/apex-bcp-excised.mk 2>/dev/null; then
+if grep -Eq 'com\.android\.healthfitness' vendor/guardtalk/feature-excised/apex-bcp-excised.mk 2>/dev/null; then
   pass "defence-in-depth: healthfitness listed in apex-bcp-excised.mk"
 else
   pass "NOTE: healthfitness apex-bcp excision not matched (check manually)"
@@ -246,7 +250,7 @@ require_rg 'system_dashboard_summary' "$POLICY" "policy system summary"
 # --- Dependency APPROVED cites (queues) ---
 for q in "$ROOT_QUEUE" "$AGENT_QUEUE"; do
   require_file "$q" "$q"
-  if rg -q 'T-UIHIDE-KEYS.*APPROVED' "$q" && rg -q 'F-UIHIDE-SETTINGS.*APPROVED' "$q"; then
+  if grep -Eq 'T-UIHIDE-KEYS.*APPROVED' "$q" && grep -Eq 'F-UIHIDE-SETTINGS.*APPROVED' "$q"; then
     pass "$q cites T+F APPROVED"
   else
     fail "$q missing T-UIHIDE-KEYS / F-UIHIDE-SETTINGS APPROVED"

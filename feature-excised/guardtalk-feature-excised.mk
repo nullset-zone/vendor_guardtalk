@@ -98,6 +98,14 @@ include vendor/guardtalk/feature-excised/icon-overlays.mk
 # full overlay set (6 RROs) is wired through the single executing bridge.
 include vendor/guardtalk/radio-excised/telephony-features.mk
 
+# BUG-SET-02: Wire GuardTalkSettingsProviderOverlay uniformly across all
+# GuardTalkOS targets (def_lock_screen_show_notifications=0,
+# def_usb_mass_storage_enabled=false).
+PRODUCT_PACKAGES += GuardTalkSettingsProviderOverlay
+
+PRODUCT_SOONG_NAMESPACES += \
+    vendor/guardtalk/overlays/GuardTalkSettingsProviderOverlay
+
   # T-W2-I6-THEME / T-BRAND-SWEEP / T-PORT-AKITA-THEME-WIRE — GuardTalk
   # bootanimation + wallpaper wiring via PRODUCT_DEVICE (not tokay-hardcoded).
   # Per-device wrappers under device/<codename>/guardtalk-theme.mk include the
@@ -153,13 +161,12 @@ include vendor/guardtalk/radio-excised/telephony-features.mk
   _gt_camera_mk :=
 
 
-  # T-SEC-P4-PRIVACY / T-SEC-P4-PERMS — packages that lived only in
+  # T-SEC-P4-PRIVACY — packages that lived only in
   # guardtalk-tokay.mk (never inherited). Wire through this live bridge so they
   # enter PRODUCT_PACKAGES for the image (props are live via
   # guardtalk-product-props.mk included from guardtalk-radio-excised.mk).
   PRODUCT_PACKAGES += init.guardtalk.privacy_tmpfs.rc
   PRODUCT_PACKAGES += init.guardtalk.hardening.rc
-  PRODUCT_PACKAGES += default-permissions-com.guardtalk.messenger
 
   # =====================================================================
   # T-PKG-EXCISE-WAVES P2 — APEX-dormant feature-gates (documentation only).

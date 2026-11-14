@@ -37,14 +37,14 @@ echo "ROOT=$ROOT"
 echo "LIVE_DEVICE_CLAIMED=false"
 echo
 
-echo "=== RAW: packet rg setSensorBlocked|isSensorBlocked|setChecked|privacy_*_toggle ==="
-rg -n "setSensorBlocked|isSensorBlocked|setChecked|privacy_camera_toggle|privacy_mic_toggle" \
+echo "=== RAW: packet grep setSensorBlocked|isSensorBlocked|setChecked|privacy_*_toggle ==="
+grep -rnE "setSensorBlocked|isSensorBlocked|setChecked|privacy_camera_toggle|privacy_mic_toggle" \
   packages/apps/Settings/src/com/android/settings/privacy/ \
   packages/apps/Settings/res/xml/privacy_controls_settings.xml || true
 echo
 
-echo "=== RAW: packet rg mustDenySensors(|isKeyguardLocked Helper + QS tiles ==="
-rg -n "mustDenySensors\\(|isKeyguardLocked" \
+echo "=== RAW: packet grep mustDenySensors(|isKeyguardLocked Helper + QS tiles ==="
+grep -nE "mustDenySensors\\(|isKeyguardLocked" \
   "$HELPER" "$CAM_TILE" "$MIC_TILE" || true
 echo
 

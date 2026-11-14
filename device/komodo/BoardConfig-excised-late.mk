@@ -39,3 +39,6 @@ ifeq ($(TARGET_BUILD_VARIANT),user)
 BOARD_AVB_ALGORITHM := SHA256_RSA4096
 BOARD_AVB_KEY_PATH ?= vendor/guardtalk/branding/signing-keys/avb.pem
 endif
+
+# F-003: shared system_dlkm blocklist (wwan.ko + GKI BT/NFC .ko)
+BOARD_SYSTEM_KERNEL_MODULES_BLOCKLIST_FILE := vendor/guardtalk/feature-excised/system_dlkm.modules.blocklist

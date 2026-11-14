@@ -22,3 +22,6 @@ BOARD_KERNEL_CMDLINE += androidboot.radio.disabled=1
 BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE := $(GT_EXCISION_BLOCKLIST_FILE)
 
 $(call gt-excision-validate-device-blocklist)
+
+# F-003: shared system_dlkm blocklist (wwan.ko + GKI BT/NFC .ko)
+BOARD_SYSTEM_KERNEL_MODULES_BLOCKLIST_FILE := vendor/guardtalk/feature-excised/system_dlkm.modules.blocklist

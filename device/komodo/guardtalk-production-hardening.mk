@@ -60,10 +60,6 @@ endif
 # logs off; EXIF make/model false. Komodo-only; not EXCISE/KERNEL files.
 include vendor/guardtalk/device/komodo/guardtalk-telemetry.mk
 
-# T-REMEDIATE-B4-MESSENGER (item 19): bake Jami GuardTalk Messenger into the
-# user image. Not a Gateway sideload (unknown-APK block). No store/browser.
-include vendor/guardtalk/device/komodo/guardtalk-messenger.mk
-
 # T-REMEDIATE-B5-DEFAULTS (item 24): roaming false, MTP off, bug_report=0,
 # lock_screen_show_notifications=0. Overlay props only; su/SPL/AVB unchanged.
 include vendor/guardtalk/device/komodo/guardtalk-defaults.mk

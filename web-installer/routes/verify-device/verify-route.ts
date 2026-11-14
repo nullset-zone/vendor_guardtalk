@@ -32,6 +32,7 @@ import { FastbootClient, FastbootError } from "../../lib/fastboot/client.js";
 import { ProtocolError } from "../../lib/fastboot/protocol.js";
 import { fingerprintFromJwk } from "../../lib/keys/fingerprint.js";
 import { POSTURE_CONNECTIVITY, POSTURE_CUSTODY, renderPosturePill } from "../../lib/ui/posture.js";
+import { usbTroubleshootingHtml } from "../../lib/ui/usb-troubleshooting.js";
 import { makeChip } from "../../lib/ui/chips.js";
 import { escapeHtml } from "../../lib/ui/escape.js";
 import { renderSideBySideRow } from "../../lib/ui/sidebyside.js";
@@ -325,6 +326,7 @@ function readPanel(): string {
       `guessed: if the device does not publish it, this page says so and hands you to the comparison.</p>`,
     `<button type="button" class="${GL_BTN_CONFIRM} cta" data-action="read-enrolled-key">Ask the device</button>`,
     `<div class="result" data-container="read-result"></div>`,
+    usbTroubleshootingHtml(),
     `</section>`,
   ].join("");
 }

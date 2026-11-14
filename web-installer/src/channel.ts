@@ -1,6 +1,7 @@
+import { decodePkmd } from "../lib/avb/pkmd.js";
 import { assertManifestAllowlist } from "./allowlist.js";
 import { ChannelError } from "./errors.js";
-import { normalizeSha256 } from "./hash.js";
+import { assertSha256Match, normalizeSha256 } from "./hash.js";
 import {
   ARTIFACT_PHASES,
   FLASH_ORDER,
@@ -116,6 +117,28 @@ export function loadChannelFromTexts(input: {
     parseSha256Sums(input.sha256sums),
     parseFilesTxt(input.filesTxt),
   );
+}
+
+/**
+ * Verify `avb_pkmd.bin` bytes fail-closed against the channel manifest:
+ * non-empty, exact byte length, SHA-256 match, and valid AVB public key structure.
+ */
+export function verifyChannelAvbKey(
+  bundle: ChannelBundle,
+  avbBytes: Uint8Array,
+): void {
+  if (bundle.manifest.avb.size <= 0 || avbBytes.byteLength !== bundle.manifest.avb.size) {
+    throw new ChannelError(
+      `avb_pkmd.bin size mismatch: expected ${String(bundle.manifest.avb.size)}, got ${String(avbBytes.byteLength)}`,
+    );
+  }
+  assertSha256Match("avb_pkmd.bin", avbBytes, bundle.manifest.avb.sha256);
+  try {
+    decodePkmd(avbBytes);
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    throw new ChannelError(`invalid avb_pkmd.bin public key: ${detail}`);
+  }
 }
 
 function assertSafeName(name: string): void {
@@ -309,6 +332,13 @@ function crossCheckArtifacts(
     if (digest !== normalizeSha256(row.sha256)) {
       throw new ChannelError(`SHA256SUMS disagrees with manifest for ${file.name}`);
     }
+  }
+  if (manifest.avb.size <= 0) {
+    throw new ChannelError("avb.size must be positive");
+  }
+  const avbRow = fromManifest.get("avb_pkmd.bin");
+  if (avbRow === undefined || avbRow.phase !== "avb" || avbRow.size !== manifest.avb.size) {
+    throw new ChannelError("avb_pkmd.bin manifest row disagrees with manifest.avb");
   }
   const avbDigest = sha256sums.get("avb_pkmd.bin");
   if (avbDigest !== normalizeSha256(manifest.avb.sha256)) {

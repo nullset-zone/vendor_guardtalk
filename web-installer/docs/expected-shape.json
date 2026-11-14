@@ -86,8 +86,8 @@
       "note": "Pixel 9/8 family: no super.img (uses super_empty.img)"
     },
     "rango": {
-      "sourceStamp": "rango-20260928-081134",
-      "artifactCount": 21,
+      "sourceStamp": "rango-20261113-045952",
+      "artifactCount": 20,
       "artifacts": [
         "avb_pkmd.bin",
         "boot.img",
@@ -104,7 +104,6 @@
         "system_ext.img",
         "vbmeta.img",
         "vbmeta_system.img",
-        "vbmeta_valid_flags3.img",
         "vbmeta_vendor.img",
         "vendor.img",
         "vendor_boot.img",
@@ -112,7 +111,117 @@
         "vendor_kernel_boot.img"
       ],
       "hasSuperImg": true,
-      "note": "Pixel 10 Pro Fold: populated super.img + device-specific vbmeta_valid_flags3.img"
+      "note": "Pixel 10 Pro Fold: populated super.img + super_empty.img (BP4A+CP1A backport)"
+    },
+    "caiman": {
+      "sourceStamp": "caiman-20261113-135738",
+      "artifactCount": 19,
+      "artifacts": [
+        "avb_pkmd.bin",
+        "boot.img",
+        "bootloader.img",
+        "dtbo.img",
+        "init_boot.img",
+        "product.img",
+        "pvmfw.img",
+        "radio.img",
+        "super_empty.img",
+        "system.img",
+        "system_dlkm.img",
+        "system_ext.img",
+        "vbmeta.img",
+        "vbmeta_system.img",
+        "vbmeta_vendor.img",
+        "vendor.img",
+        "vendor_boot.img",
+        "vendor_dlkm.img",
+        "vendor_kernel_boot.img"
+      ],
+      "hasSuperImg": false,
+      "note": "Pixel 9 Pro: no super.img (uses super_empty.img)"
+    },
+    "frankel": {
+      "sourceStamp": "frankel-20261113-113011",
+      "artifactCount": 20,
+      "artifacts": [
+        "avb_pkmd.bin",
+        "boot.img",
+        "bootloader.img",
+        "dtbo.img",
+        "init_boot.img",
+        "product.img",
+        "pvmfw.img",
+        "radio.img",
+        "super.img",
+        "super_empty.img",
+        "system.img",
+        "system_dlkm.img",
+        "system_ext.img",
+        "vbmeta.img",
+        "vbmeta_system.img",
+        "vbmeta_vendor.img",
+        "vendor.img",
+        "vendor_boot.img",
+        "vendor_dlkm.img",
+        "vendor_kernel_boot.img"
+      ],
+      "hasSuperImg": true,
+      "note": "Pixel 10: populated super.img + super_empty.img (BP4A+CP1A backport)"
+    },
+    "stallion": {
+      "sourceStamp": "stallion-20261110-labelled",
+      "artifactCount": 19,
+      "artifacts": [
+        "avb_pkmd.bin",
+        "boot.img",
+        "bootloader.img",
+        "dtbo.img",
+        "init_boot.img",
+        "product.img",
+        "pvmfw.img",
+        "radio.img",
+        "super_empty.img",
+        "system.img",
+        "system_dlkm.img",
+        "system_ext.img",
+        "vbmeta.img",
+        "vbmeta_system.img",
+        "vbmeta_vendor.img",
+        "vendor.img",
+        "vendor_boot.img",
+        "vendor_dlkm.img",
+        "vendor_kernel_boot.img"
+      ],
+      "hasSuperImg": false,
+      "note": "Pixel 9a: no super.img (uses super_empty.img)"
+    },
+    "blazer": {
+      "sourceStamp": "blazer-20261112-guardtalk",
+      "artifactCount": 20,
+      "artifacts": [
+        "avb_pkmd.bin",
+        "boot.img",
+        "bootloader.img",
+        "dtbo.img",
+        "init_boot.img",
+        "product.img",
+        "pvmfw.img",
+        "radio.img",
+        "super.img",
+        "super_empty.img",
+        "system.img",
+        "system_dlkm.img",
+        "system_ext.img",
+        "vbmeta.img",
+        "vbmeta_system.img",
+        "vbmeta_vendor.img",
+        "vendor.img",
+        "vendor_boot.img",
+        "vendor_dlkm.img",
+        "vendor_kernel_boot.img"
+      ],
+      "hasSuperImg": true,
+      "note": "Pixel 10 Pro: populated super.img + super_empty.img (BP4A+CP1A backport)"
     }
   }
 }

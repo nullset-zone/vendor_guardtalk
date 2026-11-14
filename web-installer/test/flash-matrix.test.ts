@@ -126,19 +126,17 @@ test("INVENTORY: advertised-vs-packed divergence names the exact advertising sou
   }
 
   const byProduct = new Map(matrix.divergence.map((r) => [r.product, r]));
-  // komodo: advertised in ALLOWED_PRODUCTS but ABSENT from the product facts.
-  // The INVENTORY card's finding was komodo advertised with no packed channel;
-  // CHANNEL-COMPLETE packs it from its real September stamp, so the residual
-  // that remains is the product-facts gap, not an unpacked channel.
   const komodo = byProduct.get("komodo");
   assert.ok(komodo, "komodo must appear in the divergence ledger");
-  assert.equal(komodo.absentFromProductFacts, true);
-  assert.equal(komodo.inTargets, false);
+  assert.equal(komodo.absentFromProductFacts, false);
+  assert.equal(komodo.inTargets, true);
   assert.equal(komodo.inExperimental, false);
   assert.equal(komodo.packed, true);
   assert.equal(komodo.verdict, "PACKED-CURRENT");
-  // It is still advertised ONLY by the allowlist — the exact source is named.
-  assert.deepEqual(komodo.advertisedBy, ["src/types.ts:3 (ALLOWED_PRODUCTS)"]);
+  assert.deepEqual(komodo.advertisedBy, [
+    "src/types.ts:3 (ALLOWED_PRODUCTS)",
+    "status.json (routes.targets)",
+  ]);
   // rango: advertised and now genuinely packed from its current stamp.
   const rango = byProduct.get("rango");
   assert.ok(rango, "rango must appear in the divergence ledger");

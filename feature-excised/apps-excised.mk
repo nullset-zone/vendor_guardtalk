@@ -264,6 +264,58 @@ GUARDTALK_APPS_PACKAGES += \
 # restored after a userdebug boot loop. DEC-REMEDIATE-001 item 10 + Law 0
 # require removal plus the PMS tolerate-missing patch above. Do not restore
 # these APKs to “keep the throw happy”.
+#
+# *** CORRECTED 2026-11-08 by T-GMSC-LIB-CAMERA-UNBLOCK. THE SENTENCE ABOVE
+# IS HALF TRUE, AND ITS "DO NOT RESTORE" ADVICE WAS WRONG FOR GmsCompatLib. ***
+#
+# The stanza still drops GmsCompat / GmsCompatConfig / AppCompatConfig. It no
+# longer drops GmsCompatLib — see GUARDTALK_GMSCORE_CLIENT_LIB_KEEP at the end
+# of this file. Measured reasons, not a policy reversal:
+#
+#   1. The PMS tolerate-missing patch above fixes ONE caller
+#      (GosPackageStatePermission.Builder.apply). It does not touch the caller
+#      that actually kills processes on tangorpro.
+#   2. android.app.compat.gms.GmsCompat.maybeEnable() runs from
+#      Instrumentation.newApplication() in EVERY app process and ends with:
+#          isEligibleForClientCompat = !isGmsCore() &&
+#              appInfoExt.hasFlag(AppInfoExtFlag.HAS_GMSCORE_CLIENT_LIBRARY);
+#          if (isEligibleForClientCompat && GmsCompatLib.get() == null)
+#              GmsCompatLib.init(appCtx, Application.getProcessName());
+#      The flag is set purely from the manifest declaring the
+#      com.google.android.gms.version metadata key
+#      (PackageExtInit.getExtFlags). No GmsCompat app needs to be installed,
+#      and no GMS policy needs to be enabled, for this branch to be taken.
+#   3. GmsCompatLib.init() then does createPackageContext(
+#      "app.grapheneos.gmscompat.lib") and rethrows
+#      NameNotFoundException as IllegalStateException. So with the lib
+#      excised, EVERY eligible app hard-crashes during Application
+#      construction, before its own code runs.
+#
+# Measured on tangorpro 2026-11-08 (evidence:
+# .agent-comm/evidence/T-CAM-TANGORPRO-FLASH-20261108/):
+#   am_crash com.google.android.apps.camera.services (uid 10068) x6, cause
+#     ...NameNotFoundException: Application package
+#        app.grapheneos.gmscompat.lib not found
+#     at com.android.internal.gmscompat.GmsCompatLib.init(GmsCompatLib.java:25)
+#     at android.app.compat.gms.GmsCompat.maybeEnable(GmsCompat.java:138)
+#   Process died; onBind never reached; the PixelExtensions extension bind the
+#   vendor props redirect to (ro.vendor.camera.extensions.package) then times
+#   out at 1000 ms on the main thread, 6-8 times, and the camera session
+#   configure expires at 5000 ms.
+#
+# IMPORTANT — restoring GmsCompatLib does NOT restore GMS compatibility.
+# GmsCompatLib.get() is only consulted after the eligibility gate, and
+# GmsCompat.isEnabledFor() still returns false for every package whose id is
+# not GMS_CORE / PLAY_STORE / G_SEARCH / ANDROID_AUTO / G_CARRIER_SETTINGS.
+# The lib's init path is then inert: GmsCompatLibImpl.init() calls
+# SystemServiceOverridesRegistry.init(), which overrides nothing when
+# GmsCompat.isEnabled() is false and the initial package id is not G_CAMERA.
+# The lib is a probe target the framework unconditionally expects to exist;
+# removing it does not disable any feature, it only converts a no-op into a
+# crash. No-GMS policy is unchanged by this line.
+#
+# Reversible (Law 11): delete the GUARDTALK_GMSCORE_CLIENT_LIB_KEEP stanza at
+# the end of this file AND restore `GmsCompatLib \` to the stanza above.
 
 # T-PKG-EXCISE-WAVE-C Part 2 — Mainline APEX modules: INVESTIGATE (not excised).
 #
@@ -562,9 +614,15 @@ GUARDTALK_OVERLAY_KEEP := \
 #          CameraExtensionsProxy (system/app/) and PixelCameraServicesConnectivityClient
 #          (product/priv-app/) are distinct install paths and distinct Soong modules.
 #          See T-CAM-BLACK comment below for why PixelCameraServicesConnectivityClient
-#          MUST be KEPT (camera HAL bridge). CameraExtensionsProxy is the AOSP
-#          camera extensions UI proxy — safe to drop; the Pixel camera HAL does
-#          NOT depend on it.
+#          MUST be KEPT (camera HAL bridge).
+#          *** CORRECTED 2026-11-08 by T-CAM-EXT (see the note at the drop list
+#          below). The former sentence here read "CameraExtensionsProxy is the
+#          AOSP camera extensions UI proxy — safe to drop; the Pixel camera HAL
+#          does NOT depend on it." The HAL clause is true; "safe to drop" was
+#          false. It serves ICameraExtensionsProxyService, and excising it makes
+#          the CAMERA APP NPE + ANR on the main thread -> black preview.
+#          CameraExtensionsProxy is NO LONGER excised and is now protected by
+#          GUARDTALK_CAMERA_EXT_KEEP. ***
 #   StatementService (com.android.statementservice)
 #       -> late-tokay.mk:249635 install target
 #          out/target/product/tokay/product/priv-app/StatementService/
@@ -686,9 +744,27 @@ GUARDTALK_OVERLAY_KEEP := \
 # to be invoked, and no app on GuardTalkOS uses it. The ~100 MB com.android.virt.apex
 # still ships but is inert. Items 5-8 are reported as INVESTIGATE per the brief's
 # acceptance criteria.
+#
+# T-CAM-EXT (2026-11-08, tangorpro on-device): CameraExtensionsProxy is DELISTED
+# from this drop list. It is the service behind
+# android.hardware.camera2.extension.ICameraExtensionsProxyService, and the
+# GrapheneOS Camera app initialises CameraX extensions at startup. With the
+# service absent the app NPEs on the null binder
+#   ExtensionsManager: Failed to initialize extensions ... NullPointerException:
+#     'java.lang.String ...ICameraExtensionsProxyService.toString()'
+#     on a null object reference
+# and PXLEXT_PixelExtensionsClient then retries the bind ON THE MAIN THREAD
+# every 1000 ms, starving input dispatch: 5 s InputDispatcher ANR, then
+# Camera2CameraImpl "Unable to configure camera ... not done within 5000 ms",
+# then black preview. The HAL is healthy throughout (2 devices Present, full
+# metadata dump) — it simply never receives configureStreams.
+# The pre-existing comment at ~line 565 ("CameraExtensionsProxy is the AOSP
+# camera extensions UI proxy — safe to drop; the Pixel camera HAL does NOT
+# depend on it") is TRUE about the HAL and FALSE about the app. Kept, with the
+# GUARDTALK_CAMERA_EXT_KEEP guard below, mirroring GUARDTALK_CAMERA_HAL_KEEP.
+# Reversible (Law 11): delete this note and restore the entry to re-excise.
 GUARDTALK_APPS_PACKAGES += \
     DynamicSystemInstallationService \
-    CameraExtensionsProxy \
     StatementService \
     CredentialManager
 
@@ -809,3 +885,138 @@ PRODUCT_PACKAGES += $(filter $(GUARDTALK_OVERLAY_KEEP),$(GUARDTALK_APPS_PACKAGES
 GUARDTALK_CAMERA_HAL_KEEP := \
     PixelCameraServicesConnectivityClient
 PRODUCT_PACKAGES += $(filter $(GUARDTALK_CAMERA_HAL_KEEP),$(GUARDTALK_APPS_PACKAGES))
+
+# T-CAM-EXT (2026-11-08): CameraExtensionsProxy serves
+# android.hardware.camera2.extension.ICameraExtensionsProxyService. GrapheneOS
+# Camera calls ExtensionsManager.init() on every cold start; with the service
+# excised it NPEs on the null binder and retries the bind on the MAIN THREAD
+# every 1000 ms -> input-dispatch ANR at 5 s -> Camera2CameraImpl
+# configureStreams timeout -> black preview. Proven on tangorpro 2026-11-08
+# (see the GUARDTALK_APPS_PACKAGES note above). Install path is system/app/, so
+# this is a systems image change, not product.
+# Defence-in-depth: restore it if a future edit re-adds it to the drop list.
+# (No-op in normal operation.)
+GUARDTALK_CAMERA_EXT_KEEP := \
+    CameraExtensionsProxy
+PRODUCT_PACKAGES += $(filter $(GUARDTALK_CAMERA_EXT_KEEP),$(GUARDTALK_APPS_PACKAGES))
+
+# T-GMSC-LIB-CAMERA-UNBLOCK (2026-11-08) — GmsCompatLib KEEP.
+#
+# WHY THIS EXISTS: GmsCompatLib is not an optional feature package; it is a
+# probe target that the framework unconditionally expects to exist in EVERY
+# app process. android.app.compat.gms.GmsCompat.maybeEnable() is called from
+# Instrumentation.newApplication() before any app code runs and ends with:
+#
+#     isEligibleForClientCompat = !isGmsCore() &&
+#         appInfoExt.hasFlag(AppInfoExtFlag.HAS_GMSCORE_CLIENT_LIBRARY);
+#     if (isEligibleForClientCompat && GmsCompatLib.get() == null)
+#         GmsCompatLib.init(appCtx, Application.getProcessName());
+#
+# HAS_GMSCORE_CLIENT_LIBRARY is set by PackageExtInit.getExtFlags() from the
+# PRESENCE of the com.google.android.gms.version metadata key in the app's
+# manifest — it is not a GMS policy decision, and no GmsCompat app needs to be
+# installed for the branch to be taken. GmsCompatLib.init() then calls
+# createPackageContext("app.grapheneos.gmscompat.lib") and rethrows
+# NameNotFoundException as IllegalStateException. So with the lib excised,
+# every eligible app hard-crashes during Application construction.
+#
+# EXACT DEPENDENCY CHAIN (why this one package and not the cluster):
+#   eligible app process
+#     -> Instrumentation.newApplication()
+#     -> GmsCompat.maybeEnable()                     [framework, always runs]
+#     -> GmsCompatLib.get() == null                  [lib absent]
+#     -> GmsCompatLib.init()                         [framework]
+#     -> createPackageContext("app.grapheneos.gmscompat.lib")
+#     -> NameNotFoundException -> IllegalStateException -> FATAL
+# The chain does NOT pass through GmsCompat, GmsCompatConfig or AppCompatConfig
+# (the GmsCompat settings UI, its config payload, and the compat-config
+# prebuilt). Those three stay excised: nothing on the crash path reads them.
+#
+# SCOPE: gs201_tangorpro AND zumapro_stallion. Each is a GuardTalk product
+# whose image ships at least one package declaring the gms.version metadata
+# key.
+#
+# tangorpro — measured 2026-11-08 with aapt2 over every APK in
+#   out/target/product/tangorpro/{system,product,system_ext,vendor}.
+#   Evidence: .agent-comm/evidence/T-GMSC-LIB-CAMERA-UNBLOCK/GMS_ELIGIBLE_APPS.txt
+#
+# stallion — measured 2026-11-09T19:12+04, aapt2 over every APK in
+#   releases/desktop-flash/stallion-20261109-stockpatch/{system,system_ext,
+#   product}.img (all /app and /priv-app entries). FOUR eligible apps:
+#
+#     system_ext/priv-app/PixelModemService
+#     product/app/TrichromeWebView
+#     product/app/talkback
+#     product/priv-app/PixelCameraServicesConnectivityClient
+#
+# blazer — measured 2026-11-09T20:40+04, same method against
+#   releases/desktop-flash/blazer-20260928-060401/{system,system_ext,product}.img.
+#   THE SAME FOUR apps, same paths. Evidence:
+#   .agent-comm/evidence/T-BLAZER-PREPARE/CAMERA-VERIFICATION.md
+#   Additionally verified for blazer: com.google.android.camerax.extensions.jar
+#   in /system_ext/framework has the same classes.dex bind strings as stallion's
+#   (com.google.android.apps.camera.services.extensions.service.PixelExtensions,
+#   PXLEXT_PixelExtensionsClient, "Failed to connect to PixelExtensionsClient
+#   proxy service after"), so the camera failure mechanism is identical.
+#
+# rango — measured 2026-11-12T13:07+04, aapt2 over all 54 APKs in
+#   releases/desktop-flash/rango-20260928-081134/{system,system_ext,product,
+#   vendor}.img + 19 APKs in vendor/google_devices/rango/proprietary/.
+#   SIX eligible apps (the four stallion/blazer apps plus two foldable/Pixel
+#   apps):
+#
+#     system_ext/app/CrossDeviceAccessServicePrimary
+#     system_ext/priv-app/PixelModemService
+#     product/app/AiIconsPrebuilt_20251106
+#     product/app/TrichromeWebView
+#     product/app/talkback
+#     product/priv-app/PixelCameraServicesConnectivityClient
+#
+#   Verified com.google.android.camerax.extensions.jar classes.dex on rango has
+#   the identical PixelExtensions / PXLEXT_PixelExtensionsClient bind strings.
+#   Evidence: .agent-comm/evidence/T-EXCISE-RANGO-PREPARE-CP1A/CAMERA-VERIFICATION.md
+#
+#   The last of those is the camera crash subject: PixelCameraServices-
+#   ConnectivityClient (PCS) is routed into GmsCompatLib.init() by its own
+#   manifest metadata, throws IllegalStateException at
+#   Instrumentation.newApplication(), and therefore never exports
+#   com.google.android.apps.camera.services.extensions.service.PixelExtensions…
+#   — the exact ICameraExtensionsProxyService that camerax's
+#   ExtensionVersionImpl binds (read from camerax.jar's classes.dex, and the
+#   service name confirmed declared in PCS's manifest). With PCS dead, the
+#   camera logs PXLEXT_PixelExtensionsClient "Failed to connect … after 1000 ms"
+#   once per second ON THE MAIN THREAD, input dispatch starves past 5 s, and
+#   Camera2CameraImpl fails configureStreams with a 5000 ms TimeoutException.
+#   Device evidence: .agent-comm/evidence/T-CAM-STALLION-DIAG/ and
+#   .agent-comm/evidence/T-FLASH-STALLION-STOCK-PATCH/CAMERA-ROOT-CAUSE.md
+#
+# The prior version of this stanza was gated to gs201_tangorpro alone and left
+# an explicit instruction: "If this branch ever produces a crash with
+# NameNotFoundException: app.grapheneos.gmscompat.lib, that product has an
+# eligible app and its own aapt2 scan is required — do not widen the gate by
+# guessing." Stallion produces exactly that crash, and the aapt2 scan above is
+# that evidence. The gate is therefore widened with data, not by assumption.
+#
+# WHAT THIS DOES *NOT* DO: it does not enable GMS compatibility. GmsCompat
+# .isEnabledFor() still returns false for every package id that is not
+# GMS_CORE / PLAY_STORE / G_SEARCH_APP / ANDROID_AUTO / G_CARRIER_SETTINGS, so
+# the lib's init path stays inert (GmsCompatLibImpl.init() ->
+# SystemServiceOverridesRegistry.init() overrides nothing when
+# GmsCompat.isEnabled() is false and the initial package id is not G_CAMERA).
+# The no-GMS product posture is unchanged; what changes is that a framework
+# probe stops killing processes. No GMS payload is installed — GmsCompatLib is
+# a 17-file shim with no bundled Google jars.
+#
+# Reversible (Law 11): delete this stanza. That reverts to the pre-2026-11-08
+# behaviour exactly (lib excised, eligible apps crash in Application).
+GUARDTALK_GMSCORE_CLIENT_LIB_KEEP := \
+    GmsCompatLib
+
+ifeq ($(filter gs201_tangorpro zumapro_stallion zumapro_caimito laguna_muzel laguna_rango,$(GT_VARIANT)),$(GT_VARIANT))
+PRODUCT_PACKAGES += $(filter $(GUARDTALK_GMSCORE_CLIENT_LIB_KEEP),$(GUARDTALK_APPS_PACKAGES))
+else
+# Not the affected product: GmsCompatLib stays excised. If this branch ever
+# produces a crash with NameNotFoundException: app.grapheneos.gmscompat.lib,
+# that product has an eligible app and its own aapt2 scan is required — do not
+# widen the gate by guessing.
+endif

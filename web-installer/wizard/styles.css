@@ -343,6 +343,125 @@ dialog,
   font-size: var(--gl-font-size-sm);
 }
 
+.readiness-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gl-spacing-3);
+  margin-top: var(--gl-spacing-4);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--gl-spacing-2) var(--gl-spacing-4);
+  border-radius: var(--gl-border-radius-base);
+  border: 1px solid var(--line-strong);
+  font-size: var(--gl-font-size-sm);
+  font-weight: 600;
+  background: var(--gl-background-color-section);
+  color: var(--gl-text-color-default);
+}
+
+.badge-supported {
+  border-left: 4px solid var(--gl-feedback-success);
+}
+
+.badge-experimental {
+  border-left: 4px solid var(--gl-feedback-warning);
+}
+
+.badge-hold {
+  border-left: 4px solid var(--gl-feedback-danger);
+}
+
+.badge-neutral {
+  border-left: 4px solid var(--gl-border-color-strong);
+}
+
+.steps li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--gl-spacing-3);
+  margin: var(--gl-spacing-4) 0;
+}
+
+.steps li[aria-current="step"] .step-title {
+  font-weight: 700;
+  color: var(--gl-text-color-default);
+}
+
+.step-chip {
+  font-size: var(--gl-font-size-xs);
+  font-weight: 650;
+  padding: var(--gl-spacing-1) var(--gl-spacing-3);
+  border-radius: var(--gl-border-radius-base);
+  border: 1px solid var(--line-strong);
+  color: var(--gl-text-color-subtle);
+}
+
+.os-guidance {
+  margin-top: var(--gl-spacing-4);
+}
+
+.os-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gl-spacing-3);
+  margin-bottom: var(--gl-spacing-3);
+}
+
+.os-tab[aria-selected="true"] {
+  border-color: var(--gl-focus-ring);
+  background: var(--gl-background-color-strong);
+}
+
+.device-telemetry {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--gl-spacing-3);
+  padding: var(--gl-spacing-4);
+  background: var(--gl-background-color-subtle);
+  border: 1px solid var(--gl-border-color-default);
+  border-radius: var(--gl-border-radius-base);
+}
+
+.device-telemetry p {
+  margin: 0;
+}
+
+.progress-box {
+  margin: var(--gl-spacing-4) 0;
+}
+
+.progress-track {
+  width: 100%;
+  height: 0.75rem;
+  background: var(--gl-background-color-subtle);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--gl-border-radius-base);
+  overflow: hidden;
+  margin-bottom: var(--gl-spacing-2);
+}
+
+.progress-fill {
+  width: 0%;
+  height: 100%;
+  background: var(--gl-action-confirm-bg);
+  transition: width 120ms ease-out;
+}
+
+.safety-gate {
+  padding: var(--gl-spacing-4);
+  background: var(--gl-background-color-subtle);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--gl-border-radius-base);
+}
+
+.recovery-box {
+  margin-top: var(--gl-spacing-5);
+}
+
 @media (max-width: 800px) {
   .layout {
     grid-template-columns: 1fr;

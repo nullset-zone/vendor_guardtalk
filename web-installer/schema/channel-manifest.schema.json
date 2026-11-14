@@ -29,20 +29,20 @@
     },
     "product": {
       "type": "string",
-      "enum": ["tokay", "akita", "komodo", "rango"],
-      "description": "Advertised devices: Pixel 9 (tokay), Pixel 8a (akita), Pixel 9 Pro XL (komodo), Pixel 10 Pro Fold (rango, experimental / boot HOLD). Packer fails closed on unstamped shiba/husky/caiman/tegu/comet. Rango is image-ready, not production-boot-green."
+      "enum": ["tokay", "akita", "komodo", "rango", "caiman", "frankel", "stallion", "blazer"],
+      "description": "Staged devices: Pixel 9 (tokay), Pixel 8a (akita), Pixel 9 Pro XL (komodo), Pixel 10 Pro Fold (rango), Pixel 9 Pro (caiman), Pixel 10 (frankel), Pixel 9a (stallion), Pixel 10 Pro (blazer). Packer fails closed on unstamped shiba/husky/tegu/comet."
     },
     "advertisedDevices": {
       "type": "array",
       "minItems": 1,
-      "maxItems": 4,
-      "items": { "enum": ["tokay", "akita", "komodo", "rango"] },
-      "description": "Public allowlist. tokay, akita, komodo, and/or rango. Must include product. Rango is selectable experimental / boot HOLD."
+      "maxItems": 8,
+      "items": { "enum": ["tokay", "akita", "komodo", "rango", "caiman", "frankel", "stallion", "blazer"] },
+      "description": "Public allowlist of staged devices. Must include product."
     },
     "reservedProducts": {
       "type": "array",
-      "items": { "type": "string", "not": { "enum": ["tokay", "akita", "komodo", "rango"] } },
-      "description": "Must not list advertised devices (tokay, akita, komodo, rango). Unstamped products (shiba, husky, caiman, tegu, comet) may appear here; they must not appear in product/advertisedDevices."
+      "items": { "type": "string", "not": { "enum": ["tokay", "akita", "komodo", "rango", "caiman", "frankel", "stallion", "blazer"] } },
+      "description": "Must not list advertised/staged devices. Unstamped products (shiba, husky, tegu, comet) may appear here; they must not appear in product/advertisedDevices."
     },
     "channel": {
       "type": "string",

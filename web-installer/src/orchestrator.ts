@@ -4,15 +4,17 @@ import {
   LiveExecuteHoldError,
   LockBeforeCompleteError,
   LockCancelledError,
+  LockSafetyError,
   UnlockCancelledError,
   WrongProductError,
 } from "./errors.js";
 import { assertSha256Match } from "./hash.js";
-import { buildFlashPlan } from "./plan.js";
+import { buildFlashPlan, type FlashPlanOptions } from "./plan.js";
 import type {
   ArtifactStore,
   ChannelBundle,
   FastbootTransport,
+  FlashOptions,
   FlashPlan,
   PlanStep,
   ReconnectHook,
@@ -21,6 +23,17 @@ import { isDryRunTransport, LIVE_FLASH_CLAIMED } from "./types.js";
 
 export interface OrchestratorHooks {
   onReconnect: ReconnectHook;
+  /** DEC-009 explicit opt-in required to execute a plan on a live (non-dryRun) transport. */
+  allowLiveExecute?: boolean;
+}
+
+export interface LockOptions {
+  /** Explicit user confirmation of destructive userdata wipe + bootloader lock. */
+  confirmed?: boolean;
+  /** DEC-009 explicit opt-in required to lock on a live (non-dryRun) transport. */
+  allowLiveLock?: boolean;
+  /** Explicit operator override to lock an unverified or experimental target. */
+  operatorOverride?: boolean;
 }
 
 export class FlashOrchestrator {
@@ -28,6 +41,7 @@ export class FlashOrchestrator {
   private readonly channel: ChannelBundle;
   private readonly store: ArtifactStore;
   private readonly plan: FlashPlan;
+  private readonly planOptions: FlashPlanOptions | undefined;
   private connected = false;
   private planComplete = false;
   /**
@@ -40,14 +54,16 @@ export class FlashOrchestrator {
     transport: FastbootTransport;
     channel: ChannelBundle;
     store: ArtifactStore;
+    planOptions?: FlashPlanOptions;
   }) {
     this.transport = opts.transport;
     this.channel = opts.channel;
     this.store = opts.store;
+    this.planOptions = opts.planOptions;
     const close = (opts.transport as { close?: unknown }).close;
     this.teardown =
       typeof close === "function" ? () => (close.call(opts.transport) as Promise<void>) : undefined;
-    this.plan = buildFlashPlan(opts.channel);
+    this.plan = buildFlashPlan(opts.channel, opts.planOptions);
   }
 
   getPlan(): FlashPlan {
@@ -82,6 +98,11 @@ export class FlashOrchestrator {
     this.connected = true;
   }
 
+  async getCurrentSlot(): Promise<string> {
+    this.requireConnected();
+    return (await this.transport.getVar("current-slot")).trim();
+  }
+
   async unlock(): Promise<void> {
     this.requireConnected();
     const unlocked = await this.transport.getVar("unlocked");
@@ -95,7 +116,7 @@ export class FlashOrchestrator {
   }
 
   async executePlan(hooks: OrchestratorHooks): Promise<void> {
-    this.assertDryRunOnly("execute");
+    this.assertDryRunOrOptIn("execute", hooks.allowLiveExecute);
     this.requireConnected();
     await this.assertProduct();
     await this.maybeCancelSnapshot();
@@ -105,21 +126,45 @@ export class FlashOrchestrator {
     this.planComplete = true;
   }
 
-  async lock(): Promise<void> {
-    this.assertDryRunOnly("lock");
+  async lock(options?: LockOptions): Promise<void> {
+    this.assertDryRunOrOptIn("lock", options?.allowLiveLock);
     this.requireConnected();
     if (!this.planComplete) {
       throw new LockBeforeCompleteError();
     }
+    this.assertLockSafety(options);
     const result = await this.transport.runCommand("flashing lock");
     if (!result.ok) {
       throw new LockCancelledError();
     }
   }
 
-  private assertDryRunOnly(action: "execute" | "lock"): void {
-    if (!isDryRunTransport(this.transport)) {
+  private assertDryRunOrOptIn(action: "execute" | "lock", optIn: boolean | undefined): void {
+    if (!isDryRunTransport(this.transport) && optIn !== true) {
       throw new LiveExecuteHoldError(action);
+    }
+  }
+
+  private assertLockSafety(options: LockOptions | undefined): void {
+    const isLive = !isDryRunTransport(this.transport);
+    if (!isLive && options === undefined) {
+      return;
+    }
+    if (options?.confirmed !== true) {
+      throw new LockSafetyError(
+        "flashing lock requires explicit confirmation (confirmed: true)",
+      );
+    }
+    const { product, verifiedBootClaim, bootState } = this.channel.manifest;
+    const isUnverifiedOrExperimental =
+      product === "rango" ||
+      verifiedBootClaim === "none" ||
+      bootState === "unlocked";
+    if (isUnverifiedOrExperimental && options.operatorOverride !== true) {
+      throw new LockSafetyError(
+        `refusing flashing lock on unverified/experimental target '${product}' ` +
+          `(verifiedBootClaim=${verifiedBootClaim}, bootState=${bootState}) without operatorOverride: true`,
+      );
     }
   }
 
@@ -148,7 +193,9 @@ export class FlashOrchestrator {
 
   private async assertProduct(): Promise<void> {
     const product = (await this.transport.getVar("product")).trim();
-    assertAllowedProduct(product);
+    if (!this.planOptions?.allowExtendedProduct) {
+      assertAllowedProduct(product);
+    }
     if (product !== this.channel.manifest.product) {
       throw new WrongProductError(product);
     }
@@ -171,7 +218,8 @@ export class FlashOrchestrator {
 
   private async runStep(step: PlanStep, onReconnect: ReconnectHook): Promise<void> {
     if (step.kind === "flash") {
-      await this.flashVerified(step.artifact, step.partition);
+      const flashOpts: FlashOptions | undefined = step.slot ? { slot: step.slot } : undefined;
+      await this.flashVerified(step.artifact, step.partition, flashOpts);
       return;
     }
     if (step.kind === "erase") {
@@ -182,17 +230,51 @@ export class FlashOrchestrator {
       await this.requireOk(step.command);
       return;
     }
+    if (step.kind === "wipe-super") {
+      await this.wipeSuperVerified(step.artifact);
+      return;
+    }
+    if (step.kind === "reboot-fastboot") {
+      if (typeof this.transport.rebootFastboot !== "function") {
+        throw new FastbootError("transport does not support rebootFastboot (fastbootd)");
+      }
+      await this.transport.rebootFastboot(onReconnect);
+      const isUserspace = (await this.transport.getVar("is-userspace")).trim().toLowerCase();
+      if (isUserspace !== "yes") {
+        throw new FastbootError(
+          `expected fastbootd (is-userspace=yes) after reboot-fastboot, got '${isUserspace}'`,
+        );
+      }
+      return;
+    }
     await this.transport.rebootBootloader(onReconnect);
   }
 
-  private async flashVerified(name: string, partition: string): Promise<void> {
+  private async flashVerified(
+    name: string,
+    partition: string,
+    options?: FlashOptions,
+  ): Promise<void> {
     const expected = this.channel.sha256sums.get(name);
     if (expected === undefined) {
       throw new FastbootError(`no SHA-256 for ${name}`);
     }
     const data = await this.store.read(name);
     assertSha256Match(name, data, expected);
-    await this.transport.flash(partition, data);
+    await this.transport.flash(partition, data, options);
+  }
+
+  private async wipeSuperVerified(name: string): Promise<void> {
+    if (typeof this.transport.wipeSuper !== "function") {
+      throw new FastbootError("transport does not support wipeSuper");
+    }
+    const expected = this.channel.sha256sums.get(name);
+    if (expected === undefined) {
+      throw new FastbootError(`no SHA-256 for ${name}`);
+    }
+    const data = await this.store.read(name);
+    assertSha256Match(name, data, expected);
+    await this.transport.wipeSuper(data);
   }
 
   private async requireOk(command: string): Promise<void> {

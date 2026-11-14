@@ -86,18 +86,6 @@ ifneq ($(GUARDTALK_RADIO_EXCISED),)
   PRODUCT_PACKAGES += GuardTalkConfig
   PRODUCT_SOONG_NAMESPACES += vendor/guardtalk/apps/GuardTalkConfig
 
-  # T-REMEDIATE-B4-MESSENGER: bake Jami GuardTalk Messenger (com.guardtalk.messenger)
-  # into the GuardTalkOS user image. Product app, not priv-app. Always += here
-  # (Validator pattern) so a late PRODUCT_PACKAGES rebuild cannot drop it.
-  # Do not add a browser or Play Store; jamid lives on the Gateway LAN
-  # (see vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md).
-  PRODUCT_PACKAGES += GuardTalkMessenger
-  PRODUCT_SOONG_NAMESPACES += vendor/guardtalk/apps/GuardTalkMessenger
-
-  # T-REMEDIATE-B4-CHECKIN (item 20): 12 h seizure check-in client.
-  # Tor admin visibility HOLDs until Gateway exists; no public C2 baked in.
-  include vendor/guardtalk/checkin/guardtalk-checkin.mk
-
   # =====================================================================
 
   # T-BRAND-PROPS (Wave 5): rebrand the user-visible device model in Settings →

@@ -25,19 +25,22 @@ function gatedWizard(): InstallWizard {
   return session;
 }
 
-test("picker offers tokay, akita, komodo, and rango", () => {
+test("picker offers all 8 packed devices with gt/hybrid metadata", () => {
   assert.deepEqual(
     WIZARD_DEVICES.map((d) => d.id),
-    ["tokay", "akita", "komodo", "rango"],
+    ["tokay", "komodo", "caiman", "frankel", "stallion", "blazer", "rango", "akita"],
   );
   assert.equal(WIZARD_DEVICES.find((d) => d.id === "rango")?.status, "experimental");
   assert.equal(WIZARD_DEVICES.find((d) => d.id === "rango")?.deviceName, "Pixel 10 Pro Fold");
   assert.equal(WIZARD_DEVICES.find((d) => d.id === "tokay")?.deviceName, "Pixel 9");
   assert.equal(WIZARD_DEVICES.find((d) => d.id === "akita")?.deviceName, "Pixel 8a");
   assert.equal(WIZARD_DEVICES.find((d) => d.id === "komodo")?.deviceName, "Pixel 9 Pro XL");
+  assert.equal(WIZARD_DEVICES.find((d) => d.id === "caiman")?.deviceName, "Pixel 9 Pro");
+  assert.equal(WIZARD_DEVICES.find((d) => d.id === "frankel")?.defaultBootChain, "hybrid");
+  assert.equal(WIZARD_DEVICES.find((d) => d.id === "blazer")?.defaultBootChain, "hybrid");
+  assert.equal(WIZARD_DEVICES.find((d) => d.id === "stallion")?.defaultBootChain, "gt");
   assert.equal(WIZARD_DEVICES.find((d) => d.id === "tokay")?.status, "supported");
   assert.equal(JSON.stringify(WIZARD_DEVICES).includes("shiba"), false);
-  assert.equal(JSON.stringify(WIZARD_DEVICES).includes("caiman"), false);
   assert.equal(JSON.stringify(WIZARD_DEVICES).includes("husky"), false);
 });
 
@@ -108,12 +111,14 @@ test("tiny quota is called out as a private-window problem", () => {
   assert.match(assessment.summary, /Incognito is not a supported path/);
 });
 
-test("rango can be selected as experimental; unstamped products cannot", () => {
+test("all 8 packed devices can be selected; unstamped products cannot", () => {
   const session = new InstallWizard();
-  assert.doesNotThrow(() => session.selectDevice("rango"));
+  for (const id of ["tokay", "komodo", "caiman", "frankel", "stallion", "blazer", "rango", "akita"]) {
+    assert.doesNotThrow(() => session.selectDevice(id));
+  }
   assert.throws(() => session.selectDevice("shiba"), WizardGateError);
-  assert.throws(() => session.selectDevice("caiman"), WizardGateError);
   assert.throws(() => session.selectDevice("husky"), WizardGateError);
+  assert.throws(() => session.selectDevice("tegu"), WizardGateError);
 });
 
 test("akita, komodo, and rango can be selected", () => {
@@ -149,9 +154,9 @@ test("wizard HTML is GuardTalkOS-branded and carries DEC labels", async () => {
   assert.match(html, /Incognito windows are not a supported path/);
   assert.match(html, /Reconnect after reboot-bootloader/);
   assert.match(html, /Pixel 9 \(tokay\)/);
-  assert.match(html, /Pixel 8a \(akita\)/);
+  assert.match(html, /Pixel 8a\s*\(akita\)/);
   assert.match(html, /Pixel 9 Pro XL \(komodo\)/);
-  assert.match(html, /Pixel 10 Pro Fold \(rango\)/);
+  assert.match(html, /Pixel 10 Pro Fold/);
   assert.match(html, /experimental \/ boot HOLD/);
   assert.match(html, /channels\/tokay/);
   assert.match(html, /reboot-to-fastboot\.sh/);
@@ -303,5 +308,99 @@ test("assertCanFlash names unlock as the missing gate", () => {
         dryRun: true,
       }),
     /unlock the bootloader before flash/,
+  );
+});
+
+test("live per-partition progress reports steps and 100% completion", async () => {
+  const session = gatedWizard();
+  session.attachArtifacts(new Map(tokayBlobs().map((b) => [b.name, b.bytes])));
+  session.useDryRunTransport();
+  await session.connect();
+  await session.unlock();
+  const seen: Array<{ partition?: string; percent: number }> = [];
+  await session.executePlan({
+    onReconnect: async () => undefined,
+    onProgress: (p) => {
+      seen.push(p.partition !== undefined ? { partition: p.partition, percent: p.percent } : { percent: p.percent });
+    },
+  });
+  assert.ok(seen.length > 0, "expected progress callbacks");
+  assert.ok(seen.some((p) => p.partition === "bootloader"));
+  assert.equal(seen[seen.length - 1]?.percent, 100);
+  assert.equal(session.claimsLiveFlash(), false);
+});
+
+test("recoverable USB errors are classified with user recovery guidance", async () => {
+  const { UsbDisconnectError, UsbTimeoutError, UsbPermissionError } = await import("../src/errors.js");
+  const { classifyRecoverableUsbError } = await import("../wizard/gating.js");
+  const d = classifyRecoverableUsbError(new UsbDisconnectError("flash"));
+  assert.equal(d.recoverable, true);
+  assert.equal(d.kind, "disconnect");
+  const t = classifyRecoverableUsbError(new UsbTimeoutError("flash"));
+  assert.equal(t.recoverable, true);
+  assert.equal(t.kind, "timeout");
+  const p = classifyRecoverableUsbError(new UsbPermissionError("connect"));
+  assert.equal(p.recoverable, true);
+  assert.equal(p.kind, "permission");
+});
+
+test("safety-gated flashing lock blocks unconfirmed or unverified targets without override", async () => {
+  const { LockSafetyError } = await import("../src/errors.js");
+  const { canLockWithSafety, assertCanLockWithSafety } = await import("../wizard/gating.js");
+  const readyFlags = {
+    deviceSelected: true,
+    channelLoaded: true,
+    connected: true,
+    unlocked: true,
+    planComplete: true,
+    artifactsReady: true,
+    dryRun: true,
+  };
+  assert.equal(
+    canLockWithSafety(readyFlags, {
+      confirmed: false,
+      operatorOverride: false,
+      isExperimentalOrUnverified: true,
+    }),
+    false,
+  );
+  assert.equal(
+    canLockWithSafety(readyFlags, {
+      confirmed: true,
+      operatorOverride: false,
+      isExperimentalOrUnverified: true,
+    }),
+    false,
+  );
+  assert.equal(
+    canLockWithSafety(readyFlags, {
+      confirmed: true,
+      operatorOverride: true,
+      isExperimentalOrUnverified: true,
+    }),
+    true,
+  );
+  assert.throws(
+    () =>
+      assertCanLockWithSafety(readyFlags, {
+        confirmed: true,
+        operatorOverride: false,
+        isExperimentalOrUnverified: true,
+      }),
+    WizardGateError,
+  );
+
+  const session = gatedWizard();
+  session.attachArtifacts(new Map(tokayBlobs().map((b) => [b.name, b.bytes])));
+  session.useDryRunTransport();
+  await session.connect();
+  await session.unlock();
+  await session.executePlan(async () => undefined);
+  await assert.rejects(
+    () => session.lock({ confirmed: true, operatorOverride: false }),
+    LockSafetyError,
+  );
+  await assert.doesNotReject(
+    () => session.lock({ confirmed: true, operatorOverride: true }),
   );
 });

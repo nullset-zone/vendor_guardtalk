@@ -16,3 +16,8 @@
 # claim and must keep matching the signed vendor image for Play Integrity /
 # keymint (radio-excised/product-config-late.mk).
 GUARDTALK_PRODUCT_MODEL := GuardTalk Pixel Tablet
+
+# F-003: enable Wave 2 feature excision (BT/NFC/Loc/Apps) on tangorpro so
+# vintf-excised.mk selects vendor_manifest_no_bt_tangorpro.xml (removing
+# android.hardware.bluetooth + hardware.google.bluetooth.sar from VINTF).
+GUARDTALK_FEATURE_EXCISED_WAVE2 := true

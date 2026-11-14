@@ -79,7 +79,7 @@ export const STEP_TITLES = [
   "Keep the key",
 ];
 
-const STAMP_RE = /^([a-z0-9]+)-([0-9]{8})-([0-9]{6})$/;
+const STAMP_RE = /^([a-z0-9]+)-([0-9]{8})-([0-9]{6}|[a-z][a-z0-9_-]*)$/;
 
 export function phaseForArtifact(name) {
   if (name === "bootloader.img" || name === "radio.img") return "firmware";

@@ -43,13 +43,4 @@
         launcher:y="0"
         launcher:packageName="com.android.settings"
         launcher:className="com.android.settings.Settings" />
-
-    <!-- Workspace: GT Messenger (F-REMEDIATE-B4-MESSENGER — first-user RING). -->
-    <favorite
-        launcher:screen="0"
-        launcher:x="1"
-        launcher:y="0"
-        launcher:packageName="com.guardtalk.messenger"
-        launcher:className="com.guardtalk.messenger.MessengerActivity" />
-
 </favorites>

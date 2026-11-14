@@ -18,6 +18,7 @@ import { INSTALLER_CSP } from "../../lib/claims/csp.js";
 import { ProtectionLimit } from "../../lib/claims/components.js";
 import { GL_BTN_CONFIRM, glAlertHtml } from "../../lib/ui/pajamas.js";
 import { offeredProductIds } from "../../lib/ui/offered-devices.js";
+import { usbTroubleshootingHtml } from "../../lib/ui/usb-troubleshooting.js";
 
 export const GATEWAY_URL = "https://guardtalk.io/system/gateway";
 export const DOCS_URL = "https://guardtalk.io/docs";
@@ -224,6 +225,7 @@ export function connectStepHtml(view: ConnectStepViewInput): string {
   parts.push(`</ol>`);
   parts.push(`<p>The phone will show its own confirmation screen during <code class="mono">fastboot flashing unlock</code>. Unlocking also wipes data again — the checkbox above covers this.</p>`);
   parts.push(`</details>`);
+  parts.push(usbTroubleshootingHtml());
 
   if (view.stopped !== undefined) {
     parts.push(stopAnnouncementHtml(view.stopped, { id: "step5-stop-announcement" }));

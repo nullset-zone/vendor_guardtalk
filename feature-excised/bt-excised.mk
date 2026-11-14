@@ -258,6 +258,7 @@ $(or \
   $(findstring bluetooth_power_limits,$(1)), \
   $(findstring /bluetooth/,$(1)), \
   $(findstring bluetooth-service.bcmbtlinux.rc,$(1)), \
+  $(findstring bluetooth@1.1-service.synabtlinux.rc,$(1)), \
   $(findstring downlink_bluetooth_headset_config.pb,$(1)), \
   $(findstring uplink_bluetooth_headset_aec_off_config.pb,$(1)), \
   $(findstring uplink_bluetooth_headset_aec_on_config.pb,$(1)), \

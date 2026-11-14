@@ -36,9 +36,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.guardtalk.sysctl_hardening=1 \
     persist.security.usb_mode=2
 
-# T-SEC-P4-PERMS: Messenger default-permissions XML (package may be absent until APK lands).
-PRODUCT_PACKAGES += default-permissions-com.guardtalk.messenger
-
 # T-SEC-P4-PRIVACY: RAM-only privacy tmpfs (logs/cache wiped across reboot).
 PRODUCT_PACKAGES += init.guardtalk.privacy_tmpfs.rc
 

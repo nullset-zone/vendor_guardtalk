@@ -428,3 +428,13 @@ test("both routes: claim lint is clean over own sources (security words name mec
     assert.deepEqual(hits.map((hit) => `${hit.line} [${hit.rule}] ${hit.excerpt}`), []);
   }
 });
+
+test("both routes: OS-specific USB/udev/driver troubleshooting is present", () => {
+  for (const html of [renderVerifyDevicePage({}), renderRecoverPage({})]) {
+    assert.match(html, /data-guide="usb-troubleshooting"/);
+    assert.match(html, /18d1/);
+    assert.match(html, /fwupd/);
+    assert.match(html, /Google USB Driver/);
+    assert.match(html, /adb kill-server/);
+  }
+});

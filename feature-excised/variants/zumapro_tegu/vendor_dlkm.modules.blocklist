@@ -25,3 +25,6 @@ blocklist syna_touch
 
 # T-BT-FULL (FR-3): Bluetooth power/rfkill driver — BCM BT on UART.
 blocklist nitrous
+
+# F-003: GNSS/PPS & NFC kernel module excision
+blocklist bbd_pps_gpio.ko

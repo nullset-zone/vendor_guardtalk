@@ -156,6 +156,10 @@ DEVICE_MANIFEST_FILE += $(GUARDTALK_VENDOR_MANIFEST_EXCISED)
 PRODUCT_PACKAGES := $(filter-out \
     adevtool_vintf_fragment_vendor_dmd.xml,$(PRODUCT_PACKAGES))
 
+# F-003: also emit ro.guardtalk.radio.excised=1 to vendor/build.prop
+# (alongside PRODUCT_SYSTEM_PROPERTIES in guardtalk-product-props.mk) so
+# verify-radio-excision.sh and vendor-namespace checks both observe it.
 PRODUCT_VENDOR_PROPERTIES += \
     ro.boot.radio.disabled=1 \
-    ro.radio.noril=1
+    ro.radio.noril=1 \
+    ro.guardtalk.radio.excised=1

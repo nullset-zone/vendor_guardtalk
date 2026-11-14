@@ -39,7 +39,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 # Default preserves the in-tree layout exactly.
 RELEASES_ROOT="${GUARDTALK_RELEASES_ROOT:-${REPO_ROOT}/releases/desktop-flash}"
 
-readonly ADVERTISED_DEVICES=(tokay akita komodo rango)
+readonly ADVERTISED_DEVICES=(tokay akita komodo rango caiman frankel stallion blazer)
 readonly CHANNEL_DEFAULT="dev"
 readonly BOOT_STATE="unlocked"
 readonly CHANNEL_LABEL="dev/unlocked"
@@ -117,15 +117,22 @@ resolve_stamp() {
 
 parse_stamp_identity() {
     local stamp_base="$1"
-    if [[ ! "$stamp_base" =~ ^([a-z0-9]+)-([0-9]{8})-([0-9]{6})$ ]]; then
-        die "stamp name must be {product}-YYYYMMDD-HHMMSS, got: $stamp_base"
+    if [[ "$stamp_base" =~ ^([a-z0-9]+)-([0-9]{8})-([0-9]{6})$ ]]; then
+        PRODUCT="${BASH_REMATCH[1]}"
+        RELEASE_ID="${BASH_REMATCH[2]}-${BASH_REMATCH[3]}"
+        local y="${BASH_REMATCH[2]:0:4}" m="${BASH_REMATCH[2]:4:2}" d="${BASH_REMATCH[2]:6:2}"
+        local H="${BASH_REMATCH[3]:0:2}" M="${BASH_REMATCH[3]:2:2}" S="${BASH_REMATCH[3]:4:2}"
+        UNIX_EPOCH="$(date -u -d "${y}-${m}-${d} ${H}:${M}:${S}" +%s)" \
+            || die "cannot parse stamp timestamp: $stamp_base"
+    elif [[ "$stamp_base" =~ ^([a-z0-9]+)-([0-9]{8})-([a-z][a-z0-9_-]*)$ ]]; then
+        PRODUCT="${BASH_REMATCH[1]}"
+        RELEASE_ID="${BASH_REMATCH[2]}-${BASH_REMATCH[3]}"
+        local y="${BASH_REMATCH[2]:0:4}" m="${BASH_REMATCH[2]:4:2}" d="${BASH_REMATCH[2]:6:2}"
+        UNIX_EPOCH="$(date -u -d "${y}-${m}-${d} 00:00:00" +%s)" \
+            || die "cannot parse stamp date: $stamp_base"
+    else
+        die "stamp name must be {product}-YYYYMMDD-(HHMMSS|label), got: $stamp_base"
     fi
-    PRODUCT="${BASH_REMATCH[1]}"
-    RELEASE_ID="${BASH_REMATCH[2]}-${BASH_REMATCH[3]}"
-    local y="${BASH_REMATCH[2]:0:4}" m="${BASH_REMATCH[2]:4:2}" d="${BASH_REMATCH[2]:6:2}"
-    local H="${BASH_REMATCH[3]:0:2}" M="${BASH_REMATCH[3]:2:2}" S="${BASH_REMATCH[3]:4:2}"
-    UNIX_EPOCH="$(date -u -d "${y}-${m}-${d} ${H}:${M}:${S}" +%s)" \
-        || die "cannot parse stamp timestamp: $stamp_base"
 }
 
 assert_advertised_product() {
@@ -134,7 +141,7 @@ assert_advertised_product() {
     for allowed in "${ADVERTISED_DEVICES[@]}"; do
         [[ "$product" == "$allowed" ]] && return 0
     done
-    die "product '$product' is not in the advertised allowlist (tokay, akita, komodo, rango)"
+    die "product '$product' is not in the advertised allowlist (${ADVERTISED_DEVICES[*]})"
 }
 
 assert_public_avb() {
@@ -638,7 +645,7 @@ PY
     [[ -f "${tmp}/out-rango/rango-dev" ]] \
         || die "self-test: rango-dev pointer missing"
     local unstamped stamp
-    for unstamped in shiba husky caiman; do
+    for unstamped in shiba husky tegu comet; do
         stamp="${tmp}/${unstamped}-20990101-000000"
         mkdir -p "$stamp"
         printf 'public-avb-blob\n' >"${stamp}/avb_pkmd.bin"

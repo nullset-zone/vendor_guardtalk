@@ -42,7 +42,7 @@ export const REQUIRED_CHANNEL_FILES = Object.freeze([
   "avb_pkmd.bin",
 ]);
 
-const STAMP_RE = /^([a-z0-9]+)-([0-9]{8})-([0-9]{6})$/;
+const STAMP_RE = /^([a-z0-9]+)-([0-9]{8})-([0-9]{6}|[a-z][a-z0-9_-]*)$/;
 
 /** True when `path` is a symlink (never throws on absence). */
 function isSymlink(path) {

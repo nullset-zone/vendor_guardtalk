@@ -86,3 +86,6 @@ BOARD_VENDOR_KERNEL_MODULES_BLOCKLIST_FILE := $(GT_EXCISION_BLOCKLIST_FILE)
 # Fail loudly if the file above ever drifts token-wise from variant
 # gs201_tangorpro, or points at a non-existent path. Never a silent no-op.
 $(call gt-excision-validate-device-blocklist)
+
+# F-003: shared system_dlkm blocklist (wwan.ko + GKI BT/NFC .ko)
+BOARD_SYSTEM_KERNEL_MODULES_BLOCKLIST_FILE := vendor/guardtalk/feature-excised/system_dlkm.modules.blocklist

@@ -21,6 +21,7 @@ import { fingerprintFromJwk } from "../../lib/keys/fingerprint.js";
 import { POSTURE_CONNECTIVITY, POSTURE_CUSTODY, renderPosturePill } from "../../lib/ui/posture.js";
 import { makeChip } from "../../lib/ui/chips.js";
 import { escapeHtml } from "../../lib/ui/escape.js";
+import { usbTroubleshootingHtml } from "../../lib/ui/usb-troubleshooting.js";
 import { GL_BTN_CONFIRM, GL_BTN_DANGER, GL_BTN_LINK, glAlertHtml } from "../../lib/ui/pajamas.js";
 import { RELEASE_STATE_ALPHA } from "../verify-device/verify-route.js";
 
@@ -100,6 +101,7 @@ function unlockPhaseHtml(acknowledged: boolean): string {
     `<p class="wipe-warning">${escapeHtml(WIPE_WARNING_TEXT)}</p>`,
     ...gate,
     `<div class="result" data-container="unlock-result"></div>`,
+    usbTroubleshootingHtml(),
     `</section>`,
   ].join("");
 }

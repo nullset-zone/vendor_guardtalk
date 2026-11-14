@@ -24,3 +24,6 @@ blocklist goodix_brl_touch
 
 # T-BT-FULL (FR-3): Bluetooth power/rfkill — nitrous.ko on akita vendor_dlkm.
 blocklist nitrous
+
+# F-003: GNSS/PPS & NFC kernel module excision
+blocklist bbd_pps_gpio.ko
