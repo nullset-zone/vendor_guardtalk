@@ -104,17 +104,11 @@ GuardTalk overlay: `vendor/guardtalk/device/komodo/guardtalk-telemetry.mk`
 (logpersist.start / logcatd user filter + vendor init re-assert). Do not
 re-enable RIL. Do not edit apps-excised.mk or init.guardtalk.hardening.rc.
 
-## Messenger (T-REMEDIATE-B4-MESSENGER)
+## Messenger (decommissioned — T-VENDOR-PURGE-MESSENGER-PREINSTALL)
 
-adevtool does **not** emit the Messenger APK. After regen, keep:
-
-```
-include vendor/guardtalk/device/komodo/guardtalk-messenger.mk
-```
-
-from `guardtalk-production-hardening.mk`. Soong module `GuardTalkMessenger`
-(`com.guardtalk.messenger`) is the bake path. Do **not** restore AppStore /
-TrichromeChrome. Gateway jamid SOP: `vendor/guardtalk/docs/GATEWAY_MESSENGER_PROVISION.md`.
+Messenger preinstall has been decommissioned and purged from `vendor/guardtalk/`.
+Do **not** restore `guardtalk-messenger.mk` into `guardtalk-production-hardening.mk`,
+and do **not** restore AppStore / TrichromeChrome.
 
 ## User defaults (T-REMEDIATE-B5-DEFAULTS)
 

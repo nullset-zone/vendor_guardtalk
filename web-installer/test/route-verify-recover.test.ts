@@ -29,12 +29,10 @@ import {
 import {
   RECOVERY_ACK_PHRASE,
   RECOVER_PATH_PHASES,
-  REENROL_WIPE_WARNING,
   RELOCK_WIPE_WARNING,
   WIPE_WARNING_TEXT,
   freezeAckRequired,
   freezeOutOfOrder,
-  flashPkmd,
   recoverRelock,
   recoverUnlock,
   renderRecoverPage,
@@ -123,8 +121,6 @@ test("route subsets as data: verify-device is steps 5 and 8 only; recover is the
     "read-the-loss",
     "typed-ack",
     "unlock-wipe",
-    "new-key",
-    "re-enrol-pkmd",
     "reinstall-pointer",
     "relock",
   ]);
@@ -328,33 +324,27 @@ test("wipe warnings are verbatim before their destructive actions; relock step p
   const html = renderRecoverPage({ ackAcknowledged: true });
   const unlockWarningAt = html.indexOf(WIPE_WARNING_TEXT);
   const unlockActionAt = html.indexOf('data-action="recover-unlock"');
-  const enrolWarningAt = html.indexOf(REENROL_WIPE_WARNING);
-  const enrolActionAt = html.indexOf('data-action="recover-flash-pkmd"');
   const relockWarningAt = html.indexOf(RELOCK_WIPE_WARNING);
   const relockActionAt = html.indexOf('data-action="recover-relock"');
   assert.ok(unlockWarningAt >= 0 && unlockActionAt > unlockWarningAt);
-  assert.ok(enrolWarningAt >= 0 && enrolActionAt > enrolWarningAt);
   assert.ok(relockWarningAt >= 0 && relockActionAt > relockWarningAt);
   const relockPhase = html.indexOf('data-phase="relock"');
-  assert.ok(relockPhase > html.indexOf('data-phase="re-enrol-pkmd"'));
+  assert.ok(relockPhase > html.indexOf('data-phase="reinstall-pointer"'));
   assert.ok(html.includes(RELOCK_WIPE_WARNING));
 });
 
-test("all three new-key flows are offered on recover (contrast: update hides generate)", () => {
+test("recover page contains no user-key generation, PEM import, or key-enrolment prompts", () => {
   const html = renderRecoverPage({ ackAcknowledged: true });
-  assert.match(html, /generate here\./);
-  assert.match(html, /bring your own\./);
-  assert.match(html, /sign elsewhere\./);
-  const updateRouteSource = readFileSync(
-    fileURLToPath(new URL("../lib/install-state/steps.ts", import.meta.url)),
-    "utf8",
-  );
-  assert.match(updateRouteSource, /UPDATE_ROUTE_ALLOWED_FLOWS[^]*?\[2, 3\]/);
+  assert.doesNotMatch(html, /generate here\./);
+  assert.doesNotMatch(html, /bring your own\./);
+  assert.doesNotMatch(html, /sign elsewhere\./);
+  assert.doesNotMatch(html, /recover-flash-pkmd/);
+  assert.doesNotMatch(html, /re-enrol-pkmd/);
 });
 
 // --- recover: device ops over the simulated transport ---------------------------
 
-test("recover unlock → post-wipe session → flash pkmd → relock runs green", async () => {
+test("recover unlock → post-wipe session → relock runs green", async () => {
   // Session one: unlock wipes the device and drops the USB link mid-unlock.
   const first = makeSim({ unlocked: false });
   const unlockResult = await recoverUnlock(first.client);
@@ -364,11 +354,6 @@ test("recover unlock → post-wipe session → flash pkmd → relock runs green"
 
   // Session two: the user replugs; the device returns unlocked and clean.
   const second = makeSim({ unlocked: true });
-  const pkmd = new Uint8Array(1032).fill(0xab);
-  const flashResult = await flashPkmd(second.client, pkmd);
-  assert.equal(flashResult.ok, true);
-  assert.deepEqual(second.sim.partitions.get("avb_custom_key"), pkmd);
-
   const relockResult = await recoverRelock(second.client);
   assert.equal(relockResult.ok, true);
   assert.equal(second.sim.unlocked, false);

@@ -30,7 +30,7 @@ import {
   renderUnavailableFact,
   unavailableFactLines,
 } from "../lib/ui/unavailable.js";
-import { renderStep0, renderStep1, renderStep4 } from "../routes/install/early-steps.js";
+import { renderStep0, renderStep1 } from "../routes/install/early-steps.js";
 import {
   CLOSING_SENTENCE,
   GENERATE_HIDDEN_REASON,
@@ -38,7 +38,6 @@ import {
   UPDATE_INTRO,
   UPDATE_NO_PUSH,
 } from "../routes/update/update-route.js";
-import { STOP_REASONS } from "../lib/install-state/stops.js";
 
 const ROOT_URL = new URL("..", import.meta.url);
 const REL = (rel: string): string => readFileSync(fileURLToPath(new URL(rel, ROOT_URL)), "utf8");
@@ -93,7 +92,7 @@ test("(a) non-vacuity: the emitted modules carry the honest replacement, not sil
     "the /update route must render the block",
   );
   assert.ok(
-    REL("dist/site/lib/cli-export/generator.js").includes("unavailableFactLines"),
+    REL("dist/routes-js/lib/cli-export/generator.js").includes("unavailableFactLines"),
     "the CLI export must reuse the same fact text",
   );
 });
@@ -142,19 +141,11 @@ test("(b) the facts that gate a destructive step say so, and name the step", () 
   assert.match(String(MISSING_FACTS["Q-08"].blocks), /nothing/);
 });
 
-test("(b) step 1 and step 4 render the blocking affordance, not a token", () => {
+test("(b) step 1 renders the blocking affordance, not a token", () => {
   const step1 = renderStep1({ package: false, sums: false, sig: false });
   assert.ok(step1.includes(`data-unavailable="${ONION_ADDRESS_FACT.id}"`));
   assert.ok(step1.includes(`data-unavailable="${RELEASE_FINGERPRINT_FACT.id}"`));
-  const step4 = renderStep4({
-    status: "stopped",
-    algorithm: "SHA256_RSA4096",
-    rows: [],
-    stopReason: STOP_REASONS.PARTITION_LAYOUT_UNKNOWN,
-    chainPartitions: ["vbmeta_system"],
-  });
-  assert.ok(step4.includes(`data-unavailable="Q-07"`));
-  for (const html of [step1, step4, renderStep0()]) {
+  for (const html of [step1, renderStep0()]) {
     assert.equal(html.includes(FORBIDDEN_TOKEN), false);
   }
 });

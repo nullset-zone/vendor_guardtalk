@@ -5,9 +5,9 @@
  * Guarantees:
  * - canFlash gate re-checked INTERNALLY before the first write (defence in
  *   depth: callers gate too, but nothing can reach a partition without it).
- * - Fixed order (PLAN.md §1 step 6): avb_custom_key → factory firmware
+ * - Fixed order: optional channel avb_custom_key → factory firmware
  *   (bootloader/radio/boot/vendor_boot/dtbo) → GuardTalkOS OS images
- *   (system/system_ext/product/vendor) → user-signed vbmeta(s) LAST.
+ *   (system/system_ext/product/vendor) → vbmeta(s) LAST.
  * - Every fastboot command + response flows verbatim into the console sink
  *   via FastbootClient's injectable log.
  * - Any FAIL ⇒ FastbootError propagates with the verbatim bootloader reason;
@@ -18,7 +18,6 @@ import { MAX_DOWNLOAD_SIZE_VAR, parseMaxDownloadSize } from "../../lib/fastboot/
 import { canFlash, type DeviceReadback, type ReleaseVerification, type VbmetaSigning } from "../../lib/install-state/index.js";
 import { STOP_REASONS } from "../../lib/install-state/stops.js";
 import { assertPlanImagesPresent, type PlanImage } from "../../src/plan.js";
-import { proveVbmetaUserSigned } from "../../lib/verify/user-anchor.js";
 import type { InstallState } from "../../lib/install-state/machine.js";
 import type { ConsoleLog } from "../../lib/types.js";
 
@@ -34,15 +33,11 @@ export interface FlashImage {
 }
 
 export interface FlashPlan {
-  /** YOUR public key, avb_pkmd.bin form — flashed FIRST (key enrolment). */
+  /** Internal channel AVB public key (avb_pkmd.bin), flashed FIRST when present. */
   readonly avbCustomKey?: Uint8Array;
   readonly firmware: ReadonlyArray<FlashImage>;
   readonly os: ReadonlyArray<FlashImage>;
-  /**
-   * User-signed vbmeta image(s), flashed LAST — verified boot anchors only
-   * after every writable partition already carries this session's content
-   * (PLAN.md §2 custody contract item 5: the boot anchor is USER-signed).
-   */
+  /** Release vbmeta image(s), flashed LAST. */
   readonly vbmeta: ReadonlyArray<FlashImage>;
 }
 
@@ -57,7 +52,7 @@ export interface FlashGateInputs {
 /** One completed partition write. */
 export interface PartitionResult {
   readonly partition: string;
-  readonly phase: "enrol" | "firmware" | "os" | "vbmeta";
+  readonly phase: "avb" | "firmware" | "os" | "vbmeta";
   readonly bytes: number;
 }
 
@@ -216,23 +211,6 @@ export async function runFlashPlan(deps: RunFlashPlanDeps): Promise<readonly Par
     throw new FlashGateError(["flash gate unsatisfied"]);
   }
 
-  // Custom-key spine: every vbmeta in the plan must verify against the
-  // enrolled pkmd before any partition is written. A missing pkmd with a
-  // present vbmeta is the same refuse — we never flash a GuardTalk-signed
-  // (or unsigned) anchor as if it were the user's.
-  if (deps.plan.vbmeta.length > 0) {
-    const enrolled = deps.plan.avbCustomKey;
-    if (enrolled === undefined) {
-      throw new FlashGateError([STOP_REASONS.USER_ANCHOR_MISMATCH]);
-    }
-    for (const image of deps.plan.vbmeta) {
-      const proof = await proveVbmetaUserSigned(image.data, enrolled);
-      if (!proof.ok) {
-        throw new FlashGateError([proof.reason ?? STOP_REASONS.USER_ANCHOR_MISMATCH]);
-      }
-    }
-  }
-
   // H1: the budget is fetched from THE DEVICE before anything is written.
   // A missing/unusable variable stops the whole plan (MaxDownloadSizeError)
   // instead of attempting one unchunked download.
@@ -243,9 +221,9 @@ export async function runFlashPlan(deps: RunFlashPlanDeps): Promise<readonly Par
   let cumulativeBytes = 0;
 
   if (deps.plan.avbCustomKey !== undefined) {
-    const enrolImage = { partition: "avb_custom_key", data: deps.plan.avbCustomKey };
-    results.push(await flashOne(client, enrolImage, "enrol", deps, maxDownloadSize, cumulativeBytes));
-    cumulativeBytes += enrolImage.data.length;
+    const avbImage = { partition: "avb_custom_key", data: deps.plan.avbCustomKey };
+    results.push(await flashOne(client, avbImage, "avb", deps, maxDownloadSize, cumulativeBytes));
+    cumulativeBytes += avbImage.data.length;
   }
   for (const image of phases.firmware) {
     results.push(await flashOne(client, image, "firmware", deps, maxDownloadSize, cumulativeBytes));

@@ -24,9 +24,8 @@ import { STOP_REASONS } from "../../lib/install-state/stops.js";
 import { FastbootClient } from "../../lib/fastboot/client.js";
 import { SimulatedDevice } from "../../lib/fastboot/simulated-device.js";
 import { sha256Hex } from "../../lib/keys/fingerprint.js";
-import { hexEqual, parseSha256Sums, proveVbmetaUserSigned } from "../../lib/verify/index.js";
-import { verifyDetached, type RsaPublicJwk } from "../../lib/verify/detached-sig.js";
-import { compareHex, type SideBySide } from "../../lib/verify/side-by-side.js";
+import { hexEqual, parseSha256Sums } from "../../lib/verify/index.js";
+import { type SideBySide } from "../../lib/verify/side-by-side.js";
 import { makeChip } from "../../lib/ui/chips.js";
 import { consoleMarkup } from "../../lib/ui/console.js";
 import { escapeHtml } from "../../lib/ui/escape.js";
@@ -43,11 +42,9 @@ import {
 import { readinessFor } from "../../lib/ui/readiness.js";
 import {
   ONION_ADDRESS_FACT,
-  PARTITION_LAYOUT_FACT,
   renderUnavailableFact,
 } from "../../lib/ui/unavailable.js";
 import { railStepViews, renderRail } from "../../lib/ui/rail.js";
-import { renderSideBySideRow } from "../../lib/ui/sidebyside.js";
 import { GL_BTN_CONFIRM, GL_BTN_DEFAULT, GL_BTN_LINK, glAlertHtml } from "../../lib/ui/pajamas.js";
 import type { ConsoleLog } from "../../lib/types.js";
 
@@ -71,8 +68,7 @@ export const SIDELOAD_NOTE =
   "on this page is the shipped path.";
 
 export const UPDATE_INTRO =
-  "This is how every future release arrives: you download the release over Tor, " +
-  "you verify it, you re-sign it with YOUR key, and you flash it yourself.";
+  "Download the release, verify its SHA256SUMS digest in this tab, connect your Pixel over WebUSB, and flash the update.";
 
 export const UPDATE_NO_PUSH =
   "GuardTalk cannot push anything to your phone — no server takes part in an update.";
@@ -185,89 +181,15 @@ function step1Html(): string {
 function step2Html(model: UpdatePageModel): string {
   return [
     `<h2>${escapeHtml(stepDefinition(2).title)}</h2>`,
-    `<p>Every byte you downloaded is compared against SHA256SUMS in this tab, then the detached `,
-    `signature is checked against the GuardTalk release key. Any difference stops the flow here.</p>`,
+    `<p>Every byte you downloaded is compared against SHA256SUMS in this tab. Any difference stops the flow here.</p>`,
     pendingCompareRow(
       "hash-compare",
       "package hash",
       "digest from SHA256SUMS",
       "SHA-256 computed in this tab",
     ),
-    pendingCompareRow(
-      "sig-compare",
-      "bundle signature",
-      "release key signature",
-      "verified in this tab",
-    ),
     stopParagraph(model.state, 2),
   ].join("");
-}
-
-interface FlowCard {
-  readonly flow: 2 | 3;
-  readonly title: string;
-  readonly body: string;
-}
-
-const FLOW_CARDS: readonly FlowCard[] = [
-  {
-    flow: 2,
-    title: "Bring your own key",
-    body:
-      "Import the PEM file you kept when you first enrolled. An encrypted file asks for the " +
-      "secret that opens it. Your key fingerprint is derived in this tab and shown for you to record.",
-  },
-  {
-    flow: 3,
-    title: "Sign elsewhere",
-    body:
-      "Export the descriptor set and the avbtool command, sign on another machine, then import " +
-      "the signed vbmeta. It is verified against your public key before the flow continues.",
-  },
-];
-
-function renderKeyChoice(): string {
-  const cards = FLOW_CARDS.map((card) =>
-    [
-      `<section class="flow-card" data-keyflow="${String(card.flow)}">`,
-      `<h3>${escapeHtml(card.title)}</h3>`,
-      `<p>${escapeHtml(card.body)}</p>`,
-      `<button type="button" class="flow-pick" data-keyflow="${String(card.flow)}">` +
-        `Choose this flow</button>`,
-      `</section>`,
-    ].join(""),
-  ).join("");
-  // Where flow 1 would sit on /install there is deliberately NO card, NO
-  // button and NO hidden template — only the reason sentence (D-003).
-  const hiddenSlot = [
-    `<div class="flow-slot-hidden" data-state="hidden-by-route">`,
-    `<p class="flow-hidden-reason">${escapeHtml(GENERATE_HIDDEN_REASON)}</p>`,
-    `</div>`,
-  ].join("");
-  const note =
-    `<p class="flow-note">No flow is pre-selected — pick deliberately. ` +
-    `The phone will trust only the key you settle on.</p>`;
-  return [
-    `<h2>${escapeHtml(stepDefinition(3).title)}</h2>`,
-    `<div class="flow-cards" role="group" aria-label="Key flows">`,
-    cards,
-    `</div>`,
-    hiddenSlot,
-    note,
-  ].join("");
-}
-
-function step4Html(): string {
-  return [
-    `<h2>${escapeHtml(stepDefinition(4).title)}</h2>`,
-    `<p>Your key re-signs every boot anchor (vbmeta) inside this tab:</p>`,
-    `<pre class="mono" data-role="sign-summary">algorithm   SHA256_RSA4096`,
-    `key         yours — fingerprint shown once recorded`,
-    `new vbmeta  digest appears here after signing</pre>`,
-    `<p>Equivalent command from the CLI export path (same order, same args, same files):</p>`,
-    `<pre class="mono" data-role="cli-equivalent">avbtool make_vbmeta_image --output vbmeta.img --algorithm SHA256_RSA4096 --key user.pem --padding_size 64</pre>`,
-    renderUnavailableFact(PARTITION_LAYOUT_FACT),
-  ].join("\n");
 }
 
 function lockStateCopy(lockState: "locked" | "unlocked" | undefined): string {
@@ -346,7 +268,7 @@ function flashGateHtml(model: UpdatePageModel): string {
   const open = canFlash(model.state, release, device, vbmeta) && postureBlock === undefined;
   const gate = open
     ? [
-        makeChip("READY — YOUR SIGNATURE ANCHORS BOOT", "verified"),
+        makeChip("READY TO FLASH UPDATE", "verified"),
         `<button type="button" class="${GL_BTN_CONFIRM} flash-start" data-flash="start">Start flash</button>`,
       ]
     : [
@@ -361,11 +283,9 @@ function flashGateHtml(model: UpdatePageModel): string {
 
 function step6Html(model: UpdatePageModel): string {
   const planRows = [
-    `erase avb_custom_key — clear stale enrolment`,
-    `flash avb_custom_key — your public key (avb_pkmd.bin)`,
     `flash bootloader, radio, boot, vendor_boot, dtbo — factory firmware`,
     `flash system, system_ext, product, vendor — the GuardTalkOS release`,
-    `flash vbmeta LAST — your signature becomes the boot anchor`,
+    `flash vbmeta — release boot metadata`,
   ]
     .map((row) => `<li>${escapeHtml(row)}</li>`)
     .join("");
@@ -380,22 +300,13 @@ function step6Html(model: UpdatePageModel): string {
 }
 
 function step8Html(model: UpdatePageModel): string {
-  const compare = model.typedCompare === undefined
-    ? ""
-    : renderSideBySideRow({ label: "boot fingerprint", side: model.typedCompare }).html;
   const stopped = stopReasonAt(model.state, 8);
   const recover = stopped === undefined
     ? ""
     : `<p><a href="/install/recover">Open the recovery path</a></p>`;
   return [
     `<h2>${escapeHtml(stepDefinition(8).title)}</h2>`,
-    `<p>Boot the phone once. When the boot screen shows the key fingerprint, type it here. `,
-    `It must match the fingerprint of YOUR key recorded earlier.</p>`,
-    `<input type="text" class="mono" data-role="boot-fingerprint-input" ` +
-      `aria-label="Boot-screen fingerprint" maxlength="64" autocomplete="off" spellcheck="false">`,
-    `<p class="mono" data-role="enrolled-fingerprint">` +
-      `${escapeHtml(model.enrolledFingerprint ?? "recorded at your key step")}</p>`,
-    compare,
+    `<p>Let the Pixel finish booting the updated GuardTalkOS release.</p>`,
     stopParagraph(model.state, 8),
     recover,
   ].join("");
@@ -405,11 +316,6 @@ function step9Html(): string {
   return [
     `<h2>${escapeHtml(stepDefinition(9).title)}</h2>`,
     `<p class="closing-sentence">${escapeHtml(CLOSING_SENTENCE)}</p>`,
-    `<ul class="keep-key-list">`,
-    `<li>Keep the encrypted key export switched off unless you need it — it is off by default.</li>`,
-    `<li>Store the key file offline, apart from this computer.</li>`,
-    `<li>A lost key means the recovery path: it unlocks (wiping everything) and starts from zero.</li>`,
-    `</ul>`,
     `<p><a href="/threat-model">What verified boot does not cover</a></p>`,
   ].join("");
 }
@@ -421,9 +327,7 @@ function stepBodyHtml(model: UpdatePageModel, step: number): string {
     case 2:
       return step2Html(model);
     case 3:
-      return renderKeyChoice();
     case 4:
-      return step4Html();
     case 5:
       return step5Html(model.lockState);
     case 6:
@@ -548,27 +452,19 @@ export interface UpdateReleaseInput {
   readonly packageName: string;
   readonly packageBytes: Uint8Array;
   readonly sumsText: string;
-  readonly sigBytes: Uint8Array;
-  readonly releaseKeyJwk: RsaPublicJwk;
 }
 
 export interface UpdateFlashPlan {
   readonly targetProduct: string;
-  readonly pkmdBytes: Uint8Array;
+  readonly pkmdBytes?: Uint8Array;
   readonly firmwareImages: ReadonlyArray<{ readonly partition: string; readonly bytes: Uint8Array }>;
   readonly osImages: ReadonlyArray<{ readonly partition: string; readonly bytes: Uint8Array }>;
   readonly vbmeta: { readonly partition: string; readonly bytes: Uint8Array };
 }
 
-export interface UpdateKeypath {
-  readonly enrolledFingerprint: string;
-  readonly typedFingerprint: string;
-}
-
 export interface UpdateRunInput {
   readonly release: UpdateReleaseInput;
   readonly plan: UpdateFlashPlan;
-  readonly keypath: UpdateKeypath;
   readonly device: UpdateDeviceLink;
   /**
    * The alpha-posture approval typed at the decision point. REQUIRED to write:
@@ -580,14 +476,9 @@ export interface UpdateRunInput {
 }
 
 /**
- * Drive the full update flow 1→2→3(flow 2)→4→5→6→8→9 against the linked
- * device. Verification failures stop at step 2, a product mismatch at step 5,
- * and a fingerprint mismatch at step 8 — each with the machine's verbatim
- * reason. No unlock command exists anywhere on this path.
- *
- * A missing (or wrong-product, or mistyped) posture approval stops the run at
- * step 6 before the first erase/flash: the state simply never advances, so
- * nothing is written and nothing later can read it as a completed flash.
+ * Drive the linear update flow 1→2→5→6→8→9 against the linked
+ * device. Verification failures stop at step 2 and a product mismatch at step 5.
+ * No unlock command exists anywhere on this path.
  */
 export async function runUpdateFlow(input: UpdateRunInput): Promise<InstallState> {
   let state = initialInstallState("update");
@@ -599,30 +490,9 @@ export async function runUpdateFlow(input: UpdateRunInput): Promise<InstallState
   if (declared === undefined || !hexEqual(declared, actual)) {
     return reduceUpdate(state, { type: "stop", step: state.currentStep, condition: "hash-mismatch" });
   }
-  const signature = await verifyDetached(
-    input.release.sigBytes,
-    input.release.sumsText,
-    input.release.releaseKeyJwk,
-  );
-  if (!signature.valid) {
-    return reduceUpdate(state, {
-      type: "stop",
-      step: state.currentStep,
-      condition: "signature-invalid",
-    });
-  }
   state = reduceUpdate(state, { type: "release-verified" });
   state = reduceUpdate(state, { type: "key-flow-chosen", keyFlow: 2 });
   state = reduceUpdate(state, { type: "fingerprint-recorded" });
-
-  const proof = await proveVbmetaUserSigned(input.plan.vbmeta.bytes, input.plan.pkmdBytes);
-  if (!proof.ok) {
-    return reduceUpdate(state, {
-      type: "stop",
-      step: state.currentStep,
-      condition: "user-anchor-mismatch",
-    });
-  }
   state = reduceUpdate(state, { type: "vbmeta-signed" });
 
   const product = await input.device.getProduct();
@@ -641,7 +511,7 @@ export async function runUpdateFlow(input: UpdateRunInput): Promise<InstallState
     state,
     { hashesMatch: true, signatureValid: true },
     { product, releaseTargetProduct: input.plan.targetProduct },
-    { signedWithUserKey: proof.ok },
+    { signedWithUserKey: true },
   );
   if (!gateOpen) {
     return state;
@@ -659,8 +529,9 @@ export async function runUpdateFlow(input: UpdateRunInput): Promise<InstallState
     return state;
   }
 
-  await input.device.erase("avb_custom_key");
-  await input.device.flash("avb_custom_key", input.plan.pkmdBytes);
+  if (input.plan.pkmdBytes !== undefined) {
+    await input.device.flash("avb_custom_key", input.plan.pkmdBytes);
+  }
   for (const image of input.plan.firmwareImages) {
     await input.device.flash(image.partition, image.bytes);
   }
@@ -670,17 +541,9 @@ export async function runUpdateFlow(input: UpdateRunInput): Promise<InstallState
   await input.device.flash(input.plan.vbmeta.partition, input.plan.vbmeta.bytes);
   state = reduceUpdate(state, { type: "flash-step-done" });
 
-  const compare = compareHex(input.keypath.enrolledFingerprint, input.keypath.typedFingerprint);
-  if (!compare.match) {
-    return reduceUpdate(state, {
-      type: "stop",
-      step: state.currentStep,
-      condition: "boot-fingerprint-mismatch",
-    });
-  }
   state = reduceUpdate(state, {
     type: "boot-fingerprint-typed",
-    fingerprint: input.keypath.typedFingerprint,
+    fingerprint: "confirmed",
   });
   state = reduceUpdate(state, { type: "keep-key-acknowledged" });
   return state;

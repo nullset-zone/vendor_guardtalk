@@ -15,8 +15,6 @@
      Pinned inventory (exhaustive):
        Hotseat screen 0 x=0: GT Info (com.guardtalk.validator/.ValidatorActivity)
        Hotseat screen 0 x=1: GT Config (com.guardtalk.config/.ConfigActivity)
-       Workspace screen 0 x=0 y=0: GT Messenger
-         (com.guardtalk.messenger/.MessengerActivity)
 
      Excised apps NOT pinned (T-RM-APPS dependency): Auditor,
      ExactCalculator, InfoApp, Messaging, Dialer, TrichromeChrome, AppStore.

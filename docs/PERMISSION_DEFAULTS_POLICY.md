@@ -19,13 +19,11 @@ Out of scope (later Phase-4 tasks): `privacy_tmpfs`, clipboard clear, Files hand
 |-------|--------|
 | **Package name (constant)** | `com.guardtalk.messenger` |
 | **Source of truth** | `android.guardtalk.GuardTalkPermissionDefaultsPolicy.MESSENGER_PACKAGE_NAME` |
-| **In-tree APK / PRODUCT_PACKAGES app module** | **PRESENT** — Soong `GuardTalkMessenger` (`vendor/guardtalk/apps/GuardTalkMessenger/`) |
-| **Install path** | Product-partition `/product/app` via `PRODUCT_PACKAGES += GuardTalkMessenger` (komodo user image). Not priv-app. |
+| **In-tree APK / PRODUCT_PACKAGES app module** | **REMOVED** — `GuardTalkMessenger` purged (`T-VENDOR-PURGE-MESSENGER-PREINSTALL`); `grantGuardTalkMessengerDefaultPermissions()` removed from `DefaultPermissionGrantPolicy.java` (`T-REMEDIATE-SEC-FLASH-AVB-HARDENING`, `F-006`) |
+| **Install path** | None (decommissioned; not preinstalled on any GuardTalkOS target) |
 | **CarMessenger APK** | `packages/apps/Car/MessengerPrebuilt/` — **not** GuardTalk Messenger; ignored |
 
-**T-REMEDIATE-B4-MESSENGER closed the P4 APK GAP.** The product module is a Jami JSON-RPC client; jamid runs on the GuardTalk Gateway (see `GATEWAY_MESSENGER_PROVISION.md`). Do not substitute Play Store / browser / GMS. Do not invent a second package name.
-
-When the APK requests the listed permissions, grants activate automatically via the XML + `DefaultPermissionGrantPolicy`.
+> **Historical note (`T-REMEDIATE-B4-MESSENGER` → `T-VENDOR-PURGE-MESSENGER-PREINSTALL` → `F-006`):** `GuardTalkMessenger` has been purged from `vendor/guardtalk/` and `grantGuardTalkMessengerDefaultPermissions()` has been removed from `DefaultPermissionGrantPolicy.java`. The third-party exception deny-default filter (`allowDefaultPermissionException`) remains active.
 
 ## Product property
 
@@ -66,18 +64,15 @@ Only permissions the Messenger APK **requests** are applied (`DefaultPermissionG
 User create / grantDefaultPermissions(userId)
         │
         ├── AOSP sys/priv + default handlers (unchanged)
-        ├── etc/default-permissions XML exceptions
-        │     └── GuardTalk filter: skip non-system third-party (except Messenger)
-        └── grantGuardTalkMessengerDefaultPermissions()
-              └── grantPermissionsToPackage(ignoreSystemPackage=true)
-                    when com.guardtalk.messenger is installed
+        └── etc/default-permissions XML exceptions
+              └── GuardTalk filter: skip non-system third-party (allowDefaultPermissionException)
 ```
 
 | Layer | Location | Role |
 |-------|----------|------|
 | Framework policy | `android.guardtalk.GuardTalkPermissionDefaultsPolicy` | Package constant, prop, permission set, exception allow rules |
-| Service hook | `DefaultPermissionGrantPolicy` | Messenger grants + third-party exception filter |
-| Product XML | `vendor/guardtalk/permissions/default-permissions-com.guardtalk.messenger.xml` | Installs to `product/etc/default-permissions/` (system-app / cert path when APK is system) |
+| Service hook | `DefaultPermissionGrantPolicy` | Third-party exception deny-default filter (`grantGuardTalkMessengerDefaultPermissions` removed in `F-006`) |
+| Product XML | `vendor/guardtalk/permissions/default-permissions-com.guardtalk.messenger.xml` | Retained policy/rollback artifact (not wired into `GuardTalkMessenger`) |
 | Product wiring | `guardtalk-tokay.mk` + `vendor/guardtalk/permissions/Android.bp` | Prop + `PRODUCT_PACKAGES` |
 
 PermissionController was **not** modified; runtime grant authority for this task is Package Manager `DefaultPermissionGrantPolicy`. PermissionController continues to surface user-facing grant/revoke UI.
@@ -100,7 +95,7 @@ When `ro.guardtalk.permission_defaults=1`:
 2. Permission / Apps screens may show Messenger grants as granted-by-default when the APK is present; user can revoke.
 3. Do not surface a “grant all to third-party” product shortcut.
 4. Special Access rows remain Maintenance / GT Config gated where Phase-1 UI already requires it.
-5. Messenger APK is baked as `GuardTalkMessenger`; UI may show the launcher. Grants are still HOLD until a user image is flashed (PASS HOLD).
+5. `GuardTalkMessenger` is purged and not preinstalled (`T-VENDOR-PURGE-MESSENGER-PREINSTALL` / `F-006`); UI must not show a Messenger launcher or assume preinstalled Messenger grants.
 
 ## Fail-closed / gap handling
 

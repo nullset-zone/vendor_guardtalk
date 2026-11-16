@@ -28,6 +28,25 @@ mkdir -p \
 cp -a dist/routes-js/lib/. "$SITE/lib/"
 cp -a dist/routes-js/src/. "$SITE/src/"
 
+# F-001 (OpenStateStack Foundation zero-key-custody alignment): drop unreferenced
+# legacy modules from the emitted site (cli-export, user-anchor, and unused key-custody helpers).
+rm -rf \
+  "$SITE/lib/cli-export" \
+  "$SITE/lib/verify/user-anchor.js" \
+  "$SITE/lib/keys/export-enc.js" \
+  "$SITE/lib/keys/import.js" \
+  "$SITE/lib/keys/generate.js"
+if [[ -f "$SITE/lib/verify/index.js" ]]; then
+  grep -v '"./user-anchor.js"' "$SITE/lib/verify/index.js" > "$SITE/lib/verify/index.js.tmp"
+  mv "$SITE/lib/verify/index.js.tmp" "$SITE/lib/verify/index.js"
+fi
+if [[ -e "$SITE/lib/cli-export/generator.js" ]] || [[ -e "$SITE/lib/verify/user-anchor.js" ]] \
+  || [[ -e "$SITE/lib/keys/export-enc.js" ]] || [[ -e "$SITE/lib/keys/import.js" ]] \
+  || [[ -e "$SITE/lib/keys/generate.js" ]]; then
+  echo "error: legacy cli-export/user-anchor/key-custody modules leaked into $SITE/lib/" >&2
+  exit 1
+fi
+
 # Install graph (same directory as index.html so ./install-app.js resolves).
 cp dist/routes-js/routes/install/*.js "$SITE/install/"
 cp routes/install/page.html "$SITE/install/index.html"
@@ -85,19 +104,19 @@ if grep -E -n 'design\.guardtalk\.io|@import url\(http|fonts\.googleapis' \
   exit 1
 fi
 
-# Root index points at /install without a network fetch.
+# Root index points at /wizard/ without a network fetch.
 cat > "$SITE/index.html" <<'EOF'
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="refresh" content="0; url=./install/" />
+    <meta http-equiv="refresh" content="0; url=./wizard/" />
     <title>GuardTalkOS installer</title>
     <meta http-equiv="Content-Security-Policy"
-          content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src http://192.168.2.220:9100" />
+          content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'" />
   </head>
   <body>
-    <p><a href="./install/">Open the installer</a></p>
+    <p><a href="./wizard/">Open the installer</a></p>
   </body>
 </html>
 EOF

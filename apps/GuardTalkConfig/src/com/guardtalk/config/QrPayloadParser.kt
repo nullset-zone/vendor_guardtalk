@@ -1,5 +1,6 @@
 package com.guardtalk.config
 
+import android.os.Build
 import android.util.Base64
 import android.util.Log
 import org.json.JSONObject
@@ -63,10 +64,26 @@ object QrPayloadParser {
      * call chain, available on Android API 33+ (Android 13+). Tokay (Pixel 9)
      * ships with Android 14+ so this is satisfied.
      */
+    // Production Ed25519 public key (32 raw bytes). Populate before building user releases.
+    private val PRODUCTION_PUBLIC_KEY: ByteArray? = null
+
     private val TEST_PUBLIC_KEY: ByteArray = byteArrayOf(
         -74, 62, -37, -122, 21, 101, -32, -53, -17, 56, 119, 52, -124, 57, 19, 100,
         85, -83, -30, -53, -75, -13, 50, 31, -30, -8, 84, 25, 69, 108, 18, -43
     )
+
+    private fun activePublicKey(): ByteArray {
+        val prodKey = PRODUCTION_PUBLIC_KEY
+        if (prodKey != null && prodKey.size == 32) {
+            return prodKey
+        }
+        if ("user".equals(Build.TYPE, ignoreCase = true)) {
+            throw InvalidPayloadException(
+                "Refusing TEST_PUBLIC_KEY on user build — production Ed25519 key not configured"
+            )
+        }
+        return TEST_PUBLIC_KEY
+    }
 
     /** Thrown when the outer envelope or the signature fails verification. */
     class InvalidPayloadException(message: String, cause: Throwable? = null) :
@@ -174,7 +191,7 @@ object QrPayloadParser {
     private fun verifyEd25519(message: ByteArray, signature: ByteArray) {
         try {
             val keyFactory = KeyFactory.getInstance("Ed25519")
-            val publicKey = keyFactory.generatePublic(X509EncodedKeySpec(encodeSpki(TEST_PUBLIC_KEY)))
+            val publicKey = keyFactory.generatePublic(X509EncodedKeySpec(encodeSpki(activePublicKey())))
             val verifier = Signature.getInstance("Ed25519")
             verifier.initVerify(publicKey)
             verifier.update(message)

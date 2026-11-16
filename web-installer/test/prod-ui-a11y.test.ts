@@ -96,7 +96,7 @@ test("(b) the rendered /install stop surfaces each announce through a live regio
     // step 7 lock refused
     lockStepHtml({ sim: false, locked: false, refused: "FAIL" }),
     // step 8 boot fingerprint mismatch
-    verifyStepHtml({ sim: false, enrolledFingerprint: "ab", outcome: "mismatch" }),
+    verifyStepHtml({ sim: false, outcome: "mismatch" }),
     // verify-device route hard stop
     renderHardStopBanner(),
   ];
@@ -182,7 +182,7 @@ test("(e) a form submit advances step 8 (Enter in the text input is wired)", () 
   // without it pressing Enter would be inert.
   const app = REL("routes/install/install-app.ts");
   assert.match(app, /addEventListener\("submit", onSubmit\)/);
-  assert.match(app, /if \(action === "compare-fingerprint"\)/);
+  assert.match(app, /if \(action === "confirm-boot"\)/);
 });
 
 /* ================================================================== *

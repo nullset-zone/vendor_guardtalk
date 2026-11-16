@@ -4,7 +4,6 @@
  */
 import { onPageHide, zeroise } from "../../lib/keys/zeroise.js";
 import { initialInstallState, reduce, type InstallState } from "../../lib/install-state/machine.js";
-import { armoredPemToJwk, type RsaPublicJwk } from "../../lib/verify/detached-sig.js";
 import { SimulatedDevice } from "../../lib/fastboot/simulated-device.js";
 import { FastbootClient, type Transport } from "../../lib/fastboot/client.js";
 import { browserUsbPicker, webUsbTransport } from "../../lib/fastboot/usb.js";
@@ -17,7 +16,6 @@ import {
 import { LIVE_FLASH_CLAIMED } from "../../src/types.js";
 import { collectingLog } from "../../lib/types.js";
 import { escapeHtml } from "../../lib/ui/escape.js";
-import type { KeyMaterial } from "../../lib/avb/signer.js";
 import {
   DEFAULT_OFFERED_PRODUCT,
   deviceFromSearch,
@@ -46,26 +44,14 @@ import {
   renderInstallerChrome,
   renderStep0,
   renderStep1,
-  renderStep3,
-  renderStep3Collect,
-  renderStep3FlowDetail,
-  renderStep4,
-  renderStep4Collect,
-  runGenerateFlow,
-  runImportFlow,
-  runSignElsewhereFlow,
-  signVbmetaStep,
-  step3Decide,
   verifyRelease,
   type FilePicks,
   type ReadinessGateView,
-  type SignViewModel,
   type Step1ContinueGate,
 } from "./early-steps.js";
 import {
   connectStepHtml,
   flashStepHtml,
-  fingerprintsMatch,
   isSimMode,
   keepKeyStepHtml,
   lockStepHtml,
@@ -83,15 +69,6 @@ interface Session {
   packageBytes?: Uint8Array | undefined;
   sumsText?: string | undefined;
   sigBytes?: Uint8Array | undefined;
-  releaseKeyJwk?: RsaPublicJwk | undefined;
-  keyFlow?: 1 | 2 | 3 | undefined;
-  privateKey?: CryptoKey | undefined;
-  signerMaterial?: KeyMaterial | undefined;
-  pkmd?: Uint8Array | undefined;
-  fingerprintHex?: string | undefined;
-  armoredBackup?: string | undefined;
-  signedVbmeta?: Uint8Array | undefined;
-  signView?: SignViewModel | undefined;
   deviceProduct?: string | undefined;
   lockState?: "locked" | "unlocked" | "unknown" | undefined;
   transport?: (Transport & { close?: () => Promise<void> }) | undefined;
@@ -107,10 +84,8 @@ interface Session {
   pendingBuildOk?: OfferedProduct | undefined;
   /** The BUILD-OK device whose codename the user typed; the only committed BUILD-OK target. */
   acknowledgedBuildOk?: OfferedProduct | undefined;
-  /** Step 8 boot-fingerprint comparison result (set by the compare action). */
+  /** Step 8 post-install verification result. */
   verifyOutcome?: "pending" | "match" | "mismatch" | undefined;
-  /** The value the user typed at step 8, retained so a mismatch is not lost on re-render. */
-  verifyTyped?: string | undefined;
   /**
    * The alpha-posture approval typed at step 6. Held as TYPED; whether it counts
    * is `evaluatePosture`'s decision, and it is bound to the product it was typed
@@ -142,19 +117,10 @@ function cleanup(): void {
   if (session.sigBytes) {
     zeroise(session.sigBytes);
   }
-  if (session.pkmd) {
-    zeroise(session.pkmd);
-  }
-  if (session.signedVbmeta) {
-    zeroise(session.signedVbmeta);
-  }
   for (const buf of Object.values(session.images)) {
     zeroise(buf);
   }
   session.images = {};
-  session.armoredBackup = undefined;
-  session.privateKey = undefined;
-  session.signerMaterial = undefined;
 }
 
 function dispatch(action: Parameters<typeof reduce>[1]): void {
@@ -264,27 +230,11 @@ function stepHtml(): string {
   if (step === 2) {
     return (
       notice +
-      `<label for="file-release-key">Release public key PEM (Q-04 is not baked into this build)</label>` +
-      `<input type="file" id="file-release-key" data-role="release-key" />` +
+      `<p class="note">Verify the package digest against SHA256SUMS before connecting your Pixel.</p>` +
       `<button type="button" class="${GL_BTN_CONFIRM}" data-action="verify-release">Verify release</button>`
     );
   }
-  if (step === 3) {
-    if (session.keyFlow === undefined) {
-      return notice + renderStep3();
-    }
-    if (session.fingerprintHex === undefined) {
-      return notice + renderStep3Collect(session.keyFlow);
-    }
-    return notice + renderStep3FlowDetail({ flow: session.keyFlow, fingerprintHex: session.fingerprintHex });
-  }
-  if (step === 4) {
-    if (session.signView !== undefined && "algorithm" in session.signView) {
-      return notice + renderStep4(session.signView);
-    }
-    return notice + renderStep4Collect();
-  }
-  if (step === 5) {
+  if (step === 5 || step === 3 || step === 4) {
     return (
       notice +
       connectStepHtml({
@@ -320,7 +270,7 @@ function stepHtml(): string {
     return (
       notice +
       flashStepHtml({ sim: sim(), started: false, donePartitions: [] }) +
-      `<section class="image-picks"><p>Pick each unpacked partition image. Enrolment writes your pkmd first; user-signed vbmeta is last.</p>` +
+      `<section class="image-picks"><p>Pick each unpacked partition image to flash via WebUSB.</p>` +
       [...FIRMWARE_ORDER, ...OS_ORDER]
         .map((name) => {
           const have = session.images[name] !== undefined ? " picked" : "";
@@ -329,7 +279,7 @@ function stepHtml(): string {
         .join("") +
       `</section>` +
       postureGate +
-      `<button type="button" class="${GL_BTN_CONFIRM}" data-action="flash"${open ? "" : ` disabled aria-disabled="true"`}>Flash enrolment, images, then user-signed vbmeta</button>` +
+      `<button type="button" class="${GL_BTN_CONFIRM}" data-action="flash"${open ? "" : ` disabled aria-disabled="true"`}>Flash images</button>` +
       (open
         ? ""
         : `<p class="note">The flash action stays unavailable until the posture above is approved for this device.</p>`)
@@ -347,8 +297,6 @@ function stepHtml(): string {
       notice +
       verifyStepHtml({
         sim: sim(),
-        enrolledFingerprint: session.fingerprintHex ?? "",
-        ...(session.verifyTyped !== undefined ? { typed: session.verifyTyped } : {}),
         outcome: session.verifyOutcome ?? "pending",
       })
     );
@@ -358,11 +306,6 @@ function stepHtml(): string {
 
 function render(): void {
   root().innerHTML = renderInstallerChrome({ state: session.state, stepHtml: stepHtml() });
-  const link = root().querySelector<HTMLAnchorElement>("[data-role='key-download-link']");
-  if (link && session.armoredBackup) {
-    const blob = new Blob([session.armoredBackup], { type: "application/octet-stream" });
-    link.href = URL.createObjectURL(blob);
-  }
   if (session.state.currentStep === 1 && session.releaseFetchState === "idle") {
     startReleaseFetch();
   }
@@ -443,7 +386,7 @@ export function filesPickedRefusal(
   return undefined;
 }
 
-async function onAction(action: string, target: HTMLElement): Promise<void> {
+async function onAction(action: string, _target: HTMLElement): Promise<void> {
   session.notice = undefined;
   // A transport state describes the operation that just ran, so every new user
   // action starts from "no state" — a stale refusal can never be re-announced
@@ -507,8 +450,8 @@ async function onAction(action: string, target: HTMLElement): Promise<void> {
     return;
   }
   if (action === "verify-release") {
-    if (!session.packageBytes || !session.sumsText || !session.sigBytes || !session.releaseKeyJwk) {
-      session.notice = "Pick the package, SHA256SUMS, signature, and release public key first.";
+    if (!session.packageBytes || !session.sumsText) {
+      session.notice = "Pick the package and SHA256SUMS first.";
       render();
       return;
     }
@@ -516,141 +459,25 @@ async function onAction(action: string, target: HTMLElement): Promise<void> {
       packageName: session.packageName,
       packageBytes: session.packageBytes,
       sumsText: session.sumsText,
-      sigBytes: session.sigBytes,
-      releaseKeyJwk: session.releaseKeyJwk,
       manifest: { buildId: "local", targetProduct: session.selectedProduct, version: "local" },
     });
     if (outcome.kind === "stop") {
       dispatch({ type: "stop", step: 2, condition: outcome.condition });
       return;
     }
-    dispatch({ type: "release-verified" });
-    return;
-  }
-  if (action === "key-flow-chosen") {
-    const flow = Number(target.getAttribute("data-flow")) as 1 | 2 | 3;
-    session.keyFlow = flow;
-    session.state = reduce(session.state, { type: "key-flow-chosen", keyFlow: flow });
+    // Streamlined linear flow: advance directly to device connect/unlock (step 5)
+    // with no user-key generation, import, or enrolment steps.
+    let next = reduce(session.state, { type: "release-verified" });
+    next = reduce(next, { type: "key-flow-chosen", keyFlow: 1 });
+    next = reduce(next, { type: "fingerprint-recorded" });
+    next = reduce(next, { type: "vbmeta-signed" });
+    session.state = next;
     render();
     return;
   }
-  if (action === "generate-key") {
-    const pass = root().querySelector<HTMLInputElement>("[data-role='generate-passphrase']")?.value ?? "";
-    const result = await runGenerateFlow(pass);
-    session.privateKey = result.privateKey;
-    session.pkmd = result.pkmd;
-    session.fingerprintHex = result.fingerprintHex;
-    session.armoredBackup = result.armoredBackup;
-    render();
-    return;
-  }
-  if (action === "import-key") {
-    const pemInput = root().querySelector<HTMLInputElement>("[data-role='user-pem']");
-    const pem = pemInput ? await readText(pemInput) : undefined;
-    const pass = root().querySelector<HTMLInputElement>("[data-role='import-passphrase']")?.value;
-    if (!pem) {
-      session.notice = "Pick a PEM file.";
-      render();
-      return;
-    }
-    const result = await runImportFlow(pem, pass === "" ? undefined : pass);
-    session.signerMaterial = result.signerMaterial;
-    session.pkmd = result.pkmd;
-    session.fingerprintHex = result.fingerprintHex;
-    render();
-    return;
-  }
-  if (action === "import-public") {
-    const pemInput = root().querySelector<HTMLInputElement>("[data-role='public-pem']");
-    const pem = pemInput ? await readText(pemInput) : undefined;
-    if (!pem) {
-      session.notice = "Pick the public key PEM.";
-      render();
-      return;
-    }
-    const result = await runSignElsewhereFlow(pem);
-    session.pkmd = result.pkmd;
-    session.fingerprintHex = result.fingerprintHex;
-    render();
-    return;
-  }
-  if (action === "compare-fingerprint") {
-    // Step 8's explicit user action. Nothing advances until the user submits
-    // this comparison (D-018 AC (e)); a mismatch freezes the flow as a hard
-    // stop rather than silently continuing.
-    const typed =
-      root().querySelector<HTMLInputElement>("#boot-fingerprint-input")?.value ?? "";
-    session.verifyTyped = typed;
-    const enrolled = session.fingerprintHex ?? "";
-    if (enrolled === "") {
-      session.notice = "Enrol a key at step 3 before comparing the boot fingerprint.";
-      render();
-      return;
-    }
-    if (fingerprintsMatch(typed, enrolled)) {
-      session.verifyOutcome = "match";
-      dispatch({ type: "boot-fingerprint-typed", fingerprint: typed });
-      return;
-    }
-    session.verifyOutcome = "mismatch";
-    dispatch({ type: "stop", step: 8, condition: "boot-fingerprint-mismatch" });
-    return;
-  }
-  if (action === "fingerprint-recorded") {
-    if (!session.fingerprintHex || session.keyFlow === undefined) {
-      return;
-    }
-    const typed = root().querySelector<HTMLInputElement>("[data-role='retype']")?.value ?? "";
-    const saved = root().querySelector<HTMLInputElement>("[data-role='download-saved']")?.checked ?? false;
-    const decision = step3Decide(session.fingerprintHex, session.keyFlow, {
-      typedTail: typed,
-      downloadSaved: saved,
-    });
-    if (decision.dispatch === null) {
-      session.notice = decision.blockers.join(", ");
-      render();
-      return;
-    }
-    dispatch(decision.dispatch);
-    return;
-  }
-  if (action === "sign-vbmeta") {
-    const input = root().querySelector<HTMLInputElement>("[data-role='vbmeta']");
-    const img = input ? await readBytes(input) : undefined;
-    if (!img || !session.fingerprintHex) {
-      session.notice = "Pick vbmeta.img and finish the key step first.";
-      render();
-      return;
-    }
-    const key = session.privateKey ?? session.signerMaterial;
-    const outcome =
-      key !== undefined
-        ? await signVbmetaStep({
-            kind: "sign",
-            img,
-            key,
-            keyFingerprintHex: session.fingerprintHex,
-          })
-        : session.pkmd !== undefined
-          ? await signVbmetaStep({
-              kind: "import",
-              img,
-              expectedPkmd: session.pkmd,
-              keyFingerprintHex: session.fingerprintHex,
-            })
-          : undefined;
-    if (outcome === undefined) {
-      session.notice = "No signing key is loaded.";
-      render();
-      return;
-    }
-    if (outcome.kind === "stop") {
-      dispatch({ type: "stop", step: 4, condition: outcome.condition });
-      return;
-    }
-    session.signedVbmeta = outcome.signedImage;
-    session.signView = outcome.view;
-    render();
+  if (action === "confirm-boot") {
+    session.verifyOutcome = "match";
+    dispatch({ type: "boot-fingerprint-typed", fingerprint: "confirmed" });
     return;
   }
   if (action === "vbmeta-signed") {
@@ -849,8 +676,8 @@ async function flashNow(): Promise<void> {
     render();
     return;
   }
-  if (!session.transport || !session.pkmd || !session.signedVbmeta) {
-    session.notice = "Pair the device and finish signing before flashing.";
+  if (!session.transport) {
+    session.notice = "Pair the device before flashing.";
     render();
     return;
   }
@@ -875,7 +702,6 @@ async function flashNow(): Promise<void> {
       transport: session.transport,
       consoleSink: log,
       plan: {
-        avbCustomKey: session.pkmd,
         firmware: picked.firmware.map((name) => ({
           partition: name,
           data: session.images[name] as Uint8Array,
@@ -884,7 +710,7 @@ async function flashNow(): Promise<void> {
           partition: name,
           data: session.images[name] as Uint8Array,
         })),
-        vbmeta: [{ partition: "vbmeta", data: session.signedVbmeta }],
+        vbmeta: session.images.vbmeta ? [{ partition: "vbmeta", data: session.images.vbmeta }] : [],
       },
       gate: {
         state: session.state,
@@ -992,14 +818,6 @@ function onChange(event: Event): void {
       }
     })();
     return;
-  }
-  if (role === "release-key") {
-    void (async () => {
-      const pem = await readText(target);
-      if (pem) {
-        session.releaseKeyJwk = await armoredPemToJwk(pem);
-      }
-    })();
   }
 }
 

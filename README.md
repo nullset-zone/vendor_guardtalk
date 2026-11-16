@@ -5,6 +5,7 @@ Product deltas for the GrapheneOS fork under [nullset-zone](https://github.com/n
 ## Modem excision (`GUARDTALK_RADIO_EXCISED`)
 
 - **Profile:** `tokay-cur-user` with the host RIL/telephony stack excised. **Law 7 correction (2026-09-26, `T-EXCISE-CLAIM-HONESTY-RESIDUAL`):** baseband firmware (`radio.img`/`modem.img`) still ships and is flashed — Tier B residual (`H-R1`); the kernel modem transport (`cpif`/`cpif_page`/`shm_ipc`) still loads on 10/13 at source level (Tier C, `C-R1`; source-removed by `T-EXCISE-MODEM-KERNEL`, pending re-stamp).
+- **AOSP-constrained residuals (`F-008`, `T-REMEDIATE-SEC-FLASH-AVB-HARDENING`, 2026-11-16):** Staged images carry four AOSP/HAL-constrained files due to platform build/VINTF dependencies: `com.android.telephonycore.apex` (14/14 targets), `com.android.nfcservices.apex` (14/14 targets), `location.provider.xml` (14/14 targets), and `vendor/etc/vintf/manifest/bluetooth_audio.xml` (9/14 targets: all 8 rebuilt + `tangorpro`, required as an install-dep of `audio-impl` / contexthub).
 - **Product base:** `device/tokay/product-common-excised.mk` skips `telephony_*.mk` inherits.
 - **Late filter:** `radio-excised/product-config-late.mk` hooked from `build/make/core/product_config.mk` (after inherit merge).
 - **Do not edit** `vendor/google_devices/tokay/tokay.mk` or `BoardConfig.mk` directly — re-apply hooks after `adevtool generate-all -d tokay` (see `device/tokay/REGEN_HOOKS.md`).

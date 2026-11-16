@@ -3,22 +3,28 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GuardTalkOS Web Installer — 8 Packed Pixel Targets</title>
+    <title>GuardTalkOS Web Installer — OpenStateStack Foundation</title>
+    <link rel="stylesheet" href="../design/pajamas/tokens.css" />
+    <link rel="stylesheet" href="../design/pajamas/reset.css" />
+    <link rel="stylesheet" href="../design/pajamas/templates.css" />
+    <link rel="stylesheet" href="../design/pajamas/components.css" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <a class="skip-link" href="#workspace">Skip to installer steps</a>
     <header class="masthead">
-      <p class="eyebrow">GuardTalkOS · GrapheneOS-Parity Guided Installer</p>
+      <p class="eyebrow">GuardTalkOS · OpenStateStack Foundation · GrapheneOS-Parity WebUSB Installer</p>
       <h1>Web installer</h1>
       <p class="lede">
-        Install a <strong>dev/unlocked</strong> image across all 8 packed Pixel
+        Install a <strong>dev/unlocked</strong> GuardTalkOS image across all 8 packed Pixel
         targets: Pixel 9 (tokay), Pixel 9 Pro XL (komodo), Pixel 9 Pro (caiman),
         Pixel 10 (frankel), Pixel 9a (stallion), Pixel 10 Pro (blazer), Pixel 10
         Pro Fold (rango) — <strong>experimental / boot HOLD</strong>, and Pixel 8a
-        (akita) — <strong>experimental</strong>. The server loads the matching
-        channel when you pick a device. Flash order comes from flashcore, not from
-        this page.
+        (akita) — <strong>experimental</strong>.
+        Release signing keys are held exclusively in the <strong>OpenStateStack Foundation</strong>
+        vault by GuardTalkOS maintainers; this browser client has zero key custody
+        and verifies Foundation-published <code>SHA256SUMS</code>, <code>manifest.json</code>,
+        and public-only <code>avb_pkmd.bin</code> before flashing via WebUSB (<code>flashcore</code>).
       </p>
       <div class="readiness-strip" aria-label="Honest readiness posture">
         <span id="posture-badge" class="badge badge-hold">LIVE_FLASH_CLAIMED=false · DRY-RUN ONLY</span>
@@ -27,11 +33,13 @@
       </div>
     </header>
 
-    <aside class="banners" aria-label="Channel limits">
+    <aside class="banners" aria-label="Channel limits and trust posture">
       <p class="banner banner-dev" data-dec="007">
-        <strong>dev/unlocked.</strong>
-        This channel is not GrapheneOS-equivalent locked verified boot.
-        Locking the bootloader here does not create a production verified-boot install.
+        <strong>dev/unlocked · OpenStateStack Foundation vault trust.</strong>
+        GuardTalkOS maintainers hold all release signing keys in the OpenStateStack Foundation vault.
+        You never upload, generate, or import signing keys.
+        This channel is not GrapheneOS-equivalent locked verified boot;
+        locking the bootloader here does not create a production verified-boot install.
       </p>
       <p class="banner banner-parity" data-dec="008">
         Flashcore supports dual-slot bootloader writes (<code>--slot=other</code>),
@@ -57,50 +65,41 @@
       <nav class="steps" aria-label="Installer sequence">
         <ol id="step-rail">
           <li data-step="1" aria-current="step">
-            <span class="step-title">1. Browser &amp; USB prerequisites</span>
+            <span class="step-title">1. Enable OEM Unlocking</span>
             <span class="step-chip" data-step-chip="1">CURRENT</span>
           </li>
           <li data-step="2">
-            <span class="step-title">2. Enable OEM unlocking</span>
+            <span class="step-title">2. Connect Device</span>
             <span class="step-chip" data-step-chip="2">PENDING</span>
           </li>
           <li data-step="3">
-            <span class="step-title">3. Connect device</span>
+            <span class="step-title">3. Unlock Bootloader</span>
             <span class="step-chip" data-step-chip="3">PENDING</span>
           </li>
           <li data-step="4">
-            <span class="step-title">4. Unlock bootloader</span>
+            <span class="step-title">4. Download &amp; Flash Release</span>
             <span class="step-chip" data-step-chip="4">PENDING</span>
           </li>
           <li data-step="5">
-            <span class="step-title">5. Download &amp; verify release</span>
+            <span class="step-title">5. Lock Bootloader</span>
             <span class="step-chip" data-step-chip="5">PENDING</span>
-          </li>
-          <li data-step="6">
-            <span class="step-title">6. Flash release</span>
-            <span class="step-chip" data-step-chip="6">PENDING</span>
-          </li>
-          <li data-step="7">
-            <span class="step-title">7. Safety-gated lock bootloader</span>
-            <span class="step-chip" data-step-chip="7">PENDING</span>
-          </li>
-          <li data-step="8">
-            <span class="step-title">8. Post-install verification</span>
-            <span class="step-chip" data-step-chip="8">PENDING</span>
           </li>
         </ol>
       </nav>
 
       <main id="workspace" class="workspace">
-        <section class="panel" id="step-1" aria-labelledby="prereq-title">
-          <h2 id="prereq-title">1. Browser &amp; USB prerequisites</h2>
+        <section class="panel" id="step-1" aria-labelledby="oem-title">
+          <h2 id="oem-title">1. Enable OEM Unlocking</h2>
           <p id="chromium-check" class="note">Checking browser WebUSB and Chromium support…</p>
           <p id="webusb-note" class="note"></p>
           <ul class="checklist">
-            <li>Use a current Chromium, Chrome, Edge, or Brave window — not Firefox or Safari for live USB.</li>
+            <li>Use a current Chromium, Chrome, Edge, or Brave window — <strong>Private / Incognito windows are not a supported path</strong> (origin storage is too small for release artifacts).</li>
+            <li>On the Pixel, open <strong>Settings → About phone</strong> and tap <strong>Build number</strong> 7 times to enable Developer options.</li>
+            <li>Open <strong>Settings → System → Developer options</strong> and enable <strong>OEM unlocking</strong> and <strong>USB debugging</strong>.</li>
             <li>
-              <strong>Private / Incognito windows are not a supported path.</strong>
-              Origin storage in those windows is too small to hold the real artifacts.
+              Plug USB into <strong>this computer</strong>, then use <strong>Reboot to Fastboot</strong> below
+              (WebUSB ADB sends <code>adb reboot bootloader</code> / <code>reboot:bootloader</code>),
+              hold <strong>Volume Down + Power</strong>, or run <code>vendor/guardtalk/scripts/reboot-to-fastboot.sh</code>.
             </li>
           </ul>
           <div class="os-guidance" aria-label="OS-specific USB guidance">
@@ -136,36 +135,30 @@
             <input id="private-hint" type="checkbox" />
             I am in a private or Incognito window (unsupported)
           </label>
-        </section>
-
-        <section class="panel" id="step-2" aria-labelledby="oem-title">
-          <h2 id="oem-title">2. Enable OEM unlocking</h2>
-          <ul class="checklist">
-            <li>On the Pixel, open <strong>Settings → About phone</strong> and tap <strong>Build number</strong> 7 times to enable Developer options.</li>
-            <li>Open <strong>Settings → System → Developer options</strong> and enable <strong>OEM unlocking</strong> and <strong>USB debugging</strong>.</li>
-            <li>
-              Plug USB into <strong>this computer</strong>, then use
-              <strong>Reboot to Fastboot</strong> below. This page talks WebUSB ADB
-              and sends <code>adb reboot bootloader</code> (<code>reboot:bootloader</code>).
-              The first time, unlock the phone and tap <strong>Allow USB debugging</strong>.
-            </li>
-            <li>
-              Manual fallback: hold <strong>Volume Down + Power</strong>, or run
-              <code>vendor/guardtalk/scripts/reboot-to-fastboot.sh</code> on the USB host.
-            </li>
-          </ul>
           <div class="actions">
             <button id="btn-reboot-fastboot" type="button">Reboot to Fastboot</button>
           </div>
         </section>
 
-        <section class="panel" id="step-3" aria-labelledby="connect-title">
-          <h2 id="connect-title">3. Connect device</h2>
+        <section class="panel" id="step-2" aria-labelledby="connect-title">
+          <h2 id="connect-title">2. Connect Device</h2>
           <p class="note">
-            Choose a target or let WebUSB auto-detect the codename via
-            <code>getvar product</code>, inspect <code>current-slot</code> and
-            <code>unlocked</code> status, and verify channel compatibility.
+            Select your Pixel target and connect in Fastboot Mode. WebUSB inspects
+            <code>getvar product</code>, <code>current-slot</code>, and <code>unlocked</code> status.
           </p>
+          <label class="field" for="device">Target Pixel device (8 packed channels)</label>
+          <select id="device" name="device"></select>
+          <p class="note">
+            Supported: Pixel 9 (tokay), Pixel 9 Pro XL (komodo), Pixel 9 Pro (caiman),
+            Pixel 10 (frankel), Pixel 9a (stallion), Pixel 10 Pro (blazer).
+            Experimental: Pixel 10 Pro Fold (rango) — experimental / boot HOLD,
+            Pixel 8a (akita) — experimental.
+          </p>
+          <label class="field" for="boot-chain">Boot-chain mode (<code>gt</code> vs <code>hybrid</code>)</label>
+          <select id="boot-chain" name="boot-chain">
+            <option value="gt">gt — GuardTalk native boot chain</option>
+            <option value="hybrid">hybrid — CP1A rescue-boot hybrid (frankel / blazer / rango)</option>
+          </select>
           <div class="device-telemetry" aria-live="polite">
             <p>Detected product: <strong id="telemetry-product">not connected</strong></p>
             <p>Current slot: <strong id="telemetry-slot">unknown</strong></p>
@@ -177,11 +170,11 @@
           </div>
         </section>
 
-        <section class="panel" id="step-4" aria-labelledby="unlock-title">
-          <h2 id="unlock-title">4. Unlock bootloader</h2>
+        <section class="panel" id="step-3" aria-labelledby="unlock-title">
+          <h2 id="unlock-title">3. Unlock Bootloader</h2>
           <p class="note">
-            Runs <code>flashing unlock</code>. Unlocking wipes user data on the Pixel
-            when accepted via the volume/power confirmation prompt on-device.
+            Runs <code>flashing unlock</code>. Unlocking wipes all user data on the Pixel
+            when confirmed using the volume and power keys on-device.
           </p>
           <label class="check">
             <input id="confirm-unlock" type="checkbox" />
@@ -192,41 +185,22 @@
           </div>
         </section>
 
-        <section class="panel" id="step-5" aria-labelledby="device-title">
-          <h2 id="device-title">5. Download &amp; verify release</h2>
-          <label class="field" for="device">Target Pixel device (8 packed channels)</label>
-          <select id="device" name="device"></select>
+        <section class="panel" id="step-4" aria-labelledby="flash-title">
+          <h2 id="flash-title">4. Download &amp; Flash Release</h2>
           <p class="note">
-            Supported targets: Pixel 9 (tokay), Pixel 9 Pro XL (komodo), Pixel 9 Pro (caiman),
-            Pixel 10 (frankel), Pixel 9a (stallion), Pixel 10 Pro (blazer).
-            Experimental targets: Pixel 10 Pro Fold (rango) — experimental / boot HOLD,
-            Pixel 8a (akita) — experimental.
-          </p>
-
-          <label class="field" for="boot-chain">Boot-chain mode (<code>gt</code> vs <code>hybrid</code>)</label>
-          <select id="boot-chain" name="boot-chain">
-            <option value="gt">gt — GuardTalk native boot chain</option>
-            <option value="hybrid">hybrid — CP1A rescue-boot hybrid (frankel / blazer / rango)</option>
-          </select>
-
-          <p>
-            Images come from this server:
-            <code id="channel-url">../channels/tokay/</code>
-            Changing the device reloads that folder.
+            Hosted release channel: <code id="channel-url">../channels/tokay/</code>.
+            Verified against OpenStateStack Foundation-published <code>SHA256SUMS</code>,
+            <code>manifest.json</code>, and public-only <code>avb_pkmd.bin</code> (zero user key custody).
           </p>
           <p id="channel-status" class="note">Waiting for the hosted channel…</p>
           <div id="channel-verify-box" class="callout">
-            <h3>Release &amp; AVB verification</h3>
+            <h3>OpenStateStack Foundation release verification</h3>
             <p id="channel-verify-text">Pending channel load…</p>
           </div>
           <div id="quota-box" class="callout" role="alert" hidden>
             <h3>Storage quota (OPFS / streaming)</h3>
             <p id="quota-text"></p>
           </div>
-        </section>
-
-        <section class="panel" id="step-6" aria-labelledby="plan-title">
-          <h2 id="plan-title">6. Flash release</h2>
           <p id="plan-meta" class="note">Load a channel to see firmware → avb_custom_key → os.</p>
           <div class="progress-box" aria-live="polite">
             <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="flash-progress-bar">
@@ -235,9 +209,14 @@
             <p id="flash-progress-text" class="note">0% · Waiting to start flash plan.</p>
           </div>
           <ol id="plan-list" class="plan"></ol>
+          <p class="note">
+            <strong>Reconnect after reboot-bootloader:</strong> when firmware or OS flashing enters
+            <code>fastbootd</code> or reboots the bootloader, leave the Pixel in Fastboot Mode and
+            click <strong>Reconnect</strong> in the prompt.
+          </p>
           <div class="actions">
             <button id="btn-preview" type="button" class="secondary" disabled>Refresh plan preview</button>
-            <button id="btn-flash" type="button" class="danger" disabled>Flash plan</button>
+            <button id="btn-flash" type="button" class="danger" disabled>Flash release</button>
           </div>
           <div id="usb-recovery-box" class="callout danger recovery-box" role="alert" hidden>
             <h3>Recoverable USB error</h3>
@@ -248,11 +227,11 @@
           </div>
         </section>
 
-        <section class="panel" id="step-7" aria-labelledby="lock-title">
-          <h2 id="lock-title">7. Safety-gated lock bootloader</h2>
+        <section class="panel" id="step-5" aria-labelledby="lock-title">
+          <h2 id="lock-title">5. Lock Bootloader</h2>
           <p class="note">
-            Lock is rejected until the flash plan completes. Locking wipes user data
-            when accepted on-device. Unverified (<code>dev/unlocked</code>) or experimental
+            Lock is gated until the flash plan completes. Locking wipes user data
+            when confirmed on-device. Unverified (<code>dev/unlocked</code>) or experimental
             targets block <code>flashing lock</code> unless explicit operator override is enabled.
           </p>
           <div class="safety-gate">
@@ -268,22 +247,10 @@
           <div class="actions">
             <button id="btn-lock" type="button" class="danger" disabled>Lock bootloader</button>
           </div>
-        </section>
-
-        <section class="panel" id="step-8" aria-labelledby="verify-title">
-          <h2 id="verify-title">8. Post-install verification &amp; readiness</h2>
           <p id="verify-summary" class="note">
             Complete the flash plan to inspect final verification posture.
             <code>LIVE_FLASH_CLAIMED=false</code>.
           </p>
-          <section aria-labelledby="reconnect-title">
-            <h3 id="reconnect-title">Reconnect after reboot-bootloader</h3>
-            <p class="note">
-              When firmware or OS flashing reboots the bootloader or enters <code>fastbootd</code>,
-              this page loses the USB session. Leave the Pixel in Fastboot Mode, then use
-              <strong>Reconnect</strong> in the dialog.
-            </p>
-          </section>
         </section>
 
         <section class="panel" aria-labelledby="log-title">
@@ -309,7 +276,7 @@
 
     <footer class="foot">
       <p>
-        GuardTalkOS web installer · tokay + akita + komodo + rango (experimental / boot HOLD) + caiman + frankel + stallion + blazer · channel label
+        GuardTalkOS · OpenStateStack Foundation · tokay + akita + komodo + rango (experimental / boot HOLD) + caiman + frankel + stallion + blazer · channel label
         <strong>dev/unlocked</strong> · flashcore plan, not a factory
         <code>-install-</code> zip · <code>LIVE_FLASH_CLAIMED=false</code>.
       </p>

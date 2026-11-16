@@ -71,12 +71,13 @@ test("file:line report formatting", () => {
   assert.match(report, /a\.txt:2 \[no-ota-language\]/);
 });
 
-test("CSP string names one origin and no wildcard", () => {
+test("CSP string is strictly 'self', has no wildcard, and has no cleartext http:// LAN origin", () => {
   const csp =
-    "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src http://192.168.2.220:9100";
+    "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'";
   assert.equal(INSTALLER_CSP, csp);
   assert.equal(INSTALLER_CSP.includes("*"), false);
-  assert.equal(INSTALLER_CSP.split("connect-src ")[1], "http://192.168.2.220:9100");
+  assert.equal(INSTALLER_CSP.includes("http://"), false);
+  assert.equal(INSTALLER_CSP.split("connect-src ")[1], "'self'");
   assert.equal(cspMetaTag(), `<meta http-equiv="Content-Security-Policy" content="${csp}">`);
 });
 

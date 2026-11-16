@@ -1,4 +1,9 @@
-# GuardTalk Messenger — Gateway Jami provision
+# GuardTalk Messenger — Gateway Jami provision (DECOMMISSIONED)
+
+> **Status: DECOMMISSIONED (`T-VENDOR-PURGE-MESSENGER-PREINSTALL`, 2026-11-16).**
+> `GuardTalkMessenger` (`com.guardtalk.messenger`) has been purged from `vendor/guardtalk/`
+> and is no longer built or preinstalled on any GuardTalkOS target. This document is
+> retained for historical reference only.
 
 **Task:** `T-REMEDIATE-B4-MESSENGER` (item 19)  
 **Date:** 2026-09-16  

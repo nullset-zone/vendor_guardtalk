@@ -98,29 +98,24 @@ function refreshGates(): void {
 function updateStepRail(): void {
   const flags = wizard.flags();
   const completed: Record<number, boolean> = {
-    1: true,
-    2: flags.connected || flags.unlocked,
-    3: flags.connected,
-    4: flags.unlocked,
-    5: flags.channelLoaded && flags.artifactsReady,
-    6: flags.planComplete,
-    7: flags.planComplete && !flags.unlocked,
-    8: flags.planComplete,
+    1: flags.connected || flags.unlocked,
+    2: flags.connected,
+    3: flags.unlocked,
+    4: flags.planComplete,
+    5: flags.planComplete && !flags.unlocked,
   };
-  let currentStep = 3;
-  if (!flags.channelLoaded) {
-    currentStep = 5;
-  } else if (!flags.connected) {
-    currentStep = 3;
+  let currentStep = 2;
+  if (!flags.connected) {
+    currentStep = 2;
   } else if (!flags.unlocked) {
-    currentStep = 4;
+    currentStep = 3;
   } else if (!flags.planComplete) {
-    currentStep = 6;
+    currentStep = 4;
   } else {
-    currentStep = 7;
+    currentStep = 5;
   }
 
-  for (let i = 1; i <= 8; i += 1) {
+  for (let i = 1; i <= 5; i += 1) {
     const li = document.querySelector<HTMLLIElement>(`#step-rail li[data-step="${String(i)}"]`);
     const chip = document.querySelector<HTMLElement>(`[data-step-chip="${String(i)}"]`);
     if (!li || !chip) {

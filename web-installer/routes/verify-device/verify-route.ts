@@ -303,15 +303,11 @@ function simChip(): string {
 function comparePanel(): string {
   return [
     `<section class="capability" data-step="8" data-capability="compare" id="compare-boot-screen">`,
-    `<h2>Compare the boot-screen fingerprint — step 8</h2>`,
+    `<h2>Check verified-boot state — step 8</h2>`,
     `<ol class="compare-guide">`,
-    `<li>Boot the phone and wait for the boot screen.</li>`,
-    `<li>Find the fingerprint line — a long hexadecimal string tied to your key.</li>`,
-    `<li>Type it exactly as shown, character for character.</li>`,
+    `<li>Boot the phone and wait for the GuardTalkOS start screen.</li>`,
+    `<li>Confirm the device boots cleanly without verified-boot error prompts.</li>`,
     `</ol>`,
-    `<label class="field-label" for="boot-fingerprint-input">Boot-screen fingerprint</label>`,
-    `<input type="text" id="boot-fingerprint-input" data-role="boot-fingerprint-input" autocomplete="off" spellcheck="false">`,
-    `<button type="button" class="${GL_BTN_CONFIRM} cta" data-action="compare-boot-screen">Compare fingerprint</button>`,
     `<div class="result" data-container="compare-result"></div>`,
     `</section>`,
   ].join("");
@@ -319,12 +315,11 @@ function comparePanel(): string {
 
 function readPanel(): string {
   return [
-    `<section class="capability" data-step="5" data-capability="read" id="read-enrolled-key">`,
-    `<h2>Read the enrolled key — step 5</h2>`,
-    `<p>Some bootloaders answer getvar requests with the hash of the enrolled AVB public key. ` +
-      `Every known variable name is asked, each answer is printed verbatim in the console, and nothing is ` +
-      `guessed: if the device does not publish it, this page says so and hands you to the comparison.</p>`,
-    `<button type="button" class="${GL_BTN_CONFIRM} cta" data-action="read-enrolled-key">Ask the device</button>`,
+    `<section class="capability" data-step="5" data-capability="read" id="read-device-state">`,
+    `<h2>Read bootloader state — step 5</h2>`,
+    `<p>Ask the bootloader over WebUSB for its product codename, slot, and lock state. ` +
+      `Nothing is written to the device.</p>`,
+    `<button type="button" class="${GL_BTN_CONFIRM} cta" data-action="read-device-state">Ask the device</button>`,
     `<div class="result" data-container="read-result"></div>`,
     usbTroubleshootingHtml(),
     `</section>`,
@@ -343,9 +338,8 @@ export function renderVerifyDevicePage(input: VerifyPageInput = {}): string {
     simSwitch(sim),
     sim ? simChip() : ``,
     `</header>`,
-    `<p class="lead">Does this phone boot with your key? Two equal capabilities answer that — read the ` +
-      `enrolled key hash where the bootloader publishes it, or compare the boot-screen fingerprint by eye ` +
-      `and keyboard. Nothing is written to the device here; this route flashes nothing.</p>`,
+    `<p class="lead">Check your Pixel's bootloader state and confirm GuardTalkOS boots cleanly. ` +
+      `Nothing is written to the device here; this route flashes nothing.</p>`,
     torChromiumHonestyBlock(),
     readPanel(),
     comparePanel(),
@@ -365,7 +359,7 @@ export function wireVerifyPage(root: HTMLElement, handlers: VerifyPageHandlers):
       return;
     }
     const action = target.getAttribute("data-action");
-    if (action === "read-enrolled-key") {
+    if (action === "read-device-state") {
       handlers.onReadRequested();
       return;
     }

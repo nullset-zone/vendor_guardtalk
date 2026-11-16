@@ -37,13 +37,13 @@ export const BOOT_MISMATCH_SENTENCE =
  * /threat-model link wherever the protective claim is made.
  */
 export const BOOT_STATE_LIMIT_SENTENCE =
-  "Verified boot checks what your key signs — firmware beneath it (baseband, boot ROM) and a compromised signing machine stay outside that check.";
+  "Verified boot checks what the OpenStateStack Foundation release signing key signs — firmware beneath it (baseband, boot ROM) and a compromised signing machine stay outside that check.";
 
 export const GATEWAY_LIMIT_SENTENCE =
   "The Gateway is a network-defence boundary for your messages, not an absolute one — it has limits of its own.";
 
 export const CUSTODY_LIMIT_SENTENCE =
-  "Key custody protects the key on this computer; it cannot cover a signing machine already compromised or a key copied without your knowledge.";
+  "Release signing keys are held in the OpenStateStack Foundation vault; this browser only verifies Foundation-published SHA256SUMS, manifest.json, and public avb_pkmd.bin.";
 
 /** Advertised products from wizard/devices.ts (DEC-WEBINSTALL-015). Rango is experimental / boot HOLD. */
 export const TARGET_PRODUCTS: readonly string[] = offeredProductIds();
@@ -309,7 +309,7 @@ export function lockStepHtml(view: LockStepViewInput): string {
   parts.push(`<section class="install-step install-step-lock" data-step="7">`);
   parts.push(`<h1>Lock the bootloader.</h1>`);
   parts.push(
-    `<p>Sending <code class="mono">flashing lock</code> re-arms verified boot against YOUR key. Confirming on the device wipes its data one final time — expect one more setup wizard afterwards.</p>`,
+    `<p>Sending <code class="mono">flashing lock</code> re-arms verified boot against the OpenStateStack Foundation release signing key (<code>avb_pkmd.bin</code>). Confirming on the device wipes its data one final time — expect one more setup wizard afterwards.</p>`,
   );
   parts.push(`<ol class="lock-steps">`);
   parts.push(`<li>Send the lock command from this page (or run <code class="mono">fastboot flashing lock</code> yourself).</li>`);
@@ -326,8 +326,7 @@ export function lockStepHtml(view: LockStepViewInput): string {
   parts.push(
     `<div class="boot-state-explainer" data-topic="boot-state">`,
     `<h2>What you should see at every boot</h2>`,
-    `<p>A locked bootloader running a custom OS shows a boot-state notice on every start, followed by the fingerprint of YOUR public key — the same hex string recorded at step 3. This screen is the point of the whole exercise: the phone itself now proves, every single boot, that it is running exactly what you signed and nothing else.</p>`,
-    `<p class="mono">check the key fingerprint on EVERY boot — it takes two seconds and it is the whole contract.</p>`,
+    `<p>A locked bootloader running a custom OS shows a boot-state notice on every start with the verified-boot key fingerprint. Confirm that the device boots cleanly into GuardTalkOS.</p>`,
     ProtectionLimit(BOOT_STATE_LIMIT_SENTENCE).html,
     `</div>`,
   );
@@ -346,8 +345,6 @@ export type VerifyOutcome = "pending" | "match" | "mismatch";
 
 export interface VerifyStepViewInput {
   readonly sim: boolean;
-  readonly enrolledFingerprint: string;
-  readonly typed?: string;
   readonly outcome?: VerifyOutcome;
 }
 
@@ -357,27 +354,20 @@ export function verifyStepHtml(view: VerifyStepViewInput): string {
   parts.push(`<section class="install-step install-step-verify" data-step="8">`);
   parts.push(`<h1>First boot &amp; verify.</h1>`);
   parts.push(
-    `<p>The phone's first boot shows your key's fingerprint on screen. Type it below — character for character — and this page compares it against the key enrolled in step 3.</p>`,
+    `<p>Let the Pixel finish its first boot into GuardTalkOS, then confirm below to continue.</p>`,
   );
   parts.push(
-    `<div class="enrolled-ref mono" data-enrolled="sha256:pkmd">enrolled: ${escapeHtml(view.enrolledFingerprint)}</div>`,
-  );
-  parts.push(
-    `<form class="verify-form" data-form="boot-fingerprint">`,
-    `<label for="boot-fingerprint-input">Type the fingerprint shown on the phone's boot screen</label>`,
-    `<input class="mono" id="boot-fingerprint-input" name="boot-fingerprint" type="text" autocomplete="off" spellcheck="false" value="${escapeHtml(view.typed ?? "")}">`,
-    `<button type="submit" class="${GL_BTN_CONFIRM} primary-action" data-action="compare-fingerprint">Compare</button>`,
-    `</form>`,
+    `<button type="button" class="${GL_BTN_CONFIRM} primary-action" data-action="confirm-boot">Confirm device booted</button>`,
   );
 
   if (view.outcome === "match") {
     parts.push(
       `<div class="verify-result" data-outcome="match">`,
-      makeChip("VERIFIED · YOUR KEY", "verified", { ariaLive: "polite" }),
-      `<p>The fingerprint on the phone matches the key YOU enrolled. Verified boot is anchored to your signature.</p>`,
+      makeChip("POST-INSTALL VERIFIED", "verified", { ariaLive: "polite" }),
+      `<p>Flashing and bootloader state are complete.</p>`,
       `<div class="gateway-handoff" data-handoff="gateway">`,
       `<h2>Next: the Gateway.</h2>`,
-      `<p>Messaging moves to the Gateway service. Open these once, bookmark them, then continue reading step 9 before you rely on this phone.</p>`,
+      `<p>Messaging moves to the Gateway service. Open these once, bookmark them, then continue to finish.</p>`,
       `<ul class="handoff-links">`,
       `<li><a href="${GATEWAY_URL}" rel="noopener noreferrer">guardtalk.io/system/gateway</a></li>`,
       `<li><a href="${DOCS_URL}" rel="noopener noreferrer">GuardTalkOS documentation</a></li>`,
@@ -396,7 +386,7 @@ export function verifyStepHtml(view: VerifyStepViewInput): string {
       makeChip("BOOT_FINGERPRINT_MISMATCH", "tripwire", { ariaLive: "assertive" }),
       `<p class="tripwire-text">${escapeHtml(BOOT_MISMATCH_SENTENCE)}</p>`,
       `<p class="stop-reason mono">${escapeHtml(STOP_REASONS.BOOT_FINGERPRINT_MISMATCH)}</p>`,
-      `<p>If typing was not the problem, treat the installation as compromised and start recovery: <a href="${RECOVERY_URL}">/install/recover</a>.</p>`,
+      `<p>If the device fails to boot cleanly, start recovery: <a href="${RECOVERY_URL}">/install/recover</a>.</p>`,
       `</div></div>`,
     );
   }
@@ -411,25 +401,17 @@ export function keepKeyStepHtml(sim = false): string {
   const parts: string[] = [];
   parts.push(simBannerHtml(sim));
   parts.push(`<section class="install-step install-step-keep-key" data-step="9">`);
-  parts.push(`<h1>Keep the key.</h1>`);
-  parts.push(`<div class="custody-recap" data-topic="key-custody">`);
-  parts.push(`<h2>Where your private key lives</h2>`);
+  parts.push(`<h1>Installation complete.</h1>`);
+  parts.push(`<div class="custody-recap" data-topic="install-complete">`);
+  parts.push(`<h2>Updates</h2>`);
   parts.push(
-    `<p>In the browser flow it exists only as a non-extractable WebCrypto handle inside this tab — it cannot leave by code, and it was never sent anywhere. If you exported an encrypted PEM at step 3, that file plus its passphrase is the ONLY other copy in existence. Store it somewhere you will find again; there is no reset link.</p>`,
-  );
-  parts.push(`<h2>New computer</h2>`);
-  parts.push(
-    `<p>Import your encrypted PEM on the new machine and continue with <a href="/install/update">/install/update</a> — it walks verify → sign → flash again without generating anything new.</p>`,
-  );
-  parts.push(`<h2>Next release</h2>`);
-  parts.push(
-    `<p>Releases ship as packages you download over Tor and sign yourself; nothing arrives on this phone by itself. Expect the same ritual each time: download, verify, re-sign with your key, flash, lock, check the fingerprint at first boot.</p>`,
+    `<p>When a new GuardTalkOS release is published, use <a href="/install/update">/install/update</a> to download, verify, and flash the update over WebUSB.</p>`,
   );
   parts.push(ProtectionLimit(CUSTODY_LIMIT_SENTENCE).html);
   parts.push(`</div>`);
   parts.push(`<p class="closing-sentence">${escapeHtml(CLOSING_SENTENCE)}</p>`);
   parts.push(
-    `<form class="keep-key-ack-form" data-form="keep-key-ack"><button type="submit" class="${GL_BTN_CONFIRM} primary-action" data-action="finish">I have stored my key and my passphrase</button></form>`,
+    `<form class="keep-key-ack-form" data-form="keep-key-ack"><button type="submit" class="${GL_BTN_CONFIRM} primary-action" data-action="finish">Finish</button></form>`,
   );
   parts.push(`</section>`);
   return parts.join("");

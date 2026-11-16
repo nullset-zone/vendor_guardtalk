@@ -17,12 +17,11 @@
 import { cspMetaTag } from "../../lib/claims/csp.js";
 import { FastbootClient } from "../../lib/fastboot/client.js";
 import { STOP_REASONS, type InstallState } from "../../lib/install-state/index.js";
-import { fingerprintFromJwk } from "../../lib/keys/fingerprint.js";
 import { POSTURE_CONNECTIVITY, POSTURE_CUSTODY, renderPosturePill } from "../../lib/ui/posture.js";
 import { makeChip } from "../../lib/ui/chips.js";
 import { escapeHtml } from "../../lib/ui/escape.js";
 import { usbTroubleshootingHtml } from "../../lib/ui/usb-troubleshooting.js";
-import { GL_BTN_CONFIRM, GL_BTN_DANGER, GL_BTN_LINK, glAlertHtml } from "../../lib/ui/pajamas.js";
+import { GL_BTN_DANGER, GL_BTN_LINK, glAlertHtml } from "../../lib/ui/pajamas.js";
 import { RELEASE_STATE_ALPHA } from "../verify-device/verify-route.js";
 
 export const INSTALL_HREF = "/install";
@@ -37,20 +36,13 @@ export const WIPE_WARNING_TEXT =
 export const RELOCK_WIPE_WARNING =
   "Locking wipes ALL data again — confirm on-device when the phone asks.";
 
-/** Shown verbatim before the avb_custom_key enrolment flash. */
-export const REENROL_WIPE_WARNING =
-  "Enrolment writes your new key to avb_custom_key — anything already enrolled there is overwritten.";
-
 /**
- * The recover path as ordered data. It never reaches the /install flash/lock
- * wizard steps; enrolment + relock are its own terminal actions.
+ * The recover path as ordered data. It walks unlock (wipe) → reinstall → relock.
  */
 export const RECOVER_PATH_PHASES: readonly string[] = [
   "read-the-loss",
   "typed-ack",
   "unlock-wipe",
-  "new-key",
-  "re-enrol-pkmd",
   "reinstall-pointer",
   "relock",
 ];
@@ -106,39 +98,11 @@ function unlockPhaseHtml(acknowledged: boolean): string {
   ].join("");
 }
 
-function newKeyPhaseHtml(): string {
-  return [
-    `<section class="phase" data-phase="new-key">`,
-    `<h2>New key</h2>`,
-    `<p>Your old key is lost — that is why you are here. All three flows are open to you as equals; ` +
-      `none is pre-selected.</p>`,
-    `<ul class="key-flow-cards">`,
-    `<li><strong>generate here.</strong> A fresh RSA-4096 pair made in this tab; the private half never leaves it.</li>`,
-    `<li><strong>bring your own.</strong> Import an existing PEM you already keep.</li>`,
-    `<li><strong>sign elsewhere.</strong> Make the key on another machine; import only what you need to enrol.</li>`,
-    `</ul>`,
-    `<p>After choosing a flow, continue below with the public half only.</p>`,
-    `</section>`,
-  ].join("");
-}
-
-function reenrolPhaseHtml(): string {
-  return [
-    `<section class="phase" data-phase="re-enrol-pkmd">`,
-    `<h2>Enrol your new key</h2>`,
-    `<p class="wipe-warning">${REENROL_WIPE_WARNING}</p>`,
-    `<button type="button" class="${GL_BTN_CONFIRM}" data-action="recover-flash-pkmd">Flash avb_pkmd.bin (avb_custom_key)</button>`,
-    `<div class="result" data-container="flash-result"></div>`,
-    `</section>`,
-  ].join("");
-}
-
 function reinstallPointerHtml(): string {
   return [
     `<section class="phase" data-phase="reinstall-pointer">`,
     `<h2>Install GuardTalkOS</h2>`,
-    `<p>The OS itself was not touched by this route. With your new key enrolled, go back to the full ` +
-      `installer and run it against this device with the new key:</p>`,
+    `<p>With the bootloader unlocked, go back to the installer and flash GuardTalkOS over WebUSB:</p>`,
     `<p><a href="${INSTALL_HREF}" data-link="reinstall">Continue at ${INSTALL_HREF}</a></p>`,
     `</section>`,
   ].join("");
@@ -203,14 +167,11 @@ export function renderRecoverPage(input: RecoverPageInput = {}): string {
     simSwitch(sim),
     sim ? simChip() : ``,
     `</header>`,
-    `<p class="lead">You are here because the key this phone boots with is lost. This page cannot get ` +
-      `that key back. It walks one honest path: erase everything, enrol a new key, start over.</p>`,
+    `<p class="lead">Recovery erases all user data on the phone so you can unlock the bootloader and reinstall GuardTalkOS from scratch.</p>`,
     lossStatementHtml(),
     torChromiumHonestyBlock(),
     ackGateHtml(acked),
     unlockPhaseHtml(acked),
-    newKeyPhaseHtml(),
-    reenrolPhaseHtml(),
     reinstallPointerHtml(),
     relockPhaseHtml(),
     `<footer class="route-footer">`,
@@ -273,22 +234,9 @@ export function recoverUnlock(client: FastbootClient): Promise<DeviceOpResult> {
   return runDeviceStep(() => client.flashingUnlock(), "unlocked — data wiped");
 }
 
-/** Re-enrol the new key by flashing avb_custom_key. */
-export function flashPkmd(client: FastbootClient, pkmdBytes: Uint8Array): Promise<DeviceOpResult> {
-  return runDeviceStep(
-    () => client.flash("avb_custom_key", pkmdBytes),
-    "avb_pkmd.bin written to avb_custom_key",
-  );
-}
-
 /** Lock the bootloader again. Wipes data again; warning shown first. */
 export function recoverRelock(client: FastbootClient): Promise<DeviceOpResult> {
   return runDeviceStep(() => client.flashingLock(), "locked");
-}
-
-/** Fingerprint of the NEW key's public half (display rule: fingerprints only). */
-export function newKeyFingerprint(jwk: JsonWebKey): Promise<string> {
-  return fingerprintFromJwk(jwk);
 }
 
 // --- Wiring --------------------------------------------------------------------
@@ -296,7 +244,6 @@ export function newKeyFingerprint(jwk: JsonWebKey): Promise<string> {
 export interface RecoverPageHandlers {
   readonly onAckTyped: (phrase: string) => void;
   readonly onUnlockRequested: () => void;
-  readonly onFlashPkmdRequested: (pkmd: Uint8Array) => void;
   readonly onRelockRequested: () => void;
   readonly onSimToggled: (on: boolean) => void;
 }
@@ -317,12 +264,6 @@ export function wireRecoverPage(root: HTMLElement, handlers: RecoverPageHandlers
     const action = target.getAttribute("data-action");
     if (action === "recover-unlock") {
       handlers.onUnlockRequested();
-      return;
-    }
-    if (action === "recover-flash-pkmd") {
-      // The real page supplies the bytes from the completed key flow; the
-      // handler contract receives them from the caller's state holder.
-      handlers.onFlashPkmdRequested(new Uint8Array(0));
       return;
     }
     if (action === "recover-relock") {

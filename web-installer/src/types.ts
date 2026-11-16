@@ -16,6 +16,14 @@ export interface ChannelArtifact {
   size: number;
 }
 
+/**
+ * Public-only AVB key metadata (`avb_pkmd.bin`).
+ *
+ * OpenStateStack Foundation vault trust model: GuardTalkOS maintainers hold all
+ * release signing keys in their Foundation vault (never in the browser, never in
+ * git, never user-supplied). The web installer is a zero-key-custody client
+ * verifying Foundation-published `SHA256SUMS`, `manifest.json`, and `avb_pkmd.bin`.
+ */
 export interface ChannelAvb {
   publicKeyFile: "avb_pkmd.bin";
   sha256: string;

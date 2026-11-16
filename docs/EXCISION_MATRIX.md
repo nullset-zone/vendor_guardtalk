@@ -53,6 +53,13 @@ no resolution can be asserted from evidence. The D-01…D-06 reconciliation foll
 | `D-07` | `vendor/guardtalk/docs/PORT_MATRIX_GEN8910_PREFLIGHT.md` **§17**, the `T-EXCISE-MATRIX-D07-OPEN` addendum | §17 heading `:475`; the `D-01…D-08` statement `:489-490` |
 | `D-08` | **Not here by design** — owned by `T-EXCISE-MATRIX-DOC-RESIDUAL` as the shipped `stallion` stamp README | `vendor/guardtalk/docs/STALLION_PORT_RESOLUTION.md:235-247` (§6.4 ownership note, `:233`) |
 
+> **AOSP-Constrained Residuals (`F-008`, `T-REMEDIATE-SEC-FLASH-AVB-HARDENING`, 2026-11-16):**
+> Staged `*-latest` images retain four AOSP/HAL-constrained artifacts verified by `debugfs` in `A-GUARDTALK-SECURITY-AND-CLAIM-AUDIT`:
+> - `com.android.telephonycore.apex` (14/14 targets — AOSP mainline APEX dependency)
+> - `com.android.nfcservices.apex` (14/14 targets — AOSP mainline APEX dependency)
+> - `location.provider.xml` (14/14 targets — AOSP framework permission XML)
+> - `vendor/etc/vintf/manifest/bluetooth_audio.xml` (9/14 targets: all 8 rebuilt targets + `tangorpro` — accepted Tier-B install-dep of `audio-impl`)
+
 > `D-07`'s *documentation* gap is reconciled in the preflight's §17 addendum (2026-09-26); its
 > *underlying conditions* (`QA-W1` 16-QPR1 stallion lag, `QA-W2` `build_id` pin asymmetry, `QI-1` mutable
 > present-set) remain `OPEN` — which is what the ⚠ **Residual** block below records. `D-08` is a

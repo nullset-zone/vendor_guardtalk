@@ -158,9 +158,31 @@ class ConfigApplier(private val context: Context) {
      * Google default. This is the documented GrapheneOS mechanism (see
      * packages/modules/NetworkStack/src/com/android/server/connectivity/NetworkMonitor.java).
      */
+    private fun isValidConnectivityHost(host: String): Boolean {
+        if (host.isEmpty() || host.length > 253) return false
+        if (host.contains("..") || host.startsWith(".") || host.startsWith("-")) return false
+        val match = Regex("^([A-Za-z0-9.-]+)(?::([0-9]{1,5}))?$").matchEntire(host)
+            ?: return false
+        val hostname = match.groupValues[1]
+        if (hostname.endsWith(".") || hostname.endsWith("-")) return false
+        val portStr = match.groupValues[2]
+        if (portStr.isNotEmpty()) {
+            val port = portStr.toIntOrNull() ?: return false
+            if (port !in 1..65535) return false
+        }
+        return true
+    }
+
     private fun applyConnectivityServer(host: String) {
         if (host.isEmpty()) {
             steps += Step("connectivity_server", true, "skipped (empty)")
+            return
+        }
+        if (!isValidConnectivityHost(host)) {
+            steps += Step(
+                "connectivity_server", false,
+                "rejected invalid connectivity host"
+            )
             return
         }
         val url = "http://$host/generate_204"
@@ -272,7 +294,7 @@ class ConfigApplier(private val context: Context) {
                         )
                     setAlwaysOn.isAccessible = true
                     val userHandle = android.os.Process.myUserHandle()
-                    val userId = userHandle.hashCode()
+                    val userId = userHandle.identifier
                     val lockdownOk = setAlwaysOn.invoke(
                         vpnMgr,
                         userId,

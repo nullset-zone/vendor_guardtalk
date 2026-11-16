@@ -10,7 +10,6 @@ function boot(): void {
   wireRecoverPage(root, {
     onAckTyped: () => {},
     onUnlockRequested: () => {},
-    onFlashPkmdRequested: () => {},
     onRelockRequested: () => {},
     onSimToggled: () => {},
   });

@@ -12,6 +12,8 @@ class VoiceSettingsActivity : Activity() {
     companion object {
         private const val PROP_ENABLED = "persist.vendor.guardtalk.voice.enabled"
         private const val PROP_PRESET = "persist.vendor.guardtalk.voice.preset"
+        private val ALLOWED_PROPS = setOf(PROP_ENABLED, PROP_PRESET)
+        private val VALID_VALUE = Regex("^[0-9]$")
     }
 
     private val presetLabels by lazy {
@@ -64,6 +66,8 @@ class VoiceSettingsActivity : Activity() {
     }
 
     private fun setProperty(key: String, value: String) {
+        require(key in ALLOWED_PROPS) { "Disallowed property key: $key" }
+        require(VALID_VALUE.matches(value)) { "Invalid property value" }
         Runtime.getRuntime().exec(arrayOf("setprop", key, value)).waitFor()
     }
 

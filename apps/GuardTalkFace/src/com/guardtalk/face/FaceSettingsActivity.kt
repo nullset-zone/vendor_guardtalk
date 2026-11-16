@@ -13,6 +13,8 @@ class FaceSettingsActivity : Activity() {
         private const val PROP_ENABLED = "persist.vendor.guardtalk.face.enabled"
         private const val PROP_PERSONA = "persist.vendor.guardtalk.face.persona"
         private const val PROP_QUALITY = "persist.vendor.guardtalk.face.quality"
+        private val ALLOWED_PROPS = setOf(PROP_ENABLED, PROP_PERSONA, PROP_QUALITY)
+        private val VALID_VALUE = Regex("^[0-9]$")
     }
 
     private val personaLabels by lazy {
@@ -84,6 +86,8 @@ class FaceSettingsActivity : Activity() {
     }
 
     private fun setProperty(key: String, value: String) {
+        require(key in ALLOWED_PROPS) { "Disallowed property key: $key" }
+        require(VALID_VALUE.matches(value)) { "Invalid property value" }
         Runtime.getRuntime().exec(arrayOf("setprop", key, value)).waitFor()
     }
 

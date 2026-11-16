@@ -245,8 +245,11 @@ require_rg 'allowDefaultPermissionException' "$PERM_POL" \
   "allowDefaultPermissionException deny-default API"
 require_rg 'return isSystemApp' "$PERM_POL" \
   "third-party exceptions denied unless system/Messenger"
-require_rg 'grantGuardTalkMessengerDefaultPermissions' "$DPGP" \
-  "DefaultPermissionGrantPolicy grants Messenger"
+if grep -q 'grantGuardTalkMessengerDefaultPermissions' "$DPGP"; then
+  fail "DefaultPermissionGrantPolicy still retains grantGuardTalkMessengerDefaultPermissions (F-006)"
+else
+  pass "DefaultPermissionGrantPolicy removed grantGuardTalkMessengerDefaultPermissions (F-006)"
+fi
 require_rg 'GuardTalkPermissionDefaultsPolicy\.allowDefaultPermissionException' "$DPGP" \
   "DefaultPermissionGrantPolicy filters third-party exceptions"
 require_rg 'package="com\.guardtalk\.messenger"' "$PERM_XML" \
@@ -257,18 +260,11 @@ require_rg 'ro\.guardtalk\.permission_defaults=1' "$PROPS_MK" \
   "live prop permission_defaults=1 in product-props.mk"
 require_rg 'PRODUCT_PACKAGES \+= default-permissions-com\.guardtalk\.messenger' "$TOKAY_MK" \
   "tokay.mk PRODUCT_PACKAGES Messenger default-permissions"
-# T-REMEDIATE-B4-MESSENGER closed the P4 APK GAP (product bake, not sideload).
-if [[ -f vendor/guardtalk/apps/GuardTalkMessenger/Android.bp ]] \
-  && rg -q 'name: "GuardTalkMessenger"' vendor/guardtalk/apps/GuardTalkMessenger/Android.bp; then
-  pass "GuardTalkMessenger Soong module present (P4 GAP closed)"
+# T-VENDOR-PURGE-MESSENGER-PREINSTALL / F-006: GuardTalkMessenger must be absent.
+if [[ ! -e vendor/guardtalk/apps/GuardTalkMessenger ]]; then
+  pass "GuardTalkMessenger purged (absent from vendor/guardtalk/apps/)"
 else
-  fail "missing GuardTalkMessenger Android.bp"
-fi
-if rg -q 'package="com\.guardtalk\.messenger"' \
-  vendor/guardtalk/apps/GuardTalkMessenger/AndroidManifest.xml 2>/dev/null; then
-  pass "manifest package com.guardtalk.messenger"
-else
-  fail "manifest missing package com.guardtalk.messenger"
+  fail "GuardTalkMessenger still present at vendor/guardtalk/apps/GuardTalkMessenger"
 fi
 
 echo "=== Q-SEC-P4-PRIVACY: privacy_tmpfs init + props ==="

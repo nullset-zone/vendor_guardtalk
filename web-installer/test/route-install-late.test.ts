@@ -56,7 +56,7 @@ test("claim lint: late-step markup carries no forbidden phrases", () => {
     connectStepHtml({ sim: false, usbPresent: true, check: { expected: "tokay", actual: "tokay", match: true }, lockState: "unlocked", oemUnlockAcked: false }),
     flashStepHtml({ sim: true, started: true, currentPartition: "system", donePartitions: [] }),
     lockStepHtml({ sim: true, locked: true }),
-    verifyStepHtml({ sim: true, enrolledFingerprint: ENROLLED, outcome: "match" }),
+    verifyStepHtml({ sim: true, outcome: "match" }),
     keepKeyStepHtml(true),
     simBannerHtml(true),
   ];
@@ -528,11 +528,11 @@ test("typed fingerprint match advances; single-char difference hard-stops with t
   assert.notEqual(oneCharOff, ENROLLED);
   assert.equal(fingerprintsMatch(oneCharOff, ENROLLED), false);
 
-  const matched = verifyStepHtml({ sim: false, enrolledFingerprint: ENROLLED, outcome: "match" });
-  assert.match(matched, /VERIFIED · YOUR KEY/);
+  const matched = verifyStepHtml({ sim: false, outcome: "match" });
+  assert.match(matched, /POST-INSTALL VERIFIED/);
   assert.match(matched, /guardtalk\.io\/system\/gateway/u);
 
-  const mismatched = verifyStepHtml({ sim: false, enrolledFingerprint: ENROLLED, outcome: "mismatch" });
+  const mismatched = verifyStepHtml({ sim: false, outcome: "mismatch" });
   assert.match(mismatched, /BOOT_FINGERPRINT_MISMATCH/);
   assert.ok(mismatched.includes(BOOT_MISMATCH_SENTENCE), "exact sentence must appear verbatim");
   assert.match(mismatched, /\/install\/recover/u);
@@ -833,7 +833,7 @@ test("sim-mode labelling is visible in emitted markup (D-011)", () => {
     connectStepHtml({ sim: true, usbPresent: true, oemUnlockAcked: false }),
     flashStepHtml({ sim: true, started: false, donePartitions: [] }),
     lockStepHtml({ sim: true, locked: false }),
-    verifyStepHtml({ sim: true, enrolledFingerprint: ENROLLED }),
+    verifyStepHtml({ sim: true }),
     keepKeyStepHtml(true),
   ]) {
     assert.match(html, /SIMULATION/, "every late step must label a simulated session");
@@ -848,8 +848,8 @@ test("CSP sweep: emitted strings carry zero inline handlers/styles/scripts and r
     connectStepHtml({ sim: true, usbPresent: true, check: { expected: "tokay", actual: "tokay", match: true }, lockState: "locked", oemUnlockAcked: false }),
     flashStepHtml({ sim: true, started: true, currentPartition: "system", donePartitions: [] }),
     lockStepHtml({ sim: false, locked: true }),
-    verifyStepHtml({ sim: false, enrolledFingerprint: ENROLLED, outcome: "match" }),
-    verifyStepHtml({ sim: false, enrolledFingerprint: ENROLLED, outcome: "mismatch" }),
+    verifyStepHtml({ sim: false, outcome: "match" }),
+    verifyStepHtml({ sim: false, outcome: "mismatch" }),
     keepKeyStepHtml(),
     simBannerHtml(true),
   ];
@@ -859,8 +859,9 @@ test("CSP sweep: emitted strings carry zero inline handlers/styles/scripts and r
       assert.equal(pattern.test(html), false, `forbidden CSP pattern ${String(pattern)} found`);
     }
   }
-  assert.equal(INSTALLER_CSP, "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src http://192.168.2.220:9100");
+  assert.equal(INSTALLER_CSP, "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'");
   assert.equal(INSTALLER_CSP.includes("*"), false);
+  assert.equal(INSTALLER_CSP.includes("http://"), false);
 });
 
 // --- custody sweep ------------------------------------------------------------
@@ -870,7 +871,7 @@ test("custody sweep: no key material, passphrase or secret sinks in emitted stri
     connectStepHtml({ sim: true, usbPresent: true, oemUnlockAcked: false }),
     flashStepHtml({ sim: true, started: false, donePartitions: [] }),
     lockStepHtml({ sim: false, locked: true }),
-    verifyStepHtml({ sim: false, enrolledFingerprint: ENROLLED }),
+    verifyStepHtml({ sim: false }),
     keepKeyStepHtml(false),
   ];
   const sinkPatterns = [
@@ -886,35 +887,13 @@ test("custody sweep: no key material, passphrase or secret sinks in emitted stri
       assert.equal(pattern.test(html), false, `custody sink ${String(pattern)} leaked into markup`);
     }
   }
-  // Step 9 talks about custody honestly without ever naming storage APIs.
+  // Step 9 points to /install/update without any PEM or key-custody prompts.
   const step9 = keepKeyStepHtml();
-  assert.match(step9, /non-extractable WebCrypto handle/iu);
-  assert.match(step9, /encrypted PEM/iu);
+  assert.match(step9, /\/install\/update/u);
+  assert.doesNotMatch(step9, /encrypted PEM/iu);
 });
 
 // --- Phase-5 E1: H1 runner wiring + F5/F6 threat-model links ---------------------
-
-test("user-anchor: unsigned vbmeta is refused before any write", async () => {
-  const device = new SimulatedDevice({
-    initiallyUnlocked: true,
-    vars: { "max-download-size": "268435456" },
-  });
-  const log = collectingLog();
-  const plan = fullPlan();
-  plan.vbmeta = [{ partition: "vbmeta", data: bytes(64, 0x11) }];
-  await assert.rejects(
-    () =>
-      runFlashPlan({
-        transport: device,
-        consoleSink: log,
-        plan,
-        gate: gateInputs(stateAt(6)),
-      }),
-    (err: unknown) => err instanceof Error && /magic|anchor|parse failed|vbmeta/i.test(err.message),
-  );
-  assert.equal(flashCommands(log.lines).length, 0);
-  assert.equal(device.partitions.size, 0);
-});
 
 test("H1: runFlashPlan fetches getvar:max-download-size once, before the first write", async () => {
   const device = new SimulatedDevice({
@@ -1090,7 +1069,7 @@ test("F5: step-7 boot-state explainer carries its limit with a /threat-model lin
 });
 
 test("F6: step-8 Gateway handoff states the network-defence limit with a /threat-model link", () => {
-  const html = verifyStepHtml({ sim: false, enrolledFingerprint: ENROLLED, outcome: "match" });
+  const html = verifyStepHtml({ sim: false, outcome: "match" });
   assert.ok(html.includes(GATEWAY_LIMIT_SENTENCE));
   assert.match(html, /guardtalk\.io\/system\/gateway/u);
   assert.match(html, /href="\/threat-model"/u);

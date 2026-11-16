@@ -176,6 +176,21 @@ test("wizard HTML is GuardTalkOS-branded and carries DEC labels", async () => {
   assert.doesNotMatch(html, /1700 MiB/);
 });
 
+test("wizard HTML is a 5-step GrapheneOS-parity WebUSB installer with OpenStateStack Foundation vault trust", async () => {
+  const html = await readFile(join(HERE, "../wizard/index.html"), "utf8");
+  assert.match(html, /OpenStateStack Foundation/);
+  assert.match(html, /1\. Enable OEM Unlocking/);
+  assert.match(html, /2\. Connect Device/);
+  assert.match(html, /3\. Unlock Bootloader/);
+  assert.match(html, /4\. Download &amp; Flash Release/);
+  assert.match(html, /5\. Lock Bootloader/);
+  assert.doesNotMatch(html, /data-step="6"/);
+  assert.doesNotMatch(html, /data-step="7"/);
+  assert.doesNotMatch(html, /data-step="8"/);
+  assert.match(html, /zero key custody|zero-key-custody/i);
+  assert.match(html, /avb_pkmd\.bin/);
+});
+
 test("wizard HTML carries danger variant and alert regions (Pajamas F1/F4/F9)", async () => {
   const html = await readFile(join(HERE, "../wizard/index.html"), "utf8");
   assert.match(html, /id="btn-unlock"[^>]*class="danger"/);
@@ -198,6 +213,31 @@ test("wizard styles carry strong border, danger tokens, busy and checkbox sizing
   assert.match(css, /select:hover/);
   assert.match(css, /\.check input\[type="checkbox"\]\s*{[^}]*width:\s*1\.5rem/);
   assert.match(css, /\.check input\[type="checkbox"\]\s*{[^}]*height:\s*1\.5rem/);
+});
+
+test("wizard HTML loads Pajamas design system CSS before ./styles.css", async () => {
+  const html = await readFile(join(HERE, "../wizard/index.html"), "utf8");
+  const expected = [
+    "../design/pajamas/tokens.css",
+    "../design/pajamas/reset.css",
+    "../design/pajamas/templates.css",
+    "../design/pajamas/components.css",
+    "./styles.css",
+  ];
+  const indices = expected.map((href) => html.indexOf(`href="${href}"`));
+  for (let i = 0; i < expected.length; i++) {
+    const idx = indices[i];
+    assert.ok(idx !== undefined && idx !== -1, `missing stylesheet link: ${expected[i]}`);
+    if (i > 0) {
+      const prevIdx = indices[i - 1];
+      assert.ok(
+        prevIdx !== undefined && prevIdx < idx,
+        `${expected[i - 1]} must appear before ${expected[i]}`,
+      );
+    }
+  }
+  const tokensCss = await readFile(join(HERE, "../design/pajamas/tokens.css"), "utf8");
+  assert.match(tokensCss, /--gl-/);
 });
 
 interface HarnessButton {
