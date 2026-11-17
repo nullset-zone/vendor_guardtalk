@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { LiveExecuteHoldError, LockBeforeCompleteError } from "../src/errors.js";
+import { LockBeforeCompleteError, LockSafetyError } from "../src/errors.js";
 import { channelTextsFromBlobs, MockFastboot, tokayBlobs } from "./helpers.js";
 import { WIZARD_DEVICES, deviceFromSearch } from "../wizard/devices.js";
 import {
@@ -145,7 +145,8 @@ test("wizard HTML is GuardTalkOS-branded and carries DEC labels", async () => {
   assert.match(html, /dual-slot/);
   assert.match(html, /data-dec="009"/);
   assert.match(html, /data-dec="010"/);
-  assert.match(html, /Live Flash\/Lock are HOLD/);
+  assert.match(html, /Live WebUSB Flash\/Lock require explicit WebUSB device connection/);
+  assert.match(html, /WebUSB \+ Dry-Run/);
   assert.match(html, /komodo-20260915-063833/);
   assert.match(html, /not a signed user FLASH_READY image/);
   assert.match(html, /FLASH_READY=false/);
@@ -311,28 +312,118 @@ test("runAction finally ordering propagates gates after a failed action", async 
   assert.equal(h.unlockBtn.ariaBusy, null);
 });
 
-test("wizard executePlan refuses live mode", async () => {
+test("wizard executePlan and lock work in live mode with safety gating", async () => {
   const session = gatedWizard();
   session.attachArtifacts(new Map(tokayBlobs().map((b) => [b.name, b.bytes])));
   session.attachTransport(new MockFastboot({ live: true }), "live");
   await session.connect();
   await session.unlock();
   assert.equal(session.currentMode(), "live");
-  assert.equal(canFlash(session.flags()), false);
+  assert.equal(canFlash(session.flags()), true);
+
+  const seen: number[] = [];
+  await session.executePlan({
+    onReconnect: async () => undefined,
+    onProgress: (p) => seen.push(p.percent),
+  });
+  assert.ok(seen.length > 0);
+  assert.equal(seen[seen.length - 1], 100);
+  assert.equal(canLock(session.flags()), true);
+
+  await assert.rejects(() => session.lock(), LockSafetyError);
   await assert.rejects(
-    () => session.executePlan(async () => undefined),
-    LiveExecuteHoldError,
+    () => session.lock({ confirmed: true, operatorOverride: false }),
+    LockSafetyError,
   );
+  await assert.doesNotReject(
+    () => session.lock({ confirmed: true, operatorOverride: true }),
+  );
+  assert.equal(session.claimsLiveFlash(), false);
 });
 
-test("wizard lock refuses live mode", async () => {
+test("wizard executePlan and lock refuse preview mode without transport", async () => {
   const session = gatedWizard();
   session.attachArtifacts(new Map(tokayBlobs().map((b) => [b.name, b.bytes])));
-  session.attachTransport(new MockFastboot({ live: true }), "live");
-  await session.connect();
-  await session.unlock();
+  assert.equal(session.currentMode(), "preview");
+  assert.equal(canFlash(session.flags()), false);
   assert.equal(canLock(session.flags()), false);
-  await assert.rejects(() => session.lock(), LiveExecuteHoldError);
+  await assert.rejects(
+    () => session.executePlan(async () => undefined),
+    WizardGateError,
+  );
+  await assert.rejects(() => session.lock(), WizardGateError);
+});
+
+test("OpfsArtifactStore.readBlob returns OPFS Blob directly and executePlan forwards flashBlob", async () => {
+  const { OpfsArtifactStore } = await import("../wizard/http-store.js");
+  const blobs = new Map(tokayBlobs().map((b) => [b.name, b.bytes]));
+  const origFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const name = url.split("/").pop() ?? "";
+    const bytes = blobs.get(name);
+    if (!bytes) {
+      return new Response("not found", { status: 404 });
+    }
+    const copy = new Uint8Array(bytes.byteLength);
+    copy.set(bytes);
+    return new Response(copy, {
+      status: 200,
+      headers: { "content-length": String(bytes.byteLength) },
+    });
+  }) as typeof fetch;
+
+  try {
+    const files = new Map<string, Blob>();
+    const opfsDir = {
+      getFileHandle: async (name: string) => {
+        const chunks: Uint8Array[] = [];
+        return {
+          createWritable: async () => ({
+            write: async (data: Uint8Array) => {
+              chunks.push(new Uint8Array(data));
+            },
+            close: async () => {
+              files.set(name, new Blob(chunks.map((c) => new Uint8Array(c))));
+            },
+          }),
+          getFile: async () => files.get(name) ?? new Blob(),
+        };
+      },
+    };
+    const store = new OpfsArtifactStore("https://example.invalid/ch/", opfsDir);
+    const sampleName = tokayBlobs()[0]!.name;
+    const directBlob = await store.readBlob(sampleName);
+    assert.ok(directBlob instanceof Blob);
+    assert.equal(directBlob, files.get(sampleName));
+
+    const session = gatedWizard();
+    session.attachStore(store);
+    const base = new MockFastboot({ live: true });
+    let flashBlobCalls = 0;
+    const live: import("../src/types.js").FastbootTransport = {
+      dryRun: false,
+      connect: () => base.connect(),
+      getVar: (n) => base.getVar(n),
+      runCommand: (c) => base.runCommand(c),
+      flash: (p, d, o) => base.flash(p, d, o),
+      flashBlob: async (partition, blob, options) => {
+        flashBlobCalls += 1;
+        await base.flash(partition, new Uint8Array(await blob.arrayBuffer()), options);
+      },
+      rebootBootloader: (r) => base.rebootBootloader(r),
+    };
+    session.attachTransport(live, "live");
+    await session.connect();
+    await session.unlock();
+    await session.executePlan({
+      onReconnect: async () => undefined,
+      onProgress: () => undefined,
+    });
+    assert.ok(flashBlobCalls > 0, "expected executePlan with onProgress to forward flashBlob");
+  } finally {
+    globalThis.fetch = origFetch;
+  }
 });
 
 test("assertCanFlash names unlock as the missing gate", () => {

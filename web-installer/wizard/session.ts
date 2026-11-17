@@ -1,6 +1,6 @@
 import { assertAllowedProduct } from "../src/allowlist.js";
 import { loadChannelFromTexts } from "../src/channel.js";
-import { FlashcoreError, LiveExecuteHoldError } from "../src/errors.js";
+import { FlashcoreError } from "../src/errors.js";
 import { FlashOrchestrator, type LockOptions } from "../src/orchestrator.js";
 import { buildFlashPlan, type FlashPlanOptions } from "../src/plan.js";
 import { MemoryArtifactStore } from "../src/store.js";
@@ -221,6 +221,7 @@ export class InstallWizard {
       planComplete: this.orchestrator?.isPlanComplete() ?? false,
       artifactsReady: this.store !== null,
       dryRun: this.mode === "dry-run",
+      live: this.mode === "live",
     };
   }
 
@@ -318,16 +319,16 @@ export class InstallWizard {
   }
 
   async executePlan(onReconnectOrOptions: ReconnectHook | ExecutePlanOptions): Promise<void> {
-    this.assertDryRunOnly("execute");
     assertCanFlash(this.flags());
     const opts: ExecutePlanOptions =
       typeof onReconnectOrOptions === "function"
         ? { onReconnect: onReconnectOrOptions }
         : onReconnectOrOptions;
+    const allowLiveExecute = this.currentMode() === "live";
 
     const orch = this.requireOrchestrator();
     if (!opts.onProgress) {
-      await orch.executePlan({ onReconnect: opts.onReconnect });
+      await orch.executePlan({ onReconnect: opts.onReconnect, allowLiveExecute });
       return;
     }
 
@@ -383,6 +384,17 @@ export class InstallWizard {
           emitStep(step);
         }
       },
+      ...(baseTransport.flashBlob
+        ? {
+            flashBlob: async (partition: string, blob: Blob, options?: FlashOptions) => {
+              await baseTransport.flashBlob!(partition, blob, options);
+              const step = plan.steps[stepCursor];
+              if (step && step.kind === "flash") {
+                emitStep(step);
+              }
+            },
+          }
+        : {}),
       rebootBootloader: async (onReconnect) => {
         await baseTransport.rebootBootloader(onReconnect);
         const step = plan.steps[stepCursor];
@@ -412,6 +424,17 @@ export class InstallWizard {
             },
           }
         : {}),
+      ...(baseTransport.wipeSuperBlob
+        ? {
+            wipeSuperBlob: async (blob: Blob) => {
+              await baseTransport.wipeSuperBlob!(blob);
+              const step = plan.steps[stepCursor];
+              if (step && step.kind === "wipe-super") {
+                emitStep(step);
+              }
+            },
+          }
+        : {}),
       ...(baseTransport.close ? { close: () => baseTransport.close!() } : {}),
     };
     void lastCommandResult;
@@ -423,14 +446,15 @@ export class InstallWizard {
       planOptions: this.planOptions(),
     });
     await progressOrchestrator.connect();
-    await progressOrchestrator.executePlan({ onReconnect: opts.onReconnect });
+    await progressOrchestrator.executePlan({ onReconnect: opts.onReconnect, allowLiveExecute });
     this.orchestrator = progressOrchestrator;
   }
 
   async lock(options?: LockOptions): Promise<void> {
-    this.assertDryRunOnly("lock");
     assertCanLock(this.flags());
-    await this.requireOrchestrator().lock(options);
+    const lockOptions =
+      this.currentMode() === "live" ? { ...options, allowLiveLock: true } : options;
+    await this.requireOrchestrator().lock(lockOptions);
     this.unlocked = false;
   }
 
@@ -446,12 +470,6 @@ export class InstallWizard {
       return err.message;
     }
     return "unexpected wizard failure";
-  }
-
-  private assertDryRunOnly(action: "execute" | "lock"): void {
-    if (this.currentMode() !== "dry-run") {
-      throw new LiveExecuteHoldError(action);
-    }
   }
 
   private requireChannel(): ChannelBundle {

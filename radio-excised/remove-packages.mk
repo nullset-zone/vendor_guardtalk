@@ -158,6 +158,14 @@ GUARDTALK_RADIO_PACKAGES := \
     Telecom \
     Telecom__tokay__auto_generated_rro_product \
     \
+    dmd \
+    android.hardware.secure_element-service.uicc \
+    android.hardware.secure_element-service.thales \
+    android.hardware.secure_element.thales.libse \
+    android.hardware.secure_element_gto.xml \
+    android.hardware.secure_element-V1-ndk.vendor \
+    android.hardware.telephony.euicc.prebuilt.xml \
+    android.hardware.telephony.euicc.mep.prebuilt.xml \
     PixelQualifiedNetworksService
 
 # T-PKG-EXCISE-WAVE-CAT5 — A-REPORT-INVESTIGATE item 17b. With the radio/RIL
@@ -241,7 +249,8 @@ $(or \
   $(findstring Telephony,$(1)), \
   $(findstring TeleService,$(1)), \
   $(findstring PixelModemService,$(1)), \
-  $(findstring com.google.android.modem.pms,$(1)))
+  $(findstring com.google.android.modem.pms,$(1)), \
+  $(findstring android.hardware.secure_element,$(1)))
 endef
 
 _gt_filtered_product_packages :=

@@ -114,11 +114,16 @@
 # .agent-comm/evidence/T-EXCISE-BT-SOCKET-LIB-KEEP/.
 #
 # Residual (Law 7, stated not hidden): installing `android.hardware.bluetooth.audio-impl`
-# re-installs its `vintf_fragments: ["bluetooth_audio.xml"]`, which declares
+# re-installs its `vintf_fragments: ["bluetooth_audio.xml"]` (declared in AOSP
+# `hardware/interfaces/bluetooth/audio/aidl/default/Android.bp:13`), which declares
 # android.hardware.bluetooth.audio v5 IBluetoothAudioProviderFactory/default.
-# That declaration is now *accurate* (the audio HAL registers that factory from
-# ModuleBluetooth's constructor), but it is a `android.hardware.bluetooth.*` name
-# and the BT VINTF gate forbids that class. See the report for the follow-up.
+# Hard AOSP ELF dependency (F-008 audit): `hardware/interfaces/audio/aidl/default/Android.bp:106,187`
+# links `android.hardware.bluetooth.audio-impl` into `vendor.audio-hal-aidl`
+# (`android.hardware.audio.service-aidl.aoc`). Dropping `android.hardware.bluetooth.audio-impl`
+# breaks the audio HAL ELF link (`CANNOT LINK EXECUTABLE`, proven on stallion in
+# `T-EXCISE-BT-SOCKET-LIB-KEEP`), and `bluetooth_audio.xml` is not a separate
+# `PRODUCT_PACKAGES` entry, so it cannot be dropped via `filter-out` without
+# patching AOSP `hardware/interfaces/`.
 GUARDTALK_BT_PACKAGES := \
     android.hardware.bluetooth-V1-ndk.vendor \
     android.hardware.bluetooth.finder-V1-ndk.vendor \

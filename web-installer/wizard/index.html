@@ -27,7 +27,7 @@
         and public-only <code>avb_pkmd.bin</code> before flashing via WebUSB (<code>flashcore</code>).
       </p>
       <div class="readiness-strip" aria-label="Honest readiness posture">
-        <span id="posture-badge" class="badge badge-hold">LIVE_FLASH_CLAIMED=false · DRY-RUN ONLY</span>
+        <span id="posture-badge" class="badge badge-hold">LIVE_FLASH_CLAIMED=false · WebUSB + Dry-Run</span>
         <span id="device-readiness-badge" class="badge badge-supported">TARGET · dev/unlocked</span>
         <span id="boot-chain-badge" class="badge badge-neutral">boot-chain: gt</span>
       </div>
@@ -49,8 +49,9 @@
         for production desktop flashing.
       </p>
       <p class="banner banner-hold" data-dec="009">
-        <strong>DEC-009 HOLD.</strong>
-        Live Flash/Lock are HOLD. Dry-run is the only shipped execute path.
+        <strong>DEC-009.</strong>
+        Live WebUSB Flash/Lock require explicit WebUSB device connection and safety confirmation
+        (dry-run remains available); <code>LIVE_FLASH_CLAIMED=false</code> until hardware flash &amp; boot are verified.
         This is <strong>not</strong> <code>flash-from-remote.sh</code>.
       </p>
       <p class="banner banner-hold" data-dec="010">

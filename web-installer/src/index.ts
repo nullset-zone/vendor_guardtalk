@@ -43,7 +43,7 @@ export {
   assertManifestAllowlist,
   isAllowedProduct,
 } from "./allowlist.js";
-export { assertSha256Match, sha256Hex } from "./hash.js";
+export { assertBlobSha256Match, assertSha256Match, sha256BlobHex, sha256Hex } from "./hash.js";
 export {
   assembleChannel,
   loadChannelFromTexts,

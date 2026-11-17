@@ -8,7 +8,7 @@ import {
   UnlockCancelledError,
   WrongProductError,
 } from "./errors.js";
-import { assertSha256Match } from "./hash.js";
+import { assertBlobSha256Match, assertSha256Match } from "./hash.js";
 import { buildFlashPlan, type FlashPlanOptions } from "./plan.js";
 import type {
   ArtifactStore,
@@ -259,18 +259,36 @@ export class FlashOrchestrator {
     if (expected === undefined) {
       throw new FastbootError(`no SHA-256 for ${name}`);
     }
+    if (
+      typeof this.store.readBlob === "function" &&
+      typeof this.transport.flashBlob === "function"
+    ) {
+      const blob = await this.store.readBlob(name);
+      await assertBlobSha256Match(name, blob, expected);
+      await this.transport.flashBlob(partition, blob, options);
+      return;
+    }
     const data = await this.store.read(name);
     assertSha256Match(name, data, expected);
     await this.transport.flash(partition, data, options);
   }
 
   private async wipeSuperVerified(name: string): Promise<void> {
-    if (typeof this.transport.wipeSuper !== "function") {
-      throw new FastbootError("transport does not support wipeSuper");
-    }
     const expected = this.channel.sha256sums.get(name);
     if (expected === undefined) {
       throw new FastbootError(`no SHA-256 for ${name}`);
+    }
+    if (
+      typeof this.store.readBlob === "function" &&
+      typeof this.transport.wipeSuperBlob === "function"
+    ) {
+      const blob = await this.store.readBlob(name);
+      await assertBlobSha256Match(name, blob, expected);
+      await this.transport.wipeSuperBlob(blob);
+      return;
+    }
+    if (typeof this.transport.wipeSuper !== "function") {
+      throw new FastbootError("transport does not support wipeSuper");
     }
     const data = await this.store.read(name);
     assertSha256Match(name, data, expected);

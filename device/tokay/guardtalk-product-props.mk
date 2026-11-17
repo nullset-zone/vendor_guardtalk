@@ -38,7 +38,9 @@ PRODUCT_SYSTEM_PROPERTIES += \
     ro.guardtalk.clipboard_clear_timeout_ms=60000 \
     ro.guardtalk.files_policy=1 \
     ro.guardtalk.files_trash=1 \
-    ro.guardtalk.files_protect_critical=1
+    ro.guardtalk.files_protect_critical=1 \
+    ro.system_settings.service.odp_enabled=false \
+    ro.system_settings.service.adservices_enabled=false
 
 # Not a GuardTalk policy flag: stays in vendor/build.prop (vendor namespace
 # unaffected by the label change above).

@@ -43,6 +43,7 @@ export interface WizardFlags {
   planComplete: boolean;
   artifactsReady: boolean;
   dryRun: boolean;
+  live?: boolean;
 }
 
 export interface SafetyLockGate {
@@ -81,12 +82,12 @@ export function canFlash(flags: WizardFlags): boolean {
     flags.connected &&
     flags.unlocked &&
     flags.artifactsReady &&
-    flags.dryRun
+    (flags.dryRun || flags.live === true)
   );
 }
 
 export function canLock(flags: WizardFlags): boolean {
-  return flags.planComplete && flags.dryRun;
+  return flags.planComplete && (flags.dryRun || flags.live === true);
 }
 
 export function canLockWithSafety(flags: WizardFlags, safety: SafetyLockGate): boolean {

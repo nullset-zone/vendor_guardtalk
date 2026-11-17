@@ -4,7 +4,6 @@ import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import {
-  LiveExecuteHoldError,
   UsbDisconnectError,
   UsbPermissionError,
   UsbTimeoutError,
@@ -166,7 +165,7 @@ test("QA-ADV-UI-03: assertCanLockWithSafety blocks unconfirmed or unverified tar
   );
 });
 
-test("QA-ADV-UI-04: InstallWizard rejects unoffered devices and blocks live execute/lock", async () => {
+test("QA-ADV-UI-04: InstallWizard rejects unoffered devices and gates live execute/lock until connected + safety confirmed", async () => {
   const wizard = new InstallWizard();
   assert.throws(() => wizard.selectDevice("shiba"), WizardGateError);
   assert.throws(() => wizard.selectDevice("husky"), WizardGateError);
@@ -175,19 +174,39 @@ test("QA-ADV-UI-04: InstallWizard rejects unoffered devices and blocks live exec
   wizard.selectDevice("tokay");
   wizard.loadChannel(channelTextsFromBlobs(tokayBlobs()));
   wizard.attachArtifacts(new Map(tokayBlobs().map((b) => [b.name, b.bytes])));
+  let unlocked = "no";
   wizard.useLiveTransport({
     connect: async () => undefined,
-    getVariable: async () => "no",
-    runCommand: async () => ({ text: "", dataSize: 0 }),
+    getVariable: async (name) => {
+      if (name === "product") return "tokay";
+      if (name === "current-slot") return "a";
+      if (name === "unlocked") return unlocked;
+      if (name === "is-userspace") return "yes";
+      return "no";
+    },
+    runCommand: async (cmd) => {
+      if (cmd === "flashing unlock") unlocked = "yes";
+      if (cmd === "flashing lock") unlocked = "no";
+      return { text: "", dataSize: 0 };
+    },
     flashBlob: async () => undefined,
     reboot: async () => undefined,
   });
 
+  // Before connect/unlock, wizard gates must still refuse executePlan and lock.
   await assert.rejects(
     () => wizard.executePlan(async () => undefined),
-    LiveExecuteHoldError,
+    WizardGateError,
   );
-  await assert.rejects(() => wizard.lock(), LiveExecuteHoldError);
+  await assert.rejects(() => wizard.lock(), WizardGateError);
+
+  await wizard.connect();
+  await wizard.unlock();
+  await wizard.executePlan(async () => undefined);
+  await assert.rejects(() => wizard.lock(), /explicit confirmation|LockSafetyError/i);
+  await assert.doesNotReject(() =>
+    wizard.lock({ confirmed: true, operatorOverride: true }),
+  );
 });
 
 // ---------------------------------------------------------------------------

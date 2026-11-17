@@ -113,6 +113,13 @@ export function adaptAndroidFastboot(
         throw classifyUsbError(err, `flash ${partition}`);
       }
     },
+    flashBlob: async (partition, blob, flashOptions) => {
+      try {
+        await device.flashBlob(partitionName(partition, flashOptions), blob);
+      } catch (err) {
+        throw classifyUsbError(err, `flash ${partition}`);
+      }
+    },
     rebootBootloader: async (onReconnect) => {
       try {
         await withUsbTimeout(
@@ -135,20 +142,8 @@ export function adaptAndroidFastboot(
         throw classifyUsbError(err, "reboot-fastboot");
       }
     },
-    wipeSuper: async (data) => {
-      if (typeof device.upload !== "function") {
-        throw new FastbootError("android-fastboot device does not support upload() for wipe-super");
-      }
-      try {
-        await device.upload(blobFrom(data));
-      } catch (err) {
-        throw classifyUsbError(err, "wipe-super upload");
-      }
-      const res = await mapCommand(device, "update-super:super:wipe", cmdTimeout);
-      if (!res.ok) {
-        throw new FastbootError(res.text ?? "update-super:super:wipe failed");
-      }
-    },
+    wipeSuper: async (data) => wipeSuperWithBlob(device, blobFrom(data), cmdTimeout),
+    wipeSuperBlob: async (blob) => wipeSuperWithBlob(device, blob, cmdTimeout),
     close: async () => {
       if (typeof device.device?.close === "function") {
         try {
@@ -166,14 +161,16 @@ export function adaptAndroidFastboot(
  * scope); a missing or malformed package fails closed with a FastbootError
  * instead of degrading into a transport that pretends to work.
  */
-export async function importAndroidFastboot(): Promise<AndroidFastbootModule> {
+export async function importAndroidFastboot(
+  specifier: string = ANDROID_FASTBOOT_SPECIFIER,
+): Promise<AndroidFastbootModule> {
   let loaded: unknown;
   try {
-    loaded = await import(ANDROID_FASTBOOT_SPECIFIER);
+    loaded = await import(specifier);
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     throw new FastbootError(
-      `cannot load '${ANDROID_FASTBOOT_SPECIFIER}' (${detail}); ` +
+      `cannot load '${specifier}' (${detail}); ` +
         "run `npm install` in the installer root",
     );
   }
@@ -186,6 +183,16 @@ export interface AndroidFastbootConnectOptions extends AdaptFastbootOptions {
    * package. Production callers omit it and get the real library.
    */
   readonly module?: AndroidFastbootModule;
+  /**
+   * Optional pre-constructed FastbootDevice instance (e.g. from a browser
+   * ES module import) to wrap and connect directly without dynamic import.
+   */
+  readonly device?: AndroidFastbootDevice;
+  /**
+   * Optional module URL / specifier (e.g. `"/dist/vendor/fastboot.min.mjs"` in
+   * browser builds) to import instead of the bare `"android-fastboot"` specifier.
+   */
+  readonly moduleUrl?: string;
 }
 
 /**
@@ -199,13 +206,33 @@ export interface AndroidFastbootConnectOptions extends AdaptFastbootOptions {
 export async function connectAndroidFastboot(
   options: AndroidFastbootConnectOptions = {},
 ): Promise<FastbootTransport> {
-  const module = assertAndroidFastbootModule(
-    options.module ?? (await importAndroidFastboot()),
-  );
-  const device = new module.FastbootDevice();
+  const device =
+    options.device ??
+    new (assertAndroidFastbootModule(
+      options.module ?? (await importAndroidFastboot(options.moduleUrl)),
+    ).FastbootDevice)();
   const transport = adaptAndroidFastboot(device, options);
   await transport.connect();
   return transport;
+}
+
+async function wipeSuperWithBlob(
+  device: AndroidFastbootDevice,
+  blob: Blob,
+  cmdTimeout: number | undefined,
+): Promise<void> {
+  if (typeof device.upload !== "function") {
+    throw new FastbootError("android-fastboot device does not support upload() for wipe-super");
+  }
+  try {
+    await device.upload(blob);
+  } catch (err) {
+    throw classifyUsbError(err, "wipe-super upload");
+  }
+  const res = await mapCommand(device, "update-super:super:wipe", cmdTimeout);
+  if (!res.ok) {
+    throw new FastbootError(res.text ?? "update-super:super:wipe failed");
+  }
 }
 
 function assertAndroidFastbootModule(

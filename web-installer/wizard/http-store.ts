@@ -93,9 +93,14 @@ export interface OpfsWritable {
   abort?(reason?: unknown): Promise<void>;
 }
 
+export interface OpfsFileLike {
+  arrayBuffer(): Promise<ArrayBuffer>;
+  stream?(): ReadableStream<Uint8Array>;
+}
+
 export interface OpfsFileHandle {
   createWritable(): Promise<OpfsWritable>;
-  getFile(): Promise<{ arrayBuffer(): Promise<ArrayBuffer>; stream?(): ReadableStream<Uint8Array> }>;
+  getFile(): Promise<Blob | OpfsFileLike>;
 }
 
 export interface OpfsDirectoryHandle {
@@ -139,6 +144,18 @@ export class OpfsArtifactStore implements ArtifactStore {
       throw err;
     }
     return handle;
+  }
+
+  async readBlob(name: string): Promise<Blob> {
+    const handle = await this.stageToOpfs(name);
+    const file = await handle.getFile();
+    if (typeof Blob !== "undefined" && file instanceof Blob) {
+      return file;
+    }
+    if (typeof (file as { slice?: unknown }).slice === "function") {
+      return file as Blob;
+    }
+    return new Blob([await file.arrayBuffer()]);
   }
 
   async read(name: string): Promise<Uint8Array> {

@@ -4,7 +4,11 @@ import {
   getWizardDevice,
 } from "./devices.js";
 import { fetchHostedChannel, hostedChannelBase } from "./hosted-channel.js";
-import { HttpArtifactStore } from "./http-store.js";
+import {
+  HttpArtifactStore,
+  OpfsArtifactStore,
+  type OpfsDirectoryHandle,
+} from "./http-store.js";
 import { formatMib } from "./quota.js";
 import { webUsbAvailable } from "./adb-reboot.js";
 import { canLockWithSafety, type SafetyLockGate } from "./gating.js";
@@ -13,8 +17,10 @@ import {
   readOptionalFastbootDevice,
   type FlashProgress,
 } from "./session.js";
+import { importAndroidFastboot } from "../src/transport.js";
 import {
   LIVE_FLASH_CLAIMED,
+  type ArtifactStore,
   type BootChainMode,
   type FlashPlan,
   type PlanStep,
@@ -220,7 +226,31 @@ async function loadHostedFor(product: string): Promise<void> {
   }
   wizard.selectDevice(hosted.product);
   const plan = wizard.loadChannel(hosted.texts);
-  wizard.attachStore(new HttpArtifactStore(hosted.baseUrl));
+  const estimateQuota =
+    "storage" in navigator && navigator.storage.estimate !== undefined
+      ? () => navigator.storage.estimate()
+      : undefined;
+  let store: ArtifactStore = new HttpArtifactStore(hosted.baseUrl, {
+    ...(estimateQuota ? { estimateQuota } : {}),
+  });
+  let usingOpfs = false;
+  if ("storage" in navigator && typeof navigator.storage.getDirectory === "function") {
+    try {
+      const rootDir = await navigator.storage.getDirectory();
+      const channelDir = await rootDir.getDirectoryHandle(`guardtalk-${hosted.product}`, {
+        create: true,
+      });
+      store = new OpfsArtifactStore(
+        hosted.baseUrl,
+        channelDir as unknown as OpfsDirectoryHandle,
+        estimateQuota,
+      );
+      usingOpfs = true;
+    } catch {
+      // Fall back to HttpArtifactStore when OPFS is blocked (e.g. private window).
+    }
+  }
+  wizard.attachStore(store);
   updateReadinessBadges(hosted.product);
   renderPlan(plan);
   const chMeta = wizard.getChannelMeta();
@@ -231,9 +261,14 @@ async function loadHostedFor(product: string): Promise<void> {
   await refreshQuota();
   refreshGates();
   const payload = wizard.assessStorage(null).payloadBytes;
-  el("channel-status").textContent =
-    `${plan.product} channel ready. Artifacts stay on the server until flashcore reads them.`;
-  logLine(`Loaded hosted ${plan.product} channel. Artifact total ${formatMib(payload)}.`, "ok");
+  el("channel-status").textContent = usingOpfs
+    ? `${plan.product} channel ready (OPFS streaming enabled for multi-GB artifacts).`
+    : `${plan.product} channel ready. Artifacts stay on the server until flashcore reads them.`;
+  logLine(
+    `Loaded hosted ${plan.product} channel. Artifact total ${formatMib(payload)}.` +
+      (usingOpfs ? " Store: OPFS." : " Store: HTTP in-memory."),
+    "ok",
+  );
   const meta = getWizardDevice(plan.product);
   if (meta?.status === "experimental") {
     logLine(`${plan.product} is experimental — not production-boot-green.`, "warn");
@@ -455,7 +490,7 @@ function bindDeviceActions(): void {
   el("btn-connect").addEventListener("click", () => {
     void runAction("Connect", async () => {
       clearUsbRecovery();
-      attachLiveIfRequested();
+      await attachLiveIfRequested();
       const telemetry = await wizard.connect();
       el("telemetry-product").textContent = telemetry.product;
       el("telemetry-slot").textContent = telemetry.currentSlot;
@@ -557,7 +592,7 @@ function abortReconnect(): void {
   }
 }
 
-function attachLiveIfRequested(): void {
+async function attachLiveIfRequested(): Promise<void> {
   if (wizard.currentMode() === "dry-run") {
     return;
   }
@@ -567,11 +602,9 @@ function attachLiveIfRequested(): void {
     logLine("Using adaptAndroidFastboot around a provided FastbootDevice.", "info");
     return;
   }
-  if (wizard.currentMode() !== "live") {
-    throw new Error(
-      "No FastbootDevice is attached. Use Dry-run, or provide window.FastbootDevice (android-fastboot is not bundled).",
-    );
-  }
+  const mod = await importAndroidFastboot("/dist/vendor/fastboot.min.mjs");
+  wizard.useLiveTransport(new mod.FastbootDevice());
+  logLine("Loaded /dist/vendor/fastboot.min.mjs for live WebUSB Fastboot.", "info");
 }
 
 function markWebUsb(): void {
@@ -582,7 +615,7 @@ function markWebUsb(): void {
     : "Non-Chromium browser detected — switch to Chromium, Chrome, Edge, or Brave for live WebUSB.";
   const note = el("webusb-note");
   note.textContent = usb
-    ? "This browser exposes WebUSB. Reboot to Fastboot uses WebUSB ADB. Live flash still needs a FastbootDevice; this build does not ship android-fastboot."
+    ? "This browser exposes WebUSB. Reboot to Fastboot uses WebUSB ADB, and Connect loads /dist/vendor/fastboot.min.mjs for live WebUSB Fastboot."
     : "This browser has no WebUSB. Reboot to Fastboot and live connect are unavailable. Dry-run and plan preview still work.";
 }
 

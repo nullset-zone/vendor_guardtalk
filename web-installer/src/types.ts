@@ -73,6 +73,8 @@ export interface ChannelBundle {
 export interface ArtifactStore {
   read(name: string): Promise<Uint8Array>;
   readStream?(name: string): Promise<ReadableStream<Uint8Array>>;
+  /** Optional Blob-backed handle (e.g. OPFS File) to avoid multi-GB JS heap copies. */
+  readBlob?(name: string): Promise<Blob>;
 }
 
 export type ReconnectHook = () => Promise<void>;
@@ -99,9 +101,15 @@ export interface FastbootTransport {
     data: Uint8Array,
     options?: FlashOptions,
   ): Promise<void>;
+  flashBlob?(
+    partition: string,
+    blob: Blob,
+    options?: FlashOptions,
+  ): Promise<void>;
   rebootBootloader(onReconnect: ReconnectHook): Promise<void>;
   rebootFastboot?(onReconnect: ReconnectHook): Promise<void>;
   wipeSuper?(data: Uint8Array): Promise<void>;
+  wipeSuperBlob?(blob: Blob): Promise<void>;
   close?(): Promise<void>;
 }
 

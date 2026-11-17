@@ -79,6 +79,10 @@ include vendor/guardtalk/feature-excised/bt-excised.mk
 # T-W2-I5-LOC / T-LOC-FULL — Location/GNSS HAL excision.
 include vendor/guardtalk/feature-excised/loc-excised.mk
 
+# F-004 / F-005 / F-007 — UWB, Wi-Fi Aware/RTT, ContextHub, CHRE nearby,
+# and <unavailable-feature> overrides (including tangorpro location & euicc).
+include vendor/guardtalk/feature-excised/uwb-contexthub-excised.mk
+
 # T-W2-I6-THEME / F-HOME-LAYOUT — GuardTalk overlay wiring (SystemUI,
 # FrameworkBrand, SetupWizard, Launcher). Adds PRODUCT_PACKAGES entries for
 # the GuardTalk RROs. Runs AFTER the excision filter-outs above so the

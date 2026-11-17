@@ -543,17 +543,17 @@ resolve_laguna_avb_inputs() {
     outdir="$(mktemp -d "/tmp/$DEV-vbmeta.XXXXXX")"
     VBMETA_TMPDIR="$outdir"
     VBMETA_FLAGS3="$outdir/vbmeta_valid_flags3.img"
-    log "  no prebuilt flags3 vbmeta for $DEV — deriving from $src (--flags 3, AOSP testkey)"
+    log "  no prebuilt flags0 vbmeta for $DEV — deriving from $src (--flags 0, AOSP testkey)"
     # --padding_size MUST equal the laguna vbmeta partition size (16384 B).
     # Verified against every stock laguna factory image: rango/blazer/frankel/
     # mustang all ship vbmeta.img = 16384 B, and the one proven-booting hybrid
     # (rango-20260802-130756) ships 16384 B for all three vbmeta images.
     # Without this avbtool emits ~7616 B, leaving 8768 B of stale partition
     # content from a previous (possibly fullgt, flags:0) flash.
-    # Ref: T-PORT-LAGUNA-HYBRID Addendum 4 / B-PORT-LAGUNA-HYBRID-VERIFY.
+    # Ref: T-PORT-LAGUNA-HYBRID Addendum 4 / B-PORT-LAGUNA-HYBRID-VERIFY / F-002.
     "$HOST_BIN/avbtool" make_vbmeta_image \
       --include_descriptors_from_image "$src" \
-      --flags 3 --key "$AVB_TESTKEY" --algorithm SHA256_RSA4096 \
+      --flags 0 --key "$AVB_TESTKEY" --algorithm SHA256_RSA4096 \
       --padding_size 16384 \
       --output "$VBMETA_FLAGS3" \
       || die "avbtool make_vbmeta_image failed for $src"
@@ -849,6 +849,18 @@ patch_stock_bootstrap_apexes() {
     debugfs -R "dump /system/apex/$apex $tmp/$apex" "$stock_img" 2>/dev/null \
       || die "dump stock $apex failed"
   done
+
+  # Ensure enough free blocks for stock bootstrap apexes (user builds leave <3MiB free).
+  command -v resize2fs >/dev/null || die "resize2fs required for stock bootstrap apex headroom"
+  command -v e2fsck >/dev/null || die "e2fsck required for stock bootstrap apex headroom"
+  local cur_size new_size fsck_rc=0
+  cur_size="$(stat -c%s "$img")"
+  new_size=$((cur_size + 67108864))
+  e2fsck -fy "$img" >/dev/null 2>&1 || fsck_rc=$?
+  [ "$fsck_rc" -le 2 ] || die "e2fsck pre-bootapex-grow FAILED (rc=$fsck_rc) on $img"
+  truncate -s "$new_size" "$img" || die "truncate bootapex grow failed on $img"
+  resize2fs "$img" >/dev/null 2>&1 || die "resize2fs bootapex grow failed on $img"
+  log "  grew system.img $cur_size -> $new_size (+64MiB bootstrap-apex headroom) ✓"
 
   for apex in com.android.tzdata.apex com.android.runtime.apex com.android.i18n.apex; do
     {

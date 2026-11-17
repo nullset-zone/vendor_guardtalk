@@ -120,3 +120,58 @@ function stateToBytes(state: Uint32Array): Uint8Array {
   }
   return out;
 }
+
+/** Incremental SHA-256 for streaming large Blobs without full-buffer allocation. */
+export class Sha256Stream {
+  private readonly state = new Uint32Array([
+    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c,
+    0x1f83d9ab, 0x5be0cd19,
+  ]);
+  private readonly words = new Uint32Array(64);
+  private readonly buffer = new Uint8Array(64);
+  private buffered = 0;
+  private totalBytes = 0;
+
+  update(chunk: Uint8Array): void {
+    let offset = 0;
+    this.totalBytes += chunk.byteLength;
+    if (this.buffered > 0) {
+      const needed = 64 - this.buffered;
+      if (chunk.byteLength < needed) {
+        this.buffer.set(chunk, this.buffered);
+        this.buffered += chunk.byteLength;
+        return;
+      }
+      this.buffer.set(chunk.subarray(0, needed), this.buffered);
+      compressBlock(this.state, this.words, this.buffer, 0);
+      this.buffered = 0;
+      offset = needed;
+    }
+    while (offset + 64 <= chunk.byteLength) {
+      compressBlock(this.state, this.words, chunk, offset);
+      offset += 64;
+    }
+    if (offset < chunk.byteLength) {
+      this.buffer.set(chunk.subarray(offset), 0);
+      this.buffered = chunk.byteLength - offset;
+    }
+  }
+
+  digestHex(): string {
+    const bitLen = this.totalBytes * 8;
+    this.buffer[this.buffered] = 0x80;
+    this.buffered += 1;
+    if (this.buffered > 56) {
+      this.buffer.fill(0, this.buffered, 64);
+      compressBlock(this.state, this.words, this.buffer, 0);
+      this.buffered = 0;
+    }
+    this.buffer.fill(0, this.buffered, 56);
+    const view = new DataView(this.buffer.buffer);
+    view.setUint32(56, Math.floor(bitLen / 0x1_0000_0000), false);
+    view.setUint32(60, bitLen >>> 0, false);
+    compressBlock(this.state, this.words, this.buffer, 0);
+    return Array.from(stateToBytes(this.state), (b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+}

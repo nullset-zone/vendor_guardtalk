@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GuardTalkOS feature exclusions (F-004, F-005, F-007).
+  Applied by SystemConfig after all vendor/product permission XMLs are parsed,
+  so hasSystemFeature() returns false even for features declared inside
+  adevtool_sysconfig_vendor_permissions / adevtool_sysconfig_product_permissions
+  (including tangorpro tablet_core_hardware.xml, android.hardware.uwb.xml, and
+  android.hardware.telephony.euicc*.xml).
+-->
+<permissions>
+    <unavailable-feature name="android.hardware.uwb" />
+    <unavailable-feature name="android.hardware.wifi.aware" />
+    <unavailable-feature name="android.hardware.wifi.rtt" />
+    <unavailable-feature name="android.hardware.context_hub" />
+    <unavailable-feature name="android.hardware.telephony.euicc" />
+    <unavailable-feature name="android.hardware.telephony.euicc.mep" />
+    <unavailable-feature name="android.hardware.location" />
+    <unavailable-feature name="android.hardware.location.network" />
+    <unavailable-feature name="android.hardware.location.gps" />
+</permissions>

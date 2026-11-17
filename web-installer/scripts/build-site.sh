@@ -121,4 +121,13 @@ cat > "$SITE/index.html" <<'EOF'
 </html>
 EOF
 
+# F-001: Serve pinned android-fastboot ES module from /dist/vendor/fastboot.min.mjs.
+FASTBOOT_MJS="$ROOT/node_modules/android-fastboot/dist/fastboot.min.mjs"
+if [[ ! -s "$FASTBOOT_MJS" ]]; then
+  echo "error: missing $FASTBOOT_MJS (run npm install)" >&2
+  exit 1
+fi
+mkdir -p "$ROOT/dist/vendor"
+cp -f "$FASTBOOT_MJS" "$ROOT/dist/vendor/fastboot.min.mjs"
+
 echo "site written to $SITE"
