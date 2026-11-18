@@ -28,3 +28,7 @@ blocklist nitrous
 
 # F-003: GNSS/PPS & NFC kernel module excision
 blocklist bbd_pps_gpio.ko
+
+# R-001: UWB kernel module excision
+blocklist aoc_uwb_platform_drv.ko
+blocklist aoc_uwb_service_dev.ko

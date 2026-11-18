@@ -15,6 +15,7 @@ GUARDTALK_UWB_CHRE_PACKAGES := \
     adevtool_vintf_fragment_vendor_android.hardware.qorvo.uwb-service.xml \
     adevtool_vintf_fragment_vendor_qorvo.uwb-service.xml \
     android.hardware.uwb.prebuilt.xml \
+    android.hardware.uwb.xml \
     android.hardware.wifi.aware.prebuilt.xml \
     android.hardware.wifi.rtt.prebuilt.xml \
     android.hardware.contexthub-service.generic \
@@ -43,6 +44,7 @@ $(or \
   $(findstring uwb-service.rc,$(1)), \
   $(findstring uwb-calib.rc,$(1)), \
   $(findstring /etc/uwb/,$(1)), \
+  $(findstring android.hardware.uwb.xml,$(1)), \
   $(findstring android.hardware.contexthub-service.generic.rc,$(1)), \
   $(findstring chre/nearby.napp_header,$(1)))
 endef

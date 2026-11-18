@@ -20,7 +20,8 @@ $(or \
   $(findstring cbd,$(1)), \
   $(findstring rfsd,$(1)), \
   $(findstring dmd.rc,$(1)), \
-  $(findstring android.hardware.secure_element,$(1)))
+  $(findstring android.hardware.secure_element,$(1)), \
+  $(findstring android.hardware.telephony.euicc,$(1)))
 endef
 
 _gt_filtered_product_copy_files :=

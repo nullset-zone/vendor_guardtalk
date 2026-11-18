@@ -166,6 +166,8 @@ GUARDTALK_RADIO_PACKAGES := \
     android.hardware.secure_element-V1-ndk.vendor \
     android.hardware.telephony.euicc.prebuilt.xml \
     android.hardware.telephony.euicc.mep.prebuilt.xml \
+    android.hardware.telephony.euicc.xml \
+    android.hardware.telephony.euicc.mep.xml \
     PixelQualifiedNetworksService
 
 # T-PKG-EXCISE-WAVE-CAT5 — A-REPORT-INVESTIGATE item 17b. With the radio/RIL
