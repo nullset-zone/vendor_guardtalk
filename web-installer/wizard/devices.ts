@@ -5,7 +5,7 @@ export type OfferedDeviceStatus = "supported" | "experimental";
 export type StatusJsonFact = "target" | "experimental";
 
 export interface WizardDevice {
-  readonly id: StagedProduct;
+  readonly id: string;
   /** Marketing name shown in the picker and readiness badge (e.g. Pixel 9). */
   readonly deviceName: string;
   /** Picker option text. Experimental devices name HOLD in the label. */
@@ -18,7 +18,8 @@ export interface WizardDevice {
   readonly readinessBadge: string;
 }
 
-export const WIZARD_DEVICES: readonly WizardDevice[] = [
+/** Full 14-target GuardTalkOS device catalog. */
+export const ALL_WIZARD_DEVICES: readonly WizardDevice[] = [
   {
     id: "tokay",
     deviceName: "Pixel 9",
@@ -107,7 +108,83 @@ export const WIZARD_DEVICES: readonly WizardDevice[] = [
     superMode: "super_empty",
     readinessBadge: "EXPERIMENTAL · dev/unlocked · gt · LIVE_FLASH_CLAIMED=false",
   },
+  {
+    id: "comet",
+    deviceName: "Pixel 9 Pro Fold",
+    label: "Pixel 9 Pro Fold (comet)",
+    status: "supported",
+    statusJsonFact: "target",
+    defaultBootChain: "gt",
+    supportedBootChains: ["gt"],
+    superMode: "super_empty",
+    readinessBadge: "TARGET · dev/unlocked · gt · LIVE_FLASH_CLAIMED=false",
+  },
+  {
+    id: "husky",
+    deviceName: "Pixel 8 Pro",
+    label: "Pixel 8 Pro (husky)",
+    status: "supported",
+    statusJsonFact: "target",
+    defaultBootChain: "gt",
+    supportedBootChains: ["gt"],
+    superMode: "super_empty",
+    readinessBadge: "TARGET · dev/unlocked · gt · LIVE_FLASH_CLAIMED=false",
+  },
+  {
+    id: "mustang",
+    deviceName: "Pixel 10 Pro XL",
+    label: "Pixel 10 Pro XL (mustang)",
+    status: "supported",
+    statusJsonFact: "target",
+    defaultBootChain: "gt",
+    supportedBootChains: ["gt"],
+    superMode: "super_empty",
+    readinessBadge: "TARGET · dev/unlocked · gt · LIVE_FLASH_CLAIMED=false",
+  },
+  {
+    id: "shiba",
+    deviceName: "Pixel 8",
+    label: "Pixel 8 (shiba)",
+    status: "supported",
+    statusJsonFact: "target",
+    defaultBootChain: "gt",
+    supportedBootChains: ["gt"],
+    superMode: "super_empty",
+    readinessBadge: "TARGET · dev/unlocked · gt · LIVE_FLASH_CLAIMED=false",
+  },
+  {
+    id: "tegu",
+    deviceName: "Pixel 9a",
+    label: "Pixel 9a (tegu)",
+    status: "supported",
+    statusJsonFact: "target",
+    defaultBootChain: "gt",
+    supportedBootChains: ["gt"],
+    superMode: "super_empty",
+    readinessBadge: "TARGET · dev/unlocked · gt · LIVE_FLASH_CLAIMED=false",
+  },
+  {
+    id: "tangorpro",
+    deviceName: "Pixel Tablet",
+    label: "Pixel Tablet (tangorpro)",
+    status: "supported",
+    statusJsonFact: "target",
+    defaultBootChain: "gt",
+    supportedBootChains: ["gt"],
+    superMode: "super_empty",
+    readinessBadge: "TARGET · dev/unlocked · gt · LIVE_FLASH_CLAIMED=false",
+  },
 ];
+
+/**
+ * Offered devices in the wizard picker, filtered to STAGED_PRODUCTS so
+ * unpacked targets fail closed until packed and promoted in src/allowlist.ts.
+ */
+export const WIZARD_DEVICES: readonly (WizardDevice & { readonly id: OfferedProduct })[] =
+  ALL_WIZARD_DEVICES.filter(
+    (d): d is WizardDevice & { readonly id: OfferedProduct } =>
+      (STAGED_PRODUCTS as readonly string[]).includes(d.id),
+  );
 
 export type OfferedProduct = StagedProduct;
 

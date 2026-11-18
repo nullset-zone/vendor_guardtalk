@@ -22,10 +22,10 @@ test("hosted channel URL is per staged product", () => {
 });
 
 test("hosted channel URL rejects unstamped products", () => {
-  assert.throws(() => hostedChannelBase("shiba"), WizardGateError);
-  assert.throws(() => hostedChannelBase("tegu"), WizardGateError);
-  assert.throws(() => hostedChannelBase("husky"), WizardGateError);
-  assert.throws(() => hostedChannelBase("comet"), WizardGateError);
+  assert.throws(() => hostedChannelBase("oriole"), WizardGateError);
+  assert.throws(() => hostedChannelBase("raven"), WizardGateError);
+  assert.throws(() => hostedChannelBase("bluejay"), WizardGateError);
+  assert.throws(() => hostedChannelBase("lynx"), WizardGateError);
 });
 
 test("fetchHostedChannel verifies avb_pkmd.bin SHA-256 and AVB key fail-closed", async () => {

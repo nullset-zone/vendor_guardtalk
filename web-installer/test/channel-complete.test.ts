@@ -153,7 +153,7 @@ test("CHANNEL-COMPLETE: (b) every channel pointer names the packed product + dev
     const body = readFileSync(pointerPath, "utf8").trim();
     assert.match(
       body,
-      /^[A-Za-z0-9._-]+ \d+ (tokay|akita|komodo|rango|caiman|frankel|stallion|blazer) dev$/,
+      /^[A-Za-z0-9._-]+ \d+ (tokay|akita|komodo|rango|caiman|frankel|stallion|blazer|comet|husky|mustang|shiba|tegu|tangorpro) dev$/,
     );
     const manifest = readManifest(product);
     assert.ok(body.startsWith(manifest.releaseId), "pointer releaseId disagrees with manifest");

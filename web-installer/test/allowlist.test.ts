@@ -5,7 +5,7 @@ import { WrongProductError } from "../src/errors.js";
 import { loadChannelFromTexts } from "../src/channel.js";
 import { channelTextsFromBlobs, tokayBlobs } from "./helpers.js";
 
-test("all 8 staged products are allowed", () => {
+test("all 14 staged products are allowed", () => {
   assert.deepEqual([...STAGED_PRODUCTS], [
     "tokay",
     "akita",
@@ -15,23 +15,29 @@ test("all 8 staged products are allowed", () => {
     "frankel",
     "stallion",
     "blazer",
+    "comet",
+    "husky",
+    "mustang",
+    "shiba",
+    "tegu",
+    "tangorpro",
   ]);
   for (const product of STAGED_PRODUCTS) {
     assert.doesNotThrow(() => assertAllowedProduct(product));
   }
 });
 
-test("unstamped shiba, husky, tegu, comet, and empty product are rejected", () => {
-  assert.throws(() => assertAllowedProduct("shiba"), WrongProductError);
-  assert.throws(() => assertAllowedProduct("husky"), WrongProductError);
-  assert.throws(() => assertAllowedProduct("tegu"), WrongProductError);
-  assert.throws(() => assertAllowedProduct("comet"), WrongProductError);
+test("unstamped oriole, raven, bluejay, lynx, and empty product are rejected", () => {
+  assert.throws(() => assertAllowedProduct("oriole"), WrongProductError);
+  assert.throws(() => assertAllowedProduct("raven"), WrongProductError);
+  assert.throws(() => assertAllowedProduct("bluejay"), WrongProductError);
+  assert.throws(() => assertAllowedProduct("lynx"), WrongProductError);
   assert.throws(() => assertAllowedProduct(""), WrongProductError);
 });
 
 test("WrongProductError lists tokay, akita, komodo, rango", () => {
   assert.throws(
-    () => assertAllowedProduct("shiba"),
+    () => assertAllowedProduct("oriole"),
     (err: unknown) =>
       err instanceof WrongProductError &&
       err.message.includes("tokay, akita, komodo, rango"),
@@ -51,11 +57,11 @@ test("rango manifest loads when advertisedDevices includes rango", () => {
   assert.equal(bundle.manifest.product, "rango");
 });
 
-test("shiba manifest fails closed at channel load", () => {
+test("oriole manifest fails closed at channel load", () => {
   const texts = channelTextsFromBlobs(tokayBlobs());
   const manifest = JSON.parse(texts.manifestJson) as Record<string, unknown>;
-  manifest.product = "shiba";
-  manifest.advertisedDevices = ["shiba"];
+  manifest.product = "oriole";
+  manifest.advertisedDevices = ["oriole"];
   assert.throws(
     () =>
       loadChannelFromTexts({

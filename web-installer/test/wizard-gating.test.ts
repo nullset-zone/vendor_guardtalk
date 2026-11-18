@@ -5,7 +5,8 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { LockBeforeCompleteError, LockSafetyError } from "../src/errors.js";
 import { channelTextsFromBlobs, MockFastboot, tokayBlobs } from "./helpers.js";
-import { WIZARD_DEVICES, deviceFromSearch } from "../wizard/devices.js";
+import { ALL_WIZARD_DEVICES, WIZARD_DEVICES, deviceFromSearch } from "../wizard/devices.js";
+import { STAGED_PRODUCTS } from "../src/allowlist.js";
 import {
   WizardGateError,
   assertCanFlash,
@@ -14,7 +15,7 @@ import {
 } from "../wizard/gating.js";
 import { assessQuota, payloadBytes } from "../wizard/quota.js";
 import { InstallWizard } from "../wizard/session.js";
-import { runGuardedAction } from "../wizard/main.js";
+import { runGuardedAction, webUsbNoteText } from "../wizard/main.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -25,10 +26,25 @@ function gatedWizard(): InstallWizard {
   return session;
 }
 
-test("picker offers all 8 packed devices with gt/hybrid metadata", () => {
+test("picker offers all 14 packed devices with gt/hybrid metadata", () => {
   assert.deepEqual(
     WIZARD_DEVICES.map((d) => d.id),
-    ["tokay", "komodo", "caiman", "frankel", "stallion", "blazer", "rango", "akita"],
+    [
+      "tokay",
+      "komodo",
+      "caiman",
+      "frankel",
+      "stallion",
+      "blazer",
+      "rango",
+      "akita",
+      "comet",
+      "husky",
+      "mustang",
+      "shiba",
+      "tegu",
+      "tangorpro",
+    ],
   );
   assert.equal(WIZARD_DEVICES.find((d) => d.id === "rango")?.status, "experimental");
   assert.equal(WIZARD_DEVICES.find((d) => d.id === "rango")?.deviceName, "Pixel 10 Pro Fold");
@@ -40,8 +56,8 @@ test("picker offers all 8 packed devices with gt/hybrid metadata", () => {
   assert.equal(WIZARD_DEVICES.find((d) => d.id === "blazer")?.defaultBootChain, "hybrid");
   assert.equal(WIZARD_DEVICES.find((d) => d.id === "stallion")?.defaultBootChain, "gt");
   assert.equal(WIZARD_DEVICES.find((d) => d.id === "tokay")?.status, "supported");
-  assert.equal(JSON.stringify(WIZARD_DEVICES).includes("shiba"), false);
-  assert.equal(JSON.stringify(WIZARD_DEVICES).includes("husky"), false);
+  assert.equal(JSON.stringify(WIZARD_DEVICES).includes("oriole"), false);
+  assert.equal(JSON.stringify(WIZARD_DEVICES).includes("raven"), false);
 });
 
 test("flash is gated until unlock", async () => {
@@ -111,14 +127,29 @@ test("tiny quota is called out as a private-window problem", () => {
   assert.match(assessment.summary, /Incognito is not a supported path/);
 });
 
-test("all 8 packed devices can be selected; unstamped products cannot", () => {
+test("all 14 packed devices can be selected; unstamped products cannot", () => {
   const session = new InstallWizard();
-  for (const id of ["tokay", "komodo", "caiman", "frankel", "stallion", "blazer", "rango", "akita"]) {
+  for (const id of [
+    "tokay",
+    "komodo",
+    "caiman",
+    "frankel",
+    "stallion",
+    "blazer",
+    "rango",
+    "akita",
+    "comet",
+    "husky",
+    "mustang",
+    "shiba",
+    "tegu",
+    "tangorpro",
+  ]) {
     assert.doesNotThrow(() => session.selectDevice(id));
   }
-  assert.throws(() => session.selectDevice("shiba"), WizardGateError);
-  assert.throws(() => session.selectDevice("husky"), WizardGateError);
-  assert.throws(() => session.selectDevice("tegu"), WizardGateError);
+  assert.throws(() => session.selectDevice("oriole"), WizardGateError);
+  assert.throws(() => session.selectDevice("raven"), WizardGateError);
+  assert.throws(() => session.selectDevice("bluejay"), WizardGateError);
 });
 
 test("akita, komodo, and rango can be selected", () => {
@@ -132,7 +163,7 @@ test("deviceFromSearch reads ?device= and rejects unknown products", () => {
   assert.equal(deviceFromSearch("?device=rango"), "rango");
   assert.equal(deviceFromSearch("sim=1&device=akita"), "akita");
   assert.equal(deviceFromSearch(new URLSearchParams("device=komodo")), "komodo");
-  assert.equal(deviceFromSearch("?device=shiba"), "tokay");
+  assert.equal(deviceFromSearch("?device=oriole"), "tokay");
   assert.equal(deviceFromSearch("?sim=1"), "tokay");
 });
 
@@ -533,5 +564,53 @@ test("safety-gated flashing lock blocks unconfirmed or unverified targets withou
   );
   await assert.doesNotReject(
     () => session.lock({ confirmed: true, operatorOverride: true }),
+  );
+});
+
+test("F-002: webUsbNoteText requires HTTPS when window.isSecureContext is false", () => {
+  const insecureMsg = webUsbNoteText(false, false);
+  assert.match(insecureMsg, /secure context/i);
+  assert.match(insecureMsg, /https:\/\//);
+  assert.match(insecureMsg, /Dry-run and plan preview still work\./);
+
+  const insecureEvenIfUsbFlag = webUsbNoteText(false, true);
+  assert.equal(insecureEvenIfUsbFlag, insecureMsg);
+
+  const noUsbMsg = webUsbNoteText(true, false);
+  assert.match(noUsbMsg, /This browser has no WebUSB\./);
+  assert.doesNotMatch(noUsbMsg, /https:\/\//);
+
+  const hasUsbMsg = webUsbNoteText(true, true);
+  assert.match(hasUsbMsg, /This browser exposes WebUSB\./);
+});
+
+test("F-003: ALL_WIZARD_DEVICES covers all 14 targets and WIZARD_DEVICES tracks STAGED_PRODUCTS", () => {
+  const expected14 = [
+    "tokay",
+    "akita",
+    "komodo",
+    "rango",
+    "caiman",
+    "frankel",
+    "stallion",
+    "blazer",
+    "comet",
+    "husky",
+    "mustang",
+    "shiba",
+    "tegu",
+    "tangorpro",
+  ];
+  const ids = ALL_WIZARD_DEVICES.map((d) => d.id);
+  assert.equal(ids.length, 14);
+  for (const target of expected14) {
+    const dev = ALL_WIZARD_DEVICES.find((d) => d.id === target);
+    assert.ok(dev, `missing device metadata for ${target}`);
+    assert.ok(dev.deviceName.length > 0);
+    assert.match(dev.readinessBadge, /LIVE_FLASH_CLAIMED=false/);
+  }
+  assert.deepEqual(
+    WIZARD_DEVICES.map((d) => d.id).sort(),
+    [...STAGED_PRODUCTS].sort(),
   );
 });

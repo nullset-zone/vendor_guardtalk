@@ -53,7 +53,7 @@ import { bundleFromBlobs, channelTextsFromBlobs, tokayBlobs, utf8, type FixtureB
 const HERE = dirname(fileURLToPath(import.meta.url));
 const WEB_INSTALLER_ROOT = resolve(HERE, "..");
 
-const EIGHT_STAGED = [
+const FOURTEEN_STAGED = [
   "tokay",
   "akita",
   "komodo",
@@ -62,6 +62,12 @@ const EIGHT_STAGED = [
   "frankel",
   "stallion",
   "blazer",
+  "comet",
+  "husky",
+  "mustang",
+  "shiba",
+  "tegu",
+  "tangorpro",
 ] as const;
 
 function makeTestRsa4096Pkmd(): Uint8Array {
@@ -598,18 +604,18 @@ test("QA-5b: flashing lock safety gate & DEC-009 live-execute HOLD reject all by
 // 6. All 8 packed channels on disk + Law 7 honesty flags
 // ---------------------------------------------------------------------------
 
-test("QA-6: all 8 staged devices have valid packed channels on disk and Law 7 honesty holds", async () => {
+test("QA-6: all 14 staged devices have valid packed channels on disk and Law 7 honesty holds", async () => {
   assert.equal(LIVE_FLASH_CLAIMED, false);
   assert.equal(PRODUCTION_RELEASE_CLAIMED, false);
-  assert.deepEqual([...STAGED_PRODUCTS].sort(), [...EIGHT_STAGED].sort());
-  assert.equal(isAllowedProduct("shiba"), false);
+  assert.deepEqual([...STAGED_PRODUCTS].sort(), [...FOURTEEN_STAGED].sort());
+  assert.equal(isAllowedProduct("oriole"), false);
 
   const statusRaw = JSON.parse(
     readFileSync(join(WEB_INSTALLER_ROOT, "status.json"), "utf8"),
   ) as { flashCapability?: { liveFlashClaimed?: boolean } };
   assert.equal(statusRaw.flashCapability?.liveFlashClaimed, false);
 
-  for (const product of EIGHT_STAGED) {
+  for (const product of FOURTEEN_STAGED) {
     const channelDir = join(WEB_INSTALLER_ROOT, "channels", product);
     assert.equal(existsSync(channelDir), true, `missing channel dir for ${product}`);
 

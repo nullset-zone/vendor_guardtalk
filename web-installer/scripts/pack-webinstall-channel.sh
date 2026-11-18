@@ -39,7 +39,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 # Default preserves the in-tree layout exactly.
 RELEASES_ROOT="${GUARDTALK_RELEASES_ROOT:-${REPO_ROOT}/releases/desktop-flash}"
 
-readonly ADVERTISED_DEVICES=(tokay akita komodo rango caiman frankel stallion blazer)
+readonly ADVERTISED_DEVICES=(tokay akita komodo rango caiman frankel stallion blazer comet husky mustang shiba tegu tangorpro)
 readonly CHANNEL_DEFAULT="dev"
 readonly BOOT_STATE="unlocked"
 readonly CHANNEL_LABEL="dev/unlocked"
@@ -645,7 +645,7 @@ PY
     [[ -f "${tmp}/out-rango/rango-dev" ]] \
         || die "self-test: rango-dev pointer missing"
     local unstamped stamp
-    for unstamped in shiba husky tegu comet; do
+    for unstamped in oriole raven bluejay lynx; do
         stamp="${tmp}/${unstamped}-20990101-000000"
         mkdir -p "$stamp"
         printf 'public-avb-blob\n' >"${stamp}/avb_pkmd.bin"

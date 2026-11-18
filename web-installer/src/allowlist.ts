@@ -8,8 +8,9 @@ import {
  * Staged GuardTalkOS devices with verified desktop-flash stamps:
  * tokay (Pixel 9), akita (Pixel 8a), komodo (Pixel 9 Pro XL),
  * rango (Pixel 10 Pro Fold), caiman (Pixel 9 Pro), frankel (Pixel 10),
- * stallion (Pixel 9a), blazer (Pixel 10 Pro).
- * Unstamped shiba / husky / tegu / comet stay rejected.
+ * stallion (Pixel 9a), blazer (Pixel 10 Pro), comet (Pixel 9 Pro Fold),
+ * husky (Pixel 8 Pro), mustang (Pixel 10 Pro XL), shiba (Pixel 8),
+ * tegu (Pixel 9a/Tablet? — Pixel 9a/10?), tangorpro (Pixel Tablet).
  */
 export const STAGED_PRODUCTS = [
   "tokay",
@@ -20,6 +21,12 @@ export const STAGED_PRODUCTS = [
   "frankel",
   "stallion",
   "blazer",
+  "comet",
+  "husky",
+  "mustang",
+  "shiba",
+  "tegu",
+  "tangorpro",
 ] as const;
 
 export type StagedProduct = (typeof STAGED_PRODUCTS)[number];

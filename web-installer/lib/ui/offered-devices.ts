@@ -89,6 +89,12 @@ export const STATUS_JSON_TARGETS: readonly string[] = [
   "stallion",
   "blazer",
   "rango",
+  "comet",
+  "husky",
+  "mustang",
+  "shiba",
+  "tegu",
+  "tangorpro",
 ];
 export const STATUS_JSON_EXPERIMENTAL_TARGETS: readonly string[] = ["akita"];
 

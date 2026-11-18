@@ -192,12 +192,12 @@ test("PICKER-TRUTH: (c) each chip word is exactly the status.json fact, and komo
       assert.notEqual(statusJsonChipWord(product), "EXPERIMENTAL");
     }
   }
-  // komodo is now a status.json target; shiba remains absent from status.json.
+  // komodo is now a status.json target; oriole remains absent from status.json.
   assert.equal(statusJsonFact("komodo"), "target");
   assert.equal(statusJsonChipWord("komodo"), "TARGET");
   assert.equal(hasPackedChannel("komodo"), true, "komodo IS packed");
-  assert.equal(statusJsonFact("shiba"), "absent-from-status-json");
-  assert.equal(statusJsonChipWord("shiba"), "NOT IN status.json");
+  assert.equal(statusJsonFact("oriole"), "absent-from-status-json");
+  assert.equal(statusJsonChipWord("oriole"), "NOT IN status.json");
 });
 
 test("PICKER-TRUTH: (c) the rendered table shows the status.json chip for every offered product", () => {
@@ -338,7 +338,7 @@ test("PICKER-TRUTH: the packed set is non-vacuous (at least one channel is packe
 });
 
 test("PICKER-TRUTH: an unadvertised product is not in the wiring at all", () => {
-  assert.equal(packedChannel("shiba"), undefined);
-  assert.equal(hasPackedChannel("shiba"), false);
-  assert.equal(isSelectableProduct("shiba"), false);
+  assert.equal(packedChannel("oriole"), undefined);
+  assert.equal(hasPackedChannel("oriole"), false);
+  assert.equal(isSelectableProduct("oriole"), false);
 });

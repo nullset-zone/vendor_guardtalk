@@ -20,7 +20,21 @@
     "liveFlashClaimed": false,
     "$comment": "D-011: full fastboot command set implemented; every automated path simulated. LIVE_FLASH_CLAIMED stays false until a human performs a real flash with launch flags flipped (see PROGRESS.md)."
   },
-  "targets": ["tokay", "komodo", "caiman", "frankel", "stallion", "blazer", "rango"],
+  "targets": [
+    "tokay",
+    "komodo",
+    "caiman",
+    "frankel",
+    "stallion",
+    "blazer",
+    "rango",
+    "comet",
+    "husky",
+    "mustang",
+    "shiba",
+    "tegu",
+    "tangorpro"
+  ],
   "experimentalTargets": ["akita"],
   "noOta": true
 }

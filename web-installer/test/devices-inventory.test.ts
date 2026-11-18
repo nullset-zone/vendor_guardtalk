@@ -106,17 +106,17 @@ test("assertManifestAllowlist rejects rango in reservedProducts", () => {
   );
 });
 
-test("hosted channel URL rejects tegu and comet", () => {
-  assert.throws(() => hostedChannelBase("tegu"), WizardGateError);
-  assert.throws(() => hostedChannelBase("comet"), WizardGateError);
+test("hosted channel URL rejects oriole and raven", () => {
+  assert.throws(() => hostedChannelBase("oriole"), WizardGateError);
+  assert.throws(() => hostedChannelBase("raven"), WizardGateError);
 });
 
-test("WrongProductError for husky lists the four advertised products", () => {
+test("WrongProductError for bluejay lists the four advertised products", () => {
   assert.throws(
-    () => assertAllowedProduct("husky"),
+    () => assertAllowedProduct("bluejay"),
     (err: unknown) =>
       err instanceof WrongProductError &&
       err.message.includes("tokay, akita, komodo, rango") &&
-      !err.message.includes("shiba"),
+      !err.message.includes("oriole"),
   );
 });

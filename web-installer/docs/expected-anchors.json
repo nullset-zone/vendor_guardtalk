@@ -13,56 +13,98 @@
       "file": "avb_pkmd.bin",
       "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
       "size": 1032,
-      "sourceStamp": "akita-20260928-083403",
-      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
-    },
-    "komodo": {
-      "file": "avb_pkmd.bin",
-      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
-      "size": 1032,
-      "sourceStamp": "komodo-20260928-052609",
-      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
-    },
-    "rango": {
-      "file": "avb_pkmd.bin",
-      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
-      "size": 1032,
-      "sourceStamp": "rango-20261113-045952",
-      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
-    },
-    "tokay": {
-      "file": "avb_pkmd.bin",
-      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
-      "size": 1032,
-      "sourceStamp": "tokay-20260928-084839",
-      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
-    },
-    "caiman": {
-      "file": "avb_pkmd.bin",
-      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
-      "size": 1032,
-      "sourceStamp": "caiman-20261113-135738",
-      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
-    },
-    "frankel": {
-      "file": "avb_pkmd.bin",
-      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
-      "size": 1032,
-      "sourceStamp": "frankel-20261113-113011",
-      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
-    },
-    "stallion": {
-      "file": "avb_pkmd.bin",
-      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
-      "size": 1032,
-      "sourceStamp": "stallion-20261110-labelled",
+      "sourceStamp": "akita-20261117-171727",
       "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
     },
     "blazer": {
       "file": "avb_pkmd.bin",
       "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
       "size": 1032,
-      "sourceStamp": "blazer-20261112-guardtalk",
+      "sourceStamp": "blazer-20261117-190458",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "caiman": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "caiman-20261117-164109",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "comet": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "comet-20261117-172717",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "frankel": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "frankel-20261117-190933",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "husky": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "husky-20261117-173656",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "komodo": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "komodo-20261117-165012",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "mustang": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "mustang-20261117-190232",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "rango": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "rango-20261117-190715",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "shiba": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "shiba-20261117-174553",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "stallion": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "stallion-20261117-165909",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "tangorpro": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "tangorpro-20261117-181013",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "tegu": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "tegu-20261117-175443",
+      "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
+    },
+    "tokay": {
+      "file": "avb_pkmd.bin",
+      "sha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6",
+      "size": 1032,
+      "sourceStamp": "tokay-20261117-170816",
       "sourceStampSha256": "7728e30f50bfa5cea165f473175a08803f6a8346642b5aa10913e9d9e6defef6"
     }
   }

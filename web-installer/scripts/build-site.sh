@@ -51,16 +51,43 @@ fi
 cp dist/routes-js/routes/install/*.js "$SITE/install/"
 cp routes/install/page.html "$SITE/install/index.html"
 
-# Sibling routes import lib two levels up from their own source depth, so their
-# compiled modules must sit one directory below lib/ in the emitted site.
+# F-001 (A-WEBINSTALLER-SIMPLIFIED-EXTREME-AUDIT): retired legacy sub-routes
+# (/install/update, /install/verify-device, /install/recover) redirect cleanly
+# to /wizard/ instead of serving legacy type="file" pickers or Tor placeholders.
+# Compiled route JS modules are still copied so placeholder-retirement tests
+# over dist/site/ continue to verify the retired modules.
 cp dist/routes-js/routes/update/*.js "$SITE/install/update/"
-cp routes/update/page.html "$SITE/install/update/index.html"
-
 cp dist/routes-js/routes/verify-device/*.js "$SITE/install/verify-device/"
-cp routes/verify-device/page.html "$SITE/install/verify-device/index.html"
-
 cp dist/routes-js/routes/recover/*.js "$SITE/install/recover/"
-cp routes/recover/page.html "$SITE/install/recover/index.html"
+
+cat > "$SITE/install/redirect.js" <<'EOF'
+window.location.replace("../../wizard/");
+EOF
+
+emit_wizard_redirect() {
+  local dest="$1"
+  cat > "$dest" <<'EOF'
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content="0; url=../../wizard/" />
+    <title>Redirecting to GuardTalkOS WebUSB Installer</title>
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'" />
+    <script src="../redirect.js" defer></script>
+  </head>
+  <body>
+    <p>This legacy route has been retired. <a href="../../wizard/">Continue to the GuardTalkOS WebUSB Installer</a>.</p>
+    <noscript><p>JavaScript is disabled. Use the link above to open the GuardTalkOS WebUSB Installer.</p></noscript>
+  </body>
+</html>
+EOF
+}
+
+emit_wizard_redirect "$SITE/install/update/index.html"
+emit_wizard_redirect "$SITE/install/verify-device/index.html"
+emit_wizard_redirect "$SITE/install/recover/index.html"
 
 cp routes/threat-model/page.html "$SITE/threat-model/index.html"
 

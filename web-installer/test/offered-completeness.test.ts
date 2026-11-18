@@ -481,11 +481,11 @@ test("TRUTH-PRESERVED: rango stays experimental / boot HOLD", () => {
 
 test("TRUTH-PRESERVED: status.json targets match and the two chips stay separate", () => {
   assert.equal(statusJsonChipWord("komodo"), "TARGET");
-  assert.equal(statusJsonChipWord("shiba"), "NOT IN status.json");
+  assert.equal(statusJsonChipWord("oriole"), "NOT IN status.json");
   assert.equal(statusChipWord("supported"), "SUPPORTED");
   // The separation itself: for akita and rango the two notions disagree, which
   // is exactly why they must not be merged into one chip.
-  assert.notEqual(statusChipWord("supported"), statusJsonChipWord("shiba"));
+  assert.notEqual(statusChipWord("supported"), statusJsonChipWord("oriole"));
   assert.notEqual(statusChipWord("experimental"), statusJsonChipWord("rango"));
   assert.equal(statusJsonChipWord("rango"), "TARGET");
 });

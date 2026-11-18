@@ -607,16 +607,28 @@ async function attachLiveIfRequested(): Promise<void> {
   logLine("Loaded /dist/vendor/fastboot.min.mjs for live WebUSB Fastboot.", "info");
 }
 
+export function webUsbNoteText(
+  isSecureContext: boolean | undefined,
+  hasUsb: boolean,
+): string {
+  if (isSecureContext === false) {
+    return "WebUSB requires a secure context (https:// or localhost). Open this installer over https:// to enable Reboot to Fastboot and live WebUSB connect. Dry-run and plan preview still work.";
+  }
+  return hasUsb
+    ? "This browser exposes WebUSB. Reboot to Fastboot uses WebUSB ADB, and Connect loads /dist/vendor/fastboot.min.mjs for live WebUSB Fastboot."
+    : "This browser has no WebUSB. Reboot to Fastboot and live connect are unavailable. Dry-run and plan preview still work.";
+}
+
 function markWebUsb(): void {
-  const usb = "usb" in navigator;
+  const isSecureContext =
+    typeof window !== "undefined" ? window.isSecureContext : undefined;
+  const usb = isSecureContext !== false && "usb" in navigator;
   const isChromium = /chrom(e|ium)|edg\//i.test(navigator.userAgent);
   el("chromium-check").textContent = isChromium
     ? "Chromium-family browser detected."
     : "Non-Chromium browser detected — switch to Chromium, Chrome, Edge, or Brave for live WebUSB.";
   const note = el("webusb-note");
-  note.textContent = usb
-    ? "This browser exposes WebUSB. Reboot to Fastboot uses WebUSB ADB, and Connect loads /dist/vendor/fastboot.min.mjs for live WebUSB Fastboot."
-    : "This browser has no WebUSB. Reboot to Fastboot and live connect are unavailable. Dry-run and plan preview still work.";
+  note.textContent = webUsbNoteText(isSecureContext, usb);
 }
 
 function init(): void {

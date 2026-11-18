@@ -167,8 +167,8 @@ test("QA-ADV-UI-03: assertCanLockWithSafety blocks unconfirmed or unverified tar
 
 test("QA-ADV-UI-04: InstallWizard rejects unoffered devices and gates live execute/lock until connected + safety confirmed", async () => {
   const wizard = new InstallWizard();
-  assert.throws(() => wizard.selectDevice("shiba"), WizardGateError);
-  assert.throws(() => wizard.selectDevice("husky"), WizardGateError);
+  assert.throws(() => wizard.selectDevice("oriole"), WizardGateError);
+  assert.throws(() => wizard.selectDevice("raven"), WizardGateError);
   assert.throws(() => wizard.selectDevice(""), WizardGateError);
 
   wizard.selectDevice("tokay");
@@ -315,6 +315,19 @@ test("QA-ADV-UI-07: built static route HTML pages enforce strict CSP and no inli
   }
 });
 
+test("F-001: legacy /install/{update,verify-device,recover} pages redirect to /wizard/ without file pickers or Tor UI", async () => {
+  const redirectJs = await readFile(join(DIST_SITE, "install", "redirect.js"), "utf8");
+  assert.match(redirectJs, /location\.replace\("\.\.\/\.\.\/wizard\/"\)/);
+
+  for (const sub of ["update", "verify-device", "recover"]) {
+    const html = await readFile(join(DIST_SITE, "install", sub, "index.html"), "utf8");
+    assert.match(html, /http-equiv="refresh"[^>]*url=\.\.\/\.\.\/wizard\//i, `${sub}: missing meta refresh`);
+    assert.match(html, /<script src="\.\.\/redirect\.js"/, `${sub}: missing redirect.js`);
+    assert.doesNotMatch(html, /type="file"/i, `${sub}: legacy file picker must not ship`);
+    assert.doesNotMatch(html, /torChromiumHonestyBlock|onion/i, `${sub}: legacy Tor/onion UI must not ship`);
+  }
+});
+
 test("QA-ADV-UI-08: built static site includes OS-specific USB/udev/WinUSB/macOS/Chromium troubleshooting", async () => {
   const usbModule = await readFile(
     join(DIST_SITE, "lib", "ui", "usb-troubleshooting.js"),
@@ -355,7 +368,7 @@ test("QA-ADV-UI-09: Law 7 honesty invariants hold across status.json, readiness,
   };
   assert.equal(status.preLaunch, true);
   assert.equal(status.flashCapability.liveFlashClaimed, false);
-  assert.equal(status.targets.length + status.experimentalTargets.length, 8);
+  assert.equal(status.targets.length + status.experimentalTargets.length, 14);
 
   const wizardHtml = await readFile(join(PKG_ROOT, "wizard", "index.html"), "utf8");
   assert.match(wizardHtml, /LIVE_FLASH_CLAIMED=false/);
