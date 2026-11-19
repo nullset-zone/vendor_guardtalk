@@ -1,86 +1,324 @@
-# GuardTalkOS web-installer
+# GuardTalkOS WebInstaller — Beginner's Guide ("For Dummies")
 
-This directory is the product path for the GuardTalkOS WebUSB installer
-(`DEC-WEBINSTALL-002`).
+> **New to GuardTalkOS?** Start with the full OS guide at [Build, Verify & Run GuardTalkOS for Dummies](../docs/BUILD_AND_RUN_FOR_DUMMIES.md) or the product overview at [vendor/guardtalk/README.md](../README.md).
+>
+> **Honest Readiness Disclosure:** This installer is **ready for dev/unlocked WebUSB UAT across all 14 packed targets**, and **NOT ready for production verified-boot fleets**.
+> - `liveFlashClaimed=false` (`LIVE_FLASH_CLAIMED=false`)
+> - `bootVerified=false` (`BOOT_VERIFIED=false`)
+> - Channel posture: `dev/unlocked` (`verifiedBootClaim: "none"` — unsigned dev channel; **not** GrapheneOS-equivalent locked verified boot).
 
-| Path | What it is |
-|------|------------|
-| `schema/channel-manifest.schema.json` | JSON Schema for a channel `manifest.json` |
-| `schema/manifest.example.json` | Example packed from a real tokay desktop-flash stamp |
-| `src/` | Flash orchestrator (`T-WEBINSTALL-FLASHCORE`) |
-| `wizard/` | GuardTalkOS-branded installer UI (`F-WEBINSTALL-WIZARD`) |
-| `test/` | Host tests with a mocked Fastboot/WebUSB transport |
-| `NOTICE` | Third-party licenses |
+---
 
-The packer is **vendored** at `web-installer/scripts/pack-webinstall-channel.sh`
-(T-WEBINSTALL-PACKER-VENDOR), so this folder packs its own channels with no
-product repo beside it. The parent `vendor/guardtalk/scripts/pack-webinstall-channel.sh`
-is a thin `exec` wrapper around that file — there is exactly one implementation.
-It reads an existing `releases/desktop-flash/` tokay, akita, or komodo stamp and emits:
+## Table of Contents
 
-- GOS-like pointer `{releaseId} {unixEpoch} {product} dev`
-- `SHA256SUMS` of published artifacts
-- public `avb_pkmd.bin` only
-- a flashcore-consumable file list (no factory zip this wave)
+1. [What Is the GuardTalkOS WebInstaller?](#1-what-is-the-guardtalkos-webinstaller)
+2. [Supported Pixel Devices (All 14 Packed Targets)](#2-supported-pixel-devices-all-14-packed-targets)
+3. [Prerequisites (For Dummies)](#3-prerequisites-for-dummies)
+4. [Step-by-Step Local Setup, Build & Test](#4-step-by-step-local-setup-build--test)
+5. [Step-by-Step Browser Wizard Walkthrough](#5-step-by-step-browser-wizard-walkthrough)
+6. [Troubleshooting FAQ](#6-troubleshooting-faq)
+7. [Claim Honesty: Dev/UAT vs. Production Fleet](#7-claim-honesty-devuat-vs-production-fleet)
+8. [Developer & Ops Reference](#8-developer--ops-reference)
 
-**Advertised allowlist:** `tokay` (Pixel 9), `akita` (Pixel 8a), and
-`komodo` (Pixel 9 Pro XL). `shiba` / `husky` / `caiman` / `rango` are not
-offered. **Channel label:** `dev/unlocked`
-(`DEC-WEBINSTALL-007`). This is **not** GrapheneOS-equivalent locked
-verified boot.
+---
 
-**DEC-010:** The current advertised komodo desktop-flash stamp
-`komodo-20260915-063833` is `userdebug` / test-keys. It is **not** a
-signed user `FLASH_READY` image. `LIVE_FLASH_CLAIMED` remains `false`.
+## 1. What Is the GuardTalkOS WebInstaller?
 
-**DEC-011:** Debug sidecar flash is a **separate** channel.
-`komodo-debug-latest` is absent. `DEBUG_FLASH_READY` is **false**.
-`USB_GO` stays **false**. Signed-user `FLASH_READY` stays **false**.
-DEC-017 leftover SHA HOLD residual remains. Do not treat
-`komodo-20260915-063833` as that gate. Do not retarget `komodo-latest`.
-No new SKU. No USB GO. See `vendor/guardtalk/docs/KOMODO_DEBUG_FLASH.md`.
+The **GuardTalkOS WebInstaller** (`vendor/guardtalk/web-installer/`) lets you flash GuardTalkOS onto a supported Google Pixel directly from a Chromium-based web browser over USB (**WebUSB**), without installing `fastboot` on your computer.
 
-See `vendor/guardtalk/docs/WEB_INSTALLER_CHANNEL.md`.
+How it works under the hood:
+- **Browser UI (`wizard/`):** A 5-step guided wizard (`/wizard/`) that checks browser/USB readiness, connects to your Pixel in Fastboot Mode using the pinned MIT `android-fastboot` ES module (`/dist/vendor/fastboot.min.mjs`, from `kdrag0n/fastboot.js` commit `ffe7e270061b95fe0f0f3abd1aa7d3c28999d1d9`), and shows live progress and logs.
+- **Flash Orchestrator (`src/` — `flashcore`):** Reads each device's hosted release channel (`channels/<codename>/manifest.json`, `SHA256SUMS`, `files.txt`), verifies the **SHA-256** checksum of every image before flashing (fail-closed), and executes a deterministic flash plan in strict order:
+  1. `firmware` (bootloader / radio)
+  2. `avb_custom_key` (erases and flashes public-only `avb_pkmd.bin`)
+  3. `os` (logical partitions via `super_empty` + `fastbootd` or `super.img`, plus boot/vbmeta images)
+- **Zero User Key Custody:** You never generate, upload, or import private signing keys in the browser. Release signing keys are held by GuardTalkOS maintainers; the browser only verifies published checksums and public `avb_pkmd.bin`.
+- **Dry-Run Mode Included:** You can preview the exact flash plan and walk every wizard step **without plugging in a phone** by clicking **Use dry-run transport**.
 
-## Consuming this directory (git submodule / standalone clone)
+> Prefer flashing from the command line or need stock rollback? See [Build, Verify & Run GuardTalkOS for Dummies](../docs/BUILD_AND_RUN_FOR_DUMMIES.md) for `scripts/flash-from-remote.sh` and `gt-rollback-to-stock.sh`.
 
-This directory is self-contained: it can be checked out on its own, with **no
-Android `repo` checkout around it**. Nothing in it roots itself in a parent
-layout any more — every host dependency is resolved through an ordered
-candidate list (`scripts/lib/resolve.sh`) and a missing dependency is an
-**actionable error (exit 2)**, never a bare `No such file or directory`.
+---
 
-**Licence:** MIT — the full text is in [`LICENSE`](LICENSE) and matches the
-`"license": "MIT"` field in `package.json`. Copyright holder: *GuardTalkOS
-contributors*. Third-party components and their licences: [`NOTICE`](NOTICE).
+## 2. Supported Pixel Devices (All 14 Packed Targets)
 
-### Build artifacts — never committed
+All **14** GuardTalkOS targets are packed into `channels/<codename>/` and wired into `src/allowlist.ts` (`STAGED_PRODUCTS`), `wizard/devices.ts` (`ALL_WIZARD_DEVICES`), `status.json`, and `scripts/pack-wizard-hosted-channels.sh`:
 
-| Path | What it is | In git? |
-|------|------------|---------|
-| `channels/` | packed per-device channel trees (`manifest.json`, `SHA256SUMS`, `files.txt`, staged image links) produced by the packer | **never** (`.gitignore`) |
-| `dist/` | `tsc` output and the emitted static site (`dist/site`) produced by `npm run routes:build` / `wizard:build` | **never** (`.gitignore`) |
-| `node_modules/` | npm devDependencies (`typescript`, `tsx`, `@types/node`) | **never** (`.gitignore`) |
+| Codename | Device Name | `status.json` Classification | Wizard Status | Default Boot-Chain | Super Mode |
+|----------|-------------|------------------------------|---------------|--------------------|------------|
+| `tokay` | Pixel 9 | `targets` | `supported` | `gt` | `super_empty` |
+| `komodo` | Pixel 9 Pro XL | `targets` | `supported` | `gt` | `super_empty` |
+| `caiman` | Pixel 9 Pro | `targets` | `supported` | `gt` | `super_empty` |
+| `frankel` | Pixel 10 | `targets` | `supported` | `hybrid` (`gt`, `hybrid`) | `super` |
+| `stallion` | Pixel 9a | `targets` | `supported` | `gt` | `super_empty` |
+| `blazer` | Pixel 10 Pro | `targets` | `supported` | `hybrid` (`gt`, `hybrid`) | `super` |
+| `rango` | Pixel 10 Pro Fold | `targets` | `experimental` (**boot HOLD**) | `hybrid` (`gt`, `hybrid`) | `super` |
+| `akita` | Pixel 8a | `experimentalTargets` | `experimental` | `gt` | `super_empty` |
+| `comet` | Pixel 9 Pro Fold | `targets` | `supported` | `gt` | `super_empty` |
+| `husky` | Pixel 8 Pro | `targets` | `supported` | `gt` | `super_empty` |
+| `mustang` | Pixel 10 Pro XL | `targets` | `supported` | `gt` | `super_empty` |
+| `shiba` | Pixel 8 | `targets` | `supported` | `gt` | `super_empty` |
+| `tegu` | Pixel 9a | `targets` | `supported` | `gt` | `super_empty` |
+| `tangorpro` | Pixel Tablet | `targets` | `supported` | `gt` | `super_empty` |
 
-A fresh checkout therefore has no channels, no build output and no
-`node_modules`. A checked-out copy of any of them is **not** evidence that a
-build ran or that a channel was verified — regenerate and re-verify instead.
-`channels/` is generated state that git cannot protect: after any drill or
-pack, check it with `bash scripts/check-channel-integrity.sh` and re-pin the
-anchors with `node scripts/gen-expected-anchors.mjs --check`.
+**Notes:**
+- All 14 channels are currently labeled **`dev/unlocked`** with **`LIVE_FLASH_CLAIMED=false`** and **`BOOT_VERIFIED=false`**.
+- **Laguna Pixel 10 family (`frankel`, `blazer`, `rango`):** Default to `hybrid` (CP1A rescue-boot hybrid) and flash `super.img` directly. `rango` is marked **`experimental / boot HOLD`**. See [Troubleshooting FAQ](#6-troubleshooting-faq) and [../docs/BUILD_AND_RUN_FOR_DUMMIES.md](../docs/BUILD_AND_RUN_FOR_DUMMIES.md) for Laguna caveats.
 
-### Example superproject wiring
+---
 
-The installer lives in the GuardTalk product repo (`vendor/guardtalk`), so a
-superproject adds the product repo and uses the path inside it. `git submodule
-add` writes this `.gitmodules` entry for you:
+## 3. Prerequisites (For Dummies)
 
-```ini
-[submodule "vendor/guardtalk"]
-	path = vendor/guardtalk
-	url = git@github.com:nullset-zone/vendor_guardtalk.git
-	branch = 16-qpr2
+Before you start, make sure you have all of the following:
+
+### 3.1 Supported Web Browser (Chromium-Family Only)
+- **Use:** Google Chrome, Chromium, Microsoft Edge, or Brave in a **normal (non-Incognito) window**.
+- **Why Firefox, Safari, and Tor Browser do NOT work for live flashing:** They do not implement the **WebUSB** (`navigator.usb`) API. The wizard will still let you run **Dry-run** and **Plan preview**, but **Reboot to Fastboot** and live **Connect** are disabled.
+- **Why Private / Incognito windows are unsupported:** Browsers severely restrict origin storage (OPFS) in private windows, which is too small to stage multi-GB Android partition images.
+
+### 3.2 HTTPS / `window.isSecureContext` Requirement
+Browsers only expose WebUSB inside a **secure context** (`window.isSecureContext === true`). In `wizard/main.ts`, the installer checks `window.isSecureContext === false` **before** checking `"usb" in navigator`:
+- **Local machine (`localhost` or `127.0.0.1`):** `http://localhost:4173/wizard/` and `http://127.0.0.1:4173/wizard/` are treated as secure contexts by Chromium — WebUSB works locally without TLS certificates.
+- **Remote server or LAN IP (`http://192.168.x.x:4173/wizard/`):** Plain HTTP on any non-localhost address has `window.isSecureContext === false`. The wizard will display:
+  > *"WebUSB requires a secure context (https:// or localhost). Open this installer over https:// to enable Reboot to Fastboot and live WebUSB connect. Dry-run and plan preview still work."*
+- **Fix for remote hosting:** Serve the installer behind **HTTPS** (TLS).
+
+### 3.3 Hardware & Cable
+- A **good USB data cable** (many cheap charging cables lack data wires).
+- Plug directly into a USB port on the computer running the browser (avoid unpowered USB hubs).
+- Back up everything on the Pixel — **unlocking the bootloader wipes all user data**.
+
+### 3.4 Pixel Phone Preparation
+On your Pixel (in stock Android):
+1. Open **Settings → About phone** and tap **Build number** 7 times until Developer options are enabled.
+2. Open **Settings → System → Developer options**.
+3. Enable **OEM unlocking** (requires an internet connection on first toggle and a carrier-unlocked Pixel).
+4. Enable **USB debugging** (needed only if you want to use the wizard's **Reboot to Fastboot** button).
+
+### 3.5 Computer OS Setup (USB Access)
+- **Linux:**
+  1. Install Android `udev` rules (e.g., `android-udev-rules` package on Debian/Ubuntu/Arch/Fedora) and reload rules (`sudo udevadm control --reload-rules && sudo udevadm trigger`), then unplug/replug your Pixel.
+  2. Stop `fwupd` if it claims the Fastboot USB interface:
+     ```bash
+     sudo systemctl stop fwupd.service
+     ```
+  3. Stop any running local `adb` server so Chromium can claim the USB interface:
+     ```bash
+     adb kill-server
+     ```
+- **macOS:** No extra kernel driver is needed. Run `adb kill-server` if `adb` is running, and avoid unpowered USB hubs.
+- **Windows:** Install the **Google USB Driver** (*Android Bootloader Interface*) via Windows Update → Optional Updates or Device Manager before clicking **Connect**.
+
+### 3.6 Local Host Tooling (Only If Running/Building Locally)
+- **Node.js ≥ 20** (enforced by `"engines": { "node": ">=20" }` in `package.json`).
+- **Python 3** (used by `npm run wizard:serve` and `npm run routes:serve`).
+
+---
+
+## 4. Step-by-Step Local Setup, Build & Test
+
+Every command below is verified against `vendor/guardtalk/web-installer/package.json`. Run them from `vendor/guardtalk/web-installer/`:
+
+```bash
+cd vendor/guardtalk/web-installer
 ```
+
+### Step 1 — Install Dependencies
+`node_modules/`, `dist/`, and `channels/` are generated artifacts (gitignored and never committed). Install devDependencies and the pinned `android-fastboot` package:
+
+```bash
+npm ci
+```
+
+### Step 2 — Pack Release Channels (All 14 Targets)
+Pack the 14 `<codename>-latest` desktop-flash stamps from `GUARDTALK_RELEASES_ROOT` (defaults to `<repo-root>/releases/desktop-flash` when inside the GuardTalk checkout) into `channels/<codename>/`:
+
+```bash
+# Optional: point at an external desktop-flash release store
+# export GUARDTALK_RELEASES_ROOT=/path/to/releases/desktop-flash
+
+npm run channels:pack
+```
+
+*(Need to pack just a single device? Run `bash scripts/pack-webinstall-channel.sh --stamp "$GUARDTALK_RELEASES_ROOT/tokay-latest" --out channels/tokay --copy-images`.)*
+
+### Step 3 — Build the Static Site & Wizard
+Run **both** build scripts so both the browser wizard (`dist/wizard/main.js`) and the vendored WebUSB Fastboot library (`dist/vendor/fastboot.min.mjs`, copied by `routes:build`) are emitted:
+
+```bash
+npm run routes:build
+npm run wizard:build
+```
+
+### Step 4 — Verify Claims, Readiness Gate & Tests
+Run the full host verification stack:
+
+```bash
+# 1. Claim-honesty linter (ensures zero forbidden overclaims)
+npm run claims:lint
+
+# 2. 14-clause readiness gate (0 = PASS, 1 = FAIL, 2 = ERROR)
+node scripts/readiness-gate.mjs
+
+# 3. Typecheck routes + flashcore + host test suite (mocked WebUSB/Fastboot)
+npm run routes:typecheck
+npm test
+```
+
+You can also inspect a flash plan from the terminal without touching USB:
+
+```bash
+npm run plan -- --channel channels/tokay
+```
+
+### Step 5 — Serve the Installer Locally
+Start the local web server for the wizard:
+
+```bash
+npm run wizard:serve
+```
+
+Then open **`http://localhost:4173/wizard/`** (or **`http://127.0.0.1:4173/wizard/`**) in Chrome, Chromium, Edge, or Brave.
+
+> **Note on `npm run routes:serve`:** `npm run routes:serve` serves `dist/site/` on port `8080` (`http://localhost:8080/`) to preview the static landing/redirect routes (`/`, `/install/`, `/install/update`, `/install/verify-device`, `/install/recover`, `/threat-model/`). For the full interactive wizard + `channels/` + `dist/vendor/fastboot.min.mjs`, use `npm run wizard:serve` on port `4173`.
+
+### Complete `package.json` Script Reference
+
+| Command | Underlying Script | What It Does |
+|---------|-------------------|--------------|
+| `npm ci` | *(npm built-in)* | Clean install of pinned dependencies (`typescript`, `tsx`, `@types/node`, `android-fastboot`). |
+| `npm run channels:pack` | `bash scripts/pack-channels.sh` | Clears and repacks all 14 `channels/<codename>/` trees from `GUARDTALK_RELEASES_ROOT`. |
+| `npm run routes:build` | `bash scripts/build-site.sh` | Builds `dist/site/` (including `/wizard/` redirects) and copies `dist/vendor/fastboot.min.mjs`. |
+| `npm run wizard:build` | `tsc -p tsconfig.wizard.json` | Compiles `wizard/*.ts` to `dist/wizard/`. |
+| `npm run typecheck` | `tsc --noEmit` | Typechecks `src/` and `test/`. |
+| `npm run routes:typecheck` | `tsc -p tsconfig.routes.json --noEmit` | Typechecks `routes/` and `lib/`. |
+| `npm test` | `tsc --noEmit && tsx --test test/*.test.ts` | Typechecks and runs all host unit/integration tests (mocked WebUSB/Fastboot). |
+| `npm run claims:lint` | `node scripts/lint-claims-gate.mjs` | Lints emitted site and route copy for forbidden readiness/verified-boot overclaims. |
+| `npm run plan` | `tsx src/cli.ts` | Prints a flashcore plan for a channel directory (no USB). |
+| `npm run wizard:serve` | `python3 -m http.server 4173 --bind 0.0.0.0` | Serves the installer root so `/wizard/`, `/channels/`, and `/dist/` resolve on port `4173`. |
+| `npm run routes:serve` | `python3 -m http.server 8080 --directory dist/site` | Serves the emitted static site in `dist/site/` on port `8080`. |
+
+---
+
+## 5. Step-by-Step Browser Wizard Walkthrough
+
+### Opening the Wizard (and Legacy Redirects)
+- Open **`/wizard/`** (e.g., `http://localhost:4173/wizard/` locally, or `https://<your-host>/wizard/` remotely).
+- You can pre-select a device via query parameter, e.g., `/wizard/?device=tokay`.
+- **Legacy routes retired:** Navigating to `/` (in `dist/site/`), `/install/update`, `/install/recover`, or `/install/verify-device` automatically redirects cleanly to `/wizard/`.
+
+### Step 1 — Enable OEM Unlocking & Enter Fastboot Mode
+1. Check the browser status line at the top of Step 1:
+   - Confirm it reports a Chromium-family browser and WebUSB availability.
+   - Make sure you are **not** in an Incognito/Private window.
+2. Follow the OS-specific USB guidance tab (**Linux (udev & fwupd)**, **macOS**, or **Windows**).
+3. Plug your Pixel into the computer running the browser and boot it into **Fastboot Mode** using any of these three methods:
+   - Click **Reboot to Fastboot** in the wizard (sends `reboot:bootloader` over WebUSB ADB; accept the "Allow USB debugging" prompt on the Pixel).
+   - Power off the Pixel, then hold **Volume Down + Power** until the Fastboot Mode screen appears.
+   - Run the host fallback script: `vendor/guardtalk/scripts/reboot-to-fastboot.sh`.
+
+### Step 2 — Select Device & Connect via WebUSB
+1. Choose your Pixel model from the **Target Pixel device** dropdown (14 packed targets).
+2. Check the **Boot-chain mode** selector:
+   - Non-Laguna devices use `gt` (GuardTalk native boot chain).
+   - Laguna Pixel 10 devices (`frankel`, `blazer`, `rango`) default to `hybrid` (CP1A rescue-boot hybrid) and allow switching between `hybrid` and `gt`.
+3. Choose your transport:
+   - **Want to practice safely without a phone?** Click **Use dry-run transport**, then click **Connect**.
+   - **Ready to connect a real Pixel in Fastboot Mode?** Click **Connect** and select your Pixel in the browser's WebUSB picker.
+4. The wizard reads and displays live telemetry from the bootloader:
+   - **Detected product** (`getvar product` — must match the selected channel; mismatches fail closed)
+   - **Current slot** (`current-slot`)
+   - **Bootloader unlocked** (`unlocked`: `yes` or `no`)
+
+### Step 3 — Unlock Bootloader
+*(If your Pixel's bootloader is already unlocked, you can proceed straight to Step 4.)*
+1. Check **"I understand unlocking the bootloader erases all user data on the Pixel."**
+2. Click **Unlock bootloader** (runs `flashing unlock`).
+3. On the Pixel screen, use the **Volume** buttons to highlight **Unlock the bootloader** and press **Power** to confirm. Wait for the wipe to finish and the Pixel to return to Fastboot Mode.
+
+### Step 4 — Download, Verify & Flash Release
+1. When you select a device, the wizard automatically loads `../channels/<codename>/`, verifies `manifest.json`, `SHA256SUMS`, and public `avb_pkmd.bin`, checks browser storage quota (OPFS / streaming), and displays the exact **flashcore** step list (`firmware` → `avb_custom_key` → `os`).
+2. Review the plan preview (click **Refresh plan preview** if needed).
+3. Click **Flash release** and watch the progress bar and **Activity** log.
+4. **Reconnect prompts are normal:** When the flasher reboots into the bootloader or enters `fastbootd`, the browser's USB session resets and a **Reconnect the Pixel** dialog appears. Wait until the Pixel is back on the Fastboot screen, then click **Reconnect**.
+5. If a transient USB transfer error occurs, the wizard displays a **Recoverable USB error** box with a **Reconnect & retry** button.
+
+### Step 5 — Post-Flash & Safety-Gated Bootloader Lock
+1. Once the flash plan completes, review the verification summary in Step 5 (which records the product, source stamp, `avb_pkmd.bin` SHA-256 prefix, and `LIVE_FLASH_CLAIMED=false`).
+2. **About Locking the Bootloader (`flashing lock`):**
+   - Because all current channels are **`dev/unlocked`** (development/test-keys, `verifiedBootClaim: "none"`), the **Lock bootloader** button is **safety-blocked by default** — locking requires checking **both** the data-wipe confirmation **and** the explicit **Operator override** checkbox.
+   - **Important:** Locking a `dev/unlocked` channel does **not** create a GrapheneOS-equivalent production verified-boot install. For lab/UAT testing, leave the bootloader unlocked unless you explicitly intend to test locking with an operator override.
+
+---
+
+## 6. Troubleshooting FAQ
+
+### Q: I see *"WebUSB requires a secure context (https:// or localhost)"*
+- **Cause:** You opened the page over plain `http://` using a LAN IP or hostname (for example `http://192.168.1.50:4173/wizard/`), so `window.isSecureContext` is `false`.
+- **Fix:**
+  - If running on the same computer, open **`http://localhost:4173/wizard/`** or **`http://127.0.0.1:4173/wizard/`**.
+  - If hosting on another machine, put an **HTTPS** reverse proxy (TLS) in front of it and open **`https://<your-host>/wizard/`**.
+
+### Q: WebUSB says *Permission denied*, *Access denied*, or *Unable to claim interface*
+- **Linux `udev` rules:** Install `android-udev-rules`, reload udev (`sudo udevadm control --reload-rules && sudo udevadm trigger`), and replug the USB cable.
+- **`adb` daemon conflict:** Another process (`adb`) owns the USB interface. Run `adb kill-server` and retry.
+- **`fwupd` conflict (Linux):** Run `sudo systemctl stop fwupd.service` and retry.
+- **Another browser tab:** Close any other tabs using WebUSB (such as another installer tab).
+
+### Q: My Pixel does not appear in the WebUSB device picker
+- Confirm the Pixel screen actually says **Fastboot Mode** (red/green triangle screen), not normal Android or Recovery.
+- Swap to a known-good **USB data cable** and plug directly into the computer (no unpowered USB hub).
+- On **Windows**, install the **Google USB Driver** (*Android Bootloader Interface*) via Windows Update Optional Updates or Device Manager.
+- On **Linux**, re-check `udev` rules and verify `lsusb` sees a Google device (`18d1:...`).
+
+### Q: *OEM unlocking* is greyed out or the bootloader refuses to unlock
+- Connect the Pixel to Wi-Fi in stock Android for a few minutes and check **Settings → System → Developer options → OEM unlocking** again.
+- Carrier-locked Pixels (for example certain carrier-financed models) permanently disable OEM unlocking and cannot be unlocked or flashed.
+- Make sure you confirmed the on-device prompt using the **Volume** and **Power** buttons during Step 3.
+
+### Q: The flash pauses at *Reconnect the Pixel* or stalls entering `fastbootd`
+- The **Reconnect the Pixel** dialog is **expected** whenever the bootloader reboots or transitions into `fastbootd` — it is not an error by itself. Wait for the Pixel to finish rebooting into Fastboot Mode, then click **Reconnect**.
+- If the Pixel drops off USB completely, unplug and replug the cable, ensure it is in Fastboot Mode, and click **Reconnect & retry**.
+
+### Q: What are the special caveats for Pixel 10 Laguna devices (`frankel`, `blazer`, `rango`)?
+- Laguna devices (`frankel` Pixel 10, `blazer` Pixel 10 Pro, `rango` Pixel 10 Pro Fold) use `super.img` and default to the **`hybrid`** (CP1A rescue-boot) boot-chain mode rather than `gt`.
+- **`rango` (Pixel 10 Pro Fold)** is currently flagged **`experimental / boot HOLD`**.
+- For full Laguna hybrid flashing rules, `GT_BOOT_CHAIN=hybrid`, `REMOTE_RESCUE_DIR`, operator `acks/<dev>.ack` files, and stock rollback (`gt-rollback-to-stock.sh`), see [Build, Verify & Run GuardTalkOS for Dummies](../docs/BUILD_AND_RUN_FOR_DUMMIES.md).
+
+---
+
+## 7. Claim Honesty: Dev/UAT vs. Production Fleet
+
+GuardTalkOS enforces strict claim honesty (verified automatically by `npm run claims:lint` and `node scripts/readiness-gate.mjs`):
+
+| Dimension | Current State | Meaning |
+|-----------|---------------|---------|
+| **`liveFlashClaimed`** | **`false`** (`LIVE_FLASH_CLAIMED=false`) | All automated verification uses mocked WebUSB/Fastboot transports. A passing `npm test` or `readiness-gate` run is **not** a live hardware flash. |
+| **`bootVerified`** | **`false`** (`BOOT_VERIFIED=false`) | Green host checks do **not** claim hardware boot verification. |
+| **Channel Label** | **`dev/unlocked`** (`verifiedBootClaim: "none"`) | Channels are unsigned dev channels backed by review-gated anchor pins (`docs/expected-anchors.json`). |
+| **Dev/Unlocked WebUSB UAT** | **GO (14/14 packed targets)** | All 14 channels are packed, verified by `readiness-gate`, `claims:lint`, and `npm test`, and ready for human-operated dev/unlocked WebUSB UAT. |
+| **Production Verified-Boot Fleet** | **NO-GO (Blocked)** | Blocked on: (1) production release signing keys replacing AOSP `testkey` (`userdebug`/`test-keys` vs. vault-held release keys), (2) signed channel roots (`channel-root.txt` + `channel-root.txt.sig` verified via `--require-signed-root`), and (3) human-executed hardware live-flash and boot verification. |
+
+---
+
+## 8. Developer & Ops Reference
+
+### Directory Layout
+
+| Path | What It Is | Committed in Git? |
+|------|------------|-------------------|
+| `wizard/` | GuardTalkOS-branded 5-step WebUSB installer UI (`index.html`, `main.ts`, `devices.ts`, …) | Yes |
+| `src/` | `flashcore` orchestrator (`allowlist.ts`, `types.ts`, `transport.ts`, `cli.ts`, …) | Yes |
+| `routes/` & `lib/` | Static site routes, CSP headers, and claim-honesty linter (`lib/claims/`) | Yes |
+| `scripts/` | Vendored channel packers, `build-site.sh`, `readiness-gate.mjs`, `lint-claims-gate.mjs`, `verify-flashall.sh` | Yes |
+| `schema/` | JSON Schema (`channel-manifest.schema.json`) and example manifest (`manifest.example.json`) | Yes |
+| `test/` | Host unit/integration tests with mocked Fastboot/WebUSB transport | Yes |
+| `status.json` | Build-time posture manifest (`liveFlashClaimed: false`, `targets`, `experimentalTargets`) | Yes |
+| `channels/` | Generated per-device channel trees (`manifest.json`, `SHA256SUMS`, `files.txt`, staged images) | **Never** (`.gitignore`) |
+| `dist/` | Compiled TypeScript (`dist/wizard/`, `dist/site/`) and vendored `dist/vendor/fastboot.min.mjs` | **Never** (`.gitignore`) |
+| `node_modules/` | Installed npm packages (`typescript`, `tsx`, `@types/node`, `android-fastboot`) | **Never** (`.gitignore`) |
+
+### Consuming This Directory Standalone / As a Git Submodule
+This directory is self-contained and can be checked out without an Android `repo` tree around it. Channel packers are vendored at `scripts/pack-webinstall-channel.sh` and `scripts/pack-wizard-hosted-channels.sh`, and host dependencies are resolved via `scripts/lib/resolve.sh` (missing dependencies fail closed with exit `2`).
 
 ```bash
 git submodule add git@github.com:nullset-zone/vendor_guardtalk.git vendor/guardtalk
@@ -88,271 +326,48 @@ git submodule update --init --recursive
 cd vendor/guardtalk/web-installer
 ```
 
-If a superproject consumes only this directory instead of the product repo, the
-same commands apply with a shallower `path` (`vendor/guardtalk/web-installer`).
-The channel packers are **vendored** here (`scripts/pack-webinstall-channel.sh`,
-`scripts/pack-wizard-hosted-channels.sh`), so `bash scripts/pack-channels.sh`
-works with no product repo beside it; only the readiness **reporter**
-(`scripts/gt-ready-devices.sh`) still lives in the product repo, and
-`gen-readiness-manifest.sh --from-tsv` needs no reporter at all.
+After packing or drilling channels, verify integrity and anchors:
+
+```bash
+bash scripts/check-channel-integrity.sh
+node scripts/gen-expected-anchors.mjs --check
+```
 
 ### Environment contract
 
 | Variable | Read by | Default | Meaning |
 |----------|---------|---------|---------|
-| `GUARDTALK_RELEASES_ROOT` | `scripts/gen-flash-matrix.mjs`, `scripts/gen-expected-anchors.mjs`, `scripts/readiness-gate.mjs`, `scripts/verify-flashall.sh`, `scripts/pack-channels.sh` (reported + passed through), `scripts/pack-wizard-hosted-channels.sh`, `scripts/pack-webinstall-channel.sh` | modules: `<repo root>/releases/desktop-flash` (repo root = three levels above the installer); the packers fall back to the tree root four levels above `scripts/` (last resort only) | The desktop-flash **release store** the channels are packed from and re-checked against. Point it at an external store when the installer is a submodule. |
-| `GUARDTALK_INSTALLER_ROOT` | `scripts/readiness-gate.mjs` | the gate's own install location (`import.meta.url`) | The installer tree the gate **probes** (`channels/`, `docs/flash-matrix.json`, `status.json`). Set it explicitly for a `/tmp` drill; an explicit value that conflicts with `--matrix=` is an ERROR (exit 2), never a silent mismatch. |
-| `GT_NODE_BIN` | `scripts/verify-flashall.sh` | first runnable Node.js >= 20 from an ordered candidate list (PATH, `$NODE`, user toolchains, Cursor server runtimes, system locations) | Explicit Node.js interpreter. **Authoritative**: a `GT_NODE_BIN` that does not run, or is older than 20, fails closed (exit 2) — it never falls through to another binary. |
+| `GUARDTALK_RELEASES_ROOT` | `scripts/gen-flash-matrix.mjs`, `scripts/gen-expected-anchors.mjs`, `scripts/readiness-gate.mjs`, `scripts/verify-flashall.sh`, `scripts/pack-channels.sh`, `scripts/pack-wizard-hosted-channels.sh`, `scripts/pack-webinstall-channel.sh` | `<repo root>/releases/desktop-flash` | Desktop-flash release store that channels are packed from and checked against. |
+| `GUARDTALK_INSTALLER_ROOT` | `scripts/readiness-gate.mjs` | Gate's own install location (`import.meta.url`) | Installer tree probed by the gate (`channels/`, `docs/flash-matrix.json`, `status.json`). Conflicting `--matrix=` fails closed (exit `2`). |
+| `GT_NODE_BIN` | `scripts/verify-flashall.sh` | First runnable Node.js ≥ 20 from ordered candidate list | Explicit Node.js binary. Fails closed (exit `2`) if unrunnable or `< 20`. |
 
-Script-local variables (not part of the deployment contract):
+Script-local variables:
+- `NODE`: Interpreter used by `scripts/build-site.sh` for local `tsc`.
+- `GUARDTALK_RELEASES_DIR`: Drill/test override for `scripts/readiness-gate.mjs` (`--releases-dir=` wins).
+- `GT_MANIFEST_OUT`, `GT_MANIFEST_TIMESTAMP`, `GT_REPORTER_SHA`: Test overrides for `scripts/gen-readiness-manifest.sh`.
+- `CHANNEL`: `dev` (default) or `production` for `scripts/pack-webinstall-channel.sh` (`production` fails closed without a valid signature).
+- `GUARDTALK_REQUIRE_SIGNED_ROOT`: Demands a signed channel root in `scripts/readiness-gate.mjs` (equivalent to `--require-signed-root`; only `0`/`false`/`no` disable it — any unrecognized value fails closed).
 
-| Variable | Read by | Meaning |
-|----------|---------|---------|
-| `NODE` | `scripts/build-site.sh` | Interpreter used for the local `tsc` (else the first `node` on PATH). |
-| `GUARDTALK_RELEASES_DIR` | `scripts/readiness-gate.mjs` (`--releases-dir=` wins) | Drill/test override of the gate's release store; ordinary runs set `GUARDTALK_RELEASES_ROOT` instead. |
-| `GT_MANIFEST_OUT`, `GT_MANIFEST_TIMESTAMP`, `GT_REPORTER_SHA` | `scripts/gen-readiness-manifest.sh` | Keep the generated manifest out of the committed file, freeze the timestamp, or supply a recorded reporter fingerprint (tests use these). |
-| `CHANNEL` | `scripts/pack-webinstall-channel.sh` | `dev` (default) / `production`. `production` fails closed without a public signature. |
-| `GUARDTALK_REQUIRE_SIGNED_ROOT` | `scripts/readiness-gate.mjs` | A mode that DEMANDS a signed channel root. Only `0`/`false`/`no` disable it; an **unrecognised value means REQUIRED** (fail closed). Equivalent to `--require-signed-root`. |
-
-### First-run sequence (fresh clone, no parent checkout)
-
-Run from the installer directory (`cd vendor/guardtalk/web-installer`, or the
-root of a clone of the product repo's `web-installer/`). Exit code is shown for
-each step; every one must be `0`.
+### Signed Channel Roots (Production Authenticity)
+The shipped `dev` channel is **not** signed; it uses review-gated pins in `docs/expected-anchors.json`. Production channels require a detached `ssh-keygen -Y` signature (`channel-root.txt` + `channel-root.txt.sig`) verified against an out-of-band `allowed_signers` file (`docs/expected-allowed-signers` or `--allowed-signers=`):
 
 ```bash
-# 0. Node.js >= 20. Either put node on PATH, or pin it explicitly:
-export GT_NODE_BIN=/absolute/path/to/node        # optional
-
-# 1. install (devDependencies only; node_modules/ is never committed)
-npm ci                                           # -> 0
-
-# 2. point the release store at the desktop-flash release store
-export GUARDTALK_RELEASES_ROOT=/path/to/releases/desktop-flash
-
-# 3. pack the advertised channels from that store (one per device)
-for p in tokay akita komodo rango; do
-  bash scripts/pack-webinstall-channel.sh \
-    --stamp "$GUARDTALK_RELEASES_ROOT/$p-latest" \
-    --out "channels/$p" --copy-images
-done                                             # -> 0 each
-
-# 4. build the emitted site (dist/ is never committed)
-npm run routes:build                             # -> 0
-
-# 5. readiness gate: 0 = PASS, 1 = FAIL, 2 = ERROR (never a silent PASS)
-node scripts/readiness-gate.mjs                  # -> 0
-
-# 6. tests (tsc --noEmit + host tests)
-npm test                                         # -> 0
-```
-
-Step 3 uses the **vendored** per-channel packer, so it works in a standalone /
-submodule checkout. The hosted packer is vendored too: `npm run channels:pack`
-(=`bash scripts/pack-channels.sh`) packs all four products into this tree's
-`channels/` and reads `GUARDTALK_RELEASES_ROOT/<product>-latest`, exactly like
-step 3 — it is a one-command equivalent, not a different rule set.
-
-The executed transcript and exit codes for this sequence (fresh clone, no
-parent tree) are recorded in
-`.agent-comm/evidence/T-WEBINSTALL-SUBMODULE-CONTRACT/`.
-
-**Honesty:** a green sequence above means "packed, built, gated and tested on
-this host". It does **not** mean any image boots, and it is **not** a live
-flash: `BOOT_VERIFIED=false` and `LIVE_FLASH_CLAIMED=false` stand.
-
-## Signed channel roots (production authenticity)
-
-**The shipped dev channel is NOT signed.** Its authenticity mechanism is a
-review-gated checked-in constant (`docs/expected-anchors.json`, D-035/D-036),
-which `scripts/trust-anchor.mjs` states plainly as *"checked-in, review-gated;
-not a signed root"*. Nothing in this tree holds a real signing key, and none may
-be added.
-
-A **signed channel root** is the mechanism that makes a channel
-production-authenticated. Inside a channel directory:
-
-| File | What it is |
-|------|------------|
-| `channel-root.txt` | canonical statement binding the channel root (see below) |
-| `channel-root.txt.sig` | a detached signature over that statement |
-
-```text
-guardtalk-channel-root/1
-product tokay
-channel production
-manifest.json <sha256>
-SHA256SUMS <sha256>
-```
-
-`SHA256SUMS` transitively binds every artifact (including `avb_pkmd.bin`) and
-`manifest.json` binds the machine-readable contract, so one signature covers the
-whole channel root. The statement binds `product` too, so a signed root cannot
-be replayed onto another product.
-
-**The scheme is the packer's, not a new one.** `scripts/pack-webinstall-channel.sh`
-already refuses `CHANNEL=production` unless a `.sig` and an `allowed_signers`
-file are present, and verifies with `ssh-keygen -Y verify -I guardtalk-channel
--n "factory images"`. `scripts/channel-signature.mjs` performs the same check
-and adds the statement binding: the statement is **re-derived from the bytes on
-disk**, so a signature over a statement that describes *different* bytes
-authenticates nothing.
-
-**Trust comes from outside the channel.** The accepted trust list is
-`docs/expected-allowed-signers` (git-tracked, review-gated) or an explicit
-`--allowed-signers=`. Every entry naming `guardtalk-channel` must be scoped:
-
-```text
-guardtalk-channel namespaces="factory images" ssh-ed25519 AAAA… release@guardtalk
-```
-
-A trust list that ships *inside* the channel directory is self-signed — an
-attacker who can write the channel writes both halves — so it is reported as
-`channel-local` and never unlocks the signed mode.
-
-**Verify a channel you have:**
-
-```bash
-# dev channel: unchanged, 14 clauses, still "unsigned / not GrapheneOS-equivalent"
+# Dev channel (14 clauses, unsigned dev posture)
 node scripts/readiness-gate.mjs
 
-# a mode that DEMANDS a signed root — fails closed (exit 1) if none verifies
+# Strict signed-root mode — fails closed (exit 1) if no valid signature verifies
 node scripts/readiness-gate.mjs --require-signed-root
 node scripts/readiness-gate.mjs --require-signed-root --allowed-signers=/path/to/allowed_signers
-node scripts/readiness-gate.mjs --json          # read .authenticity and .anchorMode
+node scripts/readiness-gate.mjs --json
 ```
 
-What the gate reports is structured, not a log line:
+### Browser ADB Key Storage (Private Key at Rest)
+The first time you click **Reboot to Fastboot** (WebUSB ADB), `wizard/adb-rsa.ts` generates a 2048-bit RSA host key (`RSASSA-PKCS1-v1_5`, SHA-1) with WebCrypto and stores the private JWK unencrypted in `localStorage` under `guardtalk.webadb.rsa-jwk` (the browser equivalent of `~/.android/adbkey`) so your Pixel remembers the authorization.
+- **Risk scope:** Readable by scripts in the same origin or anyone with access to your local browser profile; bounded to ADB-debugging trust on your device.
+- **How to revoke:** Run `localStorage.removeItem("guardtalk.webadb.rsa-jwk")` in DevTools (or clear site data for the wizard origin), then revoke USB debugging authorizations under **Settings → Developer options** on the Pixel.
 
-```json
-{ "anchorMode": { "id": "signed-root", "signed": true, "label": "signed-root (production)" },
-  "authenticity": { "mechanism": "signed-root", "required": true, "status": "verified",
-                    "trustSource": "out-of-band", "signer": "guardtalk-channel",
-                    "namespace": "factory images", "channels": [ … ] } }
-```
-
-`authenticity.status` is one of `verified` / `absent` / `invalid` / `untrusted`
-/ `unavailable`, and `anchorMode` only reaches `signed-root` when a verifier
-actually verified something. The clause is **conditional**: the dev channel
-keeps its exact 14-clause contract, while a channel that ships a broken
-signature FAILS rather than being ignored.
-
-**What a verified root does NOT prove:** that the trust list's claim about the
-key's owner is true, that any image boots (`BOOT_VERIFIED=false`), or that a
-live flash happened (`LIVE_FLASH_CLAIMED=false`).
-
-The end-to-end proof (unsigned ⇒ FAIL, correctly signed ⇒ PASS with a
-throwaway signer generated per run under the OS temp dir) is
-`test/channel-signature.test.ts`; it never writes a key inside the repository.
-
-## Flashcore (this wave)
-
-The orchestrator loads `manifest.json` + `SHA256SUMS` + `files.txt`, builds a
-deterministic plan (`firmware` → `avb_custom_key` → `os`), verifies SHA-256
-before each artifact (fail closed), and drives a `FastbootTransport`:
-
-1. `connect` + `getvar product` must match the advertised channel product (`tokay`, `akita`, or `komodo`)
-2. `unlock` (`flashing unlock` if not already unlocked)
-3. flash firmware artifacts, then a reconnect hook
-4. erase + flash `avb_custom_key` from public `avb_pkmd.bin`
-5. flash OS images, then a reconnect hook
-6. `lock` (`flashing lock`) only after the plan completes
-
-**DEC-009:** Live Flash/Lock are HOLD. Shipped execute is dry-run only.
-This is not `flash-from-remote.sh`.
-
-There is no factory `-install-` zip / `script.txt` this wave. The public wizard is `wizard/index.html` (`F-WEBINSTALL-WIZARD`). It consumes
-flashcore (connect / unlock / plan / flash / lock). Live WebUSB is provided by
-MIT `android-fastboot` (kdrag0n/fastboot.js), declared in `package.json`
-`dependencies` and pinned to commit `ffe7e270061b95fe0f0f3abd1aa7d3c28999d1d9`
-(`npm install` / `npm ci` resolves it). `adaptAndroidFastboot` wraps a
-`FastbootDevice`; `connectAndroidFastboot()` loads the pinned package and
-connects (`T-WEBINSTALL-WEBUSB-TRANSPORT-BUNDLE`, D-043).
-
-The wizard still does not call `connectAndroidFastboot()`: it adapts a
-runtime-supplied `window.FastbootDevice`, and the static wizard build has no
-bundler step, so a bare `android-fastboot` import would not resolve in the
-browser yet. Dry-run and plan preview work without a phone, live
-`executePlan`/`lock` remain HOLD (DEC-009), and `LIVE_FLASH_CLAIMED` stays
-`false`.
-
-Host harness (prints a plan; does **not** open USB):
-
-```bash
-cd vendor/guardtalk/web-installer
-npx tsx src/cli.ts --channel /path/to/channel-dir
-```
-
-Wizard (no phone required for plan preview):
-
-```bash
-cd vendor/guardtalk/web-installer
-npm run channels:pack
-npm run wizard:build
-npm run wizard:serve
-```
-
-Then open `http://127.0.0.1:4173/wizard/`. Pick Pixel 9, Pixel 8a, or Pixel 9 Pro XL — the page
-loads `../channels/{tokay|akita|komodo}/` from this server (no file picker).
-**Dry-run** walks flashcore without USB.
-
-If the Pixel is still in stock Android, use **Reboot to Fastboot** on the page.
-That button talks ADB over WebUSB and sends `reboot:bootloader` (the same
-command as `adb reboot bootloader`). Enable OEM unlocking and USB debugging
-first, plug USB into the computer running the browser, and stop a local
-`adb` daemon (`adb kill-server`) so Chromium can claim the interface.
-
-Fallback on the USB host:
-
-```bash
-vendor/guardtalk/scripts/reboot-to-fastboot.sh
-```
-
-`flash-from-remote.sh` already does the same auto-reboot when the phone is in
-Android or recovery. This does **not** lift DEC-009 live Flash/Lock.
-Channel label is **dev/unlocked**. This is not GrapheneOS-equivalent locked
-verified boot, and it does not claim `flash-from-remote.sh` dual-slot parity.
-
-## Browser ADB key storage (private key at rest)
-
-The first time the wizard talks ADB over WebUSB, it generates a 2048-bit RSA
-host key (`RSASSA-PKCS1-v1_5`, SHA-1) with WebCrypto and stores the **full
-private JWK — including the private exponent `d` and CRT components
-`p`, `q`, `dp`, `dq`, `qi` — unencrypted in `localStorage` under
-`guardtalk.webadb.rsa-jwk`** (`wizard/adb-rsa.ts`). This is the browser
-equivalent of `~/.android/adbkey`.
-
-Why: ADB host keys must persist so the phone keeps trusting the browser after
-the first "Allow USB debugging" prompt; `localStorage` is the only synchronous,
-persistent store available without extra permissions.
-
-Threat model / limits:
-
-- Any script running in this origin (e.g. via XSS) can read the key.
-- Anyone with local disk access to the browser profile can read it.
-- Exposure is bounded to ADB-debugging trust for your device — the key is not a
-  disk-encryption or account credential — but treat the browser profile as
-  sensitive.
-
-How to clear it (revokes the browser's ADB trust; the phone will re-prompt on
-next use):
-
-- DevTools console: `localStorage.removeItem("guardtalk.webadb.rsa-jwk")`
-- Or clear site data for the wizard origin in the browser settings.
-- Then remove the matching entry on the device if desired:
-  Settings → Developer options → USB debugging authorizations → Revoke.
-
-A future wave may move to a non-extractable `CryptoKey` in IndexedDB or offer a
-session-only key. Until then, use the wizard from a trusted browser profile.
-
-## Tests
-
-Host-only. A passing run is **not** a live-flash PASS.
-
-```bash
-cd vendor/guardtalk/web-installer
-npm install
-npm test
-```
-
-Requires Node ≥ 20. Tests mock `FastbootDevice` / WebUSB.
+### Related Documentation & Licensing
+- [Build, Verify & Run GuardTalkOS for Dummies](../docs/BUILD_AND_RUN_FOR_DUMMIES.md) — full OS build, QA verification, emulator, and CLI flashing walkthrough
+- [GuardTalkOS Product Overview](../README.md) — repository index and component map
+- [Web Installer Channel Specification](../docs/WEB_INSTALLER_CHANNEL.md) — channel schema and packaging contract
+- **License:** MIT ([`LICENSE`](LICENSE)); third-party notices in [`NOTICE`](NOTICE).
