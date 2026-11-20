@@ -306,8 +306,8 @@ adb shell pm list packages | grep guardtalk
 #### Step 1: Run Dry-Run / Pre-Flight Checks First (Zero Writes to Device)
 
 ```bash
-# 1. Quarantine check only (refuses quarantined or below-floor stamps)
-DEVICE=tokay GT_FLASH_QUARANTINE_CHECK_ONLY=1 bash scripts/flash-from-remote.sh
+# 1. Quarantine check only (refuses quarantined or below-floor stamps; requires REMOTE_BUILD_DIR)
+DEVICE=tokay REMOTE_BUILD_DIR="$PWD/releases/desktop-flash/tokay-latest" GT_FLASH_QUARANTINE_CHECK_ONLY=1 bash scripts/flash-from-remote.sh
 
 # 2. Readiness + operator ack check only
 DEVICE=tokay GT_READY_CHECK_ONLY=1 bash scripts/flash-from-remote.sh
@@ -316,24 +316,27 @@ DEVICE=tokay GT_READY_CHECK_ONLY=1 bash scripts/flash-from-remote.sh
 DEVICE=tokay GT_FLASH_PLAN_ONLY=1 bash scripts/flash-from-remote.sh
 ```
 
+> **Authoritative `acks/<dev>.ack` Format (`scripts/stamp-tree/gt-ready-devices.sh:145-155`):**
+> Operator acknowledgement files live at `releases/desktop-flash/acks/<codename>.ack` (override with `GT_READY_ACK_DIR`) using strict `key=value` lines. Required keys: `ack_version=1`, `type=operator-ack`, `ruling_id`, `operator`, `device`, `stamp`, `sha256sums_sha256` (SHA-256 of the stamp's `SHA256SUMS`), and `residual` (optional: `acknowledged_at`). Any mismatch fails closed and keeps the device in `HOLD`.
+
 #### Step 2: Flash Standard Non-Laguna Pixel (e.g., `tokay`, `akita`, `caiman`, `komodo`, `stallion`)
 
 ```bash
-export REMOTE_HOST="oss-c1@192.168.2.220"   # adjust to your build host
+export REMOTE_HOST="<user>@<build-host>"   # e.g., builder@192.168.1.50 (SSH host holding releases/desktop-flash/)
 export DEVICE="tokay"
 bash scripts/flash-from-remote.sh
 ```
 
 #### Step 3: Flash Laguna Family (`frankel`, `blazer`, `mustang`, `rango`) with Hybrid Boot Chain
 
-On Pixel 10 (`laguna`) devices, if the full GuardTalk boot chain is ABL-rejected or a stamp is classified `BUILD-OK`, use the operator opt-in hybrid boot chain (`GT_BOOT_CHAIN=hybrid`) together with the exact stamp ID (`GT_ALLOW_BUILD_OK`) and the matching CP1A rescue boot directory (`REMOTE_RESCUE_DIR`):
+On Pixel 10 (`laguna`) devices, if the full GuardTalk boot chain is ABL-rejected or a stamp is classified `BUILD-OK`, use the operator opt-in hybrid boot chain (`GT_BOOT_CHAIN=hybrid`) together with the exact stamp ID (`GT_ALLOW_BUILD_OK`) and the matching CP1A rescue boot directory (`REMOTE_RESCUE_DIR` — must be an **absolute path** on `REMOTE_HOST`):
 
 ```bash
-export REMOTE_HOST="oss-c1@192.168.2.220"
+export REMOTE_HOST="<user>@<build-host>"
 export DEVICE="frankel"
 export GT_BOOT_CHAIN="hybrid"
 export GT_ALLOW_BUILD_OK="$(basename "$(readlink -f releases/desktop-flash/frankel-latest)")"
-export REMOTE_RESCUE_DIR="/mnt/Big-Storage/GuardTalk/GrapheneOS-worktree/releases/desktop-flash/frankel-rescue-cp1a"
+export REMOTE_RESCUE_DIR="/path/to/GrapheneOS-worktree/releases/desktop-flash/frankel-rescue-cp1a"
 bash scripts/flash-from-remote.sh
 ```
 
@@ -412,7 +415,7 @@ DEVICE=blazer bash scripts/gt-flash-stock.sh
 
 ### Q: Laguna (`frankel` / `blazer` / `mustang` / `rango`) hangs at the Google logo when entering `fastbootd`
 - **Cause:** Attempting to enter `fastbootd` after flashing a GuardTalk boot chain, or missing/mismatched `REMOTE_RESCUE_DIR`.
-- **Fix:** Use `scripts/flash-from-remote.sh` (which flashes the stock rescue boot chain *before* `fastbootd`), and for hybrid mode explicitly set `GT_BOOT_CHAIN=hybrid` and `REMOTE_RESCUE_DIR=releases/desktop-flash/<dev>-rescue-cp1a` (for `frankel`/`blazer`) or `<dev>-rescue-boot`.
+- **Fix:** Use `scripts/flash-from-remote.sh` (which flashes the stock rescue boot chain *before* `fastbootd`), and for hybrid mode explicitly set `GT_BOOT_CHAIN=hybrid` and an **absolute path** on `REMOTE_HOST` for `REMOTE_RESCUE_DIR` (e.g., `REMOTE_RESCUE_DIR="/path/to/GrapheneOS-worktree/releases/desktop-flash/<dev>-rescue-cp1a"` for `frankel`/`blazer`, or `<dev>-rescue-boot`).
 
 ### Q: Phone shows a yellow/orange warning screen on boot about an unlocked bootloader / custom OS
 - **Cause:** Normal for an unlocked bootloader and/or custom `avb_pkmd.bin` (currently AOSP `testkey`).

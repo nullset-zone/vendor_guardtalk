@@ -49,7 +49,7 @@ All **14** GuardTalkOS targets are packed into `channels/<codename>/` and wired 
 | `komodo` | Pixel 9 Pro XL | `targets` | `supported` | `gt` | `super_empty` |
 | `caiman` | Pixel 9 Pro | `targets` | `supported` | `gt` | `super_empty` |
 | `frankel` | Pixel 10 | `targets` | `supported` | `hybrid` (`gt`, `hybrid`) | `super` |
-| `stallion` | Pixel 9a | `targets` | `supported` | `gt` | `super_empty` |
+| `stallion` | Pixel 9a *(see note)* | `targets` | `supported` | `gt` | `super_empty` |
 | `blazer` | Pixel 10 Pro | `targets` | `supported` | `hybrid` (`gt`, `hybrid`) | `super` |
 | `rango` | Pixel 10 Pro Fold | `targets` | `experimental` (**boot HOLD**) | `hybrid` (`gt`, `hybrid`) | `super` |
 | `akita` | Pixel 8a | `experimentalTargets` | `experimental` | `gt` | `super_empty` |
@@ -62,6 +62,7 @@ All **14** GuardTalkOS targets are packed into `channels/<codename>/` and wired 
 
 **Notes:**
 - All 14 channels are currently labeled **`dev/unlocked`** with **`LIVE_FLASH_CLAIMED=false`** and **`BOOT_VERIFIED=false`**.
+- **`stallion` label note:** The live WebInstaller UI (`wizard/devices.ts`) currently displays `stallion` as `Pixel 9a`, whereas Android device makefiles (`vendor/google_devices/stallion/stallion.mk`) and [../docs/BUILD_AND_RUN_FOR_DUMMIES.md](../docs/BUILD_AND_RUN_FOR_DUMMIES.md) identify `stallion` as **Pixel 10a**. Always select by **codename (`stallion`)**.
 - **Laguna Pixel 10 family (`frankel`, `blazer`, `rango`):** Default to `hybrid` (CP1A rescue-boot hybrid) and flash `super.img` directly. `rango` is marked **`experimental / boot HOLD`**. See [Troubleshooting FAQ](#6-troubleshooting-faq) and [../docs/BUILD_AND_RUN_FOR_DUMMIES.md](../docs/BUILD_AND_RUN_FOR_DUMMIES.md) for Laguna caveats.
 
 ---
@@ -296,7 +297,7 @@ GuardTalkOS enforces strict claim honesty (verified automatically by `npm run cl
 | **`bootVerified`** | **`false`** (`BOOT_VERIFIED=false`) | Green host checks do **not** claim hardware boot verification. |
 | **Channel Label** | **`dev/unlocked`** (`verifiedBootClaim: "none"`) | Channels are unsigned dev channels backed by review-gated anchor pins (`docs/expected-anchors.json`). |
 | **Dev/Unlocked WebUSB UAT** | **GO (14/14 packed targets)** | All 14 channels are packed, verified by `readiness-gate`, `claims:lint`, and `npm test`, and ready for human-operated dev/unlocked WebUSB UAT. |
-| **Production Verified-Boot Fleet** | **NO-GO (Blocked)** | Blocked on: (1) production release signing keys replacing AOSP `testkey` (`userdebug`/`test-keys` vs. vault-held release keys), (2) signed channel roots (`channel-root.txt` + `channel-root.txt.sig` verified via `--require-signed-root`), and (3) human-executed hardware live-flash and boot verification. |
+| **Production Verified-Boot Fleet** | **NO-GO (Blocked)** | Blocked on: (1) production release signing keys replacing public AOSP `testkey` (`user/test-keys` vs. vault-held release keys), (2) signed channel roots (`channel-root.txt` + `channel-root.txt.sig` verified via `--require-signed-root`), and (3) human-executed hardware live-flash and boot verification. |
 
 ---
 
@@ -306,13 +307,13 @@ GuardTalkOS enforces strict claim honesty (verified automatically by `npm run cl
 
 | Path | What It Is | Committed in Git? |
 |------|------------|-------------------|
-| `wizard/` | GuardTalkOS-branded 5-step WebUSB installer UI (`index.html`, `main.ts`, `devices.ts`, …) | Yes |
+| `wizard/` | Authoritative GuardTalkOS 5-step WebUSB installer UI served at `/wizard/` (`index.html`, `main.ts`, `devices.ts`, …) | Yes |
 | `src/` | `flashcore` orchestrator (`allowlist.ts`, `types.ts`, `transport.ts`, `cli.ts`, …) | Yes |
-| `routes/` & `lib/` | Static site routes, CSP headers, and claim-honesty linter (`lib/claims/`) | Yes |
-| `scripts/` | Vendored channel packers, `build-site.sh`, `readiness-gate.mjs`, `lint-claims-gate.mjs`, `verify-flashall.sh` | Yes |
+| `routes/` & `lib/` | Legacy route sources (retained for placeholder-retirement tests; `scripts/build-site.sh` emits `dist/site/install/{update,verify-device,recover}/index.html` → `../../wizard/` redirects at `npm run routes:build` time), `threat-model/`, CSP headers, and claim-honesty linter (`lib/claims/`) | Yes |
+| `scripts/` | Vendored channel packers, `build-site.sh`, `readiness-gate.mjs`, `channel-freshness.mjs`, `channel-signature.mjs`, `anchor-mode.mjs`, `lint-claims-gate.mjs`, `verify-flashall.sh` | Yes |
 | `schema/` | JSON Schema (`channel-manifest.schema.json`) and example manifest (`manifest.example.json`) | Yes |
 | `test/` | Host unit/integration tests with mocked Fastboot/WebUSB transport | Yes |
-| `status.json` | Build-time posture manifest (`liveFlashClaimed: false`, `targets`, `experimentalTargets`) | Yes |
+| `status.json` | Build-time posture manifest (`installer`, `keyCustody`, `releaseState`, `preLaunch`, `onion`, `routes`, `flashCapability: { implemented, liveFlashClaimed }`, `targets`, `experimentalTargets`, `noOta: true`) | Yes |
 | `channels/` | Generated per-device channel trees (`manifest.json`, `SHA256SUMS`, `files.txt`, staged images) | **Never** (`.gitignore`) |
 | `dist/` | Compiled TypeScript (`dist/wizard/`, `dist/site/`) and vendored `dist/vendor/fastboot.min.mjs` | **Never** (`.gitignore`) |
 | `node_modules/` | Installed npm packages (`typescript`, `tsx`, `@types/node`, `android-fastboot`) | **Never** (`.gitignore`) |
